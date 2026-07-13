@@ -179,7 +179,7 @@ export function SettingsModal() {
       </section>
 
         <p className="mt-6 text-center text-[11px] text-faint">
-          Markd · notes as plain markdown, on your disk
+          Ornata · notes as plain markdown, on your disk
         </p>
       </div>
     </Modal>

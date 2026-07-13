@@ -26,7 +26,13 @@ pub fn search_notes(root: &Path, query: &str, limit: usize) -> AppResult<Vec<Sea
     }
     let mut title_hits = Vec::new();
     let mut content_hits = Vec::new();
-    walk(root, &notes_root(root), &needle, &mut title_hits, &mut content_hits)?;
+    walk(
+        root,
+        &notes_root(root),
+        &needle,
+        &mut title_hits,
+        &mut content_hits,
+    )?;
     title_hits.append(&mut content_hits);
     title_hits.truncate(limit);
     Ok(title_hits)

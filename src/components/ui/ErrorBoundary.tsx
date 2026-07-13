@@ -17,7 +17,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
-    console.error("Markd crashed:", error);
+    console.error("Ornata crashed:", error);
   }
 
   render() {
@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong
           </p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-            Markd hit an unexpected error. Your notes are safe on disk — reloading
+            Ornata hit an unexpected error. Your notes are safe on disk — reloading
             usually fixes it.
           </p>
           {this.state.error.message && (

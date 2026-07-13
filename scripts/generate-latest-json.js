@@ -23,8 +23,8 @@ const projectRoot = join(__dirname, "..");
 
 // Configuration - Update these with your website URL
 // For Next.js: Use /api/updates if serving through API routes, or /updates if using public folder
-const WEBSITE_URL = "https://usemarkd.app/updates"; // Update this to your actual website URL
-const APP_NAME = "Markd";
+const WEBSITE_URL = "https://ornata.app/updates"; // Update this to your actual website URL
+const APP_NAME = "Ornata";
 
 // Get command line arguments
 const args = process.argv.slice(2);

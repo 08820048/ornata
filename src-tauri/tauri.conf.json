@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Markd",
+  "productName": "Ornata",
   "version": "0.1.4",
-  "identifier": "app.usemarkd",
+  "identifier": "app.ornata",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Markd",
+        "title": "Ornata",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -45,7 +45,7 @@
     ],
     "category": "Productivity",
     "shortDescription": "A fast, local-first notes app for developers and content creators",
-    "longDescription": "Markd is a macOS-first, local-only, ultra high-performance notes app designed for developers and content creators who care deeply about speed, privacy, and data ownership.",
+    "longDescription": "Ornata is a macOS-first, local-only, ultra high-performance notes app designed for developers and content creators who care deeply about speed, privacy, and data ownership.",
     "macOS": {
       "signingIdentity": "-",
       "entitlements": "./Entitlements.plist",
@@ -71,8 +71,8 @@
   },
   "plugins": {
     "updater": {
-      "active": true,
-      "endpoints": ["https://usemarkd.app/updates/latest.json"],
+      "active": false,
+      "endpoints": ["https://ornata.app/updates/latest.json"],
       "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI1NTc1QTg3M0ZEMEZCRTMKUldUais5QS9oMXBYdGRxUWpRYW1IZ0hCbGxhbVdObjkyRVh5NVhWYTZEanVYbUVlaGRrb3hKQ2cK"
     }

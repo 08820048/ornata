@@ -6,8 +6,9 @@ use serde::Serialize;
 use crate::error::{AppError, AppResult};
 
 pub const NOTES_DIR: &str = "notes";
-pub const DATA_DIR: &str = ".markd";
-pub const ASSETS_DIR: &str = ".markd/assets";
+pub const DATA_DIR: &str = ".ornata";
+pub const ASSETS_DIR: &str = ".ornata/assets";
+const LEGACY_DATA_DIR: &str = ".markd";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,9 +35,19 @@ pub fn ensure_layout(root: &Path) -> AppResult<()> {
     if !root.is_dir() {
         return Err(AppError::VaultMissing(root.display().to_string()));
     }
+    let data_dir = root.join(DATA_DIR);
+    let legacy_data_dir = root.join(LEGACY_DATA_DIR);
+    if !data_dir.exists() && legacy_data_dir.is_dir() {
+        fs::rename(legacy_data_dir, &data_dir)?;
+    }
     fs::create_dir_all(root.join(NOTES_DIR))?;
     fs::create_dir_all(root.join(ASSETS_DIR))?;
     Ok(())
+}
+
+/// A vault created by either Ornata or its Markd predecessor is initialized.
+pub fn has_data_dir(root: &Path) -> bool {
+    root.join(DATA_DIR).is_dir() || root.join(LEGACY_DATA_DIR).is_dir()
 }
 
 pub fn notes_root(root: &Path) -> PathBuf {
@@ -146,8 +157,25 @@ mod tests {
         assert_eq!(tree.len(), 2);
         assert_eq!(tree[0].name, "b-folder");
         assert_eq!(tree[0].kind, NodeKind::Folder);
-        assert_eq!(tree[0].children.as_ref().unwrap()[0].rel, "b-folder/nested.md");
+        assert_eq!(
+            tree[0].children.as_ref().unwrap()[0].rel,
+            "b-folder/nested.md"
+        );
         assert_eq!(tree[1].name, "a note");
+    }
+
+    #[test]
+    fn migrates_legacy_markd_data_dir() {
+        let dir = tempdir().unwrap();
+        fs::create_dir_all(dir.path().join(".markd/assets")).unwrap();
+        fs::write(dir.path().join(".markd/todos.json"), "[]").unwrap();
+
+        assert!(has_data_dir(dir.path()));
+        ensure_layout(dir.path()).unwrap();
+
+        assert!(!dir.path().join(".markd").exists());
+        assert!(dir.path().join(".ornata/assets").is_dir());
+        assert!(dir.path().join(".ornata/todos.json").is_file());
     }
 
     #[test]

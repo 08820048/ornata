@@ -14,7 +14,7 @@ import {
 import { tags } from "@lezer/highlight";
 import { useEffect, useRef } from "react";
 
-const markdTheme = EditorView.theme({
+const ornataTheme = EditorView.theme({
   "&": {
     height: "100%",
     backgroundColor: "transparent",
@@ -41,7 +41,7 @@ const markdTheme = EditorView.theme({
   ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--hover) 55%, transparent)" },
 });
 
-const markdHighlight = HighlightStyle.define([
+const ornataHighlight = HighlightStyle.define([
   { tag: tags.heading, color: "var(--ink)", fontWeight: "700" },
   { tag: [tags.strong, tags.emphasis], color: "var(--ink)" },
   { tag: tags.strong, fontWeight: "700" },
@@ -77,9 +77,9 @@ export function MarkdownSourceEditor({
           highlightActiveLine(),
           keymap.of([...defaultKeymap, ...historyKeymap]),
           markdown(),
-          syntaxHighlighting(markdHighlight),
+          syntaxHighlighting(ornataHighlight),
           EditorView.lineWrapping,
-          markdTheme,
+          ornataTheme,
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !syncingRef.current) {
               onChangeRef.current(update.state.doc.toString());

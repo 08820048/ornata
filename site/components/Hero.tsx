@@ -48,7 +48,7 @@ export function Hero() {
           {...rise(0.12)}
           className="mx-auto mt-6 max-w-xl text-pretty text-[16px] leading-7 text-muted-foreground sm:text-[18px]"
         >
-          Everyone&apos;s built one; most don&apos;t survive their own v2. Markd
+          Everyone&apos;s built one; most don&apos;t survive their own v2. Ornata
           is the fast, local-first markdown editor for macOS you actually keep.
           Clean UI, instant everything, and AI that reads and writes your notes.
           Plain{" "}

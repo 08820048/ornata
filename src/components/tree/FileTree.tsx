@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/ContextMenu";
 import { ActionSwapIcon } from "@/components/motion/action-swap";
 
-const ROOT_DROP_ID = "markd:notes-root";
+const ROOT_DROP_ID = "ornata:notes-root";
 
 const treeCollisionDetection: CollisionDetection = (args) => {
   const collisions = pointerWithin(args);

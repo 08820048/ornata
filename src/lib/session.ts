@@ -18,7 +18,8 @@ interface Session {
   bookmarkFilter: string | null;
 }
 
-const storageKey = (root: string) => `markd:session:${root}`;
+const storageKey = (root: string) => `ornata:session:${root}`;
+const legacyStorageKey = (root: string) => `markd:session:${root}`;
 
 function writeSession(root: string) {
   const vault = useVault.getState();
@@ -43,8 +44,13 @@ export function restoreSession(root: string) {
   if (!root) return;
   let data: Session | null = null;
   try {
-    const raw = localStorage.getItem(storageKey(root));
+    const raw =
+      localStorage.getItem(storageKey(root)) ??
+      localStorage.getItem(legacyStorageKey(root));
     data = raw ? (JSON.parse(raw) as Session) : null;
+    if (raw && !localStorage.getItem(storageKey(root))) {
+      localStorage.setItem(storageKey(root), raw);
+    }
   } catch {
     data = null;
   }

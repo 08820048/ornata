@@ -1,4 +1,4 @@
-# Markd — agent guide
+# Ornata — agent guide
 
 Local-first markdown notes app for macOS. Tauri 2 (Rust) + React 19 + Vite + Tailwind v4 + Tiptap 3 + Zustand.
 
@@ -19,7 +19,7 @@ Rust owns the filesystem; the frontend is UI + state only. All IO goes through t
 User picks any folder as a vault:
 
 - `<vault>/notes/` — plain `.md` files, filename = title, no IDs. Folders are real folders. Portable plain-markdown. The app never *authors* frontmatter, but preserves and renders any that external tools (e.g. web clippers) added — see below.
-- `<vault>/.markd/` — app data: `todos.json`, `bookmarks.json`, `assets/` (pasted images).
+- `<vault>/.ornata/` — app data: `todos.json`, `bookmarks.json`, `assets/` (pasted images).
 - Vault path + theme persist in the app config dir (`config.json`).
 
 Notes are addressed by path relative to `notes/` (e.g. `projects/app.md`), never by ID. Deletes go to OS trash. External edits are picked up on window focus (dirty editor wins).
@@ -32,9 +32,9 @@ One module per concern, each with unit tests; keep files under ~300 lines:
 - `vault.rs` — layout, tree scan, rel-path resolution (rejects traversal)
 - `notes.rs` — CRUD, rename/move with collision suffixing ("name 2")
 - `search.rs` — case-insensitive title+content search, title hits ranked first
-- `todos.rs` / `bookmarks.rs` — JSON stores in `.markd/`
+- `todos.rs` / `bookmarks.rs` — JSON stores in `.ornata/`
 - `link_meta.rs` — fetch page title / og:image / favicon (reqwest + scraper)
-- `assets.rs` — save pasted images into `.markd/assets/`
+- `assets.rs` — save pasted images into `.ornata/assets/`
 - `commands.rs` — thin `#[tauri::command]` wrappers only; `lib.rs` — wiring only
 
 Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_blocking` — on the main thread they deadlock the app.

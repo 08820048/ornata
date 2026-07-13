@@ -8,15 +8,15 @@ const sans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" 
 const serif = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono" });
 
-const TITLE = "Markd — the last notes app you'll download";
+const TITLE = "Ornata — the last notes app you'll download";
 const DESCRIPTION =
-  "Everyone's built a notes app; few are worth keeping. Markd is a fast, local-first markdown editor for macOS — real UI, real speed, and AI that reads your notes. Plain .md files in a folder you own.";
+  "Everyone's built a notes app; few are worth keeping. Ornata is a fast, local-first markdown editor for macOS — real UI, real speed, and AI that reads your notes. Plain .md files in a folder you own.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://usemarkd.app"),
+  metadataBase: new URL("https://ornata.app"),
   title: TITLE,
   description: DESCRIPTION,
-  applicationName: "Markd",
+  applicationName: "Ornata",
   keywords: [
     "markdown notes app",
     "notes app for macOS",
@@ -27,12 +27,12 @@ export const metadata: Metadata = {
     "note taking app",
     "plain text notes",
   ],
-  authors: [{ name: "Markd" }],
+  authors: [{ name: "Ornata" }],
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    url: "https://usemarkd.app",
-    siteName: "Markd",
+    url: "https://ornata.app",
+    siteName: "Ornata",
     type: "website",
   },
   twitter: {
@@ -47,11 +47,11 @@ export const viewport: Viewport = { themeColor: "#fcfcfb" };
 const JSON_LD = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "Markd",
+  name: "Ornata",
   applicationCategory: "ProductivityApplication",
   operatingSystem: "macOS 12+",
   description: DESCRIPTION,
-  url: "https://usemarkd.app",
+  url: "https://ornata.app",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 

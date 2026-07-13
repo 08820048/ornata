@@ -58,8 +58,9 @@ fn snapshot(app: &AppHandle, root: &PathBuf) -> AppResult<VaultSnapshot> {
 }
 
 fn activate_vault(app: &AppHandle, state: &AppState, root: PathBuf) -> AppResult<VaultSnapshot> {
-    // First run = Markd has never set this folder up (no .markd yet).
-    let first_run = !root.join(vault::DATA_DIR).exists();
+    // Existing Markd vaults are migrated by ensure_layout and are not treated
+    // as new, so their notes are never seeded or overwritten during rebrand.
+    let first_run = !vault::has_data_dir(&root);
     vault::ensure_layout(&root)?;
     // Drop in agent guide files so coding agents understand the vault.
     let _ = agent_docs::ensure(&root);
@@ -128,7 +129,7 @@ pub async fn create_vault(
         move || {
             app.dialog()
                 .file()
-                .set_file_name("Markd Vault")
+                .set_file_name("Ornata Vault")
                 .blocking_save_file()
         }
     })
@@ -219,11 +220,7 @@ pub fn todo_update(state: State<'_, AppState>, id: String, text: String) -> AppR
 }
 
 #[tauri::command]
-pub fn todo_set_tags(
-    state: State<'_, AppState>,
-    id: String,
-    tags: Vec<String>,
-) -> AppResult<Todo> {
+pub fn todo_set_tags(state: State<'_, AppState>, id: String, tags: Vec<String>) -> AppResult<Todo> {
     todos::set_tags(&state.root()?, &id, tags)
 }
 
@@ -233,18 +230,12 @@ pub fn todo_tags_list(state: State<'_, AppState>) -> AppResult<Vec<String>> {
 }
 
 #[tauri::command]
-pub fn todo_tag_create(
-    state: State<'_, AppState>,
-    name: String,
-) -> AppResult<Vec<String>> {
+pub fn todo_tag_create(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
     todos::create_tag(&state.root()?, &name)
 }
 
 #[tauri::command]
-pub fn todo_tag_delete(
-    state: State<'_, AppState>,
-    name: String,
-) -> AppResult<Vec<String>> {
+pub fn todo_tag_delete(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
     todos::delete_tag(&state.root()?, &name)
 }
 
@@ -294,18 +285,12 @@ pub fn bookmark_tags_list(state: State<'_, AppState>) -> AppResult<Vec<String>> 
 }
 
 #[tauri::command]
-pub fn bookmark_tag_create(
-    state: State<'_, AppState>,
-    name: String,
-) -> AppResult<Vec<String>> {
+pub fn bookmark_tag_create(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
     bookmarks::create_tag(&state.root()?, &name)
 }
 
 #[tauri::command]
-pub fn bookmark_tag_delete(
-    state: State<'_, AppState>,
-    name: String,
-) -> AppResult<Vec<String>> {
+pub fn bookmark_tag_delete(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
     bookmarks::delete_tag(&state.root()?, &name)
 }
 
@@ -389,10 +374,7 @@ pub async fn export_note(
 /// Marks the bookmark as fetched even on failure so the UI can offer retry
 /// without hammering the network on every load.
 #[tauri::command]
-pub async fn bookmark_fetch_meta(
-    state: State<'_, AppState>,
-    id: String,
-) -> AppResult<Bookmark> {
+pub async fn bookmark_fetch_meta(state: State<'_, AppState>, id: String) -> AppResult<Bookmark> {
     let root = state.root()?;
     let bookmark = bookmarks::list(&root)?
         .into_iter()

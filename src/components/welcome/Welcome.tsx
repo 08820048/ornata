@@ -32,7 +32,7 @@ export function Welcome() {
         className="relative flex flex-col items-center"
       >
         <h1 className="text-[64px] font-[680] leading-none tracking-[-0.04em]">
-          Markd
+          Ornata
         </h1>
         <p className="mt-4 text-[15px] text-muted">
           Plain markdown notes. Yours, on disk.

@@ -4,9 +4,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
 
-const CMD = "xattr -dr com.apple.quarantine /Applications/Markd.app";
+const CMD = "xattr -dr com.apple.quarantine /Applications/Ornata.app";
 
-export const DOWNLOAD_EVENT = "markd:download";
+export const DOWNLOAD_EVENT = "ornata:download";
 
 export function DownloadModal() {
   const [open, setOpen] = useState(false);
@@ -57,13 +57,13 @@ export function DownloadModal() {
           >
             <div className="p-6 sm:p-7">
               <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">
-                Downloading Markd…
+                Downloading Ornata…
               </p>
               <h3 className="mt-2 font-serif text-[24px] leading-tight text-foreground">
                 One quick step on macOS
               </h3>
               <p className="mt-3 text-[14px] leading-6 text-muted-foreground">
-                Markd is signed but not yet notarized, so macOS blocks it on the
+                Ornata is signed but not yet notarized, so macOS blocks it on the
                 first launch. Once it finishes downloading, open it once — either
                 way below.
               </p>
@@ -88,7 +88,7 @@ export function DownloadModal() {
                 Or in Settings
               </p>
               <p className="mt-1 text-[13.5px] leading-6 text-muted-foreground">
-                Double-click Markd → <span className="text-foreground">Done</span> →{" "}
+                Double-click Ornata → <span className="text-foreground">Done</span> →{" "}
                 <span className="text-foreground">System Settings → Privacy &amp; Security</span>{" "}
                 → <span className="text-foreground">Open Anyway</span>. macOS
                 remembers it after that.

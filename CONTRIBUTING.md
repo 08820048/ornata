@@ -1,6 +1,6 @@
-# Contributing to Markd
+# Contributing to Ornata
 
-Thanks for considering a contribution. Markd stays small on purpose — please open an issue before starting on anything beyond a bug fix, so we can agree on the approach first.
+Thanks for considering a contribution. Ornata stays small on purpose — please open an issue before starting on anything beyond a bug fix, so we can agree on the approach first.
 
 ## Setup
 
@@ -41,4 +41,4 @@ See [AGENTS.md](./AGENTS.md) for the full architecture guide. The short version:
 
 ## Reporting bugs
 
-Open an issue with: macOS version, Markd version, and repro steps. If it's a vault/data issue, mention whether it reproduces with a fresh vault folder.
+Open an issue with: macOS version, Ornata version, and repro steps. If it's a vault/data issue, mention whether it reproduces with a fresh vault folder.

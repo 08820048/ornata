@@ -20,7 +20,7 @@ pub async fn fetch(url: &str) -> AppResult<LinkMeta> {
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
-        .user_agent("Mozilla/5.0 (Macintosh) Markd/0.2")
+        .user_agent("Mozilla/5.0 (Macintosh) Ornata/0.2")
         .build()
         .map_err(|e| AppError::Network(e.to_string()))?;
 
@@ -51,14 +51,13 @@ fn parse_meta(html: &str, base: &Url) -> LinkMeta {
             .filter(|s| !s.is_empty())
     };
 
-    let title = attr_content(r#"meta[property="og:title"]"#)
-        .or_else(|| {
-            let sel = select("title")?;
-            doc.select(&sel)
-                .next()
-                .map(|el| el.text().collect::<String>().trim().to_string())
-                .filter(|s| !s.is_empty())
-        });
+    let title = attr_content(r#"meta[property="og:title"]"#).or_else(|| {
+        let sel = select("title")?;
+        doc.select(&sel)
+            .next()
+            .map(|el| el.text().collect::<String>().trim().to_string())
+            .filter(|s| !s.is_empty())
+    });
 
     let image = attr_content(r#"meta[property="og:image"]"#)
         .or_else(|| attr_content(r#"meta[name="twitter:image"]"#))
@@ -103,7 +102,10 @@ mod tests {
         let base = Url::parse("https://example.com/blog/post").unwrap();
         let meta = parse_meta(PAGE, &base);
         assert_eq!(meta.title.as_deref(), Some("OG Title"));
-        assert_eq!(meta.image.as_deref(), Some("https://example.com/img/preview.png"));
+        assert_eq!(
+            meta.image.as_deref(),
+            Some("https://example.com/img/preview.png")
+        );
         assert_eq!(
             meta.favicon.as_deref(),
             Some("https://example.com/blog/assets/fav.svg")
@@ -116,6 +118,9 @@ mod tests {
         let meta = parse_meta("<html><head><title>Plain</title></head></html>", &base);
         assert_eq!(meta.title.as_deref(), Some("Plain"));
         assert_eq!(meta.image, None);
-        assert_eq!(meta.favicon.as_deref(), Some("https://example.com/favicon.ico"));
+        assert_eq!(
+            meta.favicon.as_deref(),
+            Some("https://example.com/favicon.ico")
+        );
     }
 }

@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "Markd"
+name = "Ornata"
 version = "0.1.4"
 dependencies = [
  "reqwest",

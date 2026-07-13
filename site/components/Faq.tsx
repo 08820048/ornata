@@ -11,11 +11,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Does it work with Obsidian?",
-    a: "Yes. Markd uses the same plain-Markdown vault with real folders, and preserves frontmatter from other tools. Point Markd and Obsidian at the same folder and both just work.",
+    a: "Yes. Ornata uses the same plain-Markdown vault with real folders, and preserves frontmatter from other tools. Point Ornata and Obsidian at the same folder and both just work.",
   },
   {
     q: "Why does macOS say the app can't be verified?",
-    a: "Markd is signed but not yet notarized. On first launch, right-click the app and choose Open (or use System Settings → Privacy & Security → Open Anyway). Notarization is planned.",
+    a: "Ornata is signed but not yet notarized. On first launch, right-click the app and choose Open (or use System Settings → Privacy & Security → Open Anyway). Notarization is planned.",
   },
   {
     q: "Is it free?",
@@ -23,7 +23,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Windows or Linux?",
-    a: "macOS first. Markd is built on Tauri, which is cross-platform, so other platforms may follow — but macOS is where it's polished today.",
+    a: "macOS first. Ornata is built on Tauri, which is cross-platform, so other platforms may follow — but macOS is where it's polished today.",
   },
   {
     q: "What's the AI agent?",

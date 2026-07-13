@@ -423,8 +423,8 @@ export const NoteEditor = memo(function NoteEditor({
         toast.error(err instanceof Error ? err.message : String(err));
       }
     };
-    window.addEventListener("markd:note-action", handle);
-    return () => window.removeEventListener("markd:note-action", handle);
+    window.addEventListener("ornata:note-action", handle);
+    return () => window.removeEventListener("ornata:note-action", handle);
   }, [active, debouncedPersist, editor, markdownSource, persist, rawText]);
 
   // Insert a page link to `rel` over the slash range, as a link mark whose

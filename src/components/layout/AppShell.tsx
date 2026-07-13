@@ -34,8 +34,8 @@ function viewPath(
 ): string | null {
   if (!root || !view) return null;
   if (view.type === "note") return `${root}/notes/${view.rel}`;
-  if (view.type === "todos") return `${root}/.markd/todos.json`;
-  if (view.type === "bookmarks") return `${root}/.markd/bookmarks.json`;
+  if (view.type === "todos") return `${root}/.ornata/todos.json`;
+  if (view.type === "bookmarks") return `${root}/.ornata/bookmarks.json`;
   return null;
 }
 
@@ -248,7 +248,7 @@ type NoteAction = "export" | "copy" | "delete";
 
 function dispatchNoteAction(action: NoteAction) {
   window.dispatchEvent(
-    new CustomEvent("markd:note-action", { detail: { action } }),
+    new CustomEvent("ornata:note-action", { detail: { action } }),
   );
 }
 

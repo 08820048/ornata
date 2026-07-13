@@ -1,16 +1,16 @@
-# Brand: Markd
+# Brand: Ornata
 
-Markd is a fast, local-first Markdown notes app.
+Ornata is a fast, local-first Markdown notes app.
 
 _Established on 2026-07-12. This file documents the existing product system._
 
-## Palette: Markd Monochrome
+## Palette: Ornata Monochrome
 
 **Vibe:** calm, premium, focused
 **Category:** consumer productivity
 **Mood:** calm and premium
 
-Markd uses warm neutral surfaces and typographic contrast instead of a brand
+Ornata uses warm neutral surfaces and typographic contrast instead of a brand
 accent. Color appears only when it communicates destructive state.
 
 ### Core seeds
@@ -121,4 +121,4 @@ Examples:
 - Use long promotional copy in the application.
 - Use em dashes in product copy or documentation.
 
-_Last updated: 2026-07-12. Palette: Markd Monochrome. Typography: Inter and JetBrains Mono. Gradients: none._
+_Last updated: 2026-07-12. Palette: Ornata Monochrome. Typography: Inter and JetBrains Mono. Gradients: none._

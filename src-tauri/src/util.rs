@@ -33,11 +33,7 @@ pub fn normalize_tags(tags: Vec<String>) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
     let mut out = Vec::new();
     for tag in tags {
-        let cleaned = tag
-            .trim()
-            .trim_start_matches('#')
-            .trim()
-            .to_lowercase();
+        let cleaned = tag.trim().trim_start_matches('#').trim().to_lowercase();
         if cleaned.is_empty() || cleaned.len() > 32 {
             continue;
         }

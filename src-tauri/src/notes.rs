@@ -5,7 +5,7 @@ use crate::error::{AppError, AppResult};
 use crate::util::sanitize_name;
 use crate::vault::{notes_root, rel_of, resolve_rel};
 
-const WELCOME: &str = r#"# Welcome to Markd
+const WELCOME: &str = r#"# Welcome to Ornata
 
 A fast, local-first place to write. Every note here is a plain `.md` file in the
 folder you picked — open it in Finder, sync it with iCloud, version it with git.

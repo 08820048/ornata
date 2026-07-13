@@ -20,7 +20,7 @@ function isRemoteSource(src: string) {
 }
 
 /**
- * Image node that keeps a vault-relative path (".markd/assets/…") in the
+ * Image node that keeps a vault-relative path (".ornata/assets/…") in the
  * markdown while rendering through Tauri's asset protocol.
  */
 const VaultImage = (vaultRoot: string) =>
@@ -41,9 +41,13 @@ const VaultImage = (vaultRoot: string) =>
 
     renderHTML({ HTMLAttributes }) {
       const vaultSrc = HTMLAttributes.vaultSrc ?? HTMLAttributes.src;
+      // Vaults created by Markd may still contain image links pointing at the
+      // legacy data directory. Keep the Markdown untouched while resolving
+      // those links through Ornata's migrated asset directory at render time.
+      const resolvedVaultSrc = vaultSrc?.replace(/^\.markd\//, ".ornata/");
       const src =
-        vaultRoot && vaultSrc && !isRemoteSource(vaultSrc)
-          ? convertFileSrc(`${vaultRoot.replace(/\/$/, "")}/${vaultSrc}`)
+        vaultRoot && resolvedVaultSrc && !isRemoteSource(resolvedVaultSrc)
+          ? convertFileSrc(`${vaultRoot.replace(/\/$/, "")}/${resolvedVaultSrc}`)
           : HTMLAttributes.src;
       return ["img", { ...HTMLAttributes, src, "data-vault-src": vaultSrc }];
     },

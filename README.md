@@ -1,34 +1,34 @@
-# Markd
+# Ornata
 
 **Local-first notes for people who write.**
 
-Markd is a macOS-first notes app built for developers and content creators who care about speed, privacy, and ownership.
+Ornata is a macOS-first notes app built for developers and content creators who care about speed, privacy, and ownership.
 
 No accounts.
 No cloud.
 No sync (for now).
 
-Your notes live on your Mac as plain `.md` files. Markd simply makes writing and finding them fast.
+Your notes live on your Mac as plain `.md` files. Ornata simply makes writing and finding them fast.
 
 ---
 
 ## Installing on macOS
 
-Download the latest `.dmg` from [usemarkd.app](https://usemarkd.app) and drag Markd to Applications.
+Download the latest `.dmg` from [ornata.app](https://ornata.app) and drag Ornata to Applications.
 
-Markd is signed but **not yet notarized**, so on the first launch macOS asks to verify it. Open it once, either way:
+Ornata is signed but **not yet notarized**, so on the first launch macOS asks to verify it. Open it once, either way:
 
 **Terminal**
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/Markd.app
+xattr -dr com.apple.quarantine /Applications/Ornata.app
 ```
 
-Then open Markd normally.
+Then open Ornata normally.
 
 **Or via Settings**
 
-Double-click Markd → click **Done** → **System Settings → Privacy & Security** → **Open Anyway** → authenticate. macOS remembers the choice after that.
+Double-click Ornata → click **Done** → **System Settings → Privacy & Security** → **Open Anyway** → authenticate. macOS remembers the choice after that.
 
 > Notarization (which removes this prompt entirely) needs an active Apple Developer account and is planned for a future release.
 
@@ -54,10 +54,10 @@ Pick any folder on disk as your vault:
 ```
 <vault>/
 ├── notes/          plain .md files — filename is the title, folders are real folders
-└── .markd/         app data: todos, bookmarks, tags, pasted images
+└── .ornata/         app data: todos, bookmarks, tags, pasted images
 ```
 
-Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes externally (vim, VS Code, whatever) — Markd picks up changes on window focus.
+Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes externally (vim, VS Code, whatever) — Ornata picks up changes on window focus.
 
 ---
 
@@ -84,7 +84,8 @@ See [AGENTS.md](./AGENTS.md) for architecture details, or [CONTRIBUTING.md](./CO
 
 - Notes are stored locally as user-owned files
 - No analytics, tracking, accounts, or note-content uploads
-- Markd connects to `usemarkd.app` to check for application updates
+- Automatic updates are disabled in this development fork until Ornata has its
+  own signing key and release feed
 - Saving a bookmark fetches that page's title, preview image, and favicon
 - Export your notes anytime — they're already just files
 
@@ -92,14 +93,17 @@ See [AGENTS.md](./AGENTS.md) for architecture details, or [CONTRIBUTING.md](./CO
 
 ## Status
 
-Markd is under active development.
+Ornata is under active development.
 Sync, encryption, and publishing may be added later — without compromising local-first performance.
 
 ## License
 
 [MIT](./LICENSE)
 
+Ornata is based on [Markd](https://github.com/starc007/markd). The original
+copyright notice and MIT license are preserved in [LICENSE](./LICENSE).
+
 ---
 
-**Markd**
+**Ornata**
 _Write at the speed of thought._
