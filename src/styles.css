@@ -84,6 +84,18 @@
     --invert: #1c1c1c;
     --invert-ink: #fbfbfa;
     --danger: #b3261e;
+
+    /* Syntax colors are deliberately scoped to code tokens. The surrounding
+       product UI remains monochrome. */
+    --syntax-plain: #24292f;
+    --syntax-comment: #6e7781;
+    --syntax-keyword: #cf222e;
+    --syntax-string: #0a3069;
+    --syntax-number: #0550ae;
+    --syntax-type: #8250df;
+    --syntax-variable: #953800;
+    --syntax-meta: #116329;
+    --syntax-operator: #57606a;
 }
 
 .dark {
@@ -100,6 +112,16 @@
     --invert: #ebebe8;
     --invert-ink: #131313;
     --danger: #e5484d;
+
+    --syntax-plain: #c9d1d9;
+    --syntax-comment: #8b949e;
+    --syntax-keyword: #ff7b72;
+    --syntax-string: #a5d6ff;
+    --syntax-number: #79c0ff;
+    --syntax-type: #d2a8ff;
+    --syntax-variable: #ffa657;
+    --syntax-meta: #7ee787;
+    --syntax-operator: #8b949e;
 }
 
 html,
@@ -282,10 +304,84 @@ body {
     overflow-x: auto;
 }
 .prose-note pre code {
+    color: var(--syntax-plain);
     background: none;
     padding: 0;
     border-radius: 0;
     font-size: 1em;
+}
+
+/* Lowlight syntax tokens. Color is confined to code so prose and product
+   chrome keep Ornata's monochrome identity. */
+.prose-note .hljs-comment,
+.prose-note .hljs-quote {
+    color: var(--syntax-comment);
+    font-style: italic;
+}
+
+.prose-note .hljs-keyword,
+.prose-note .hljs-selector-tag {
+    color: var(--syntax-keyword);
+    font-weight: 650;
+}
+
+.prose-note .hljs-section,
+.prose-note .hljs-title.function_,
+.prose-note .hljs-title.class_ {
+    color: var(--syntax-type);
+    font-weight: 650;
+}
+
+.prose-note .hljs-string,
+.prose-note .hljs-regexp,
+.prose-note .hljs-template-tag,
+.prose-note .hljs-template-variable {
+    color: var(--syntax-string);
+}
+
+.prose-note .hljs-number,
+.prose-note .hljs-literal,
+.prose-note .hljs-symbol,
+.prose-note .hljs-bullet {
+    color: var(--syntax-number);
+}
+
+.prose-note .hljs-variable,
+.prose-note .hljs-variable.constant_,
+.prose-note .hljs-attr,
+.prose-note .hljs-attribute {
+    color: var(--syntax-variable);
+}
+
+.prose-note .hljs-built_in,
+.prose-note .hljs-type {
+    color: var(--syntax-type);
+}
+
+.prose-note .hljs-meta,
+.prose-note .hljs-doctag {
+    color: var(--syntax-meta);
+}
+
+.prose-note .hljs-operator,
+.prose-note .hljs-punctuation {
+    color: var(--syntax-operator);
+}
+
+.prose-note .hljs-addition {
+    color: var(--syntax-meta);
+}
+
+.prose-note .hljs-deletion {
+    color: var(--syntax-keyword);
+}
+
+.prose-note .hljs-emphasis {
+    font-style: italic;
+}
+
+.prose-note .hljs-strong {
+    font-weight: 700;
 }
 
 .prose-note .code-block-copy {

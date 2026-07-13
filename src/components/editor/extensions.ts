@@ -10,7 +10,6 @@ import TableRow from "@tiptap/extension-table-row";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
-import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { WikiLink } from "./wikiLink";
@@ -66,7 +65,6 @@ export function createExtensions(vaultRoot: string) {
     }),
     StarterKit.configure({ link: false, codeBlock: false }),
     CodeBlockWithCopy,
-    Underline,
     Typography,
     Link.configure({
       autolink: true,
