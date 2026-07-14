@@ -1,6 +1,16 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  memo,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
 import {
@@ -10,8 +20,16 @@ import {
   type Property,
 } from "@/lib/frontmatter";
 import { hrefToRel, relToHref, wikiToMarkdown } from "@/lib/noteLinks";
+import {
+  noteAssetRoot,
+  noteKey,
+  noteTitle,
+  sameNote,
+  vaultNote,
+} from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
-import { cx, debounce, noteTitle } from "@/lib/utils";
+import type { NoteRef } from "@/lib/types";
+import { cx, debounce } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
@@ -35,22 +53,23 @@ const MarkdownSourceEditor = lazy(() =>
  * per-mount work (schema build, plugin setup, view creation) is paid once per
  * tab open, never on switch.
  *
- * `rel` can also change on a mounted instance (content is swapped via
- * setContent), so every rel-dependent bit of logic reads from `relRef` rather
+ * `note` can also change on a mounted instance (content is swapped via
+ * setContent), so every note-dependent bit of logic reads from `noteRef` rather
  * than a closure captured at editor creation.
  *
  * `active` gates the singleton concerns (fixed word counter, focus-reload,
  * overlay menus) so hidden panes stay completely inert.
  */
 export const NoteEditor = memo(function NoteEditor({
-  rel,
+  note,
   active = true,
 }: {
-  rel: string;
+  note: NoteRef;
   active?: boolean;
 }) {
   const vaultRoot = useVault((s) => s.root);
   const renameEntry = useVault((s) => s.renameEntry);
+  const renameExternalNote = useVault((s) => s.renameExternalNote);
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
 
@@ -61,7 +80,8 @@ export const NoteEditor = memo(function NoteEditor({
   const [properties, setProperties] = useState<Property[]>([]);
   const [rawText, setRawText] = useState("");
 
-  const relRef = useRef(rel);
+  const noteRef = useRef(note);
+  const currentKey = noteKey(note);
   // Frontmatter of the loaded note, kept out of the editor and re-attached on
   // save so the file's metadata survives round-trips.
   const frontmatter = useRef("");
@@ -73,28 +93,33 @@ export const NoteEditor = memo(function NoteEditor({
   const savedScroll = useRef(0);
   const lastSaved = useRef("");
   const pending = useRef<string | null>(null);
-  const loadedRel = useRef<string | null>(null);
+  const loadedKey = useRef<string | null>(null);
   // True only while we're programmatically replacing the document, so the
   // resulting onUpdate doesn't mark the fresh content as an unsaved edit.
   const swapping = useRef(false);
 
   const persist = useCallback(
-    async (markdown: string, targetRel: string) => {
-      if (relRef.current === targetRel) pending.current = null;
+    async (markdown: string, target: NoteRef) => {
+      const targetKey = noteKey(target);
+      if (sameNote(noteRef.current, target)) pending.current = null;
       // Re-attach the note's frontmatter (captured now, before any await, so a
       // concurrent note switch can't swap it out mid-save).
       const fullText = joinFrontmatter(frontmatter.current, markdown);
       try {
-        await ipc.writeNote(targetRel, fullText);
-        if (relRef.current === targetRel) {
+        if (target.kind === "vault") {
+          await ipc.writeNote(target.rel, fullText);
+        } else {
+          await ipc.writeExternalNote(target.path, fullText);
+        }
+        if (sameNote(noteRef.current, target)) {
           lastSaved.current = fullText;
           setSaveState("idle");
         }
-        toast.dismiss(`save-${targetRel}`);
+        toast.dismiss(`save-${targetKey}`);
       } catch (err) {
         setSaveState("error");
         toast.error("Note could not be saved", {
-          id: `save-${targetRel}`,
+          id: `save-${targetKey}`,
           description: err instanceof Error ? err.message : String(err),
           duration: Infinity,
         });
@@ -104,11 +129,12 @@ export const NoteEditor = memo(function NoteEditor({
   );
 
   const debouncedPersist = useMemo(
-    () => debounce((markdown: string) => persist(markdown, relRef.current), 500),
+    () => debounce((markdown: string) => persist(markdown, noteRef.current), 500),
     [persist],
   );
 
-  const extensions = useMemo(() => createExtensions(vaultRoot), [vaultRoot]);
+  const assetRoot = noteAssetRoot(vaultRoot, note);
+  const extensions = useMemo(() => createExtensions(assetRoot), [assetRoot]);
 
   const updateSlashMenu = useCallback((editor: NonNullable<EditorInstance>) => {
     const { selection } = editor.state;
@@ -174,6 +200,7 @@ export const NoteEditor = memo(function NoteEditor({
                 to: view.state.selection.to,
               },
               vaultRoot,
+              note: noteRef.current,
             });
             return true;
           }
@@ -195,6 +222,7 @@ export const NoteEditor = memo(function NoteEditor({
             file: image,
             range: { from: position, to: position },
             vaultRoot,
+            note: noteRef.current,
           });
           return true;
         },
@@ -218,28 +246,32 @@ export const NoteEditor = memo(function NoteEditor({
     [extensions],
   );
 
-  // Load the note (and swap in its content) whenever `rel` changes. The old
+  // Load the note (and swap in its content) whenever `note` changes. The old
   // note's pending edit is flushed to *its* path first, before we switch.
   useEffect(() => {
     if (!editor) return;
     let cancelled = false;
 
-    const prevRel = loadedRel.current;
+    const prevKey = loadedKey.current;
+    const previousNote = noteRef.current;
     debouncedPersist.cancel();
-    if (prevRel && prevRel !== rel && pending.current !== null) {
-      persist(pending.current, prevRel);
+    if (prevKey && prevKey !== currentKey && pending.current !== null) {
+      persist(pending.current, previousNote);
     }
     pending.current = null;
-    relRef.current = rel;
+    noteRef.current = note;
     setMissing(false);
     setSlashMenu(null);
 
-    ipc
-      .readNote(rel)
+    const load =
+      note.kind === "vault"
+        ? ipc.readNote(note.rel)
+        : ipc.readExternalNote(note.path);
+    load
       .then((text) => {
         if (cancelled) return;
         lastSaved.current = text;
-        loadedRel.current = rel;
+        loadedKey.current = currentKey;
         // Split off frontmatter (kept for save), then render any `[[wiki]]`
         // links in the body as real page links. lastSaved keeps the raw disk
         // text; rewrites only reach the file if the user edits the note.
@@ -261,7 +293,7 @@ export const NoteEditor = memo(function NoteEditor({
         if (
           body.length === 0 &&
           activeRef.current &&
-          titleFocus?.rel !== rel
+          titleFocus?.key !== currentKey
         ) {
           editor.commands.focus("start");
         }
@@ -273,7 +305,7 @@ export const NoteEditor = memo(function NoteEditor({
     return () => {
       cancelled = true;
     };
-  }, [editor, rel, persist, debouncedPersist]);
+  }, [editor, note, currentKey, persist, debouncedPersist]);
 
   const previousSource = useRef(markdownSource);
   useEffect(() => {
@@ -300,7 +332,7 @@ export const NoteEditor = memo(function NoteEditor({
   useEffect(() => {
     return () => {
       debouncedPersist.cancel();
-      if (pending.current !== null) persist(pending.current, relRef.current);
+      if (pending.current !== null) persist(pending.current, noteRef.current);
     };
   }, [debouncedPersist, persist]);
 
@@ -309,10 +341,13 @@ export const NoteEditor = memo(function NoteEditor({
   // hidden tabs catch up in the activation effect below.
   const reloadIfChanged = useCallback(async () => {
     if (!editor || pending.current !== null) return;
-    const cur = relRef.current;
+    const cur = noteRef.current;
     try {
-      const disk = await ipc.readNote(cur);
-      if (cur !== relRef.current || pending.current !== null) return;
+      const disk =
+        cur.kind === "vault"
+          ? await ipc.readNote(cur.rel)
+          : await ipc.readExternalNote(cur.path);
+      if (!sameNote(cur, noteRef.current) || pending.current !== null) return;
       if (disk !== lastSaved.current) {
         lastSaved.current = disk;
         setRawText(disk);
@@ -354,22 +389,33 @@ export const NoteEditor = memo(function NoteEditor({
   useEffect(() => {
     const root = scrollRef.current;
     if (!root) return;
-    const onClick = (event: MouseEvent) => {
+    const onClick = async (event: MouseEvent) => {
       const anchor = (event.target as HTMLElement | null)?.closest("a[href]");
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href) return;
       event.preventDefault();
       event.stopPropagation();
-      if (/^https?:\/\//i.test(href)) {
+      if (/^(?:https?:\/\/|mailto:)/i.test(href)) {
         openUrl(href);
         return;
       }
-      const target = hrefToRel(href);
-      if (target) {
+      const current = noteRef.current;
+      if (current.kind === "external") {
+        try {
+          const opened = await ipc.openExternalLink(current.path, href);
+          if (opened) useVault.getState().openExternalNotes([opened]);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : String(err));
+        }
+        return;
+      }
+      const targetRel = hrefToRel(href);
+      if (targetRel) {
         const vault = useVault.getState();
-        vault.expandTo(target);
-        vault.setView({ type: "note", rel: target });
+        const target = vaultNote(targetRel);
+        vault.expandTo(targetRel);
+        vault.setView({ type: "note", note: target });
         // Links point at the note as a whole — open it at the top, even if the
         // target tab was already scrolled down.
         useTabs.getState().requestScrollTop(target);
@@ -383,16 +429,16 @@ export const NoteEditor = memo(function NoteEditor({
   const scrollTopReq = useTabs((s) => s.scrollTopReq);
   const titleFocusReq = useTabs((s) => s.titleFocusReq);
   useEffect(() => {
-    if (!scrollTopReq || scrollTopReq.rel !== rel) return;
+    if (!scrollTopReq || scrollTopReq.key !== currentKey) return;
     savedScroll.current = 0;
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [scrollTopReq, rel]);
+  }, [scrollTopReq, currentKey]);
 
   const flushThen = (action: () => void) => {
     debouncedPersist.cancel();
     const flush =
       pending.current !== null
-        ? persist(pending.current, relRef.current)
+        ? persist(pending.current, noteRef.current)
         : Promise.resolve();
     flush.then(action);
   };
@@ -410,14 +456,23 @@ export const NoteEditor = memo(function NoteEditor({
           await navigator.clipboard.writeText(markdown);
           toast("Markdown copied");
         } else if (action === "export") {
-          const path = await ipc.exportNote(relRef.current, markdown);
+          const current = noteRef.current;
+          const path =
+            current.kind === "vault"
+              ? await ipc.exportNote(current.rel, markdown)
+              : await ipc.exportExternalNote(current.path, markdown);
           if (path) toast("Note exported", { description: path });
         } else if (action === "delete") {
+          const current = noteRef.current;
           debouncedPersist.cancel();
           if (pending.current !== null) {
-            await persist(pending.current, relRef.current);
+            await persist(pending.current, current);
           }
-          await useVault.getState().deleteEntry(relRef.current);
+          if (current.kind === "vault") {
+            await useVault.getState().deleteEntry(current.rel);
+          } else {
+            await useVault.getState().deleteExternalNote(current.path);
+          }
         }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : String(err));
@@ -455,19 +510,26 @@ export const NoteEditor = memo(function NoteEditor({
         savedScroll.current = event.currentTarget.scrollTop;
       }}
     >
-      <div className="mx-auto w-full max-w-[720px] px-10 pt-6">
+      <div className="note-page">
         {missing ? (
           <p className="pt-16 text-center text-[14px] text-faint">
             This note no longer exists.
           </p>
         ) : (
           <TitleInput
-            key={rel}
-            title={noteTitle(rel)}
+            key={currentKey}
+            title={noteTitle(note)}
             focusNonce={
-              titleFocusReq?.rel === rel ? titleFocusReq.nonce : undefined
+              titleFocusReq?.key === currentKey
+                ? titleFocusReq.nonce
+                : undefined
             }
-            onRename={(name) => flushThen(() => renameEntry(rel, name))}
+            onRename={(name) =>
+              flushThen(() => {
+                if (note.kind === "vault") renameEntry(note.rel, name);
+                else renameExternalNote(note.path, name);
+              })
+            }
           />
         )}
         <div className={cx(missing && "hidden")}>
@@ -500,8 +562,9 @@ export const NoteEditor = memo(function NoteEditor({
             editor={editor}
             menu={slashMenu}
             onClose={() => setSlashMenu(null)}
+            allowNoteLinks={note.kind === "vault"}
             onLinkToNote={(range) => {
-              if (slashMenu) {
+              if (slashMenu && note.kind === "vault") {
                 setLinkPicker({
                   range,
                   position: slashMenu.position,
@@ -512,10 +575,10 @@ export const NoteEditor = memo(function NoteEditor({
             }}
           />
         )}
-        {active && !markdownSource && linkPicker && (
+        {active && !markdownSource && linkPicker && note.kind === "vault" && (
           <NoteLinkPicker
             state={linkPicker}
-            currentRel={rel}
+            currentRel={note.rel}
             onPick={insertNoteLink}
             onClose={() => setLinkPicker(null)}
           />
@@ -546,7 +609,18 @@ function TitleInput({
   focusNonce?: number;
   onRename: (name: string) => void;
 }) {
-  const ref = useRef<HTMLInputElement>(null);
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    const container = element?.parentElement;
+    if (!element || !container) return;
+    const resize = () => resizeTitle(element);
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [title]);
 
   useEffect(() => {
     if (focusNonce === undefined) return;
@@ -557,27 +631,39 @@ function TitleInput({
   const submit = () => {
     const value = ref.current?.value.trim();
     if (value && value !== title) onRename(value);
-    else if (ref.current) ref.current.value = title;
+    else if (ref.current) {
+      ref.current.value = title;
+      resizeTitle(ref.current);
+    }
   };
 
   return (
-    <input
+    <textarea
       ref={ref}
+      rows={1}
+      aria-label="Note title"
       defaultValue={title}
       placeholder="Untitled"
-      className="w-full bg-transparent text-[30px] font-[680] tracking-[-0.025em] text-ink outline-none placeholder:text-faint"
+      className="block w-full resize-none overflow-hidden bg-transparent text-[clamp(28px,2.4vw,34px)] font-[680] leading-[1.14] tracking-[-0.025em] text-ink [overflow-wrap:anywhere] [text-wrap:balance] outline-none placeholder:text-faint"
+      onInput={(event) => resizeTitle(event.currentTarget)}
       onBlur={submit}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === "Escape") {
           event.preventDefault();
           if (event.key === "Escape" && ref.current) {
             ref.current.value = title;
+            resizeTitle(ref.current);
           }
           event.currentTarget.blur();
         }
       }}
     />
   );
+}
+
+function resizeTitle(element: HTMLTextAreaElement) {
+  element.style.height = "0px";
+  element.style.height = `${element.scrollHeight}px`;
 }
 
 function countWords(markdown: string) {

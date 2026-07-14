@@ -13,6 +13,7 @@ import { motion } from "motion/react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ipc } from "@/lib/ipc";
 import { SPRING_LAYOUT } from "@/lib/ease";
+import { vaultNote } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { SearchHit, TreeNode } from "@/lib/types";
 import { cx, parentDir } from "@/lib/utils";
@@ -99,6 +100,13 @@ export function CommandPalette() {
         run: () => vault.createNote(activeDir(vault)),
       },
       {
+        id: "open-markdown",
+        label: "Open Markdown file…",
+        hint: "⌘O",
+        icon: FolderOpen,
+        run: () => vault.chooseExternalNotes(),
+      },
+      {
         id: "todos",
         label: "Open Todos",
         icon: CheckSquare,
@@ -136,7 +144,7 @@ export function CommandPalette() {
           icon: FileText,
           run: () => {
             vault.expandTo(hit.rel);
-            vault.setView({ type: "note", rel: hit.rel });
+            vault.setView({ type: "note", note: vaultNote(hit.rel) });
           },
         }))
       : (() => {
@@ -154,7 +162,7 @@ export function CommandPalette() {
               icon: FileText,
               run: () => {
                 vault.expandTo(node.rel);
-                vault.setView({ type: "note", rel: node.rel });
+                vault.setView({ type: "note", note: vaultNote(node.rel) });
               },
             }));
         })();

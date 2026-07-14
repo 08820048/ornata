@@ -19,10 +19,10 @@ function isRemoteSource(src: string) {
 }
 
 /**
- * Image node that keeps a vault-relative path (".ornata/assets/…") in the
- * markdown while rendering through Tauri's asset protocol.
+ * Image node that keeps a relative path in Markdown while rendering it from
+ * the note's asset root (vault root or an external file's parent folder).
  */
-const VaultImage = (vaultRoot: string) =>
+const LocalImage = (assetRoot: string) =>
   Image.extend({
     addAttributes() {
       return {
@@ -45,8 +45,8 @@ const VaultImage = (vaultRoot: string) =>
       // those links through Ornata's migrated asset directory at render time.
       const resolvedVaultSrc = vaultSrc?.replace(/^\.markd\//, ".ornata/");
       const src =
-        vaultRoot && resolvedVaultSrc && !isRemoteSource(resolvedVaultSrc)
-          ? convertFileSrc(`${vaultRoot.replace(/\/$/, "")}/${resolvedVaultSrc}`)
+        assetRoot && resolvedVaultSrc && !isRemoteSource(resolvedVaultSrc)
+          ? convertFileSrc(`${assetRoot.replace(/\/$/, "")}/${resolvedVaultSrc}`)
           : HTMLAttributes.src;
       return ["img", { ...HTMLAttributes, src, "data-vault-src": vaultSrc }];
     },
@@ -58,7 +58,7 @@ const VaultImage = (vaultRoot: string) =>
     },
   });
 
-export function createExtensions(vaultRoot: string) {
+export function createExtensions(assetRoot: string) {
   return [
     Markdown.configure({
       markedOptions: { breaks: true, gfm: true },
@@ -81,7 +81,7 @@ export function createExtensions(vaultRoot: string) {
         return ctx.defaultValidate(uri);
       },
     }),
-    VaultImage(vaultRoot).configure({ allowBase64: true, inline: false }),
+    LocalImage(assetRoot).configure({ allowBase64: true, inline: false }),
     TaskList,
     TaskItem.configure({ nested: true }),
     Table.configure({ resizable: false }),

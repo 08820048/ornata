@@ -45,7 +45,16 @@ export interface SearchHit {
   titleMatch: boolean;
 }
 
+export interface ExternalNote {
+  path: string;
+  title: string;
+}
+
+export type NoteRef =
+  | { kind: "vault"; rel: string }
+  | { kind: "external"; path: string };
+
 export type View =
-  | { type: "note"; rel: string }
+  | { type: "note"; note: NoteRef }
   | { type: "todos" }
   | { type: "bookmarks" };

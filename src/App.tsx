@@ -1,8 +1,11 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "sonner";
+import { listen } from "@tauri-apps/api/event";
 import { closeTab } from "@/components/editor/TabBar";
 import { Welcome } from "@/components/welcome/Welcome";
 import { initSessionSync, restoreSession } from "@/lib/session";
+import { ipc } from "@/lib/ipc";
+import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
@@ -39,7 +42,45 @@ export default function App() {
   // Restore the saved tabs / view / filters once a vault is loaded (and again
   // whenever the active vault changes).
   useEffect(() => {
-    if (status === "ready" && root) restoreSession(root);
+    if (status !== "ready" || !root) return;
+    let cancelled = false;
+    let restored = false;
+    let stopListening: (() => void) | undefined;
+    const queued: ExternalNote[] = [];
+
+    void (async () => {
+      try {
+        stopListening = await listen<ExternalNote[]>(
+          "open-markdown",
+          ({ payload }) => {
+            if (!restored) queued.push(...payload);
+            else {
+              void ipc
+                .takeOpenedExternalNotes()
+                .then((notes) => useVault.getState().openExternalNotes(notes))
+                .catch(() => useVault.getState().openExternalNotes(payload));
+            }
+          },
+        );
+      } catch {
+        // Session and queued Finder files can still restore without events.
+      }
+      if (cancelled) {
+        stopListening?.();
+        return;
+      }
+      await restoreSession(root);
+      const opened = await ipc.takeOpenedExternalNotes().catch(() => []);
+      restored = true;
+      if (!cancelled) {
+        useVault.getState().openExternalNotes([...queued, ...opened]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      stopListening?.();
+    };
   }, [status, root]);
 
   // Pick up edits made outside the app when the window regains focus.
@@ -65,6 +106,9 @@ export default function App() {
       } else if (event.key === "n" && vault.status === "ready") {
         event.preventDefault();
         vault.createNote(activeDir(vault));
+      } else if (event.key === "o" && vault.status === "ready") {
+        event.preventDefault();
+        vault.chooseExternalNotes();
       } else if (event.key === "\\") {
         event.preventDefault();
         ui.toggleSidebar();
@@ -73,7 +117,7 @@ export default function App() {
         ui.setSettingsOpen(true);
       } else if (event.key === "w" && vault.view?.type === "note") {
         event.preventDefault();
-        closeTab(vault.view.rel);
+        closeTab(vault.view.note);
       }
     };
     window.addEventListener("keydown", onKeyDown);

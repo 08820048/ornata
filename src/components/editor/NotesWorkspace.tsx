@@ -1,4 +1,5 @@
 import { NoteEditor } from "./NoteEditor";
+import { noteKey, sameNote } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
@@ -13,18 +14,24 @@ import { useVault } from "@/stores/vault";
 export function NotesWorkspace({ visible }: { visible: boolean }) {
   const tabs = useTabs((s) => s.tabs);
   const view = useVault((s) => s.view);
-  const active = view?.type === "note" ? view.rel : null;
+  const active = view?.type === "note" ? view.note : null;
 
   if (tabs.length === 0) return null;
 
   return (
     <div className={cx("absolute inset-0", !visible && "hidden")}>
-      {tabs.map((rel) => (
+      {tabs.map((note) => (
         <div
-          key={rel}
-          className={cx("absolute inset-0", rel !== active && "hidden")}
+          key={noteKey(note)}
+          className={cx(
+            "absolute inset-0",
+            (!active || !sameNote(note, active)) && "hidden",
+          )}
         >
-          <NoteEditor rel={rel} active={visible && rel === active} />
+          <NoteEditor
+            note={note}
+            active={visible && Boolean(active && sameNote(note, active))}
+          />
         </div>
       ))}
     </div>

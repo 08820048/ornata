@@ -201,6 +201,15 @@ body {
     scrollbar-gutter: stable both-edges;
 }
 
+/* Fluid note canvas: compact windows keep useful gutters while wide windows
+   spend their extra space on the document instead of an oversized margin. */
+.note-page {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding: 24px clamp(24px, 5vw, 72px) 0;
+}
+
 /* sonner toasts follow the theme tokens (description was stuck dark).
    !important beats sonner's own injected color rule. */
 [data-sonner-toast] [data-title] {
@@ -221,10 +230,12 @@ body {
     caret-color: var(--ink);
     outline: none;
     padding-bottom: 40vh;
+    overflow-wrap: break-word;
 }
 
 .prose-note p {
     margin: 0.45em 0;
+    text-wrap: pretty;
 }
 
 .prose-note h1,
@@ -232,6 +243,7 @@ body {
 .prose-note h3,
 .prose-note h4 {
     line-height: 1.25;
+    text-wrap: balance;
 }
 .prose-note h1 {
     font-size: 1.6em;

@@ -2,7 +2,9 @@ import { X } from "lucide-react";
 import { motion } from "motion/react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { SPRING_LAYOUT } from "@/lib/ease";
-import { cx, noteTitle } from "@/lib/utils";
+import { noteKey, noteTitle, sameNote } from "@/lib/noteRef";
+import type { NoteRef } from "@/lib/types";
+import { cx } from "@/lib/utils";
 import { nextAfterClose, useTabs } from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
 
@@ -13,7 +15,7 @@ import { useVault } from "@/stores/vault";
 export function TabBar() {
   const tabs = useTabs((s) => s.tabs);
   const view = useVault((s) => s.view);
-  const active = view?.type === "note" ? view.rel : null;
+  const active = view?.type === "note" ? view.note : null;
 
   if (tabs.length === 0) return null;
 
@@ -25,12 +27,12 @@ export function TabBar() {
       role="tablist"
       className="flex min-w-0 flex-1 items-stretch overflow-x-auto [scrollbar-width:none]"
     >
-      {tabs.map((rel, index) => (
+      {tabs.map((note, index) => (
         <Tab
-          key={rel}
-          rel={rel}
-          active={rel === active}
-          focusable={rel === active || (!active && index === 0)}
+          key={noteKey(note)}
+          note={note}
+          active={active ? sameNote(note, active) : false}
+          focusable={(active ? sameNote(note, active) : false) || (!active && index === 0)}
         />
       ))}
     </motion.div>
@@ -38,23 +40,24 @@ export function TabBar() {
 }
 
 /** Close `rel`; if it was the active note, activate its neighbor. */
-export function closeTab(rel: string) {
+export function closeTab(note: NoteRef) {
   const { tabs, close } = useTabs.getState();
   const vault = useVault.getState();
-  const wasActive = vault.view?.type === "note" && vault.view.rel === rel;
-  const next = wasActive ? nextAfterClose(tabs, rel) : null;
-  close(rel);
+  const wasActive =
+    vault.view?.type === "note" && sameNote(vault.view.note, note);
+  const next = wasActive ? nextAfterClose(tabs, note) : null;
+  close(note);
   if (wasActive) {
-    vault.setView(next ? { type: "note", rel: next } : null);
+    vault.setView(next ? { type: "note", note: next } : null);
   }
 }
 
 function Tab({
-  rel,
+  note,
   active,
   focusable,
 }: {
-  rel: string;
+  note: NoteRef;
   active: boolean;
   focusable: boolean;
 }) {
@@ -65,17 +68,17 @@ function Tab({
       role="tab"
       aria-selected={active}
       tabIndex={focusable ? 0 : -1}
-      title={rel}
+      title={note.kind === "vault" ? note.rel : note.path}
       className={cx(
         "group/tab relative flex h-full min-w-0 max-w-[180px] shrink-0 cursor-pointer select-none items-center gap-1 pl-3 pr-1.5 text-[12.5px] transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ink",
         active ? "text-ink" : "text-muted hover:text-ink",
       )}
       onClick={() => {
-        if (!active) setView({ type: "note", rel });
+        if (!active) setView({ type: "note", note });
       }}
       onAuxClick={(event) => {
         // middle-click closes, like every code editor
-        if (event.button === 1) closeTab(rel);
+        if (event.button === 1) closeTab(note);
       }}
       onKeyDown={(event) => {
         const tabs = Array.from(
@@ -92,7 +95,7 @@ function Tab({
         else if (event.key === "End") next = tabs.length - 1;
         else if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          setView({ type: "note", rel });
+          setView({ type: "note", note });
           return;
         } else return;
         event.preventDefault();
@@ -111,11 +114,11 @@ function Tab({
       ) : (
         <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover/tab:bg-hover/60 group-hover/tab:opacity-100" />
       )}
-      <span className="relative z-10 truncate">{noteTitle(rel)}</span>
+      <span className="relative z-10 truncate">{noteTitle(note)}</span>
       <Tooltip label="Close ⌘W" side="bottom">
         <button
           type="button"
-          aria-label={`Close ${noteTitle(rel)}`}
+          aria-label={`Close ${noteTitle(note)}`}
           className={cx(
             "relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded transition-opacity duration-75 hover:bg-hover",
             active
@@ -124,7 +127,7 @@ function Tab({
           )}
           onClick={(event) => {
             event.stopPropagation();
-            closeTab(rel);
+            closeTab(note);
           }}
         >
           <X size={11} strokeWidth={2} />

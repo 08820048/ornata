@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   Bookmark,
+  ExternalNote,
   SearchHit,
   Theme,
   Todo,
@@ -38,6 +39,25 @@ export const ipc = {
   chooseVault: () => call<VaultSnapshot | null>("choose_vault"),
   createVault: () => call<VaultSnapshot | null>("create_vault"),
   loadTree: () => call<TreeNode[]>("load_tree"),
+
+  chooseExternalNotes: () =>
+    call<ExternalNote[]>("choose_external_notes"),
+  authorizeExternalNotes: (paths: string[]) =>
+    call<ExternalNote[]>("authorize_external_notes", { paths }),
+  takeOpenedExternalNotes: () =>
+    call<ExternalNote[]>("take_opened_external_notes"),
+  readExternalNote: (path: string) =>
+    call<string>("read_external_note", { path }),
+  writeExternalNote: (path: string, content: string) =>
+    call<void>("write_external_note", { path, content }),
+  renameExternalNote: (path: string, name: string) =>
+    call<ExternalNote>("rename_external_note", { path, name }),
+  deleteExternalNote: (path: string) =>
+    call<void>("delete_external_note", { path }),
+  saveExternalImage: (path: string, data: string, extension: string) =>
+    call<string>("save_external_image", { path, data, extension }),
+  openExternalLink: (path: string, href: string) =>
+    call<ExternalNote | null>("open_external_link", { path, href }),
 
   readNote: (rel: string) => call<string>("read_note", { rel }),
   writeNote: (rel: string, content: string) =>
@@ -83,6 +103,8 @@ export const ipc = {
   exportBookmarks: () => call<string | null>("export_bookmarks"),
   exportNote: (rel: string, content: string) =>
     call<string | null>("export_note", { rel, content }),
+  exportExternalNote: (path: string, content: string) =>
+    call<string | null>("export_external_note", { path, content }),
 
   saveImageAsset: (data: string, extension: string) =>
     call<string>("save_image_asset", { data, extension }),

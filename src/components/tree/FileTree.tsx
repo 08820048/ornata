@@ -30,6 +30,7 @@ import {
 } from "react";
 import type { TreeNode } from "@/lib/types";
 import { EASE_OUT } from "@/lib/ease";
+import { vaultNote } from "@/lib/noteRef";
 import { cx, parentDir } from "@/lib/utils";
 import { useVault } from "@/stores/vault";
 import {
@@ -93,7 +94,10 @@ export function FileTree() {
 
   useEffect(() => {
     const currentView = useVault.getState().view;
-    const activeRel = currentView?.type === "note" ? currentView.rel : null;
+    const activeRel =
+      currentView?.type === "note" && currentView.note.kind === "vault"
+        ? currentView.note.rel
+        : null;
     if (focusRel && findNode(tree, focusRel)) return;
     setFocusRel(activeRel && findNode(tree, activeRel) ? activeRel : tree[0]?.rel ?? null);
   }, [tree, focusRel]);
@@ -239,7 +243,10 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
 
   const isFolder = node.kind === "folder";
   const isOpen = expanded.has(node.rel);
-  const isActive = view?.type === "note" && view.rel === node.rel;
+  const isActive =
+    view?.type === "note" &&
+    view.note.kind === "vault" &&
+    view.note.rel === node.rel;
   const isRenaming = api?.renaming === node.rel;
   const targetDir = isFolder ? node.rel : parentDir(node.rel);
   const invalidTarget = Boolean(
@@ -291,7 +298,7 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
           if (isFolder) {
             toggleExpanded(node.rel);
           } else {
-            setView({ type: "note", rel: node.rel });
+            setView({ type: "note", note: vaultNote(node.rel) });
           }
         }}
         onContextMenu={(event) => {
@@ -340,7 +347,7 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
           } else if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             if (isFolder) toggleExpanded(node.rel);
-            else setView({ type: "note", rel: node.rel });
+            else setView({ type: "note", note: vaultNote(node.rel) });
           } else if (event.key === "F2") {
             event.preventDefault();
             api?.setRenaming(node.rel);

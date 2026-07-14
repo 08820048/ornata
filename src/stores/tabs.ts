@@ -1,27 +1,31 @@
 import { create } from "zustand";
+import { noteKey, sameNote, vaultNote } from "@/lib/noteRef";
+import type { NoteRef } from "@/lib/types";
 
 /**
  * Open note tabs, in strip order. Intentionally dumb: just the ordered list
- * of rels. Which tab is *active* is derived from `vault.view` — never stored
+ * of note references. Which tab is *active* is derived from `vault.view` — never stored
  * here — so the two can't drift apart.
  */
 interface TabsState {
-  tabs: string[];
+  tabs: NoteRef[];
   /** Bumped to ask a note's pane to scroll to top (e.g. opened via a link). */
-  scrollTopReq: { rel: string; nonce: number } | null;
+  scrollTopReq: { key: string; nonce: number } | null;
   /** Bumped to ask a newly created note to select its title. */
-  titleFocusReq: { rel: string; nonce: number } | null;
+  titleFocusReq: { key: string; nonce: number } | null;
   /** Add a tab for `rel` if not already open (no-op otherwise). */
-  open: (rel: string) => void;
-  close: (rel: string) => void;
+  open: (note: NoteRef) => void;
+  close: (note: NoteRef) => void;
+  /** Replace a note reference in place after its path changes. */
+  replace: (note: NoteRef, next: NoteRef) => void;
   /** Rewrite rels after a rename/move of `rel` → `next` (note or folder). */
   remap: (rel: string, next: string) => void;
   /** Drop `rel` and anything under it (folder delete). */
   removeUnder: (rel: string) => void;
   /** Request that `rel`'s pane jump to the top on next render. */
-  requestScrollTop: (rel: string) => void;
+  requestScrollTop: (note: NoteRef) => void;
   /** Request that `rel`'s title input receive focus and select its text. */
-  requestTitleFocus: (rel: string) => void;
+  requestTitleFocus: (note: NoteRef) => void;
   clear: () => void;
 }
 
@@ -30,33 +34,52 @@ export const useTabs = create<TabsState>((set, get) => ({
   scrollTopReq: null,
   titleFocusReq: null,
 
-  open: (rel) => {
-    if (!get().tabs.includes(rel)) set({ tabs: [...get().tabs, rel] });
+  open: (note) => {
+    if (!get().tabs.some((tab) => sameNote(tab, note))) {
+      set({ tabs: [...get().tabs, note] });
+    }
   },
 
-  close: (rel) => set({ tabs: get().tabs.filter((t) => t !== rel) }),
+  close: (note) =>
+    set({ tabs: get().tabs.filter((tab) => !sameNote(tab, note)) }),
+
+  replace: (note, next) =>
+    set({
+      tabs: get().tabs.map((tab) => (sameNote(tab, note) ? next : tab)),
+    }),
 
   remap: (rel, next) =>
     set({
-      tabs: get().tabs.map((t) =>
-        t === rel ? next : t.startsWith(`${rel}/`) ? next + t.slice(rel.length) : t,
-      ),
+      tabs: get().tabs.map((tab) => {
+        if (tab.kind !== "vault") return tab;
+        if (tab.rel === rel) return vaultNote(next);
+        return tab.rel.startsWith(`${rel}/`)
+          ? vaultNote(next + tab.rel.slice(rel.length))
+          : tab;
+      }),
     }),
 
   removeUnder: (rel) =>
     set({
-      tabs: get().tabs.filter((t) => t !== rel && !t.startsWith(`${rel}/`)),
+      tabs: get().tabs.filter(
+        (tab) =>
+          tab.kind !== "vault" ||
+          (tab.rel !== rel && !tab.rel.startsWith(`${rel}/`)),
+      ),
     }),
 
-  requestScrollTop: (rel) =>
+  requestScrollTop: (note) =>
     set({
-      scrollTopReq: { rel, nonce: (get().scrollTopReq?.nonce ?? 0) + 1 },
+      scrollTopReq: {
+        key: noteKey(note),
+        nonce: (get().scrollTopReq?.nonce ?? 0) + 1,
+      },
     }),
 
-  requestTitleFocus: (rel) =>
+  requestTitleFocus: (note) =>
     set({
       titleFocusReq: {
-        rel,
+        key: noteKey(note),
         nonce: (get().titleFocusReq?.nonce ?? 0) + 1,
       },
     }),
@@ -65,8 +88,8 @@ export const useTabs = create<TabsState>((set, get) => ({
 }));
 
 /** Tab to activate after closing `rel`: right neighbor, else left, else none. */
-export function nextAfterClose(tabs: string[], rel: string): string | null {
-  const index = tabs.indexOf(rel);
+export function nextAfterClose(tabs: NoteRef[], note: NoteRef): NoteRef | null {
+  const index = tabs.findIndex((tab) => sameNote(tab, note));
   if (index === -1) return tabs[0] ?? null;
   return tabs[index + 1] ?? tabs[index - 1] ?? null;
 }

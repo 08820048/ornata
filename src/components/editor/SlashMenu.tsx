@@ -126,21 +126,26 @@ export function SlashMenu({
   menu,
   onClose,
   onLinkToNote,
+  allowNoteLinks = true,
 }: {
   editor: Editor | null;
   menu: SlashMenuState | null;
   onClose: () => void;
   onLinkToNote: (range: { from: number; to: number }) => void;
+  allowNoteLinks?: boolean;
 }) {
   const [selected, setSelected] = useState(0);
 
   const filtered = useMemo(() => {
     const query = menu?.query.toLowerCase().trim() ?? "";
-    if (!query) return commands;
-    return commands.filter((c) =>
+    const available = allowNoteLinks
+      ? commands
+      : commands.filter((command) => command.id !== "note-link");
+    if (!query) return available;
+    return available.filter((c) =>
       `${c.label} ${c.keywords}`.toLowerCase().includes(query),
     );
-  }, [menu?.query]);
+  }, [allowNoteLinks, menu?.query]);
 
   useEffect(() => setSelected(0), [menu?.query]);
 

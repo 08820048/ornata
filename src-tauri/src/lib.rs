@@ -4,6 +4,7 @@ mod bookmarks;
 mod commands;
 mod config;
 mod error;
+mod external_notes;
 mod link_meta;
 mod notes;
 mod search;
@@ -12,10 +13,11 @@ mod util;
 mod vault;
 
 use commands::AppState;
+use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
@@ -26,6 +28,15 @@ pub fn run() {
             commands::choose_vault,
             commands::create_vault,
             commands::load_tree,
+            external_notes::choose_external_notes,
+            external_notes::authorize_external_notes,
+            external_notes::take_opened_external_notes,
+            external_notes::read_external_note,
+            external_notes::write_external_note,
+            external_notes::rename_external_note,
+            external_notes::delete_external_note,
+            external_notes::save_external_image,
+            external_notes::open_external_link,
             commands::read_note,
             commands::write_note,
             commands::create_note,
@@ -55,9 +66,31 @@ pub fn run() {
             commands::bookmark_fetch_meta,
             commands::export_bookmarks,
             commands::export_note,
+            external_notes::export_external_note,
             commands::save_image_asset,
             commands::set_theme,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app, event| {
+        #[cfg(target_os = "macos")]
+        if let tauri::RunEvent::Opened { urls } = event {
+            let state = app.state::<AppState>();
+            let notes = urls
+                .into_iter()
+                .filter_map(|url| url.to_file_path().ok())
+                .filter_map(|path| external_notes::authorize(app, &state, path).ok())
+                .collect::<Vec<_>>();
+            if notes.is_empty() {
+                return;
+            }
+            let _ = state.queue_opened(notes.clone());
+            let _ = app.emit("open-markdown", notes);
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }
+    });
 }

@@ -7,6 +7,7 @@ import { TabBar } from "@/components/editor/TabBar";
 import { BookmarksPage } from "@/components/bookmarks/BookmarksPage";
 import { TodosPage } from "@/components/todos/TodosPage";
 import { EASE_OUT, SPRING_LAYOUT, SPRING_PANEL } from "@/lib/ease";
+import { noteDisplayPath } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
 import {
   ActionSwapIcon,
@@ -33,7 +34,7 @@ function viewPath(
   view: ReturnType<typeof useVault.getState>["view"],
 ): string | null {
   if (!root || !view) return null;
-  if (view.type === "note") return `${root}/notes/${view.rel}`;
+  if (view.type === "note") return noteDisplayPath(root, view.note);
   if (view.type === "todos") return `${root}/.ornata/todos.json`;
   if (view.type === "bookmarks") return `${root}/.ornata/bookmarks.json`;
   return null;
@@ -96,7 +97,7 @@ export function AppShell() {
         {/* Row 2 — current view title + right-side actions. */}
         <div className="flex h-10 bg-transparent shrink-0 items-center px-3">
           {view?.type === "note" ? (
-            <NoteBreadcrumb rel={view.rel} />
+            <NoteBreadcrumb note={view.note} />
           ) : (
             <ActionSwapText
               value={view?.type ?? "none"}

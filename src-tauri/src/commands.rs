@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 use serde::Serialize;
@@ -8,6 +9,7 @@ use tauri_plugin_dialog::DialogExt;
 use crate::bookmarks::{self, Bookmark};
 use crate::config::{self, Theme};
 use crate::error::{AppError, AppResult};
+use crate::external_notes::ExternalNote;
 use crate::search::SearchHit;
 use crate::todos::{self, Todo};
 use crate::vault::{self, TreeNode};
@@ -16,6 +18,8 @@ use crate::{agent_docs, assets, link_meta, notes, search};
 #[derive(Default)]
 pub struct AppState {
     vault: RwLock<Option<PathBuf>>,
+    external: RwLock<HashSet<PathBuf>>,
+    opened: RwLock<Vec<ExternalNote>>,
 }
 
 impl AppState {
@@ -31,6 +35,56 @@ impl AppState {
         if let Ok(mut guard) = self.vault.write() {
             *guard = path;
         }
+    }
+
+    pub(crate) fn allow_external(&self, path: PathBuf) -> AppResult<()> {
+        self.external
+            .write()
+            .map_err(|_| AppError::Other("state lock poisoned".to_string()))?
+            .insert(path);
+        Ok(())
+    }
+
+    pub(crate) fn is_external_allowed(&self, path: &Path) -> AppResult<bool> {
+        Ok(self
+            .external
+            .read()
+            .map_err(|_| AppError::Other("state lock poisoned".to_string()))?
+            .contains(path))
+    }
+
+    pub(crate) fn replace_external(&self, old: &Path, new: PathBuf) -> AppResult<()> {
+        let mut external = self
+            .external
+            .write()
+            .map_err(|_| AppError::Other("state lock poisoned".to_string()))?;
+        external.remove(old);
+        external.insert(new);
+        Ok(())
+    }
+
+    pub(crate) fn revoke_external(&self, path: &Path) -> AppResult<()> {
+        self.external
+            .write()
+            .map_err(|_| AppError::Other("state lock poisoned".to_string()))?
+            .remove(path);
+        Ok(())
+    }
+
+    pub(crate) fn queue_opened(&self, notes: Vec<ExternalNote>) -> AppResult<()> {
+        self.opened
+            .write()
+            .map_err(|_| AppError::Other("state lock poisoned".to_string()))?
+            .extend(notes);
+        Ok(())
+    }
+
+    pub(crate) fn take_opened(&self) -> AppResult<Vec<ExternalNote>> {
+        let mut opened = self
+            .opened
+            .write()
+            .map_err(|_| AppError::Other("state lock poisoned".to_string()))?;
+        Ok(std::mem::take(&mut *opened))
     }
 }
 

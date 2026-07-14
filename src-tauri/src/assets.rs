@@ -11,6 +11,22 @@ const ALLOWED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "svg"
 /// Save image bytes (sent from the editor as base64) into the vault's
 /// asset folder. Returns the absolute path for use with the asset protocol.
 pub fn save_image(root: &Path, base64_data: &str, extension: &str) -> AppResult<PathBuf> {
+    save_image_in(root.join(ASSETS_DIR), base64_data, extension)
+}
+
+/// Save an image next to an external document in a portable `assets/` folder.
+pub fn save_external_image(
+    note_path: &Path,
+    base64_data: &str,
+    extension: &str,
+) -> AppResult<PathBuf> {
+    let parent = note_path
+        .parent()
+        .ok_or_else(|| AppError::InvalidPath(note_path.display().to_string()))?;
+    save_image_in(parent.join("assets"), base64_data, extension)
+}
+
+fn save_image_in(dir: PathBuf, base64_data: &str, extension: &str) -> AppResult<PathBuf> {
     let ext = extension.trim_start_matches('.').to_lowercase();
     if !ALLOWED_EXTENSIONS.contains(&ext.as_str()) {
         return Err(AppError::InvalidInput(format!(
@@ -18,7 +34,6 @@ pub fn save_image(root: &Path, base64_data: &str, extension: &str) -> AppResult<
         )));
     }
     let bytes = decode_base64(base64_data)?;
-    let dir = root.join(ASSETS_DIR);
     fs::create_dir_all(&dir)?;
     let path = dir.join(format!("{}.{ext}", Uuid::new_v4()));
     fs::write(&path, bytes)?;
@@ -82,6 +97,16 @@ mod tests {
         let dir = tempdir().unwrap();
         ensure_layout(dir.path()).unwrap();
         assert!(save_image(dir.path(), "aGVsbG8=", "exe").is_err());
+    }
+
+    #[test]
+    fn external_images_use_sibling_assets_folder() {
+        let dir = tempdir().unwrap();
+        let note = dir.path().join("outside.md");
+        std::fs::write(&note, "").unwrap();
+        let path = save_external_image(&note, "aGVsbG8=", "png").unwrap();
+        assert_eq!(path.parent(), Some(dir.path().join("assets").as_path()));
+        assert!(path.exists());
     }
 
     #[test]

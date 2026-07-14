@@ -1,7 +1,20 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
-import type { Theme, TreeNode, VaultSnapshot, View } from "@/lib/types";
+import {
+  externalNote,
+  noteRefForPath,
+  sameNote,
+  vaultNote,
+} from "@/lib/noteRef";
+import type {
+  ExternalNote,
+  NoteRef,
+  Theme,
+  TreeNode,
+  VaultSnapshot,
+  View,
+} from "@/lib/types";
 import { parentDir } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
 
@@ -21,6 +34,8 @@ interface VaultState {
   startup: () => Promise<void>;
   chooseVault: () => Promise<void>;
   createVault: () => Promise<void>;
+  chooseExternalNotes: () => Promise<void>;
+  openExternalNotes: (notes: ExternalNote[]) => void;
   refreshTree: () => Promise<void>;
   setView: (view: View | null) => void;
   pushRecent: (rel: string) => void;
@@ -30,8 +45,10 @@ interface VaultState {
   createNote: (dir: string) => Promise<void>;
   createFolder: (dir: string, name: string) => Promise<string | null>;
   renameEntry: (rel: string, name: string) => Promise<void>;
+  renameExternalNote: (path: string, name: string) => Promise<void>;
   moveEntry: (rel: string, dir: string) => Promise<void>;
   deleteEntry: (rel: string) => Promise<void>;
+  deleteExternalNote: (path: string) => Promise<void>;
 
   setTheme: (theme: Theme) => Promise<void>;
   cycleTheme: () => Promise<void>;
@@ -155,6 +172,23 @@ export const useVault = create<VaultState>((set, get) => ({
     }
   },
 
+  chooseExternalNotes: async () => {
+    try {
+      get().openExternalNotes(await ipc.chooseExternalNotes());
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  openExternalNotes: (notes) => {
+    if (get().status !== "ready") return;
+    for (const external of notes) {
+      const note = noteRefForPath(get().root, external.path);
+      if (note.kind === "vault") get().expandTo(note.rel);
+      get().setView({ type: "note", note });
+    }
+  },
+
   refreshTree: async () => {
     if (get().status !== "ready") return;
     try {
@@ -167,8 +201,8 @@ export const useVault = create<VaultState>((set, get) => ({
   setView: (view) => {
     set({ view });
     if (view?.type === "note") {
-      useTabs.getState().open(view.rel);
-      get().pushRecent(view.rel);
+      useTabs.getState().open(view.note);
+      if (view.note.kind === "vault") get().pushRecent(view.note.rel);
     }
   },
 
@@ -207,8 +241,9 @@ export const useVault = create<VaultState>((set, get) => ({
       await get().refreshTree();
       get().expandTo(rel);
       // Route through setView so the tab opens (blank pane otherwise).
-      get().setView({ type: "note", rel });
-      useTabs.getState().requestTitleFocus(rel);
+      const note = vaultNote(rel);
+      get().setView({ type: "note", note });
+      useTabs.getState().requestTitleFocus(note);
     } catch (err) {
       oops(err);
     }
@@ -233,12 +268,32 @@ export const useVault = create<VaultState>((set, get) => ({
       await get().refreshTree();
       remapRecents(set, get, rel, next);
       useTabs.getState().remap(rel, next);
-      if (view?.type === "note") {
-        if (view.rel === rel) {
-          set({ view: { type: "note", rel: next } });
-        } else if (view.rel.startsWith(`${rel}/`)) {
-          set({ view: { type: "note", rel: view.rel.replace(rel, next) } });
+      if (view?.type === "note" && view.note.kind === "vault") {
+        if (view.note.rel === rel) {
+          set({ view: { type: "note", note: vaultNote(next) } });
+        } else if (view.note.rel.startsWith(`${rel}/`)) {
+          set({
+            view: {
+              type: "note",
+              note: vaultNote(view.note.rel.replace(rel, next)),
+            },
+          });
         }
+      }
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  renameExternalNote: async (path, name) => {
+    try {
+      const current = externalNote(path);
+      const renamed = await ipc.renameExternalNote(path, name);
+      const next = externalNote(renamed.path);
+      useTabs.getState().replace(current, next);
+      const { view } = get();
+      if (view?.type === "note" && sameNote(view.note, current)) {
+        set({ view: { type: "note", note: next } });
       }
     } catch (err) {
       oops(err);
@@ -253,11 +308,16 @@ export const useVault = create<VaultState>((set, get) => ({
       get().expandTo(next);
       remapRecents(set, get, rel, next);
       useTabs.getState().remap(rel, next);
-      if (view?.type === "note") {
-        if (view.rel === rel) {
-          set({ view: { type: "note", rel: next } });
-        } else if (view.rel.startsWith(`${rel}/`)) {
-          set({ view: { type: "note", rel: view.rel.replace(rel, next) } });
+      if (view?.type === "note" && view.note.kind === "vault") {
+        if (view.note.rel === rel) {
+          set({ view: { type: "note", note: vaultNote(next) } });
+        } else if (view.note.rel.startsWith(`${rel}/`)) {
+          set({
+            view: {
+              type: "note",
+              note: vaultNote(view.note.rel.replace(rel, next)),
+            },
+          });
         }
       }
     } catch (err) {
@@ -271,22 +331,46 @@ export const useVault = create<VaultState>((set, get) => ({
       const { view } = get();
       await get().refreshTree();
       const gone = (r: string) => r === rel || r.startsWith(`${rel}/`);
+      const goneTab = (note: NoteRef) =>
+        note.kind === "vault" && gone(note.rel);
       set({ recentNotes: get().recentNotes.filter((r) => !gone(r)) });
 
       // Drop affected tabs; if the active note went with them, activate the
       // nearest surviving tab to its right (else the last one standing).
       const before = useTabs.getState().tabs;
       useTabs.getState().removeUnder(rel);
-      if (view?.type === "note" && gone(view.rel)) {
-        const index = before.indexOf(view.rel);
-        const right = before.slice(index + 1).find((t) => !gone(t));
-        const survivors = before.filter((t) => !gone(t));
+      if (
+        view?.type === "note" &&
+        view.note.kind === "vault" &&
+        gone(view.note.rel)
+      ) {
+        const index = before.findIndex((tab) => sameNote(tab, view.note));
+        const right = before.slice(index + 1).find((tab) => !goneTab(tab));
+        const survivors = before.filter((tab) => !goneTab(tab));
         const next = right ?? survivors[survivors.length - 1] ?? null;
-        get().setView(next ? { type: "note", rel: next } : null);
+        get().setView(next ? { type: "note", note: next } : null);
       }
       toast("Moved to Trash", {
         description: rel.split("/").pop()?.replace(/\.md$/, ""),
       });
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  deleteExternalNote: async (path) => {
+    try {
+      const note = externalNote(path);
+      await ipc.deleteExternalNote(path);
+      const { tabs, close } = useTabs.getState();
+      const index = tabs.findIndex((tab) => sameNote(tab, note));
+      const next = tabs[index + 1] ?? tabs[index - 1] ?? null;
+      close(note);
+      const { view } = get();
+      if (view?.type === "note" && sameNote(view.note, note)) {
+        get().setView(next ? { type: "note", note: next } : null);
+      }
+      toast("Moved to Trash", { description: path.split(/[\\/]/).pop() });
     } catch (err) {
       oops(err);
     }
@@ -311,5 +395,7 @@ export const useVault = create<VaultState>((set, get) => ({
 
 /** Folder rel of the current selection — used as target for "new note". */
 export function activeDir(state: Pick<VaultState, "view">) {
-  return state.view?.type === "note" ? parentDir(state.view.rel) : "";
+  return state.view?.type === "note" && state.view.note.kind === "vault"
+    ? parentDir(state.view.note.rel)
+    : "";
 }

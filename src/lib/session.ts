@@ -1,6 +1,8 @@
 import { debounce } from "@/lib/utils";
+import { externalNote, vaultNote } from "@/lib/noteRef";
+import { ipc } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
-import type { View } from "@/lib/types";
+import type { NoteRef, View } from "@/lib/types";
 import { useBookmarks } from "@/stores/bookmarks";
 import { useTabs } from "@/stores/tabs";
 import { useTodos } from "@/stores/todos";
@@ -12,7 +14,7 @@ import { useVault } from "@/stores/vault";
  * root so switching vaults restores that vault's own layout.
  */
 interface Session {
-  tabs: string[];
+  tabs: NoteRef[];
   view: View | null;
   todoFilter: string | null;
   bookmarkFilter: string | null;
@@ -40,7 +42,34 @@ function writeSession(root: string) {
 const saveSession = debounce(() => writeSession(useVault.getState().root), 250);
 
 /** Reapply a vault's saved session. Call once the vault + tree are loaded. */
-export function restoreSession(root: string) {
+function parseNoteRef(value: unknown): NoteRef | null {
+  if (typeof value === "string") return vaultNote(value);
+  if (!value || typeof value !== "object") return null;
+  const note = value as Record<string, unknown>;
+  if (note.kind === "vault" && typeof note.rel === "string") {
+    return vaultNote(note.rel);
+  }
+  if (note.kind === "external" && typeof note.path === "string") {
+    return externalNote(note.path);
+  }
+  return null;
+}
+
+function parseView(value: unknown): View | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  if (raw.type === "note") {
+    // Migrate pre-NoteRef sessions whose note view stored `rel` directly.
+    const note = parseNoteRef(raw.note ?? raw.rel);
+    return note ? { type: "note", note } : null;
+  }
+  if (raw.type === "todos" || raw.type === "bookmarks") {
+    return { type: raw.type };
+  }
+  return null;
+}
+
+export async function restoreSession(root: string) {
   if (!root) return;
   let data: Session | null = null;
   try {
@@ -58,24 +87,51 @@ export function restoreSession(root: string) {
 
   const vault = useVault.getState();
   const existing = new Set(flattenNotes(vault.tree).map((n) => n.rel));
+  const parsedTabs = (data.tabs ?? [])
+    .map(parseNoteRef)
+    .filter((note): note is NoteRef => note !== null);
+  const parsedView = parseView(data.view);
+  const externalPaths = [
+    ...parsedTabs,
+    ...(parsedView?.type === "note" ? [parsedView.note] : []),
+  ]
+    .filter((note) => note.kind === "external")
+    .map((note) => note.path);
+  let authorizedExternal = new Set<string>();
+  if (externalPaths.length) {
+    try {
+      const notes = await ipc.authorizeExternalNotes([
+        ...new Set(externalPaths),
+      ]);
+      authorizedExternal = new Set(notes.map((note) => note.path));
+    } catch {
+      // Missing or no-longer-readable external files are simply not restored.
+    }
+  }
+  const valid = (note: NoteRef) =>
+    note.kind === "vault"
+      ? existing.has(note.rel)
+      : authorizedExternal.has(note.path);
   // Drop tabs whose notes were deleted since last session.
-  const tabs = (data.tabs ?? []).filter((rel) => existing.has(rel));
+  const tabs = parsedTabs.filter(valid);
   useTabs.setState({ tabs });
 
   useTodos.setState({ tagFilter: data.todoFilter ?? null });
   useBookmarks.setState({ tagFilter: data.bookmarkFilter ?? null });
 
-  const view = data.view;
+  const view = parsedView;
   if (view?.type === "note") {
-    if (existing.has(view.rel)) {
-      vault.expandTo(view.rel);
+    if (valid(view.note)) {
+      if (view.note.kind === "vault") vault.expandTo(view.note.rel);
       vault.setView(view);
     } else {
       // Active note gone — fall back to the first surviving tab, else nothing.
-      vault.setView(tabs[0] ? { type: "note", rel: tabs[0] } : null);
+      vault.setView(tabs[0] ? { type: "note", note: tabs[0] } : null);
     }
   } else if (view) {
     vault.setView(view);
+  } else if (tabs[0]) {
+    vault.setView({ type: "note", note: tabs[0] });
   }
 }
 
