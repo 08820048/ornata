@@ -3,13 +3,11 @@
 import { motion } from "motion/react";
 import { Wordmark } from "./Logo";
 import { DownloadButton } from "./ui/download-button";
-import { GITHUB } from "@/lib/config";
 
 const LINKS = [
   { label: "Features", href: "#features" },
   { label: "Agent", href: "#agent" },
   { label: "FAQ", href: "#faq" },
-  { label: "GitHub", href: GITHUB },
 ];
 
 export function Nav() {

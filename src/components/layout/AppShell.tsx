@@ -366,22 +366,16 @@ function NewTagButton({ onCreate }: { onCreate: (name: string) => void }) {
   );
 }
 
-function HashMark() {
+function AppMark() {
   return (
-    <div className="grid h-16 w-16 place-items-center rounded-2xl border border-line-soft bg-panel">
-      <svg width="34" height="34" viewBox="0 0 1024 1024" fill="none" aria-hidden="true">
-        <g
-          stroke="var(--faint)"
-          strokeWidth="84"
-          strokeLinecap="round"
-        >
-          <line x1="390" y1="280" x2="390" y2="744" />
-          <line x1="634" y1="280" x2="634" y2="744" />
-          <line x1="280" y1="390" x2="744" y2="390" />
-          <line x1="280" y1="634" x2="744" y2="634" />
-        </g>
-      </svg>
-    </div>
+    <img
+      src="/ornata-icon.png"
+      width="64"
+      height="64"
+      alt=""
+      aria-hidden="true"
+      className="h-16 w-16"
+    />
   );
 }
 
@@ -417,7 +411,7 @@ function EmptyState() {
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 pb-24">
-      <HashMark />
+      <AppMark />
       <div className="text-center">
         <p className="text-[16px] font-semibold tracking-[-0.01em] text-ink">
           Nothing open yet

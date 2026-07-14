@@ -15,11 +15,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Why does macOS say the app can't be verified?",
-    a: "Ornata is signed but not yet notarized. On first launch, right-click the app and choose Open (or use System Settings → Privacy & Security → Open Anyway). Notarization is planned.",
-  },
-  {
-    q: "Is it free?",
-    a: "Yes — free and open source under the MIT license. No subscription, no upsell.",
+    a: "Production downloads are signed with a Developer ID certificate and notarized by Apple. Download the latest build from ornata.app; if verification fails, confirm that you have the current installer.",
   },
   {
     q: "Windows or Linux?",

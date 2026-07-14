@@ -5,7 +5,7 @@ import { AppDemo } from "./AppDemo";
 import { ButtonLink } from "./ui/button";
 import { DownloadButton } from "./ui/download-button";
 import { EASE_OUT } from "@/lib/ease";
-import { GITHUB, VERSION } from "@/lib/config";
+import { VERSION } from "@/lib/config";
 
 export function Hero() {
   const reduce = useReducedMotion();
@@ -64,13 +64,12 @@ export function Hero() {
         >
           <DownloadButton size="lg" className="w-full sm:w-auto" />
           <ButtonLink
-            href={GITHUB}
+            href="#features"
             variant="outline"
             size="lg"
             className="w-full sm:w-auto"
-            target="_blank"
           >
-            GitHub
+            Explore features
           </ButtonLink>
         </motion.div>
 
@@ -78,7 +77,7 @@ export function Hero() {
           {...rise(0.24)}
           className="mt-5 font-mono text-[11.5px] uppercase tracking-[0.14em] text-faint"
         >
-          Free &amp; open source · Apple Silicon · macOS 12+ · v{VERSION}
+          Apple Silicon · macOS 12+ · v{VERSION}
         </motion.p>
       </div>
 

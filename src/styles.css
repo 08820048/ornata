@@ -42,6 +42,7 @@
     --color-invert: var(--invert);
     --color-invert-ink: var(--invert-ink);
     --color-danger: var(--danger);
+    --color-success: var(--success);
 
     /* shadcn/beui semantic tokens mapped onto our monochrome palette so any
      component pulled from the beui registry inherits our theme unchanged. */
@@ -84,6 +85,7 @@
     --invert: #1c1c1c;
     --invert-ink: #fbfbfa;
     --danger: #b3261e;
+    --success: #4d8660;
 
     /* Syntax colors are deliberately scoped to code tokens. The surrounding
        product UI remains monochrome. */
@@ -112,6 +114,7 @@
     --invert: #ebebe8;
     --invert-ink: #131313;
     --danger: #e5484d;
+    --success: #72b588;
 
     --syntax-plain: #c9d1d9;
     --syntax-comment: #8b949e;

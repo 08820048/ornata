@@ -1,136 +1,78 @@
 #!/usr/bin/env node
 
-/**
- * Local Update Server for Testing
- *
- * This script serves the update files locally for testing the Tauri updater.
- *
- * Usage:
- *   1. Build your app: npm run tauri build
- *   2. Copy the built app to src-tauri/target/release/bundle/macos/
- *   3. Create a test latest.json with a higher version
- *   4. Run this server: bun run update:test-server
- *   5. Temporarily update tauri.conf.json to point to http://localhost:3000/updates/latest.json
- *   6. Run your app and test the update
- */
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
 
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
-
-const PORT = 3000;
-const UPDATES_DIR = path.join(
-  __dirname,
-  "../src-tauri/target/release/bundle/macos"
+const projectRoot = path.join(__dirname, "..");
+const tauriConfig = JSON.parse(
+  fs.readFileSync(path.join(projectRoot, "src-tauri", "tauri.conf.json"), "utf8"),
 );
+const version = process.argv[2] || tauriConfig.version;
+const arch = process.arch === "arm64" ? "aarch64" : "x86_64";
+const port = Number(process.env.UPDATE_TEST_PORT || 3000);
+const releaseDir = path.join(projectRoot, "release", version);
+const platformDir = path.join(releaseDir, `darwin-${arch}`);
+const manifestPath = path.join(releaseDir, "latest.json");
 
-const MIME_TYPES = {
-  ".json": "application/json",
-  ".tar.gz": "application/gzip",
-  ".zip": "application/zip",
-};
+if (!fs.existsSync(manifestPath) || !fs.existsSync(platformDir)) {
+  console.error(`Release ${version} is not staged. Run the signed release build first.`);
+  process.exit(1);
+}
 
-const server = http.createServer((req, res) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+function localManifest() {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  for (const platform of Object.values(manifest.platforms || {})) {
+    const fileName = path.basename(new URL(platform.url).pathname);
+    platform.url = `http://localhost:${port}/artifacts/${encodeURIComponent(fileName)}`;
+  }
+  return `${JSON.stringify(manifest, null, 2)}\n`;
+}
 
-  // CORS headers for local testing
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+const server = http.createServer((request, response) => {
+  const url = new URL(request.url, `http://localhost:${port}`);
+  response.setHeader("Access-Control-Allow-Origin", "*");
 
-  if (req.method === "OPTIONS") {
-    res.writeHead(200);
-    res.end();
+  if (request.method === "OPTIONS") {
+    response.writeHead(204);
+    response.end();
     return;
   }
 
-  if (req.url === "/updates/latest.json" || req.url === "/latest.json") {
-    // Serve the latest.json file
-    const latestJsonPath = path.join(__dirname, "../latest.json");
-
-    if (!fs.existsSync(latestJsonPath)) {
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end(
-        "latest.json not found. Make sure it exists in the project root."
-      );
-      return;
-    }
-
-    const content = fs.readFileSync(latestJsonPath, "utf8");
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(content);
-    return;
-  }
-
-  // Serve update files (tar.gz, zip, etc.)
-  if (req.url.startsWith("/updates/")) {
-    const fileName = path.basename(req.url);
-    const filePath = path.join(UPDATES_DIR, fileName);
-
-    if (!fs.existsSync(filePath)) {
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end(`File not found: ${fileName}`);
-      return;
-    }
-
-    const ext = path.extname(filePath);
-    const contentType = MIME_TYPES[ext] || "application/octet-stream";
-    const stat = fs.statSync(filePath);
-
-    res.writeHead(200, {
-      "Content-Type": contentType,
-      "Content-Length": stat.size,
-      "Content-Disposition": `attachment; filename="${fileName}"`,
+  if (url.pathname === "/latest.json") {
+    const body = localManifest();
+    response.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Content-Length": Buffer.byteLength(body),
     });
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
+    response.end(body);
     return;
   }
 
-  // Health check
-  if (req.url === "/") {
-    res.writeHead(200, { "Content-Type": "text/html" });
-    res.end(`
-      <html>
-        <head><title>Update Server</title></head>
-        <body>
-          <h1>Local Update Server</h1>
-          <p>Server is running on port ${PORT}</p>
-          <ul>
-            <li><a href="/latest.json">/latest.json</a></li>
-            <li><a href="/updates/latest.json">/updates/latest.json</a></li>
-          </ul>
-        </body>
-      </html>
-    `);
+  if (url.pathname.startsWith("/artifacts/")) {
+    const fileName = path.basename(decodeURIComponent(url.pathname));
+    const filePath = path.join(platformDir, fileName);
+    if (!fs.existsSync(filePath)) {
+      response.writeHead(404).end("not found");
+      return;
+    }
+    const stat = fs.statSync(filePath);
+    response.writeHead(200, {
+      "Content-Type": fileName.endsWith(".tar.gz")
+        ? "application/gzip"
+        : "application/octet-stream",
+      "Content-Length": stat.size,
+    });
+    if (request.method === "HEAD") response.end();
+    else fs.createReadStream(filePath).pipe(response);
     return;
   }
 
-  res.writeHead(404, { "Content-Type": "text/plain" });
-  res.end("Not found");
+  response.writeHead(404).end("not found");
 });
 
-server.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║         Local Update Server for Testing                  ║
-╚═══════════════════════════════════════════════════════════╝
-
-Server running on: http://localhost:${PORT}
-Updates directory: ${UPDATES_DIR}
-
-Endpoints:
-  - http://localhost:${PORT}/latest.json
-  - http://localhost:${PORT}/updates/latest.json
-  - http://localhost:${PORT}/updates/[filename]
-
-To test:
-  1. Make sure latest.json exists in project root
-  2. Make sure update files are in: ${UPDATES_DIR}
-  3. Update tauri.conf.json endpoints to: ["http://localhost:${PORT}/updates/latest.json"]
-  4. Run your app and check for updates
-
-Press Ctrl+C to stop the server.
-  `);
+server.listen(port, () => {
+  console.log(`Local updater: http://localhost:${port}/latest.json`);
+  console.log(`Serving staged release: ${releaseDir}`);
 });

@@ -1,132 +1,93 @@
 #!/bin/bash
 
-# Release script for Draft app
-# This script automates the release process: build, prepare, and generate update manifest
-
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Check if version and notes are provided
 if [ $# -lt 2 ]; then
-  echo -e "${RED}❌ Error: Missing arguments${NC}"
-  echo ""
-  echo "Usage: $0 <version> <release-notes>"
-  echo ""
-  echo "Example:"
-  echo "  $0 \"0.1.1\" \"Bug fixes and improvements\""
+  echo "Usage: $0 <version> <release-notes>" >&2
+  echo "Example: $0 0.1.5 \"Signed and notarized release\"" >&2
   exit 1
 fi
 
-VERSION=$1
-NOTES="${@:2}" # All remaining arguments as release notes
+VERSION="$1"
+shift
+NOTES="$*"
 
-echo -e "${GREEN}🚀 Starting release process for version ${VERSION}${NC}"
-echo ""
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+  echo "Invalid semantic version: $VERSION" >&2
+  exit 1
+fi
 
-# Step 1: Build the app
-echo -e "${YELLOW}📦 Step 1: Building app...${NC}"
+case "$(uname -m)" in
+  arm64) ARCH="aarch64" ;;
+  x86_64) ARCH="x86_64" ;;
+  *) echo "Unsupported macOS architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+
 cd "$PROJECT_ROOT"
 
-# Check if private key is set for signing updates
-if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
-  echo -e "${YELLOW}ℹ️  Note: TAURI_PRIVATE_KEY not set. Updates will not be signed.${NC}"
-  echo "   To sign updates, set: export TAURI_PRIVATE_KEY=\"path/to/key\""
-  echo "   See UPDATE_KEYS_EXPLAINED.md for details"
-  echo ""
-fi
+echo "Checking Apple and Tauri signing configuration..."
+source "$SCRIPT_DIR/check-release-signing.sh"
 
+echo "Synchronizing version $VERSION..."
+bun "$SCRIPT_DIR/sync-version.js" "$VERSION"
+
+echo "Removing stale release artifacts..."
+rm -rf "$PROJECT_ROOT/src-tauri/target/release/bundle" "$PROJECT_ROOT/release/$VERSION"
+
+echo "Building signed and notarized application..."
 bun run tauri build
 
-if [ $? -ne 0 ]; then
-  echo -e "${RED}❌ Build failed!${NC}"
-  exit 1
-fi
+APP_PATH=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/macos" -maxdepth 1 -name "*.app" -type d | head -n 1)
+UPDATE_BUNDLE=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/macos" -maxdepth 1 -name "*.app.tar.gz" -type f | head -n 1)
+UPDATE_SIGNATURE="${UPDATE_BUNDLE}.sig"
+DMG_PATH=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/dmg" -maxdepth 1 -name "*.dmg" -type f | head -n 1)
 
-echo -e "${GREEN}✅ Build completed${NC}"
-echo ""
+for path in "$APP_PATH" "$UPDATE_BUNDLE" "$UPDATE_SIGNATURE" "$DMG_PATH"; do
+  [ -e "$path" ] || { echo "Missing release artifact: $path" >&2; exit 1; }
+done
 
-# Step 2: Prepare DMG (remove quarantine)
-echo -e "${YELLOW}🔓 Step 2: Preparing DMG for distribution...${NC}"
-bun run prepare:dmg
-
-if [ $? -ne 0 ]; then
-  echo -e "${YELLOW}⚠️  Warning: DMG preparation failed (this is okay if DMG doesn't exist)${NC}"
-fi
-
-echo ""
-
-# Step 3: Generate update manifest
-echo -e "${YELLOW}📝 Step 3: Generating update manifest...${NC}"
-bun run update:generate "$VERSION" "$NOTES"
-
-if [ $? -ne 0 ]; then
-  echo -e "${RED}❌ Failed to generate update manifest!${NC}"
-  exit 1
-fi
-
-echo ""
-
-# Step 3.5: Stage artifacts into the website (site/public serves them as-is).
-echo -e "${YELLOW}🌐 Step 3.5: Staging artifacts into the website...${NC}"
-SITE_UPDATES="$PROJECT_ROOT/site/public/updates"
-SITE_DOWNLOADS="$PROJECT_ROOT/site/public/downloads"
-mkdir -p "$SITE_UPDATES" "$SITE_DOWNLOADS"
-
-STAGE_DMG=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/dmg" -name "*.dmg" -type f 2>/dev/null | head -n 1)
-STAGE_BUNDLE=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/macos" -name "*.tar.gz" -type f 2>/dev/null | head -n 1)
-
-cp "$PROJECT_ROOT/latest.json" "$SITE_UPDATES/latest.json"
-[ -n "$STAGE_BUNDLE" ] && cp "$STAGE_BUNDLE" "$SITE_UPDATES/"
-[ -n "$STAGE_DMG" ] && cp "$STAGE_DMG" "$SITE_DOWNLOADS/"
-
-echo -e "${GREEN}✅ Staged latest.json + bundles into site/public${NC}"
-echo -e "   ${YELLOW}Deploy with: cd site && bun run deploy${NC}"
-echo ""
-
-# Step 4: Show summary
-echo -e "${GREEN}✅ Release process completed!${NC}"
-echo ""
-echo -e "${YELLOW}📋 Files ready for upload:${NC}"
-echo ""
-
-# Find DMG file
-DMG_PATH=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/dmg" -name "*.dmg" -type f 2>/dev/null | head -n 1)
-if [ -n "$DMG_PATH" ]; then
-  echo -e "  ${GREEN}✓${NC} DMG: $DMG_PATH"
-  echo "     → Upload to: /downloads/$(basename "$DMG_PATH")"
+echo "Notarizing and stapling the DMG..."
+if [ -n "${APPLE_API_ISSUER:-}" ] && [ -n "${APPLE_API_KEY:-}" ] && [ -n "${APPLE_API_KEY_PATH:-}" ]; then
+  xcrun notarytool submit "$DMG_PATH" \
+    --key "$APPLE_API_KEY_PATH" \
+    --key-id "$APPLE_API_KEY" \
+    --issuer "$APPLE_API_ISSUER" \
+    --wait
 else
-  echo -e "  ${YELLOW}⚠${NC}  DMG not found"
+  xcrun notarytool submit "$DMG_PATH" \
+    --apple-id "$APPLE_ID" \
+    --password "$APPLE_PASSWORD" \
+    --team-id "$APPLE_TEAM_ID" \
+    --wait
 fi
+xcrun stapler staple "$DMG_PATH"
 
-# Find update bundle
-UPDATE_BUNDLE=$(find "$PROJECT_ROOT/src-tauri/target/release/bundle/macos" -name "*.tar.gz" -type f 2>/dev/null | head -n 1)
-if [ -n "$UPDATE_BUNDLE" ]; then
-  echo -e "  ${GREEN}✓${NC} Update bundle: $UPDATE_BUNDLE"
-  echo "     → Upload to: /updates/$(basename "$UPDATE_BUNDLE")"
-else
-  echo -e "  ${YELLOW}⚠${NC}  Update bundle not found"
-fi
+echo "Verifying Apple code signature and notarization ticket..."
+codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+spctl --assess --type execute --verbose=4 "$APP_PATH"
+xcrun stapler validate "$APP_PATH"
+xcrun stapler validate "$DMG_PATH"
+spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG_PATH"
 
-# Check for latest.json
-if [ -f "$PROJECT_ROOT/latest.json" ]; then
-  echo -e "  ${GREEN}✓${NC} Update manifest: $PROJECT_ROOT/latest.json"
-  echo "     → Upload to: /updates/latest.json"
-else
-  echo -e "  ${RED}✗${NC}  Update manifest not found"
-fi
+echo "Verifying the archived updater application..."
+VERIFY_DIR=$(mktemp -d)
+trap 'rm -rf "$VERIFY_DIR"' EXIT
+tar -xzf "$UPDATE_BUNDLE" -C "$VERIFY_DIR"
+ARCHIVED_APP=$(find "$VERIFY_DIR" -maxdepth 2 -name "*.app" -type d | head -n 1)
+[ -n "$ARCHIVED_APP" ] || { echo "Updater archive does not contain an app bundle" >&2; exit 1; }
+codesign --verify --deep --strict --verbose=2 "$ARCHIVED_APP"
+xcrun stapler validate "$ARCHIVED_APP"
+[ -s "$UPDATE_SIGNATURE" ] || { echo "Tauri updater signature is empty" >&2; exit 1; }
 
-echo ""
-echo -e "${YELLOW}📝 Next steps:${NC}"
-echo "  1. Review the generated files"
-echo "  2. Upload files to your website (see PUBLIC_DISTRIBUTION.md)"
-echo "  3. Update your download page with the new version"
-echo "  4. Test the download and update flow"
-echo ""
+PLATFORM_DIR="$PROJECT_ROOT/release/$VERSION/darwin-$ARCH"
+mkdir -p "$PLATFORM_DIR"
+cp "$UPDATE_BUNDLE" "$UPDATE_SIGNATURE" "$DMG_PATH" "$PLATFORM_DIR/"
+
+echo "Generating Tauri update manifest..."
+RELEASE_ARCH="$ARCH" bun run update:generate -- "$VERSION" "$NOTES"
+
+echo "Release staged at: $PROJECT_ROOT/release/$VERSION"
+echo "Review it, then run: bun run release:publish -- $VERSION --confirm"

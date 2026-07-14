@@ -16,21 +16,7 @@ Your notes live on your Mac as plain `.md` files. Ornata simply makes writing an
 
 Download the latest `.dmg` from [ornata.app](https://ornata.app) and drag Ornata to Applications.
 
-Ornata is signed but **not yet notarized**, so on the first launch macOS asks to verify it. Open it once, either way:
-
-**Terminal**
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Ornata.app
-```
-
-Then open Ornata normally.
-
-**Or via Settings**
-
-Double-click Ornata → click **Done** → **System Settings → Privacy & Security** → **Open Anyway** → authenticate. macOS remembers the choice after that.
-
-> Notarization (which removes this prompt entirely) needs an active Apple Developer account and is planned for a future release.
+Production downloads are signed with an Apple Developer ID certificate and notarized by Apple before distribution.
 
 ---
 
@@ -70,11 +56,48 @@ bun install
 bun tauri dev      # run the app
 ```
 
-Build a release bundle:
+Build a local development bundle:
 
 ```bash
 bun tauri build    # produces a .app and .dmg under src-tauri/target/release/bundle
 ```
+
+### Signed releases
+
+Releases use two independent signatures: Apple Developer ID signing and notarization for macOS trust, plus the Tauri updater signature for update integrity. Configure these environment variables outside the repository:
+
+```bash
+export APPLE_SIGNING_IDENTITY="Developer ID Application: ..."
+export TAURI_SIGNING_PRIVATE_KEY="/secure/path/to/ornata.key"
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="..." # when applicable
+```
+
+For notarization, provide either App Store Connect API credentials:
+
+```bash
+export APPLE_API_ISSUER="..."
+export APPLE_API_KEY="..."
+export APPLE_API_KEY_PATH="/secure/path/to/AuthKey_....p8"
+```
+
+Or Apple ID credentials:
+
+```bash
+export APPLE_ID="..."
+export APPLE_PASSWORD="..."
+export APPLE_TEAM_ID="..."
+```
+
+Then stage and publish a release:
+
+```bash
+bun run release:preflight
+bun run release -- 0.1.5 "Release notes"
+bun run release:publish -- 0.1.5            # dry run
+bun run release:publish -- 0.1.5 --confirm  # upload to R2
+```
+
+The release script refuses ad-hoc signing, verifies the Apple signature and stapled notarization ticket, verifies the archived updater app, and stages artifacts under `release/<version>/`. Publishing uploads immutable artifacts to the existing `ornata` R2 bucket and writes the stable `latest.json` pointer last.
 
 See [AGENTS.md](./AGENTS.md) for architecture details, or [CONTRIBUTING.md](./CONTRIBUTING.md) to send a PR.
 
@@ -84,8 +107,8 @@ See [AGENTS.md](./AGENTS.md) for architecture details, or [CONTRIBUTING.md](./CO
 
 - Notes are stored locally as user-owned files
 - No analytics, tracking, accounts, or note-content uploads
-- Automatic updates are disabled in this development fork until Ornata has its
-  own signing key and release feed
+- Automatic updates use the signed release feed at
+  `download.ornata.app/products/ornata-markd/channels/stable/latest.json`
 - Saving a bookmark fetches that page's title, preview image, and favicon
 - Export your notes anytime — they're already just files
 

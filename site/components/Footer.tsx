@@ -8,7 +8,7 @@ import { TextReveal } from "./ui/text-reveal";
 import { ButtonLink } from "./ui/button";
 import { DownloadButton } from "./ui/download-button";
 import { EASE_OUT } from "@/lib/ease";
-import { GITHUB, VERSION } from "@/lib/config";
+import { DMG, VERSION } from "@/lib/config";
 
 const COLUMNS = [
   {
@@ -16,15 +16,14 @@ const COLUMNS = [
     links: [
       { label: "Features", href: "#features" },
       { label: "Agent", href: "#agent" },
-      { label: "Releases", href: GITHUB + "/releases" },
+      { label: "Download", href: DMG },
     ],
   },
   {
-    title: "Source",
+    title: "Resources",
     links: [
-      { label: "GitHub", href: GITHUB },
-      { label: "MIT License", href: GITHUB + "/blob/main/LICENSE" },
-      { label: "Contributing", href: GITHUB + "/blob/main/CONTRIBUTING.md" },
+      { label: "FAQ", href: "#faq" },
+      { label: "Features", href: "#features" },
     ],
   },
 ];
@@ -65,12 +64,11 @@ export function Footer() {
             >
               <DownloadButton size="lg" />
               <ButtonLink
-                href={GITHUB}
+                href="#features"
                 variant="outline"
                 size="lg"
-                target="_blank"
               >
-                Star on GitHub
+                Explore features
               </ButtonLink>
             </motion.div>
           </div>
@@ -115,7 +113,7 @@ export function Footer() {
           </div>
           <div className="mt-12 flex flex-col items-start justify-between gap-2 border-t border-border pt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-faint sm:flex-row sm:items-center">
             <span>© Ornata · v{VERSION}</span>
-            <span>Built local-first · Open source</span>
+            <span>Built local-first · Your files stay yours</span>
           </div>
         </div>
       </div>

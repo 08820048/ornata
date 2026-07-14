@@ -5,6 +5,7 @@ import {
   FilePlus,
   FolderPlus,
   Loader2,
+  RefreshCw,
   Search,
   Settings,
 } from "lucide-react";
@@ -135,23 +136,27 @@ function IconAction({
 function UpdateRow() {
   const status = useUpdater((s) => s.status);
   const version = useUpdater((s) => s.version);
-  const install = useUpdater((s) => s.install);
+  const progress = useUpdater((s) => s.progress);
+  const download = useUpdater((s) => s.download);
+  const restartAndInstall = useUpdater((s) => s.restartAndInstall);
 
   if (
     status !== "available" &&
     status !== "downloading" &&
-    status !== "ready"
+    status !== "ready" &&
+    status !== "installing"
   ) {
     return null;
   }
-  const busy = status !== "available";
+  const busy = status === "downloading" || status === "installing";
+  const ready = status === "ready";
 
   return (
     <div className="border-t border-line-soft px-2 py-1.5">
       <button
         type="button"
         disabled={busy}
-        onClick={install}
+        onClick={ready ? restartAndInstall : download}
         className="flex w-full items-center gap-2 rounded-md bg-hover px-2.5 py-1.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-active disabled:cursor-default disabled:hover:bg-hover"
       >
         {busy ? (
@@ -160,15 +165,25 @@ function UpdateRow() {
             strokeWidth={2}
             className="shrink-0 animate-spin text-faint"
           />
+        ) : ready ? (
+          <RefreshCw size={14} strokeWidth={2} className="shrink-0" />
         ) : (
           <ArrowDownToLine size={14} strokeWidth={2} className="shrink-0" />
         )}
         <span className="truncate">
-          {busy ? "Updating…" : `Update to ${version}`}
+          {status === "downloading"
+            ? progress == null
+              ? "Downloading…"
+              : `Downloading ${Math.round(progress)}%`
+            : status === "installing"
+              ? "Restarting…"
+              : ready
+                ? "Restart to update"
+                : `Update to ${version}`}
         </span>
-        {!busy && (
+        {!busy && !ready && (
           <span className="ml-auto shrink-0 text-[11px] text-faint">
-            Restart
+            Download
           </span>
         )}
       </button>

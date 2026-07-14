@@ -1,184 +1,75 @@
 #!/usr/bin/env node
 
-/**
- * Generate latest.json for Custom Update Server
- *
- * This script generates the latest.json manifest file needed for Tauri updates.
- * It reads the signature files and creates a properly formatted JSON file.
- *
- * Usage:
- *   bun scripts/generate-latest-json.js <version> <notes>
- *
- * Example:
- *   bun scripts/generate-latest-json.js "0.1.1" "Bug fixes and improvements"
- */
+import {
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  normalizeArch,
+  platformKey,
+  releaseUrl,
+} from "./release-config.js";
 
-import { readFileSync, writeFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const [version, ...noteParts] = process.argv.slice(2);
+const notes = noteParts.join(" ").trim();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, "..");
-
-// Configuration - Update these with your website URL
-// For Next.js: Use /api/updates if serving through API routes, or /updates if using public folder
-const WEBSITE_URL = "https://ornata.app/updates"; // Update this to your actual website URL
-const APP_NAME = "Ornata";
-
-// Get command line arguments
-const args = process.argv.slice(2);
-if (args.length < 2) {
-  console.error("Usage: bun scripts/generate-latest-json.js <version> <notes>");
-  console.error(
-    'Example: bun scripts/generate-latest-json.js "0.1.1" "Bug fixes"'
-  );
+if (!version || !notes) {
+  console.error("Usage: bun scripts/generate-latest-json.js <version> <release-notes>");
   process.exit(1);
 }
 
-const version = args[0];
-const notes = args.slice(1).join(" "); // Join remaining args as notes
-const pubDate = new Date().toISOString();
-
-// Paths to signature files (adjust these based on your build output structure)
-const buildDir = join(projectRoot, "src-tauri", "target", "release", "bundle");
-
-// Helper function to read signature file
-function readSignature(filePath) {
-  try {
-    const content = readFileSync(filePath, "utf-8").trim();
-    return content;
-  } catch (error) {
-    console.warn(`⚠ Warning: Could not read signature file: ${filePath}`);
-    console.warn(`  Error: ${error.message}`);
-    return null;
-  }
+if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  console.error(`Invalid semantic version: ${version}`);
+  process.exit(1);
 }
 
-// Find signature files - Tauri generates these when building update bundles
-// Note: Signature files are only created when you build with the updater plugin
-// and create update bundles (not just DMG files)
-const macosSigPath = join(buildDir, "macos", `${APP_NAME}.app.tar.gz.sig`);
-const windowsSigPath = join(
-  buildDir,
-  "nsis",
-  `${APP_NAME}_${version}_x64-setup.nsis.zip.sig`
-);
-const linuxSigPath = join(
-  buildDir,
-  "appimage",
-  `${APP_NAME}_${version}_amd64.AppImage.tar.gz.sig`
-);
+const arch = normalizeArch(process.env.RELEASE_ARCH);
+const macosDir = join(projectRoot, "src-tauri", "target", "release", "bundle", "macos");
+const signatureFiles = readdirSync(macosDir)
+  .filter((name) => name.endsWith(".app.tar.gz.sig"))
+  .map((name) => join(macosDir, name))
+  .filter((path) => statSync(path).size > 0);
 
-// Also try alternative paths (Tauri v2 might use different structure)
-const macosSigPathAlt = join(
-  buildDir,
-  "macos",
-  `${APP_NAME}_${version}_aarch64.app.tar.gz.sig`
-);
-const macosSigPathAlt2 = join(
-  buildDir,
-  "macos",
-  `${APP_NAME}_${version}_x64.app.tar.gz.sig`
-);
-
-console.log("📦 Generating latest.json for version", version);
-console.log("");
-
-// Read signatures (try multiple paths for macOS)
-let macosSig = readSignature(macosSigPath);
-if (!macosSig) {
-  macosSig = readSignature(macosSigPathAlt);
-}
-if (!macosSig) {
-  macosSig = readSignature(macosSigPathAlt2);
+if (signatureFiles.length !== 1) {
+  console.error(
+    `Expected exactly one macOS updater signature in ${macosDir}, found ${signatureFiles.length}.`,
+  );
+  console.error("Remove stale release artifacts and rebuild before generating the manifest.");
+  process.exit(1);
 }
 
-const windowsSig = readSignature(windowsSigPath);
-const linuxSig = readSignature(linuxSigPath);
+const signaturePath = signatureFiles[0];
+const bundlePath = signaturePath.slice(0, -4);
+try {
+  if (statSync(bundlePath).size === 0) throw new Error("empty bundle");
+} catch {
+  console.error(`Updater bundle is missing or empty: ${bundlePath}`);
+  process.exit(1);
+}
 
-// Build the latest.json structure
-const latestJson = {
+const manifest = {
   version,
   notes,
-  pub_date: pubDate,
-  platforms: {},
+  pub_date: new Date().toISOString(),
+  platforms: {
+    [platformKey(arch)]: {
+      signature: readFileSync(signaturePath, "utf8").trim(),
+      url: releaseUrl(version, arch, bundlePath),
+    },
+  },
 };
 
-// Add macOS platforms (Intel and Apple Silicon)
-if (macosSig) {
-  latestJson.platforms["darwin-x86_64"] = {
-    signature: macosSig,
-    url: `${WEBSITE_URL}/${APP_NAME}.app.tar.gz`,
-  };
-  latestJson.platforms["darwin-aarch64"] = {
-    signature: macosSig,
-    url: `${WEBSITE_URL}/${APP_NAME}.app.tar.gz`,
-  };
-  console.log("✓ Added macOS (Intel & Apple Silicon) platform");
-} else {
-  console.warn("⚠ Skipping macOS (signature file not found)");
-}
+const outputDir = join(projectRoot, "release", version);
+const outputPath = join(outputDir, "latest.json");
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(outputPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
-// Add Windows platform
-if (windowsSig) {
-  latestJson.platforms["windows-x86_64"] = {
-    signature: windowsSig,
-    url: `${WEBSITE_URL}/${APP_NAME}_${version}_x64-setup.nsis.zip`,
-  };
-  console.log("✓ Added Windows platform");
-} else {
-  console.warn("⚠ Skipping Windows (signature file not found)");
-}
-
-// Add Linux platform
-if (linuxSig) {
-  latestJson.platforms["linux-x86_64"] = {
-    signature: linuxSig,
-    url: `${WEBSITE_URL}/${APP_NAME}_${version}_amd64.AppImage.tar.gz`,
-  };
-  console.log("✓ Added Linux platform");
-} else {
-  console.warn("⚠ Skipping Linux (signature file not found)");
-}
-
-// Write the file
-const outputPath = join(projectRoot, "latest.json");
-writeFileSync(outputPath, JSON.stringify(latestJson, null, 2) + "\n", "utf-8");
-
-console.log("");
-console.log("✅ Generated latest.json");
-console.log(`   Location: ${outputPath}`);
-console.log("");
-
-// Check if any platforms were added
-const platformCount = Object.keys(latestJson.platforms).length;
-if (platformCount === 0) {
-  console.log("⚠️  Warning: No platforms were added to latest.json");
-  console.log("");
-  console.log("📝 This usually means:");
-  console.log(
-    "   1. Signature files were not found (they're generated during build)"
-  );
-  console.log("   2. You may need to build update bundles, not just DMG files");
-  console.log("   3. For manual updates, you can edit latest.json manually");
-  console.log("");
-  console.log("💡 To generate signature files:");
-  console.log("   - Build with: bun run tauri build");
-  console.log(
-    "   - Signature files are created automatically by Tauri updater plugin"
-  );
-  console.log("   - They're located in: src-tauri/target/release/bundle/");
-} else {
-  console.log("📋 Next steps:");
-  console.log("   1. Review the generated latest.json file");
-  console.log("   2. Update WEBSITE_URL in this script if needed");
-  console.log(
-    "   3. Upload latest.json to your website at:",
-    `${WEBSITE_URL}/latest.json`
-  );
-  console.log(
-    "   4. Upload the update bundles (.tar.gz, .zip files) to your website"
-  );
-}
-console.log("");
+console.log(`Generated ${outputPath}`);
+console.log(`Platform: ${platformKey(arch)}`);
+console.log(`Bundle: ${manifest.platforms[platformKey(arch)].url}`);

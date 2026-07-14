@@ -4,9 +4,9 @@ export const alt = "Ornata — the last notes app you'll download";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// The app hash "#" mark, inlined as a data URI (matches icon-source.svg).
+// A compact vector rendering of the folded-paper O for the generated social card.
 const MARK = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024' viewBox='0 0 1024 1024'><rect width='1024' height='1024' rx='224' fill='#191919'/><g stroke='#fbfbfa' stroke-width='84' stroke-linecap='round'><line x1='390' y1='280' x2='390' y2='744'/><line x1='634' y1='280' x2='634' y2='744'/><line x1='280' y1='390' x2='744' y2='390'/><line x1='280' y1='634' x2='744' y2='634'/></g></svg>`,
+  `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024' viewBox='0 0 1024 1024'><rect width='1024' height='1024' rx='224' fill='#191919'/><path fill='#fbfbfa' fill-rule='evenodd' d='M512 178c-190 0-292 133-292 334s102 334 292 334 292-133 292-334-102-334-292-334Zm0 168c81 0 116 61 116 166s-35 166-116 166-116-61-116-166 35-166 116-166Z'/><path d='M628 512v166l-116 168c111 0 206-49 254-140L628 512Z' fill='#c8c6c0'/></svg>`,
 )}`;
 
 export default function Image() {

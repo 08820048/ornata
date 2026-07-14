@@ -2,7 +2,6 @@ import {
   FolderOpen,
   Monitor,
   Moon,
-  RefreshCw,
   Settings,
   Sun,
   X,
@@ -13,8 +12,8 @@ import type { Theme } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { UpdateControl } from "@/components/settings/UpdateControl";
 import { useUi } from "@/stores/ui";
-import { useUpdater } from "@/stores/updater";
 import { useVault } from "@/stores/vault";
 
 const THEMES: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
@@ -39,10 +38,6 @@ export function SettingsModal() {
   const setTheme = useVault((s) => s.setTheme);
   const root = useVault((s) => s.root);
   const chooseVault = useVault((s) => s.chooseVault);
-  const updateStatus = useUpdater((s) => s.status);
-  const updateVersion = useUpdater((s) => s.version);
-  const checkUpdate = useUpdater((s) => s.check);
-  const installUpdate = useUpdater((s) => s.install);
 
   return (
     <Modal
@@ -164,43 +159,7 @@ export function SettingsModal() {
 
         <section className="mt-5">
           <Label>Updates</Label>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <p
-              aria-live="polite"
-              className="min-w-0 truncate text-[12.5px] text-muted"
-            >
-              {updateStatus === "available"
-                ? `Version ${updateVersion} is available`
-                : updateStatus === "downloading" || updateStatus === "ready"
-                  ? "Installing…"
-                  : updateStatus === "checking"
-                    ? "Checking…"
-                    : "You're on the latest version"}
-            </p>
-            {updateStatus === "available" ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={installUpdate}
-                className="shrink-0"
-              >
-                Install &amp; restart
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => checkUpdate({ silent: false })}
-                disabled={
-                  updateStatus === "checking" || updateStatus === "downloading"
-                }
-                className="shrink-0"
-              >
-                <RefreshCw size={13} strokeWidth={1.75} />
-                Check
-              </Button>
-            )}
-          </div>
+          <UpdateControl />
         </section>
 
         <p className="mt-6 text-center text-[11px] text-faint">
