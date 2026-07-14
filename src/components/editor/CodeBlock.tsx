@@ -29,6 +29,7 @@ import { Check, Copy } from "lucide-react";
 import { createLowlight } from "lowlight";
 import { useEffect, useRef, useState } from "react";
 import { ActionSwapIcon } from "@/components/motion/action-swap";
+import { useT } from "@/stores/locale";
 
 // Register only the languages Ornata notes are most likely to contain. This
 // keeps the editor bundle substantially smaller than lowlight's 190+ language
@@ -59,6 +60,7 @@ const lowlight = createLowlight({
 function CodeBlockView({ node }: NodeViewProps) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const t = useT();
 
   useEffect(
     () => () => {
@@ -82,7 +84,7 @@ function CodeBlockView({ node }: NodeViewProps) {
       <button
         type="button"
         contentEditable={false}
-        aria-label={copied ? "Copied" : "Copy code"}
+        aria-label={copied ? t("common.copied") : t("editor.copyCode")}
         onMouseDown={(event) => event.preventDefault()}
         onClick={copy}
         className="code-block-copy"
@@ -98,7 +100,7 @@ function CodeBlockView({ node }: NodeViewProps) {
             <Copy size={13} strokeWidth={2} />
           )}
         </ActionSwapIcon>
-        <span>{copied ? "Copied" : "Copy"}</span>
+        <span>{copied ? t("common.copied") : t("common.copy")}</span>
       </button>
     </NodeViewWrapper>
   );

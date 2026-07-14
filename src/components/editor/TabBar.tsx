@@ -7,6 +7,7 @@ import type { NoteRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { nextAfterClose, useTabs } from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
+import { useT } from "@/stores/locale";
 
 /**
  * Code-editor style tab strip for open notes. Active tab is derived from
@@ -62,6 +63,7 @@ function Tab({
   focusable: boolean;
 }) {
   const setView = useVault((s) => s.setView);
+  const t = useT();
 
   return (
     <div
@@ -115,10 +117,10 @@ function Tab({
         <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover/tab:bg-hover/60 group-hover/tab:opacity-100" />
       )}
       <span className="relative z-10 truncate">{noteTitle(note)}</span>
-      <Tooltip label="Close ⌘W" side="bottom">
+      <Tooltip label={t("editor.closeTab")} side="bottom">
         <button
           type="button"
-          aria-label={`Close ${noteTitle(note)}`}
+          aria-label={t("editor.closeNote", { title: noteTitle(note) })}
           className={cx(
             "relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded transition-opacity duration-75 hover:bg-hover",
             active

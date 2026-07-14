@@ -25,6 +25,7 @@ import { useBookmarks } from "@/stores/bookmarks";
 import { useTodos } from "@/stores/todos";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
+import { useT } from "@/stores/locale";
 
 const SIDEBAR_WIDTH = 240;
 
@@ -51,6 +52,7 @@ export function AppShell() {
   const exportBookmarks = useBookmarks((s) => s.exportAll);
   const createTodoTag = useTodos((s) => s.createTag);
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
+  const t = useT();
 
   const path = viewPath(root, view);
 
@@ -81,7 +83,7 @@ export function AppShell() {
           transition={SPRING_PANEL}
         >
           <div className="flex shrink-0 items-center">
-            <Tooltip label="Toggle sidebar ⌘\" side="right">
+            <Tooltip label={t("editor.toggleSidebar")} side="right">
               <button
                 type="button"
                 onClick={toggleSidebar}
@@ -105,9 +107,9 @@ export function AppShell() {
               className="text-[14px] font-semibold text-ink"
             >
               {view?.type === "todos"
-                ? "Todos"
+                ? t("common.todos")
                 : view?.type === "bookmarks"
-                  ? "Bookmarks"
+                  ? t("common.bookmarks")
                   : ""}
             </ActionSwapText>
           )}
@@ -116,7 +118,11 @@ export function AppShell() {
             <div className="ml-auto flex items-center gap-2">
               {view?.type === "note" && (
                 <Tooltip
-                  label={markdownSource ? "Show rich editor" : "Show Markdown source"}
+                  label={
+                    markdownSource
+                      ? t("editor.showRich")
+                      : t("editor.showSource")
+                  }
                   side="bottom"
                 >
                   <button
@@ -148,21 +154,21 @@ export function AppShell() {
                 <motion.div layout transition={SPRING_LAYOUT}>
                   <CopyButton
                     value={path}
-                    text="Copy path"
-                    copiedText="Copied"
+                    text={t("editor.copyPath")}
+                    copiedText={t("common.copied")}
                   />
                 </motion.div>
               )}
               {view?.type === "bookmarks" && (
                 <>
-                  <Tooltip label="Export as markdown" side="bottom">
+                  <Tooltip label={t("bookmarks.exportMarkdown")} side="bottom">
                     <button
                       type="button"
                       onClick={exportBookmarks}
                       className="inline-flex h-7 select-none items-center gap-1.5 rounded-md border border-line bg-hover px-2.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-active"
                     >
                       <Download size={13} strokeWidth={2} />
-                      Export
+                      {t("bookmarks.export")}
                     </button>
                   </Tooltip>
                   <NewTagButton onCreate={createBookmarkTag} />
@@ -179,7 +185,7 @@ export function AppShell() {
                   <MorphPopoverTrigger>
                     <button
                       type="button"
-                      aria-label="Note actions"
+                      aria-label={t("editor.noteActions")}
                       className="grid h-7 w-7 place-items-center rounded-md text-muted transition-colors duration-100 hover:text-ink"
                     >
                       <MoreVertical size={15} strokeWidth={2} />
@@ -193,7 +199,7 @@ export function AppShell() {
                   >
                     <NoteMenuButton
                       icon={Download}
-                      label="Export as Markdown"
+                      label={t("editor.exportMarkdown")}
                       onClick={() => {
                         setNoteMenuOpen(false);
                         dispatchNoteAction("export");
@@ -201,7 +207,7 @@ export function AppShell() {
                     />
                     <NoteMenuButton
                       icon={Copy}
-                      label="Copy Markdown"
+                      label={t("editor.copyMarkdown")}
                       onClick={() => {
                         setNoteMenuOpen(false);
                         dispatchNoteAction("copy");
@@ -210,7 +216,7 @@ export function AppShell() {
                     <div className="mx-1 my-1 border-t border-line-soft" />
                     <NoteMenuButton
                       icon={Trash2}
-                      label="Delete note"
+                      label={t("editor.deleteNote")}
                       danger
                       onClick={() => {
                         setNoteMenuOpen(false);
@@ -285,6 +291,7 @@ function NoteMenuButton({
 function NewTagButton({ onCreate }: { onCreate: (name: string) => void }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -318,14 +325,14 @@ function NewTagButton({ onCreate }: { onCreate: (name: string) => void }) {
             >
               <input
                 ref={inputRef}
-                placeholder="Tag name…"
+                placeholder={t("editor.tagName")}
                 className="w-28 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-faint"
                 onKeyDown={(event) => {
                   if (event.key === "Enter") commit();
                   if (event.key === "Escape") setOpen(false);
                 }}
               />
-              <Tooltip label="Save ↵" side="bottom">
+              <Tooltip label={t("editor.saveEnter")} side="bottom">
                 <button
                   type="button"
                   onClick={commit}
@@ -334,7 +341,7 @@ function NewTagButton({ onCreate }: { onCreate: (name: string) => void }) {
                   <Check size={13} strokeWidth={2.25} />
                 </button>
               </Tooltip>
-              <Tooltip label="Cancel esc" side="bottom">
+              <Tooltip label={t("editor.cancelEsc")} side="bottom">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
@@ -357,7 +364,7 @@ function NewTagButton({ onCreate }: { onCreate: (name: string) => void }) {
               className="flex h-7 select-none items-center gap-1.5 px-2.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-hover"
             >
               <Tag size={13} strokeWidth={2} />
-              New tag
+              {t("common.newTag")}
             </motion.button>
           )}
         </AnimatePresence>
@@ -408,28 +415,29 @@ function EmptyAction({
 function EmptyState() {
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
   const createNote = useVault((s) => s.createNote);
+  const t = useT();
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 pb-24">
       <AppMark />
       <div className="text-center">
         <p className="text-[16px] font-semibold tracking-[-0.01em] text-ink">
-          Nothing open yet
+          {t("editor.emptyTitle")}
         </p>
         <p className="mt-1 text-[13px] text-faint">
-          Jump to a note, or start something new.
+          {t("editor.emptyDetail")}
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <EmptyAction
           icon={<Search size={14} strokeWidth={2} />}
-          label="Search"
+          label={t("common.search")}
           keys="⌘K"
           onClick={() => setPaletteOpen(true)}
         />
         <EmptyAction
           icon={<FilePlus size={14} strokeWidth={2} />}
-          label="New note"
+          label={t("common.newNote")}
           keys="⌘N"
           onClick={() => createNote("")}
         />

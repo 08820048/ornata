@@ -6,6 +6,7 @@ import {
 } from "@/components/motion/action-swap";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
+import { useT } from "@/stores/locale";
 
 type Side = "top" | "bottom" | "left" | "right";
 
@@ -15,11 +16,11 @@ type Side = "top" | "bottom" | "left" | "right";
  */
 export function CopyButton({
   value,
-  label = "Copy",
+  label,
   side = "top",
   className,
   text,
-  copiedText = "Copied",
+  copiedText,
 }: {
   value: string;
   label?: string;
@@ -30,6 +31,9 @@ export function CopyButton({
   /** label shown briefly after copy (only with `text`) */
   copiedText?: string;
 }) {
+  const t = useT();
+  const copyLabel = label ?? t("common.copy");
+  const doneLabel = copiedText ?? t("common.copied");
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,14 +78,14 @@ export function CopyButton({
       >
         {icon}
         <ActionSwapText value={copied ? "done" : "idle"} animation="cascade">
-          {copied ? copiedText : text}
+          {copied ? doneLabel : text}
         </ActionSwapText>
       </button>
     );
   }
 
   return (
-    <Tooltip label={copied ? "Copied" : label} side={side}>
+    <Tooltip label={copied ? t("common.copied") : copyLabel} side={side}>
       <button
         type="button"
         onClick={copy}

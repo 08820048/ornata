@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
 import { tagColor } from "@/lib/tagColor";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useT } from "@/stores/locale";
 
 /** Dropdown to toggle which registry tags are assigned to an item. */
 export function TagPicker({
@@ -17,6 +18,7 @@ export function TagPicker({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -40,7 +42,7 @@ export function TagPicker({
       className="relative"
       onClick={(event) => event.stopPropagation()}
     >
-      <Tooltip label="Assign tags" side="top">
+      <Tooltip label={t("tags.assign")} side="top">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -62,7 +64,7 @@ export function TagPicker({
           >
             {registry.length === 0 ? (
               <p className="px-2 py-2 text-[12px] leading-relaxed text-faint">
-                No tags yet. Create one from the top bar.
+                {t("tags.none")}
               </p>
             ) : (
               registry.map((tag) => {

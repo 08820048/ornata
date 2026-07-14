@@ -39,6 +39,7 @@ import {
   type MenuPosition,
 } from "@/components/ui/ContextMenu";
 import { ActionSwapIcon } from "@/components/motion/action-swap";
+import { useT } from "@/stores/locale";
 
 const ROOT_DROP_ID = "ornata:notes-root";
 
@@ -62,6 +63,7 @@ interface TreeApi {
 const TreeContext = createContext<TreeApi | null>(null);
 
 export function FileTree() {
+  const t = useT();
   const tree = useVault((s) => s.tree);
   const moveEntry = useVault((s) => s.moveEntry);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -141,15 +143,18 @@ export function FileTree() {
     if (node.kind === "folder") {
       items.push(
         {
-          label: "New note",
+          label: t("common.newNote"),
           icon: FilePlus,
           onSelect: () => vault.createNote(node.rel),
         },
         {
-          label: "New folder",
+          label: t("common.newFolder"),
           icon: FolderPlus,
           onSelect: async () => {
-            const rel = await vault.createFolder(node.rel, "Untitled");
+            const rel = await vault.createFolder(
+              node.rel,
+              t("common.untitled"),
+            );
             if (rel) setRenaming(rel);
           },
         },
@@ -157,12 +162,12 @@ export function FileTree() {
     }
     items.push(
       {
-        label: "Rename",
+        label: t("tree.rename"),
         icon: Pencil,
         onSelect: () => setRenaming(node.rel),
       },
       {
-        label: "Move to Trash",
+        label: t("tree.trash"),
         icon: Trash2,
         danger: true,
         onSelect: () => vault.deleteEntry(node.rel),
@@ -204,6 +209,7 @@ function TreeList({
   tree: TreeNode[];
   dragging: string | null;
 }) {
+  const t = useT();
   const eligible = Boolean(dragging && parentDir(dragging) !== "");
   const { setNodeRef } = useDroppable({
     id: ROOT_DROP_ID,
@@ -215,7 +221,7 @@ function TreeList({
     <div
       ref={setNodeRef}
       role="tree"
-      aria-label="Notes"
+      aria-label={t("tree.aria")}
       className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto px-2 pb-6 pt-1"
     >
       {tree.map((node) => (
@@ -223,11 +229,7 @@ function TreeList({
       ))}
       {tree.length === 0 && (
         <p className="px-2 pt-2 text-[12.5px] leading-relaxed text-faint">
-          No notes yet. Press{" "}
-          <kbd className="rounded border border-line bg-bg px-1 font-mono text-[10.5px]">
-            ⌘N
-          </kbd>{" "}
-          to create one.
+          {t("tree.empty")}
         </p>
       )}
     </div>
@@ -235,6 +237,7 @@ function TreeList({
 }
 
 function Row({ node, depth }: { node: TreeNode; depth: number }) {
+  const t = useT();
   const api = useContext(TreeContext);
   const view = useVault((s) => s.view);
   const expanded = useVault((s) => s.expanded);
@@ -405,7 +408,7 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
                 className="py-0.5 text-[12px] italic text-faint"
                 style={{ paddingLeft: 26 + (depth + 1) * 14 }}
               >
-                empty
+                {t("common.empty")}
               </p>
             )}
           </motion.div>

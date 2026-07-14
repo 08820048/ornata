@@ -13,6 +13,8 @@ pub struct AppConfig {
     pub vault_path: Option<String>,
     #[serde(default)]
     pub theme: Theme,
+    #[serde(default)]
+    pub language: Language,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
@@ -22,6 +24,15 @@ pub enum Theme {
     System,
     Light,
     Dark,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+pub enum Language {
+    #[default]
+    #[serde(rename = "en")]
+    English,
+    #[serde(rename = "zh-CN")]
+    SimplifiedChinese,
 }
 
 fn config_file(app: &tauri::AppHandle) -> AppResult<PathBuf> {
@@ -47,4 +58,22 @@ pub fn save(app: &tauri::AppHandle, config: &AppConfig) -> AppResult<()> {
     let path = config_file(app)?;
     fs::write(path, serde_json::to_string_pretty(config)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AppConfig, Language};
+
+    #[test]
+    fn old_config_defaults_to_english() {
+        let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(config.language, Language::English);
+    }
+
+    #[test]
+    fn language_roundtrips_with_bcp47_code() {
+        let config: AppConfig = serde_json::from_str(r#"{"language":"zh-CN"}"#).unwrap();
+        assert_eq!(config.language, Language::SimplifiedChinese);
+        assert!(serde_json::to_string(&config).unwrap().contains("zh-CN"));
+    }
 }

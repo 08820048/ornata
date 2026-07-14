@@ -11,10 +11,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cx } from "@/lib/utils";
+import { useT } from "@/stores/locale";
 
 export function SelectionMenu({ editor }: { editor: Editor }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (linkOpen) linkInputRef.current?.focus();
@@ -44,7 +46,7 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
             <input
               ref={linkInputRef}
               defaultValue={editor.getAttributes("link").href ?? ""}
-              placeholder="Paste a link…"
+              placeholder={t("editor.pasteLink")}
               className="h-7 w-[200px] bg-transparent px-1 text-[12.5px] text-ink outline-none placeholder:text-faint"
               onKeyDown={(event) => {
                 if (event.key === "Enter") applyLink();
@@ -60,42 +62,42 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
                 applyLink();
               }}
             >
-              Set
+              {t("editor.setLink")}
             </button>
           </div>
         ) : (
           <>
             <MarkButton
               active={editor.isActive("bold")}
-              label="Bold"
+              label={t("editor.bold")}
               onClick={() => editor.chain().focus().toggleBold().run()}
             >
               <Bold size={14} strokeWidth={2} />
             </MarkButton>
             <MarkButton
               active={editor.isActive("italic")}
-              label="Italic"
+              label={t("editor.italic")}
               onClick={() => editor.chain().focus().toggleItalic().run()}
             >
               <Italic size={14} strokeWidth={2} />
             </MarkButton>
             <MarkButton
               active={editor.isActive("underline")}
-              label="Underline"
+              label={t("editor.underline")}
               onClick={() => editor.chain().focus().toggleUnderline().run()}
             >
               <Underline size={14} strokeWidth={2} />
             </MarkButton>
             <MarkButton
               active={editor.isActive("strike")}
-              label="Strikethrough"
+              label={t("editor.strikethrough")}
               onClick={() => editor.chain().focus().toggleStrike().run()}
             >
               <Strikethrough size={14} strokeWidth={2} />
             </MarkButton>
             <MarkButton
               active={editor.isActive("code")}
-              label="Code"
+              label={t("editor.code")}
               onClick={() => editor.chain().focus().toggleCode().run()}
             >
               <Code size={14} strokeWidth={2} />
@@ -103,7 +105,7 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
             <div className="mx-0.5 h-4 w-px bg-line" />
             <MarkButton
               active={editor.isActive("link")}
-              label="Link"
+              label={t("editor.link")}
               onClick={() => setLinkOpen(true)}
             >
               <LinkIcon size={14} strokeWidth={2} />

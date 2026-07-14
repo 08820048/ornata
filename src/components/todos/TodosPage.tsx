@@ -11,12 +11,14 @@ import { TagRail } from "@/components/ui/TagRail";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cx } from "@/lib/utils";
 import { useTodos } from "@/stores/todos";
+import { useT } from "@/stores/locale";
 
 export function TodosPage() {
   const { todos, tagRegistry, loaded, load, add, deleteTag } = useTodos();
   const tagFilter = useTodos((s) => s.tagFilter);
   const setTagFilter = useTodos((s) => s.setTagFilter);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   useEffect(() => {
     load();
@@ -61,7 +63,7 @@ export function TodosPage() {
         <div className="min-w-0 flex-1">
         <div className="flex min-h-7 items-center justify-between">
           <p className="text-[13px] text-muted">
-            Things you&apos;ll totally get around to.
+            {t("todos.tagline")}
           </p>
           <AnimatePresence>
             {completedCount > 0 && (
@@ -77,7 +79,7 @@ export function TodosPage() {
                   className="text-[12px] text-faint hover:text-ink"
                   onClick={() => useTodos.getState().clearCompleted()}
                 >
-                  Clear completed · {completedCount}
+                  {t("todos.clearCompleted", { count: completedCount })}
                 </Button>
               </motion.div>
             )}
@@ -88,7 +90,7 @@ export function TodosPage() {
           <Plus size={16} strokeWidth={2} className="shrink-0 text-faint" />
           <input
             ref={inputRef}
-            placeholder="Add a task…"
+            placeholder={t("todos.add")}
             className="w-full bg-transparent text-[14.5px] text-ink outline-none placeholder:text-faint"
             onKeyDown={(event) => {
               if (event.key === "Enter") submit();
@@ -122,7 +124,9 @@ export function TodosPage() {
                 transition={{ duration: 0.18, ease: EASE_OUT }}
                 className="absolute inset-x-0 top-6 text-center text-[13px] text-faint"
               >
-                {tagFilter ? `No tasks tagged #${tagFilter}.` : "Nothing here yet."}
+                {tagFilter
+                  ? t("todos.noneTagged", { tag: tagFilter })
+                  : t("todos.empty")}
               </motion.p>
             )}
           </AnimatePresence>
@@ -148,6 +152,7 @@ function TodoRow({
   const setTags = useTodos((s) => s.setTags);
   const registry = useTodos((s) => s.tagRegistry);
   const [editing, setEditing] = useState(false);
+  const t = useT();
   const editRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -166,7 +171,7 @@ function TodoRow({
       <div className="flex h-7 shrink-0 items-center">
         <button
           type="button"
-          aria-label={todo.done ? "Mark as open" : "Mark as done"}
+          aria-label={todo.done ? t("todos.markOpen") : t("todos.markDone")}
           onClick={() => toggle(todo.id)}
           className={cx(
             "relative grid h-[17px] w-[17px] place-items-center rounded-[5px] border-[1.5px] transition-colors duration-100",
@@ -249,7 +254,7 @@ function TodoRow({
           onChange={(tags) => setTags(todo.id, tags)}
         />
         <CopyButton value={todo.text} />
-        <Tooltip label="Delete" side="top">
+        <Tooltip label={t("common.delete")} side="top">
           <button
             type="button"
             onClick={() => remove(todo.id)}

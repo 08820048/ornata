@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
 import { noteAssetRoot } from "@/lib/noteRef";
 import type { NoteRef } from "@/lib/types";
+import { t } from "@/stores/locale";
 
 /** Save a pasted/dropped image beside its note and insert a relative path. */
 export async function insertImageFile({
@@ -37,7 +38,7 @@ export async function insertImageFile({
       .setImage({ src: rel } as never)
       .run();
   } catch (err) {
-    toast.error(err instanceof Error ? err.message : "Could not save image");
+    toast.error(err instanceof Error ? err.message : t("toast.imageSaveFailed"));
   }
 }
 

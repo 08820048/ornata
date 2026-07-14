@@ -17,6 +17,8 @@ import {
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "@/lib/utils";
+import type { MessageKey } from "@/lib/i18n";
+import { useT } from "@/stores/locale";
 
 export interface SlashMenuState {
   query: string;
@@ -27,7 +29,7 @@ export interface SlashMenuState {
 
 interface SlashCommand {
   id: string;
-  label: string;
+  label: MessageKey;
   icon: LucideIcon;
   keywords: string;
   /** Edit to run on select. Omitted for special commands (e.g. note link). */
@@ -37,83 +39,83 @@ interface SlashCommand {
 const commands: SlashCommand[] = [
   {
     id: "note-link",
-    label: "Link to note",
+    label: "slash.noteLink",
     icon: Link2,
     keywords: "page link reference mention connect",
   },
   {
     id: "text",
-    label: "Text",
+    label: "slash.text",
     icon: Pilcrow,
     keywords: "paragraph plain",
     run: (e) => e.chain().focus().setParagraph().run(),
   },
   {
     id: "h1",
-    label: "Heading 1",
+    label: "slash.h1",
     icon: Heading1,
     keywords: "title big",
     run: (e) => e.chain().focus().setHeading({ level: 1 }).run(),
   },
   {
     id: "h2",
-    label: "Heading 2",
+    label: "slash.h2",
     icon: Heading2,
     keywords: "subtitle section",
     run: (e) => e.chain().focus().setHeading({ level: 2 }).run(),
   },
   {
     id: "h3",
-    label: "Heading 3",
+    label: "slash.h3",
     icon: Heading3,
     keywords: "subheading",
     run: (e) => e.chain().focus().setHeading({ level: 3 }).run(),
   },
   {
     id: "bullet",
-    label: "Bullet list",
+    label: "slash.bullet",
     icon: List,
     keywords: "unordered ul",
     run: (e) => e.chain().focus().toggleBulletList().run(),
   },
   {
     id: "numbered",
-    label: "Numbered list",
+    label: "slash.numbered",
     icon: ListOrdered,
     keywords: "ordered ol",
     run: (e) => e.chain().focus().toggleOrderedList().run(),
   },
   {
     id: "task",
-    label: "Task list",
+    label: "slash.task",
     icon: ListTodo,
     keywords: "todo checkbox check",
     run: (e) => e.chain().focus().toggleTaskList().run(),
   },
   {
     id: "quote",
-    label: "Quote",
+    label: "slash.quote",
     icon: TextQuote,
     keywords: "blockquote",
     run: (e) => e.chain().focus().toggleBlockquote().run(),
   },
   {
     id: "code",
-    label: "Code block",
+    label: "slash.code",
     icon: Code,
     keywords: "snippet pre fence",
     run: (e) => e.chain().focus().toggleCodeBlock().run(),
   },
   {
     id: "divider",
-    label: "Divider",
+    label: "slash.divider",
     icon: Minus,
     keywords: "rule hr line separator",
     run: (e) => e.chain().focus().setHorizontalRule().run(),
   },
   {
     id: "table",
-    label: "Table",
+    label: "slash.table",
     icon: Table,
     keywords: "grid rows columns",
     run: (e) =>
@@ -135,6 +137,7 @@ export function SlashMenu({
   allowNoteLinks?: boolean;
 }) {
   const [selected, setSelected] = useState(0);
+  const t = useT();
 
   const filtered = useMemo(() => {
     const query = menu?.query.toLowerCase().trim() ?? "";
@@ -143,9 +146,9 @@ export function SlashMenu({
       : commands.filter((command) => command.id !== "note-link");
     if (!query) return available;
     return available.filter((c) =>
-      `${c.label} ${c.keywords}`.toLowerCase().includes(query),
+      `${t(c.label)} ${c.keywords}`.toLowerCase().includes(query),
     );
-  }, [allowNoteLinks, menu?.query]);
+  }, [allowNoteLinks, menu?.query, t]);
 
   useEffect(() => setSelected(0), [menu?.query]);
 
@@ -215,7 +218,7 @@ export function SlashMenu({
           onMouseEnter={() => setSelected(index)}
         >
           <command.icon size={14.5} strokeWidth={1.75} className="shrink-0" />
-          {command.label}
+          {t(command.label)}
         </button>
       ))}
     </motion.div>

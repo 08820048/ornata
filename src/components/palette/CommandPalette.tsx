@@ -20,6 +20,7 @@ import { cx, parentDir } from "@/lib/utils";
 import { Modal } from "@/components/ui/Modal";
 import { useUi } from "@/stores/ui";
 import { activeDir, useVault } from "@/stores/vault";
+import { useT } from "@/stores/locale";
 
 interface PaletteItem {
   id: string;
@@ -43,6 +44,7 @@ export function CommandPalette() {
   const status = useVault((s) => s.status);
   const tree = useVault((s) => s.tree);
   const recentNotes = useVault((s) => s.recentNotes);
+  const t = useT();
 
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
@@ -94,33 +96,33 @@ export function CommandPalette() {
     const actions: PaletteItem[] = [
       {
         id: "new-note",
-        label: "New note",
+        label: t("common.newNote"),
         hint: "⌘N",
         icon: FilePlus,
         run: () => vault.createNote(activeDir(vault)),
       },
       {
         id: "open-markdown",
-        label: "Open Markdown file…",
+        label: t("palette.openMarkdown"),
         hint: "⌘O",
         icon: FolderOpen,
         run: () => vault.chooseExternalNotes(),
       },
       {
         id: "todos",
-        label: "Open Todos",
+        label: t("palette.openTodos"),
         icon: CheckSquare,
         run: () => vault.setView({ type: "todos" }),
       },
       {
         id: "bookmarks",
-        label: "Open Bookmarks",
+        label: t("palette.openBookmarks"),
         icon: Bookmark,
         run: () => vault.setView({ type: "bookmarks" }),
       },
       {
         id: "reveal-vault",
-        label: "Reveal vault in Finder",
+        label: t("palette.revealVault"),
         icon: FolderOpen,
         run: () => {
           if (vault.root) void openPath(vault.root);
@@ -128,7 +130,7 @@ export function CommandPalette() {
       },
       {
         id: "settings",
-        label: "Settings",
+        label: t("common.settings"),
         hint: "⌘,",
         icon: Settings,
         run: () => useUi.getState().setSettingsOpen(true),
@@ -168,7 +170,7 @@ export function CommandPalette() {
         })();
 
     return q ? [...noteItems, ...actions] : [...actions, ...noteItems];
-  }, [query, hits, tree, recentNotes]);
+  }, [query, hits, tree, recentNotes, t]);
 
   // Index where the "Recent" section starts (no query only), for the header.
   const recentStart = query.trim()
@@ -201,7 +203,7 @@ export function CommandPalette() {
     <Modal
       open={open}
       onClose={close}
-      ariaLabel="Command palette"
+      ariaLabel={t("palette.aria")}
       align="top"
       className="mt-[16vh] w-[560px]"
     >
@@ -212,7 +214,7 @@ export function CommandPalette() {
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search notes and commands…"
+                placeholder={t("palette.placeholder")}
                 className="h-12 w-full bg-transparent text-[14.5px] text-ink outline-none placeholder:text-faint"
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
@@ -244,7 +246,7 @@ export function CommandPalette() {
                 <Fragment key={item.id}>
                   {index === recentStart && (
                     <p className="px-2.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
-                      Recent
+                      {t("palette.recent")}
                     </p>
                   )}
                   <button
@@ -292,7 +294,7 @@ export function CommandPalette() {
               ))}
               {items.length === 0 && (
                 <p className="px-3 py-8 text-center text-[13px] text-faint">
-                  Nothing found for “{query.trim()}”
+                  {t("palette.nothingFound", { query: query.trim() })}
                 </p>
               )}
             </motion.div>

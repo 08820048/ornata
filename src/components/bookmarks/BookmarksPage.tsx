@@ -11,6 +11,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { EASE_OUT } from "@/lib/ease";
 import { cx, hostOf } from "@/lib/utils";
 import { useBookmarks } from "@/stores/bookmarks";
+import { useT } from "@/stores/locale";
 
 const URL_RE = /^https?:\/\/\S+$/i;
 
@@ -20,6 +21,7 @@ export function BookmarksPage() {
   const setTagFilter = useBookmarks((s) => s.setTagFilter);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   useEffect(() => {
     load();
@@ -75,7 +77,7 @@ export function BookmarksPage() {
 
         <div className="min-w-0 flex-1">
           <p className="text-[13px] text-muted">
-            Stash links here — your memory clearly isn&apos;t up to the job.
+            {t("bookmarks.tagline")}
           </p>
 
           <div className="mt-4 flex items-center gap-2.5 border-b border-line pb-3">
@@ -84,14 +86,16 @@ export function BookmarksPage() {
               ref={inputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search bookmarks, or paste a link…"
+              placeholder={t("bookmarks.placeholder")}
               className="w-full bg-transparent text-[14.5px] text-ink outline-none placeholder:text-faint"
               onKeyDown={(event) => {
                 if (event.key === "Enter") submit();
               }}
             />
             {isUrl && (
-              <span className="shrink-0 text-[11.5px] text-faint">↵ to save</span>
+              <span className="shrink-0 text-[11.5px] text-faint">
+                {t("bookmarks.enterToSave")}
+              </span>
             )}
           </div>
 
@@ -125,10 +129,10 @@ export function BookmarksPage() {
                   className="absolute inset-x-0 top-10 text-center text-[13px] text-faint"
                 >
                   {bookmarks.length === 0
-                    ? "Paste a link above to save it."
+                    ? t("bookmarks.empty")
                     : tagFilter
-                      ? `Nothing tagged #${tagFilter}.`
-                      : `No bookmarks match “${trimmed}”.`}
+                      ? t("bookmarks.noneTagged", { tag: tagFilter })
+                      : t("bookmarks.noMatch", { query: trimmed })}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -156,6 +160,7 @@ function BookmarkRow({
   const [editing, setEditing] = useState(false);
   const editRef = useRef<HTMLInputElement>(null);
   const [imageFailed, setImageFailed] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (editing) {
@@ -267,8 +272,15 @@ function BookmarkRow({
           registry={registry}
           onChange={(tags) => setTags(bookmark.id, tags)}
         />
-        <CopyButton value={bookmark.url} label="Copy link" side="top" />
-        <RowAction label="Delete bookmark" onClick={() => remove(bookmark.id)}>
+        <CopyButton
+          value={bookmark.url}
+          label={t("bookmarks.copyLink")}
+          side="top"
+        />
+        <RowAction
+          label={t("bookmarks.delete")}
+          onClick={() => remove(bookmark.id)}
+        >
           <X size={13.5} strokeWidth={2} />
         </RowAction>
       </div>

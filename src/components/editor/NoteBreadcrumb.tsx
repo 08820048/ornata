@@ -3,6 +3,7 @@ import { Fragment } from "react";
 import { ActionSwapText } from "@/components/motion/action-swap";
 import { noteKey, noteTitle } from "@/lib/noteRef";
 import type { NoteRef } from "@/lib/types";
+import { useT } from "@/stores/locale";
 
 /**
  * Folder path → title breadcrumb for the active note. Folders are static and
@@ -10,13 +11,14 @@ import type { NoteRef } from "@/lib/types";
  * animation stays short and fast regardless of how deep the note is nested.
  */
 export function NoteBreadcrumb({ note }: { note: NoteRef }) {
+  const t = useT();
   const parts = (note.kind === "vault" ? note.rel : note.path)
     .split("/")
     .filter(Boolean);
   const folders =
     note.kind === "vault"
       ? parts.slice(0, -1)
-      : ["External", ...parts.slice(-2, -1)];
+      : [t("common.external"), ...parts.slice(-2, -1)];
   const visibleFolders = folders.slice(-2);
 
   return (

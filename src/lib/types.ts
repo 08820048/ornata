@@ -1,4 +1,5 @@
 export type Theme = "system" | "light" | "dark";
+export type Language = "en" | "zh-CN";
 
 export type NodeKind = "folder" | "note";
 

@@ -15,6 +15,7 @@ import { cx } from "@/lib/utils";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { activeDir, useVault } from "@/stores/vault";
+import { useT } from "@/stores/locale";
 
 export function Sidebar() {
   const name = useVault((s) => s.name);
@@ -24,6 +25,7 @@ export function Sidebar() {
   const createFolder = useVault((s) => s.createFolder);
   const setSettingsOpen = useUi((s) => s.setSettingsOpen);
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
+  const t = useT();
 
   return (
     <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel">
@@ -37,7 +39,7 @@ export function Sidebar() {
           className="flex w-full items-center gap-2 rounded-md border border-line-soft bg-bg px-2.5 py-1.5 text-[12.5px] text-faint transition-colors duration-100 hover:border-line hover:text-muted"
         >
           <Search size={14} strokeWidth={2} className="shrink-0" />
-          <span>Search…</span>
+          <span>{t("sidebar.search")}</span>
           <kbd className="ml-auto rounded border border-line bg-panel px-1 font-mono text-[10px] leading-4 text-faint">
             ⌘K
           </kbd>
@@ -57,13 +59,13 @@ export function Sidebar() {
         <PageLink
           active={view?.type === "todos"}
           icon={<CheckSquare size={15} strokeWidth={1.75} />}
-          label="Todos"
+          label={t("common.todos")}
           onClick={() => setView({ type: "todos" })}
         />
         <PageLink
           active={view?.type === "bookmarks"}
           icon={<Bookmark size={15} strokeWidth={1.75} />}
-          label="Bookmarks"
+          label={t("common.bookmarks")}
           onClick={() => setView({ type: "bookmarks" })}
         />
       </nav>
@@ -72,18 +74,18 @@ export function Sidebar() {
 
       <div className="flex items-center justify-between pl-4 pr-2 pb-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
-          Notes
+          {t("common.notes")}
         </span>
         <div className="flex items-center gap-0.5">
           <IconAction
-            label="New note"
+            label={t("common.newNote")}
             onClick={() => createNote(activeDir(useVault.getState()))}
           >
             <FilePlus size={14.5} strokeWidth={1.75} />
           </IconAction>
           <IconAction
-            label="New folder"
-            onClick={() => createFolder("", "Untitled")}
+            label={t("common.newFolder")}
+            onClick={() => createFolder("", t("common.untitled"))}
           >
             <FolderPlus size={14.5} strokeWidth={1.75} />
           </IconAction>
@@ -101,7 +103,7 @@ export function Sidebar() {
           className="flex h-[30px] w-full items-center gap-2.5 rounded-md px-2 text-[13px] font-medium text-muted transition-colors duration-100 hover:bg-hover hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ink"
         >
           <Settings size={15} strokeWidth={1.75} />
-          <span>Settings</span>
+          <span>{t("common.settings")}</span>
           <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">
             ⌘,
           </kbd>
@@ -134,6 +136,7 @@ function IconAction({
 }
 
 function UpdateRow() {
+  const t = useT();
   const status = useUpdater((s) => s.status);
   const version = useUpdater((s) => s.version);
   const progress = useUpdater((s) => s.progress);
@@ -173,17 +176,19 @@ function UpdateRow() {
         <span className="truncate">
           {status === "downloading"
             ? progress == null
-              ? "Downloading…"
-              : `Downloading ${Math.round(progress)}%`
+              ? t("sidebar.update.downloading")
+              : t("sidebar.update.downloadingPercent", {
+                  progress: Math.round(progress),
+                })
             : status === "installing"
-              ? "Restarting…"
+              ? t("sidebar.update.restarting")
               : ready
-                ? "Restart to update"
-                : `Update to ${version}`}
+                ? t("sidebar.update.restart")
+                : t("sidebar.update.toVersion", { version: version ?? "" })}
         </span>
         {!busy && !ready && (
           <span className="ml-auto shrink-0 text-[11px] text-faint">
-            Download
+            {t("common.download")}
           </span>
         )}
       </button>

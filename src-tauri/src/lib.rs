@@ -69,6 +69,8 @@ pub fn run() {
             external_notes::export_external_note,
             commands::save_image_asset,
             commands::set_theme,
+            commands::get_language,
+            commands::set_language,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

@@ -6,6 +6,7 @@ import { tagColor } from "@/lib/tagColor";
 import { cx } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { useT } from "@/stores/locale";
 
 /** Left filter rail: "All" + registry tags, with a gliding active pill. */
 export function TagRail({
@@ -27,6 +28,7 @@ export function TagRail({
 }) {
   const pillId = useId();
   const [confirmTag, setConfirmTag] = useState<string | null>(null);
+  const t = useT();
 
   const requestDelete = (tag: string) => {
     if (counts[tag] > 0) {
@@ -41,7 +43,7 @@ export function TagRail({
   return (
     <aside className="sticky top-0 hidden w-[152px] shrink-0 sm:block">
       <p className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
-        Tags
+        {t("common.tags")}
       </p>
       <div className="flex flex-col gap-0.5">
         <button
@@ -62,7 +64,7 @@ export function TagRail({
             />
           )}
           <span className="relative z-10 h-2.5 w-2.5 shrink-0 rounded-full border border-faint" />
-          <span className="relative z-10 truncate">All</span>
+          <span className="relative z-10 truncate">{t("common.all")}</span>
           {total !== undefined && (
             <span className="relative z-10 ml-auto shrink-0 tabular-nums text-[11px] text-faint">
               {total}
@@ -105,7 +107,7 @@ export function TagRail({
               </button>
               <button
                 type="button"
-                aria-label={`Delete tag ${tag}`}
+                aria-label={t("tags.deleteAria", { tag })}
                 onClick={() => requestDelete(tag)}
                 className="grid h-6 w-6 shrink-0 place-items-center rounded text-faint opacity-0 transition-opacity hover:text-danger group-hover/rail:opacity-100"
               >
@@ -118,26 +120,28 @@ export function TagRail({
 
       {tags.length === 0 && (
         <p className="mt-1 px-2 text-[12px] leading-relaxed text-faint">
-          Create a tag from the top bar to start filtering.
+          {t("tags.createHint")}
         </p>
       )}
 
       <Modal
         open={confirmTag !== null}
         onClose={() => setConfirmTag(null)}
-        ariaLabel="Delete tag"
+        ariaLabel={t("common.delete")}
       >
         <div className="w-[320px] p-5">
           <h2 className="text-[14px] font-semibold text-ink">
-            Delete #{confirmTag}?
+            {t("tags.deleteTitle", { tag: confirmTag ?? "" })}
           </h2>
           <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
-            {confirmCount} item{confirmCount === 1 ? "" : "s"} tagged
-            #{confirmTag} will be untagged. This can&apos;t be undone.
+            {t(confirmCount === 1 ? "tags.deleteOne" : "tags.deleteMany", {
+              count: confirmCount,
+              tag: confirmTag ?? "",
+            })}
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setConfirmTag(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="danger"
@@ -147,7 +151,7 @@ export function TagRail({
                 setConfirmTag(null);
               }}
             >
-              Delete
+              {t("common.delete")}
             </Button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { EASE_OUT } from "@/lib/ease";
 import { useUpdater } from "@/stores/updater";
+import { useT } from "@/stores/locale";
 
 const SWAP = {
   duration: 0.14,
@@ -16,21 +17,22 @@ export function UpdateControl() {
   const check = useUpdater((state) => state.check);
   const download = useUpdater((state) => state.download);
   const restartAndInstall = useUpdater((state) => state.restartAndInstall);
+  const t = useT();
 
   const description =
     status === "available"
-      ? `Version ${version} is available`
+      ? t("updates.available", { version: version ?? "" })
       : status === "downloading"
-        ? `Downloading version ${version}`
+        ? t("updates.downloading", { version: version ?? "" })
         : status === "ready"
-          ? `Version ${version} is ready`
+          ? t("updates.ready", { version: version ?? "" })
           : status === "installing"
-            ? "Installing update…"
+            ? t("updates.installing")
             : status === "checking"
-              ? "Checking…"
+              ? t("updates.checking")
               : status === "error"
-                ? "Unable to check for updates"
-                : "You're on the latest version";
+                ? t("updates.error")
+                : t("updates.latest");
 
   return (
     <div className="mt-2 flex min-h-10 items-center justify-between gap-3">
@@ -53,7 +55,7 @@ export function UpdateControl() {
               exit={{ opacity: 0, y: -2 }}
               transition={SWAP}
               className="relative h-8 min-w-20 rounded-lg border border-success/25 bg-success/8 px-3 font-mono text-[12px] font-semibold tabular-nums text-success transition-[background-color,scale] duration-100 ease-out after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] hover:bg-success/12 active:scale-[0.96]"
-              aria-label={`Download version ${version}`}
+              aria-label={t("updates.downloadAria", { version: version ?? "" })}
             >
               v{version}
             </motion.button>
@@ -61,7 +63,9 @@ export function UpdateControl() {
             <motion.div
               key="downloading"
               role="progressbar"
-              aria-label={`Downloading version ${version}`}
+              aria-label={t("updates.downloadingAria", {
+                version: version ?? "",
+              })}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={progress ?? undefined}
@@ -78,7 +82,9 @@ export function UpdateControl() {
                 transition={{ duration: 0.16, ease: EASE_OUT }}
               />
               <span className="relative grid h-full place-items-center font-mono text-[11.5px] font-semibold tabular-nums text-success">
-                {progress == null ? "Downloading…" : `${Math.round(progress)}%`}
+                {progress == null
+                  ? t("sidebar.update.downloading")
+                  : `${Math.round(progress)}%`}
               </span>
             </motion.div>
           ) : status === "ready" ? (
@@ -92,7 +98,7 @@ export function UpdateControl() {
               transition={SWAP}
               className="relative h-8 rounded-lg border border-success/25 bg-success/8 px-3 text-[12px] font-semibold text-success transition-[background-color,scale] duration-100 ease-out after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] hover:bg-success/12 active:scale-[0.96]"
             >
-              重启完成更新
+              {t("updates.restart")}
             </motion.button>
           ) : status === "installing" ? (
             <motion.div
@@ -104,7 +110,7 @@ export function UpdateControl() {
               className="flex h-8 items-center gap-1.5 px-2 text-[12px] font-medium text-success"
             >
               <Loader2 size={13} strokeWidth={1.8} className="animate-spin" />
-              正在重启…
+              {t("updates.restarting")}
             </motion.div>
           ) : (
             <Button
@@ -124,7 +130,7 @@ export function UpdateControl() {
                 strokeWidth={1.75}
                 className={status === "checking" ? "animate-spin" : undefined}
               />
-              Check
+              {t("common.check")}
             </Button>
           )}
         </AnimatePresence>

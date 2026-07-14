@@ -13,6 +13,7 @@ import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { WikiLink } from "./wikiLink";
+import { t } from "@/stores/locale";
 
 function isRemoteSource(src: string) {
   return /^(?:[a-z][a-z0-9+.-]*:|#|\/)/i.test(src);
@@ -88,7 +89,7 @@ export function createExtensions(assetRoot: string) {
     TableRow,
     TableHeader,
     TableCell,
-    Placeholder.configure({ placeholder: "Write, or press / for blocks…" }),
+    Placeholder.configure({ placeholder: () => t("editor.placeholder") }),
     WikiLink,
   ];
 }

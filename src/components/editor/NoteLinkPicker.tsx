@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flattenNotes } from "@/lib/tree";
 import { cx, noteTitle, parentDir } from "@/lib/utils";
 import { useVault } from "@/stores/vault";
+import { useT } from "@/stores/locale";
 
 export interface LinkPickerState {
   range: { from: number; to: number };
@@ -34,6 +35,7 @@ export function NoteLinkPicker({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   // Exclude the current note — no self-links.
   const notes = useMemo(
@@ -81,7 +83,7 @@ export function NoteLinkPicker({
         ref={inputRef}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Link to note…"
+        placeholder={t("editor.linkToNote")}
         className="mb-1 h-8 w-full bg-transparent px-2 text-[13px] text-ink outline-none placeholder:text-faint"
         onKeyDown={(event) => {
           if (event.key === "Escape") {
@@ -132,7 +134,7 @@ export function NoteLinkPicker({
         })}
         {filtered.length === 0 && (
           <p className="px-2 py-4 text-center text-[12.5px] text-faint">
-            No notes match “{query.trim()}”
+            {t("editor.noNotesMatch", { query: query.trim() })}
           </p>
         )}
       </div>

@@ -6,6 +6,7 @@ import {
 } from "@tauri-apps/plugin-updater";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { t } from "@/stores/locale";
 
 type Status =
   | "idle"
@@ -55,13 +56,15 @@ export const useUpdater = create<UpdaterState>((set, get) => ({
         });
       } else {
         set({ status: "idle", version: null, progress: null, update: null });
-        if (!silent) toast("You're on the latest version.");
+        if (!silent) toast(t("toast.latest"));
       }
     } catch (err) {
       // Dev builds / offline / no signature all land here — stay quiet.
       set({ status: "error", version: null, progress: null, update: null });
       if (!silent) {
-        toast.error(err instanceof Error ? err.message : "Update check failed.");
+        toast.error(
+          err instanceof Error ? err.message : t("toast.updateCheckFailed"),
+        );
       }
     }
   },
@@ -95,7 +98,9 @@ export const useUpdater = create<UpdaterState>((set, get) => ({
       set({ status: "ready", progress: 100 });
     } catch (err) {
       set({ status: "available", progress: null });
-      toast.error(err instanceof Error ? err.message : "Update download failed.");
+      toast.error(
+        err instanceof Error ? err.message : t("toast.updateDownloadFailed"),
+      );
     }
   },
 
@@ -108,7 +113,9 @@ export const useUpdater = create<UpdaterState>((set, get) => ({
       await relaunch();
     } catch (err) {
       set({ status: "ready" });
-      toast.error(err instanceof Error ? err.message : "Update failed to install.");
+      toast.error(
+        err instanceof Error ? err.message : t("toast.updateInstallFailed"),
+      );
     }
   },
 }));

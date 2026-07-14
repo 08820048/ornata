@@ -17,6 +17,7 @@ import type {
 } from "@/lib/types";
 import { parentDir } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
+import { t } from "@/stores/locale";
 
 type Status = "loading" | "welcome" | "ready";
 
@@ -237,7 +238,7 @@ export const useVault = create<VaultState>((set, get) => ({
 
   createNote: async (dir) => {
     try {
-      const rel = await ipc.createNote(dir, "Untitled");
+      const rel = await ipc.createNote(dir, t("common.untitled"));
       await get().refreshTree();
       get().expandTo(rel);
       // Route through setView so the tab opens (blank pane otherwise).
@@ -350,7 +351,7 @@ export const useVault = create<VaultState>((set, get) => ({
         const next = right ?? survivors[survivors.length - 1] ?? null;
         get().setView(next ? { type: "note", note: next } : null);
       }
-      toast("Moved to Trash", {
+      toast(t("toast.movedToTrash"), {
         description: rel.split("/").pop()?.replace(/\.md$/, ""),
       });
     } catch (err) {
@@ -370,7 +371,9 @@ export const useVault = create<VaultState>((set, get) => ({
       if (view?.type === "note" && sameNote(view.note, note)) {
         get().setView(next ? { type: "note", note: next } : null);
       }
-      toast("Moved to Trash", { description: path.split(/[\\/]/).pop() });
+      toast(t("toast.movedToTrash"), {
+        description: path.split(/[\\/]/).pop(),
+      });
     } catch (err) {
       oops(err);
     }

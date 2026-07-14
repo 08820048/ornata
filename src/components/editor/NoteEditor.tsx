@@ -33,6 +33,7 @@ import { cx, debounce } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
+import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { insertImageFile } from "./insertImage";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
@@ -72,6 +73,8 @@ export const NoteEditor = memo(function NoteEditor({
   const renameExternalNote = useVault((s) => s.renameExternalNote);
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
+  const language = useLocale((s) => s.language);
+  const t = useT();
 
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
   const [linkPicker, setLinkPicker] = useState<LinkPickerState | null>(null);
@@ -87,6 +90,8 @@ export const NoteEditor = memo(function NoteEditor({
   const frontmatter = useRef("");
   const activeRef = useRef(active);
   activeRef.current = active;
+  const languageRef = useRef(language);
+  languageRef.current = language;
   const scrollRef = useRef<HTMLDivElement>(null);
   // Tracked continuously — reading scrollTop after display:none flips is too
   // late (layout is gone), so the pane restores from this on re-activation.
@@ -118,14 +123,14 @@ export const NoteEditor = memo(function NoteEditor({
         toast.dismiss(`save-${targetKey}`);
       } catch (err) {
         setSaveState("error");
-        toast.error("Note could not be saved", {
+        toast.error(t("toast.noteSaveFailed"), {
           id: `save-${targetKey}`,
           description: err instanceof Error ? err.message : String(err),
           duration: Infinity,
         });
       }
     },
-    [setSaveState],
+    [setSaveState, t],
   );
 
   const debouncedPersist = useMemo(
@@ -150,7 +155,7 @@ export const NoteEditor = memo(function NoteEditor({
       undefined,
       "￼",
     );
-    const match = /(?:^|\s)\/([a-z0-9 ]*)$/i.exec(textBefore);
+    const match = /(?:^|\s)\/([\p{L}\p{N} ]*)$/iu.exec(textBefore);
     if (!match) {
       setSlashMenu(null);
       return;
@@ -236,7 +241,7 @@ export const NoteEditor = memo(function NoteEditor({
         pending.current = markdown;
         setSaveState("saving");
         debouncedPersist(markdown);
-        setWords(countWords(markdown));
+        setWords(countWords(markdown, languageRef.current));
         updateSlashMenu(editor);
       },
       onSelectionUpdate({ editor }) {
@@ -285,7 +290,7 @@ export const NoteEditor = memo(function NoteEditor({
           contentType: "markdown",
         });
         swapping.current = false;
-        setWords(countWords(body));
+        setWords(countWords(body, language));
         // A freshly loaded note starts at the top.
         savedScroll.current = 0;
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
@@ -305,7 +310,7 @@ export const NoteEditor = memo(function NoteEditor({
     return () => {
       cancelled = true;
     };
-  }, [editor, note, currentKey, persist, debouncedPersist]);
+  }, [editor, note, currentKey, persist, debouncedPersist, language]);
 
   const previousSource = useRef(markdownSource);
   useEffect(() => {
@@ -360,12 +365,21 @@ export const NoteEditor = memo(function NoteEditor({
           contentType: "markdown",
         });
         swapping.current = false;
-        setWords(countWords(body));
+        setWords(countWords(body, language));
       }
     } catch {
       // note may have been deleted externally; tree refresh handles it
     }
-  }, [editor]);
+  }, [editor, language]);
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.view.dispatch(editor.state.tr);
+    const body = markdownSource
+      ? splitFrontmatter(rawText).body
+      : editor.getMarkdown();
+    setWords(countWords(body, language));
+  }, [editor, language, markdownSource, rawText]);
 
   useEffect(() => {
     const onFocus = () => {
@@ -454,14 +468,14 @@ export const NoteEditor = memo(function NoteEditor({
 
         if (action === "copy") {
           await navigator.clipboard.writeText(markdown);
-          toast("Markdown copied");
+          toast(t("toast.markdownCopied"));
         } else if (action === "export") {
           const current = noteRef.current;
           const path =
             current.kind === "vault"
               ? await ipc.exportNote(current.rel, markdown)
               : await ipc.exportExternalNote(current.path, markdown);
-          if (path) toast("Note exported", { description: path });
+          if (path) toast(t("toast.noteExported"), { description: path });
         } else if (action === "delete") {
           const current = noteRef.current;
           debouncedPersist.cancel();
@@ -480,7 +494,7 @@ export const NoteEditor = memo(function NoteEditor({
     };
     window.addEventListener("ornata:note-action", handle);
     return () => window.removeEventListener("ornata:note-action", handle);
-  }, [active, debouncedPersist, editor, markdownSource, persist, rawText]);
+  }, [active, debouncedPersist, editor, markdownSource, persist, rawText, t]);
 
   // Insert a page link to `rel` over the slash range, as a link mark whose
   // href is the note path (serializes to `[title](rel)` markdown on save).
@@ -513,7 +527,7 @@ export const NoteEditor = memo(function NoteEditor({
       <div className="note-page">
         {missing ? (
           <p className="pt-16 text-center text-[14px] text-faint">
-            This note no longer exists.
+            {t("editor.missing")}
           </p>
         ) : (
           <TitleInput
@@ -545,7 +559,7 @@ export const NoteEditor = memo(function NoteEditor({
                 pending.current = body;
                 setSaveState("saving");
                 debouncedPersist(body);
-                setWords(countWords(body));
+                setWords(countWords(body, language));
               }}
               />
             </Suspense>
@@ -591,7 +605,7 @@ export const NoteEditor = memo(function NoteEditor({
             (words === 0 || missing) && "opacity-0",
           )}
         >
-          {words} {words === 1 ? "word" : "words"}
+          {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
         </div>
       )}
     </div>
@@ -610,6 +624,7 @@ function TitleInput({
   onRename: (name: string) => void;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const t = useT();
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -641,9 +656,9 @@ function TitleInput({
     <textarea
       ref={ref}
       rows={1}
-      aria-label="Note title"
+      aria-label={t("editor.noteTitle")}
       defaultValue={title}
-      placeholder="Untitled"
+      placeholder={t("common.untitled")}
       className="block w-full resize-none overflow-hidden bg-transparent text-[clamp(28px,2.4vw,34px)] font-[680] leading-[1.14] tracking-[-0.025em] text-ink [overflow-wrap:anywhere] [text-wrap:balance] outline-none placeholder:text-faint"
       onInput={(event) => resizeTitle(event.currentTarget)}
       onBlur={submit}
@@ -666,7 +681,14 @@ function resizeTitle(element: HTMLTextAreaElement) {
   element.style.height = `${element.scrollHeight}px`;
 }
 
-function countWords(markdown: string) {
+function countWords(markdown: string, language: "en" | "zh-CN") {
   const text = markdown.trim();
-  return text ? text.split(/\s+/).filter(Boolean).length : 0;
+  if (!text) return 0;
+  if (language === "zh-CN") {
+    return (
+      text.match(/[\p{Script=Han}]|[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/gu)
+        ?.length ?? 0
+    );
+  }
+  return text.split(/\s+/).filter(Boolean).length;
 }

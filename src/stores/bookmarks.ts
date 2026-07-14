@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
 import type { Bookmark } from "@/lib/types";
+import { t } from "@/stores/locale";
 
 interface BookmarksState {
   bookmarks: Bookmark[];
@@ -145,13 +146,13 @@ export const useBookmarks = create<BookmarksState>((set, get) => ({
 
   exportAll: async () => {
     if (get().bookmarks.length === 0) {
-      toast("Nothing to export yet.");
+      toast(t("toast.nothingToExport"));
       return;
     }
     try {
       const path = await ipc.exportBookmarks();
       if (path) {
-        toast("Bookmarks exported", { description: path });
+        toast(t("toast.bookmarksExported"), { description: path });
       }
     } catch (err) {
       oops(err);

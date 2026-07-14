@@ -7,7 +7,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::bookmarks::{self, Bookmark};
-use crate::config::{self, Theme};
+use crate::config::{self, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::search::SearchHit;
@@ -457,5 +457,17 @@ pub fn save_image_asset(
 pub fn set_theme(app: AppHandle, theme: Theme) -> AppResult<()> {
     let mut cfg = config::load(&app);
     cfg.theme = theme;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
+pub fn get_language(app: AppHandle) -> Language {
+    config::load(&app).language
+}
+
+#[tauri::command]
+pub fn set_language(app: AppHandle, language: Language) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.language = language;
     config::save(&app, &cfg)
 }

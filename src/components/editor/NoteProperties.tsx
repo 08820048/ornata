@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Property } from "@/lib/frontmatter";
 import { EASE_OUT } from "@/lib/ease";
 import { cx, hostOf } from "@/lib/utils";
+import { useT } from "@/stores/locale";
 
 /**
  * Read-only properties panel for a note's frontmatter. Renders
@@ -12,6 +13,7 @@ import { cx, hostOf } from "@/lib/utils";
  */
 export function NoteProperties({ properties }: { properties: Property[] }) {
   const [open, setOpen] = useState(true);
+  const t = useT();
   if (properties.length === 0) return null;
 
   return (
@@ -26,7 +28,7 @@ export function NoteProperties({ properties }: { properties: Property[] }) {
           strokeWidth={2.5}
           className={cx("transition-transform duration-150", open && "rotate-90")}
         />
-        Properties
+        {t("editor.properties")}
       </button>
 
       <AnimatePresence initial={false}>

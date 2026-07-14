@@ -1,6 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { tagColor } from "@/lib/tagColor";
+import { useT } from "@/stores/locale";
 
 function chipStyle(tag: string, active: boolean) {
   const color = tagColor(tag);
@@ -38,6 +39,7 @@ export function TagList({
 }) {
   const [adding, setAdding] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (adding) inputRef.current?.focus();
@@ -69,7 +71,7 @@ export function TagList({
           {removable && (
             <button
               type="button"
-              aria-label={`Remove ${tag}`}
+              aria-label={t("tags.remove", { tag })}
               className="grid place-items-center opacity-60 transition-opacity hover:opacity-100"
               onClick={() => onChange?.(tags.filter((t) => t !== tag))}
             >
@@ -83,7 +85,7 @@ export function TagList({
         (adding ? (
           <input
             ref={inputRef}
-            placeholder="tag…"
+            placeholder={t("editor.tagName")}
             className="w-16 rounded-full border border-line bg-transparent px-2 py-0.5 text-[11px] leading-none text-ink outline-none"
             onBlur={(event) => {
               commit(event.target.value);
@@ -103,12 +105,12 @@ export function TagList({
         ) : (
           <button
             type="button"
-            aria-label="Add tag"
+            aria-label={t("tags.add")}
             className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-line px-1.5 py-[3px] text-[11px] leading-none text-faint transition-colors hover:text-muted"
             onClick={() => setAdding(true)}
           >
             <Plus size={11} strokeWidth={2.5} />
-            {tags.length === 0 && "tag"}
+            {tags.length === 0 && t("common.tags")}
           </button>
         ))}
     </div>

@@ -2,10 +2,12 @@ import { FolderOpen, FolderPlus } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVault } from "@/stores/vault";
+import { useT } from "@/stores/locale";
 
 export function Welcome() {
   const chooseVault = useVault((s) => s.chooseVault);
   const createVault = useVault((s) => s.createVault);
+  const t = useT();
 
   return (
     <div
@@ -35,23 +37,22 @@ export function Welcome() {
           Ornata
         </h1>
         <p className="mt-4 text-[15px] text-muted">
-          Plain markdown notes. Yours, on disk.
+          {t("welcome.tagline")}
         </p>
 
         <div className="mt-12 flex items-center gap-3">
           <Button variant="primary" size="lg" onClick={createVault}>
             <FolderPlus size={16} strokeWidth={1.75} />
-            Create new vault
+            {t("welcome.create")}
           </Button>
           <Button variant="outline" size="lg" onClick={chooseVault}>
             <FolderOpen size={16} strokeWidth={1.75} />
-            Open existing
+            {t("welcome.open")}
           </Button>
         </div>
 
         <p className="mt-5 max-w-[320px] text-center text-[12.5px] leading-relaxed text-faint">
-          Your notes live in a folder you own, as plain{" "}
-          <span className="font-mono text-[11.5px]">.md</span> files
+          {t("welcome.detail")}
         </p>
       </motion.div>
     </div>

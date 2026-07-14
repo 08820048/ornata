@@ -9,6 +9,7 @@ import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
+import { useLocale } from "@/stores/locale";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -34,9 +35,12 @@ export default function App() {
 
   useEffect(() => {
     initSessionSync();
-    startup();
-    // Look for an app update in the background; surfaces in the sidebar.
-    useUpdater.getState().check();
+    void (async () => {
+      await useLocale.getState().startup();
+      await startup();
+      // Look for an app update in the background; surfaces in the sidebar.
+      await useUpdater.getState().check();
+    })();
   }, [startup]);
 
   // Restore the saved tabs / view / filters once a vault is loaded (and again

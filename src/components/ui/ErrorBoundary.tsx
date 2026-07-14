@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { t } from "@/stores/locale";
 
 interface Props {
   children: ReactNode;
@@ -27,11 +28,10 @@ export class ErrorBoundary extends Component<Props, State> {
       <div className="flex h-full flex-col items-center justify-center gap-5 bg-bg px-8 text-center">
         <div className="max-w-md">
           <p className="text-[16px] font-semibold tracking-[-0.01em] text-ink">
-            Something went wrong
+            {t("error.title")}
           </p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-            Ornata hit an unexpected error. Your notes are safe on disk — reloading
-            usually fixes it.
+            {t("error.detail")}
           </p>
           {this.state.error.message && (
             <p className="mt-3 truncate rounded-md border border-line-soft bg-panel px-3 py-2 font-mono text-[11.5px] text-faint">
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
           onClick={() => window.location.reload()}
           className="inline-flex h-9 items-center rounded-md bg-invert px-4 text-[13px] font-medium text-invert-ink transition-opacity hover:opacity-90"
         >
-          Reload
+          {t("error.reload")}
         </button>
       </div>
     );
