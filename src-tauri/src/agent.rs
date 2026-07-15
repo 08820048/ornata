@@ -1,7 +1,7 @@
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -26,6 +26,7 @@ pub struct AgentState {
 struct AgentProcess {
     child: Child,
     stdin: ChildStdin,
+    last_stderr: Arc<Mutex<Option<String>>>,
 }
 
 impl Drop for AgentProcess {
@@ -132,10 +133,15 @@ pub async fn agent_start(
         .take()
         .ok_or_else(|| AppError::Other("Pi stdin is unavailable".into()))?;
 
+    let last_stderr = Arc::new(Mutex::new(None));
     stream_stdout(app.clone(), stdout);
-    stream_stderr(app, stderr);
+    stream_stderr(app, stderr, last_stderr.clone());
 
-    let mut process = AgentProcess { child, stdin };
+    let mut process = AgentProcess {
+        child,
+        stdin,
+        last_stderr,
+    };
     write_rpc(&mut process.stdin, &json!({ "type": "get_state" }))?;
     *guard = Some(process);
 
@@ -212,9 +218,10 @@ fn with_process<T>(
     let process = guard
         .as_mut()
         .ok_or_else(|| AppError::Other("Pi agent is not running".into()))?;
-    if process.child.try_wait()?.is_some() {
+    if let Some(status) = process.child.try_wait()? {
+        let error = exited_error(process, status);
         *guard = None;
-        return Err(AppError::Other("Pi agent has exited".into()));
+        return Err(AppError::Other(error));
     }
     action(process)
 }
@@ -262,6 +269,18 @@ fn write_rpc(stdin: &mut ChildStdin, value: &Value) -> AppResult<()> {
     Ok(())
 }
 
+fn exited_error(process: &AgentProcess, status: std::process::ExitStatus) -> String {
+    let detail = process
+        .last_stderr
+        .lock()
+        .ok()
+        .and_then(|stderr| stderr.clone());
+    match detail {
+        Some(detail) => format!("Pi agent exited ({status}): {detail}"),
+        None => format!("Pi agent exited ({status})"),
+    }
+}
+
 fn stream_stdout(app: AppHandle, stdout: impl std::io::Read + Send + 'static) {
     std::thread::spawn(move || {
         for line in BufReader::new(stdout).lines() {
@@ -288,10 +307,17 @@ fn stream_stdout(app: AppHandle, stdout: impl std::io::Read + Send + 'static) {
     });
 }
 
-fn stream_stderr(app: AppHandle, stderr: impl std::io::Read + Send + 'static) {
+fn stream_stderr(
+    app: AppHandle,
+    stderr: impl std::io::Read + Send + 'static,
+    last_stderr: Arc<Mutex<Option<String>>>,
+) {
     std::thread::spawn(move || {
         for line in BufReader::new(stderr).lines().map_while(Result::ok) {
             if !line.trim().is_empty() {
+                if let Ok(mut last) = last_stderr.lock() {
+                    *last = Some(line.clone());
+                }
                 let _ = app.emit("pi-agent-stderr", line);
             }
         }
