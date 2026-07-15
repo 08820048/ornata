@@ -23,6 +23,12 @@ export interface AgentMessage {
   selection?: AgentSelection;
 }
 
+export interface AgentNoteReference {
+  sourceKey: string;
+  source: string;
+  title: string;
+}
+
 export interface AgentSelection {
   sourceKey: string;
   source: string;
@@ -50,7 +56,7 @@ interface AgentStore {
   selection: AgentSelection | null;
   initialize: (root: string) => Promise<void>;
   start: () => Promise<boolean>;
-  send: (message: string) => Promise<void>;
+  send: (message: string, note?: AgentNoteReference | null) => Promise<void>;
   abort: () => Promise<void>;
   retry: () => Promise<void>;
   setPermission: (permission: AgentPermission) => Promise<void>;
@@ -79,22 +85,36 @@ function activityDetail(value: unknown) {
   return null;
 }
 
-function messageWithSelection(message: string, selection: AgentSelection | null) {
-  if (!selection) return message;
-  const available = Math.max(0, 28_000 - message.length);
-  const selectedText = selection.text.slice(0, available);
-  const truncated = selectedText.length < selection.text.length;
-  return [
-    "The user attached a text selection from an Ornata note.",
-    JSON.stringify({
-      source: selection.source,
-      title: selection.title,
-      selectedText,
-      truncated,
-    }),
-    "User request:",
-    message,
-  ].join("\n\n");
+function messageWithContext(
+  message: string,
+  note: AgentNoteReference | null,
+  selection: AgentSelection | null,
+) {
+  if (!note && !selection) return message;
+
+  const context: string[] = [];
+  if (note) {
+    context.push(
+      "The user attached the current Ornata note.",
+      JSON.stringify({ source: note.source, title: note.title }),
+    );
+  }
+  if (selection) {
+    const available = Math.max(0, 28_000 - message.length);
+    const selectedText = selection.text.slice(0, available);
+    const truncated = selectedText.length < selection.text.length;
+    context.push(
+      "The user attached a text selection from an Ornata note.",
+      JSON.stringify({
+        source: selection.source,
+        title: selection.title,
+        selectedText,
+        truncated,
+      }),
+    );
+  }
+
+  return [...context, "User request:", message].join("\n\n");
 }
 
 function ensureListeners() {
@@ -301,7 +321,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
     }
   },
 
-  send: async (message) => {
+  send: async (message, note = null) => {
     const text = message.trim();
     if (!text || get().connection === "running") return;
     const selection = get().selection;
@@ -312,13 +332,18 @@ export const useAgent = create<AgentStore>((set, get) => ({
       connection: "running",
       messages: [
         ...state.messages,
-        { id: id(), role: "user", content: text, selection: selection ?? undefined },
+        {
+          id: id(),
+          role: "user",
+          content: text,
+          selection: selection ?? undefined,
+        },
       ],
       selection: null,
       error: null,
     }));
     try {
-      await ipc.agentSend(messageWithSelection(text, selection));
+      await ipc.agentSend(messageWithContext(text, note, selection));
     } catch (error) {
       set({ connection: "error", error: String(error) });
     }

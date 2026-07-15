@@ -22,10 +22,12 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
+import { noteKey, noteTitle } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
 import {
   useAgent,
   type AgentActivity,
+  type AgentNoteReference,
   type AgentSelection,
 } from "@/stores/agent";
 import { useT } from "@/stores/locale";
@@ -46,6 +48,7 @@ export function AgentPanel() {
   const open = useUi((state) => state.agentOpen);
   const setOpen = useUi((state) => state.setAgentOpen);
   const root = useVault((state) => state.root);
+  const view = useVault((state) => state.view);
   const connection = useAgent((state) => state.connection);
   const pi = useAgent((state) => state.pi);
   const model = useAgent((state) => state.model);
@@ -64,6 +67,17 @@ export function AgentPanel() {
   const [copied, setCopied] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const t = useT();
+  const currentNote: AgentNoteReference | null =
+    view?.type === "note"
+      ? {
+          sourceKey: noteKey(view.note),
+          source:
+            view.note.kind === "vault"
+              ? `notes/${view.note.rel}`
+              : view.note.path,
+          title: noteTitle(view.note),
+        }
+      : null;
 
   useEffect(() => {
     if (open && root && useAgent.getState().vaultRoot !== root) {
@@ -89,7 +103,7 @@ export function AgentPanel() {
     const message = draft.trim();
     if (!message || connection === "running") return;
     setDraft("");
-    void send(message);
+    void send(message, currentNote);
   };
 
   const copyInstall = () => {
@@ -261,6 +275,22 @@ export function AgentPanel() {
             )}
             <div className="rounded-2xl border border-line-soft bg-bg p-2 transition-[border-color] duration-100 focus-within:border-line">
               <AnimatePresence initial={false}>
+                {currentNote && (
+                  <motion.div
+                    key={currentNote.sourceKey}
+                    initial={{ opacity: 0, y: 5, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{
+                      opacity: 0,
+                      y: -4,
+                      filter: "blur(4px)",
+                      transition: { duration: 0.14, ease: EASE_OUT },
+                    }}
+                    transition={{ duration: 0.16, ease: EASE_OUT }}
+                  >
+                    <NoteAttachment note={currentNote} />
+                  </motion.div>
+                )}
                 {selection && (
                   <motion.div
                     key={`${selection.sourceKey}:${selection.text}`}
@@ -343,6 +373,30 @@ export function AgentPanel() {
           </motion.aside>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function NoteAttachment({
+  note,
+}: {
+  note: AgentNoteReference;
+}) {
+  const t = useT();
+
+  return (
+    <div className="mb-1 flex min-h-12 items-center gap-2.5 rounded-xl bg-hover p-2">
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-line-soft bg-bg text-muted">
+        <BookOpenText size={14} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[12px] font-medium text-ink" title={note.title}>
+          {note.title}
+        </span>
+        <span className="mt-0.5 block text-[10.5px] text-faint">
+          {t("agent.currentNote")}
+        </span>
+      </span>
     </div>
   );
 }
