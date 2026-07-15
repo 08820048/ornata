@@ -14,16 +14,16 @@ const COLUMNS = [
   {
     title: "Product",
     links: [
-      { label: "Features", href: "#features" },
-      { label: "Agent", href: "#agent" },
+      { label: "Features", href: "/#features" },
+      { label: "Agent", href: "/#agent" },
       { label: "Download", href: DMG },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "FAQ", href: "#faq" },
-      { label: "Features", href: "#features" },
+      { label: "Updates", href: "/updates" },
+      { label: "FAQ", href: "/#faq" },
     ],
   },
 ];
@@ -71,7 +71,7 @@ export function Footer() {
             >
               <DownloadButton size="lg" />
               <ButtonLink
-                href="#features"
+                href="/#features"
                 variant="outline"
                 size="lg"
               >

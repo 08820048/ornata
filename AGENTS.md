@@ -56,6 +56,7 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 - Active/selected rows use inverted style (`bg-invert text-invert-ink`) — the signature look.
 - Motion: 100–160ms ease-out only. Fonts: Inter Variable (UI), JetBrains Mono (code).
 - No autocorrect anywhere: global `focusin` hook in `main.tsx` handles inputs; editor sets its own attrs.
+- Website feature additions must use the animated product-behavior demos established in `site/components/FeaturesBento.tsx` (for example, “Link ideas together”). Do not add static feature-card/checklist grids, and do not promote small release details as standalone homepage features.
 
 ## Adding beui components
 

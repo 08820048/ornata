@@ -22,8 +22,22 @@ export default function Image() {
       >
         {/* brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://ornata.app/ornata-icon.png" width={64} height={64} alt="" />
+          <svg
+            aria-hidden="true"
+            width="64"
+            height="64"
+            viewBox="0 0 64 64"
+            fill="none"
+          >
+            <rect width="64" height="64" rx="14" fill="#ffffff" />
+            <path
+              d="M11 12C7 17 11 19 17 18C28 16 47 14 51 19C55 24 43 27 31 30C20 33 11 36 12 40C14 45 29 42 41 43C52 44 57 49 53 55"
+              stroke="#111111"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -0.5 }}>
             Ornata
           </div>

@@ -30,8 +30,8 @@ export const metadata: Metadata = {
     "plain text notes",
   ],
   icons: {
-    icon: "/ornata-icon.png",
-    apple: "/ornata-icon.png",
+    icon: "/ornata-mark-2026.png",
+    apple: "/ornata-mark-2026.png",
   },
   authors: [{ name: "Ornata" }],
   openGraph: {

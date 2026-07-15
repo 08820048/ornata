@@ -1,20 +1,35 @@
-export function LogoMark({ size = 28 }: { size?: number }) {
+import Image from "next/image";
+
+export function LogoMark({
+  size = 28,
+  priority = false,
+}: {
+  size?: number;
+  priority?: boolean;
+}) {
   return (
-    <img
-      src="/ornata-icon.png"
+    <Image
+      src="/ornata-mark-2026.png"
       alt=""
       width={size}
       height={size}
+      priority={priority}
       aria-hidden="true"
-      className="shrink-0"
+      className="shrink-0 rounded-[22%] outline outline-1 -outline-offset-1 outline-black/10"
     />
   );
 }
 
-export function Wordmark({ size = 24 }: { size?: number }) {
+export function Wordmark({
+  size = 24,
+  priority = false,
+}: {
+  size?: number;
+  priority?: boolean;
+}) {
   return (
     <span className="flex items-center gap-2.5">
-      <LogoMark size={size} />
+      <LogoMark size={size} priority={priority} />
       <span className="text-[16px] font-semibold tracking-tight text-foreground">
         Ornata
       </span>

@@ -1,0 +1,216 @@
+import type { Metadata } from "next";
+import { Nav } from "@/components/Nav";
+import { Footer } from "@/components/Footer";
+import { DownloadButton } from "@/components/ui/download-button";
+
+type Release = {
+  version: string;
+  date: string;
+  dateTime: string;
+  summary: string;
+  changes: string[];
+};
+
+const RELEASES: Release[] = [
+  {
+    version: "0.1.9",
+    date: "July 15, 2026",
+    dateTime: "2026-07-15",
+    summary: "A faster way to move through long notes without leaving the editor.",
+    changes: [
+      "Added a magnetic article outline built from H1–H3 headings.",
+      "The outline follows the active section and expands around the heading you point to.",
+      "Click any section for a smooth jump; subtle interaction sounds can be disabled in Settings.",
+    ],
+  },
+  {
+    version: "0.1.8",
+    date: "July 15, 2026",
+    dateTime: "2026-07-15",
+    summary: "AssistantPi now starts with the note you are already working in.",
+    changes: [
+      "The open note is attached to AssistantPi automatically as working context.",
+      "Fixed Pi startup in production builds by resolving the user’s installed Node environment.",
+      "Updated the editor empty state to use the current Ornata icon.",
+    ],
+  },
+  {
+    version: "0.1.7",
+    date: "July 15, 2026",
+    dateTime: "2026-07-15",
+    summary: "AssistantPi arrives with explicit permissions and your choice of model.",
+    changes: [
+      "Connected Ornata to Pi installed and configured on your Mac.",
+      "Added Read only, Read & write, and Full Access permission modes.",
+      "Selected note text can be attached to a request, and responses render as Markdown.",
+      "Introduced the lightweight, hand-drawn Ornata app icon.",
+    ],
+  },
+  {
+    version: "0.1.6",
+    date: "July 14, 2026",
+    dateTime: "2026-07-14",
+    summary: "Ornata now speaks English and Simplified Chinese.",
+    changes: [
+      "Added complete English and Simplified Chinese interface localization.",
+      "Added language switching directly in Settings.",
+      "Refreshed the app with a lighter visual identity.",
+    ],
+  },
+  {
+    version: "0.1.5",
+    date: "July 14, 2026",
+    dateTime: "2026-07-14",
+    summary: "The first fully signed, notarized, and privately distributed build.",
+    changes: [
+      "Moved signed application and update distribution to Cloudflare R2.",
+      "Added Apple Developer ID signing, notarization, and secure in-app update signatures.",
+      "Added external Markdown file editing and language-aware code block highlighting.",
+      "Completed the product transition to Ornata.",
+    ],
+  },
+  {
+    version: "0.1.4",
+    date: "July 12, 2026",
+    dateTime: "2026-07-12",
+    summary: "More control over Markdown and more reliable file operations.",
+    changes: [
+      "Added Markdown source editing and code block copy actions.",
+      "Improved nested note moves and keyboard accessibility.",
+      "Hardened app configuration and updater permissions.",
+    ],
+  },
+  {
+    version: "0.1.3",
+    date: "July 9, 2026",
+    dateTime: "2026-07-09",
+    summary: "A smoother first run for a brand-new notes folder.",
+    changes: [
+      "Added a create-new-vault flow to the welcome screen.",
+      "New notes now open directly in the editor.",
+      "Improved toast readability in dark mode.",
+    ],
+  },
+  {
+    version: "0.1.2",
+    date: "July 9, 2026",
+    dateTime: "2026-07-09",
+    summary: "Updates can now arrive without reinstalling the app manually.",
+    changes: [
+      "Added automatic update checks on launch.",
+      "Added an update-available action and manual checks in Settings.",
+    ],
+  },
+  {
+    version: "0.1.1",
+    date: "July 9, 2026",
+    dateTime: "2026-07-09",
+    summary: "Polish for setup, navigation, and recovery.",
+    changes: [
+      "Added a starter welcome note for new vaults.",
+      "Added reveal-vault and Settings actions to the command palette.",
+      "Added crash recovery alongside sidebar search, theme controls, and Settings refinements.",
+    ],
+  },
+  {
+    version: "0.1.0",
+    date: "July 9, 2026",
+    dateTime: "2026-07-09",
+    summary: "The first public release of Ornata’s local-first Markdown workspace.",
+    changes: [
+      "Plain Markdown notes stored in a folder you own, with real folders and multiple tabs.",
+      "Internal page links, preserved frontmatter properties, search, todos, and bookmarks.",
+      "Per-vault session persistence for open tabs, active views, and tag filters.",
+    ],
+  },
+];
+
+export const metadata: Metadata = {
+  title: "Updates — Ornata",
+  description: "See what is new in every version of Ornata for macOS.",
+  alternates: { canonical: "/updates" },
+  openGraph: {
+    title: "Updates — Ornata",
+    description: "See what is new in every version of Ornata for macOS.",
+    url: "https://ornata.app/updates",
+  },
+};
+
+export default function UpdatesPage() {
+  return (
+    <>
+      <Nav />
+      <main className="px-4 pb-16 pt-36 sm:px-8 sm:pt-44">
+        <header className="mx-auto w-full max-w-4xl">
+          <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 font-medium text-[12px] text-muted-foreground">
+            Product updates
+          </span>
+          <div className="mt-6 flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
+            <div className="max-w-2xl">
+              <h1 className="text-balance font-serif text-[44px] leading-[1.02] tracking-[-0.025em] text-foreground sm:text-[64px]">
+                What&apos;s new in Ornata.
+              </h1>
+              <p className="mt-5 max-w-xl text-pretty text-[15.5px] leading-7 text-muted-foreground">
+                New capabilities, thoughtful improvements, and the fixes that
+                make Ornata feel quieter and more dependable with every release.
+              </p>
+            </div>
+            <DownloadButton label="Download latest" size="md" />
+          </div>
+        </header>
+
+        <section
+          aria-label="Ornata release history"
+          className="mx-auto mt-20 w-full max-w-4xl border-t border-border"
+        >
+          {RELEASES.map((release, index) => (
+            <article
+              key={release.version}
+              className="grid gap-6 border-b border-border py-10 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-10 sm:py-14"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-[12px] font-medium text-foreground">
+                    v{release.version}
+                  </p>
+                  {index === 0 ? (
+                    <span className="rounded-full bg-primary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-primary-foreground">
+                      Latest
+                    </span>
+                  ) : null}
+                </div>
+                <time
+                  dateTime={release.dateTime}
+                  className="mt-2 block font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint"
+                >
+                  {release.date}
+                </time>
+              </div>
+
+              <div className="min-w-0">
+                <h2 className="text-balance text-[21px] font-medium leading-7 tracking-[-0.015em] text-foreground sm:text-[24px]">
+                  {release.summary}
+                </h2>
+                <ul className="mt-6 space-y-3">
+                  {release.changes.map((change) => (
+                    <li
+                      key={change}
+                      className="flex items-start gap-3 text-pretty text-[14px] leading-6 text-muted-foreground"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="mt-[10px] size-1 shrink-0 rounded-full bg-faint"
+                      />
+                      <span>{change}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}

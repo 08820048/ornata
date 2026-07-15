@@ -78,12 +78,14 @@ export function AgentTrace() {
             className="mt-5 text-pretty leading-8 text-muted-foreground"
           >
             AssistantPi connects to Pi already installed and configured on your
-            Mac. Select a passage for context, choose a permission mode, and ask
-            it to work across your notes, todos, and bookmarks.
+            Mac. Your open note is attached automatically; select a passage when
+            you want precise context, choose a permission mode, and ask it to work
+            across your notes, todos, and bookmarks.
           </motion.p>
           <motion.ul {...rise(0.18)} className="mt-7 flex flex-col gap-3">
             {[
               "Uses the model and provider you configure in Pi",
+              "Knows the open note and can include the exact passage you select",
               "Read only by default; writing and destructive actions stay gated",
               "Full Access unlocks every Pi tool, including shell commands",
             ].map((line) => (
@@ -113,8 +115,12 @@ export function AgentTrace() {
             <div className="px-4 pb-4 sm:px-5 sm:pb-5">
               <div className="rounded-xl bg-card p-3">
                 <div className="flex items-center gap-2 text-[10.5px] text-faint">
+                  <FileText className="size-3.5" />
+                  <span>Current note · Q3 Roadmap</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2 text-[10.5px] text-faint">
                   <TextQuote className="size-3.5" />
-                  <span>Selection · Q3 Roadmap</span>
+                  <span>Selection</span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-pretty text-[12px] leading-5 text-fg-soft">
                   Ship the editor rewrite, then open up the workflow to AssistantPi.

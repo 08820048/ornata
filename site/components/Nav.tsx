@@ -1,16 +1,21 @@
 "use client";
 
 import { motion } from "motion/react";
+import { usePathname } from "next/navigation";
 import { Wordmark } from "./Logo";
 import { DownloadButton } from "./ui/download-button";
+import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "Agent", href: "#agent" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Features", href: "/#features" },
+  { label: "Agent", href: "/#agent" },
+  { label: "Updates", href: "/updates" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export function Nav() {
+  const pathname = usePathname();
+
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
       <motion.header
@@ -20,14 +25,20 @@ export function Nav() {
         className="pointer-events-auto mx-auto flex h-14 w-full max-w-5xl items-center justify-between rounded-full border border-border/50 bg-background/60 px-3 backdrop-blur-xl sm:px-4"
       >
         <a href="/" aria-label="Ornata home" className="px-1">
-          <Wordmark size={22} />
+          <Wordmark size={22} priority />
         </a>
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
           {LINKS.map((l) => (
             <a
               key={l.label}
               href={l.href}
-              className="rounded-full px-3.5 py-2 text-[13.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              aria-current={pathname === l.href ? "page" : undefined}
+              className={cn(
+                "rounded-full px-3.5 py-2 text-[13.5px] font-medium transition-colors duration-150",
+                pathname === l.href
+                  ? "bg-card text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               {l.label}
             </a>
