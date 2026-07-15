@@ -18,6 +18,7 @@ export interface VaultSnapshot {
   name: string;
   tree: TreeNode[];
   theme: Theme;
+  outlineSound: boolean;
 }
 
 export interface Todo {

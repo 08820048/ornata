@@ -36,6 +36,7 @@ import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
+import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
 import { insertImageFile } from "./insertImage";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
@@ -83,6 +84,8 @@ export const NoteEditor = memo(function NoteEditor({
   const [missing, setMissing] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [rawText, setRawText] = useState("");
+  const [outlineItems, setOutlineItems] = useState<OutlineItem[]>([]);
+  const [activeOutlineKey, setActiveOutlineKey] = useState<string | null>(null);
 
   const noteRef = useRef(note);
   const currentKey = noteKey(note);
@@ -103,6 +106,23 @@ export const NoteEditor = memo(function NoteEditor({
   // True only while we're programmatically replacing the document, so the
   // resulting onUpdate doesn't mark the fresh content as an unsaved edit.
   const swapping = useRef(false);
+  const outlineFrame = useRef<number | null>(null);
+
+  const syncOutline = useCallback((instance: NonNullable<EditorInstance>) => {
+    const next = outlineHeadingElements(instance).map((heading, index) => {
+      const level = Number(heading.tagName.slice(1)) as OutlineItem["level"];
+      const text = heading.textContent?.trim() ?? "";
+      return { key: `${index}:${level}:${text}`, text, level };
+    });
+    setOutlineItems((current) =>
+      sameOutline(current, next) ? current : next,
+    );
+    setActiveOutlineKey((current) =>
+      current && next.some((item) => item.key === current)
+        ? current
+        : (next[0]?.key ?? null),
+    );
+  }, []);
 
   const persist = useCallback(
     async (markdown: string, target: NoteRef) => {
@@ -259,6 +279,7 @@ export const NoteEditor = memo(function NoteEditor({
         setSaveState("saving");
         debouncedPersist(markdown);
         setWords(countWords(markdown, languageRef.current));
+        syncOutline(editor);
         updateSlashMenu(editor);
       },
       onSelectionUpdate({ editor }) {
@@ -270,7 +291,7 @@ export const NoteEditor = memo(function NoteEditor({
         );
       },
     },
-    [extensions],
+    [extensions, syncOutline],
   );
 
   useEffect(() => {
@@ -306,6 +327,8 @@ export const NoteEditor = memo(function NoteEditor({
     noteRef.current = note;
     setMissing(false);
     setSlashMenu(null);
+    setOutlineItems([]);
+    setActiveOutlineKey(null);
 
     const load =
       note.kind === "vault"
@@ -329,6 +352,7 @@ export const NoteEditor = memo(function NoteEditor({
           contentType: "markdown",
         });
         swapping.current = false;
+        syncOutline(editor);
         setWords(countWords(body, language));
         // A freshly loaded note starts at the top.
         savedScroll.current = 0;
@@ -349,7 +373,15 @@ export const NoteEditor = memo(function NoteEditor({
     return () => {
       cancelled = true;
     };
-  }, [editor, note, currentKey, persist, debouncedPersist, language]);
+  }, [
+    editor,
+    note,
+    currentKey,
+    persist,
+    debouncedPersist,
+    language,
+    syncOutline,
+  ]);
 
   const previousSource = useRef(markdownSource);
   useEffect(() => {
@@ -370,7 +402,8 @@ export const NoteEditor = memo(function NoteEditor({
       contentType: "markdown",
     });
     swapping.current = false;
-  }, [editor, markdownSource, rawText]);
+    syncOutline(editor);
+  }, [editor, markdownSource, rawText, syncOutline]);
 
   // Flush any unsaved edit when the editor unmounts (tab closed / view gone).
   useEffect(() => {
@@ -404,12 +437,61 @@ export const NoteEditor = memo(function NoteEditor({
           contentType: "markdown",
         });
         swapping.current = false;
+        syncOutline(editor);
         setWords(countWords(body, language));
       }
     } catch {
       // note may have been deleted externally; tree refresh handles it
     }
-  }, [editor, language]);
+  }, [editor, language, syncOutline]);
+
+  const updateActiveOutline = useCallback(() => {
+    if (outlineFrame.current !== null) return;
+    outlineFrame.current = window.requestAnimationFrame(() => {
+      outlineFrame.current = null;
+      const root = scrollRef.current;
+      if (!root || !editor || outlineItems.length === 0) return;
+      const headings = outlineHeadingElements(editor);
+      if (headings.length === 0) return;
+      const readingLine = root.getBoundingClientRect().top + 120;
+      let nextIndex = 0;
+      for (let index = 0; index < headings.length; index += 1) {
+        if (headings[index].getBoundingClientRect().top <= readingLine) {
+          nextIndex = index;
+        } else {
+          break;
+        }
+      }
+      setActiveOutlineKey(outlineItems[nextIndex]?.key ?? null);
+    });
+  }, [editor, outlineItems]);
+
+  useEffect(() => {
+    if (active && !markdownSource) updateActiveOutline();
+    return () => {
+      if (outlineFrame.current !== null) {
+        window.cancelAnimationFrame(outlineFrame.current);
+        outlineFrame.current = null;
+      }
+    };
+  }, [active, markdownSource, outlineItems, updateActiveOutline]);
+
+  const selectOutlineItem = useCallback(
+    (index: number) => {
+      if (!editor) return;
+      const heading = outlineHeadingElements(editor)[index];
+      if (!heading) return;
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      heading.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start",
+      });
+      setActiveOutlineKey(outlineItems[index]?.key ?? null);
+    },
+    [editor, outlineItems],
+  );
 
   useEffect(() => {
     if (!editor) return;
@@ -563,99 +645,111 @@ export const NoteEditor = memo(function NoteEditor({
   };
 
   return (
-    <div
-      ref={scrollRef}
-      className="page-scroll"
-      onScroll={(event) => {
-        savedScroll.current = event.currentTarget.scrollTop;
-      }}
-    >
-      <div className="note-page">
-        {missing ? (
-          <p className="pt-16 text-center text-[14px] text-faint">
-            {t("editor.missing")}
-          </p>
-        ) : (
-          <TitleInput
-            key={currentKey}
-            title={noteTitle(note)}
-            focusNonce={
-              titleFocusReq?.key === currentKey
-                ? titleFocusReq.nonce
-                : undefined
-            }
-            onRename={(name) =>
-              flushThen(() => {
-                if (note.kind === "vault") renameEntry(note.rel, name);
-                else renameExternalNote(note.path, name);
-              })
-            }
-          />
-        )}
-        <div className={cx(missing && "hidden")}>
-          {markdownSource ? (
-            <Suspense fallback={null}>
-              <MarkdownSourceEditor
-                value={rawText}
-                onSelectionChange={publishAgentSelection}
-                onChange={(text) => {
-                setRawText(text);
-                const { frontmatter: fm, body } = splitFrontmatter(text);
-                frontmatter.current = fm;
-                setProperties(parseFrontmatter(fm));
-                pending.current = body;
-                setSaveState("saving");
-                debouncedPersist(body);
-                setWords(countWords(body, language));
-              }}
-              />
-            </Suspense>
+    <>
+      <div
+        ref={scrollRef}
+        className="page-scroll"
+        onScroll={(event) => {
+          savedScroll.current = event.currentTarget.scrollTop;
+          updateActiveOutline();
+        }}
+      >
+        <div className="note-page">
+          {missing ? (
+            <p className="pt-16 text-center text-[14px] text-faint">
+              {t("editor.missing")}
+            </p>
           ) : (
-            <>
-              <NoteProperties properties={properties} />
-              <EditorContent editor={editor} />
-            </>
+            <TitleInput
+              key={currentKey}
+              title={noteTitle(note)}
+              focusNonce={
+                titleFocusReq?.key === currentKey
+                  ? titleFocusReq.nonce
+                  : undefined
+              }
+              onRename={(name) =>
+                flushThen(() => {
+                  if (note.kind === "vault") renameEntry(note.rel, name);
+                  else renameExternalNote(note.path, name);
+                })
+              }
+            />
+          )}
+          <div className={cx(missing && "hidden")}>
+            {markdownSource ? (
+              <Suspense fallback={null}>
+                <MarkdownSourceEditor
+                  value={rawText}
+                  onSelectionChange={publishAgentSelection}
+                  onChange={(text) => {
+                    setRawText(text);
+                    const { frontmatter: fm, body } = splitFrontmatter(text);
+                    frontmatter.current = fm;
+                    setProperties(parseFrontmatter(fm));
+                    pending.current = body;
+                    setSaveState("saving");
+                    debouncedPersist(body);
+                    setWords(countWords(body, language));
+                  }}
+                />
+              </Suspense>
+            ) : (
+              <>
+                <NoteProperties properties={properties} />
+                <EditorContent editor={editor} />
+              </>
+            )}
+          </div>
+          {active && editor && !markdownSource && (
+            <SelectionMenu editor={editor} />
+          )}
+          {active && !markdownSource && (
+            <SlashMenu
+              editor={editor}
+              menu={slashMenu}
+              onClose={() => setSlashMenu(null)}
+              allowNoteLinks={note.kind === "vault"}
+              onLinkToNote={(range) => {
+                if (slashMenu && note.kind === "vault") {
+                  setLinkPicker({
+                    range,
+                    position: slashMenu.position,
+                    side: slashMenu.side,
+                  });
+                }
+                setSlashMenu(null);
+              }}
+            />
+          )}
+          {active && !markdownSource && linkPicker && note.kind === "vault" && (
+            <NoteLinkPicker
+              state={linkPicker}
+              currentRel={note.rel}
+              onPick={insertNoteLink}
+              onClose={() => setLinkPicker(null)}
+            />
           )}
         </div>
-        {active && editor && !markdownSource && <SelectionMenu editor={editor} />}
-        {active && !markdownSource && (
-          <SlashMenu
-            editor={editor}
-            menu={slashMenu}
-            onClose={() => setSlashMenu(null)}
-            allowNoteLinks={note.kind === "vault"}
-            onLinkToNote={(range) => {
-              if (slashMenu && note.kind === "vault") {
-                setLinkPicker({
-                  range,
-                  position: slashMenu.position,
-                  side: slashMenu.side,
-                });
-              }
-              setSlashMenu(null);
-            }}
-          />
-        )}
-        {active && !markdownSource && linkPicker && note.kind === "vault" && (
-          <NoteLinkPicker
-            state={linkPicker}
-            currentRel={note.rel}
-            onPick={insertNoteLink}
-            onClose={() => setLinkPicker(null)}
-          />
+        {active && (
+          <div
+            className={cx(
+              "pointer-events-none fixed bottom-3 right-4 text-[11px] tabular-nums text-faint transition-opacity duration-300",
+              (words === 0 || missing) && "opacity-0",
+            )}
+          >
+            {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
+          </div>
         )}
       </div>
-      {active && (
-        <div
-          className={cx(
-            "pointer-events-none fixed bottom-3 right-4 text-[11px] tabular-nums text-faint transition-opacity duration-300",
-            (words === 0 || missing) && "opacity-0",
-          )}
-        >
-          {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
-        </div>
+      {active && editor && !missing && !markdownSource && (
+        <ArticleOutline
+          items={outlineItems}
+          activeKey={activeOutlineKey}
+          onSelect={selectOutlineItem}
+        />
       )}
-    </div>
+    </>
   );
 });
 
@@ -726,6 +820,24 @@ function TitleInput({
 function resizeTitle(element: HTMLTextAreaElement) {
   element.style.height = "0px";
   element.style.height = `${element.scrollHeight}px`;
+}
+
+function sameOutline(current: OutlineItem[], next: OutlineItem[]) {
+  return (
+    current.length === next.length &&
+    current.every(
+      (item, index) =>
+        item.key === next[index]?.key &&
+        item.text === next[index]?.text &&
+        item.level === next[index]?.level,
+    )
+  );
+}
+
+function outlineHeadingElements(instance: NonNullable<EditorInstance>) {
+  return Array.from(
+    instance.view.dom.querySelectorAll<HTMLElement>("h1, h2, h3"),
+  ).filter((heading) => heading.textContent?.trim());
 }
 
 function countWords(markdown: string, language: "en" | "zh-CN") {

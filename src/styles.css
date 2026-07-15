@@ -252,6 +252,7 @@ body {
 .prose-note h3,
 .prose-note h4 {
     line-height: 1.25;
+    scroll-margin-top: 28px;
     text-wrap: balance;
 }
 .prose-note h1 {

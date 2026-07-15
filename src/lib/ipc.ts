@@ -120,6 +120,8 @@ export const ipc = {
   saveImageAsset: (data: string, extension: string) =>
     call<string>("save_image_asset", { data, extension }),
   setTheme: (theme: Theme) => call<void>("set_theme", { theme }),
+  setOutlineSound: (enabled: boolean) =>
+    call<void>("set_outline_sound", { enabled }),
   getLanguage: () => call<Language>("get_language"),
   setLanguage: (language: Language) =>
     call<void>("set_language", { language }),

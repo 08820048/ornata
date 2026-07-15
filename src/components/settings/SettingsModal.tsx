@@ -44,6 +44,8 @@ export function SettingsModal() {
   const setOpen = useUi((s) => s.setSettingsOpen);
   const theme = useVault((s) => s.theme);
   const setTheme = useVault((s) => s.setTheme);
+  const outlineSound = useVault((s) => s.outlineSound);
+  const setOutlineSound = useVault((s) => s.setOutlineSound);
   const root = useVault((s) => s.root);
   const chooseVault = useVault((s) => s.chooseVault);
   const language = useLocale((s) => s.language);
@@ -158,6 +160,37 @@ export function SettingsModal() {
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="mt-3 flex min-h-10 items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[12.5px] font-medium text-ink">
+              {t("settings.outlineSound")}
+            </p>
+            <p className="mt-0.5 text-[10.5px] leading-4 text-faint">
+              {t("settings.outlineSoundDetail")}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={outlineSound}
+            aria-label={t("settings.outlineSound")}
+            onClick={() => void setOutlineSound(!outlineSound)}
+            className={cx(
+              "relative h-6 w-11 shrink-0 rounded-full p-1 transition-[background-color,transform] duration-150 after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] active:scale-[0.96]",
+              outlineSound ? "bg-invert" : "bg-sunken",
+            )}
+          >
+            <motion.span
+              animate={{ x: outlineSound ? 20 : 0 }}
+              transition={SPRING_LAYOUT}
+              className={cx(
+                "block size-4 rounded-full",
+                outlineSound ? "bg-invert-ink" : "bg-muted",
+              )}
+            />
+          </button>
         </section>
 
         <section className="mt-5">

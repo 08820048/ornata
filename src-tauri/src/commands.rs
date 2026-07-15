@@ -95,10 +95,12 @@ pub struct VaultSnapshot {
     pub name: String,
     pub tree: Vec<TreeNode>,
     pub theme: Theme,
+    pub outline_sound: bool,
 }
 
 fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
     let tree = vault::scan_tree(root)?;
+    let config = config::load(app);
     let name = root
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -107,7 +109,8 @@ fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
         root: root.display().to_string(),
         name,
         tree,
-        theme: config::load(app).theme,
+        theme: config.theme,
+        outline_sound: config.outline_sound,
     })
 }
 
@@ -457,6 +460,13 @@ pub fn save_image_asset(
 pub fn set_theme(app: AppHandle, theme: Theme) -> AppResult<()> {
     let mut cfg = config::load(&app);
     cfg.theme = theme;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
+pub fn set_outline_sound(app: AppHandle, enabled: bool) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.outline_sound = enabled;
     config::save(&app, &cfg)
 }
 

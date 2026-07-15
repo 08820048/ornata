@@ -6,7 +6,7 @@ use tauri::Manager;
 
 use crate::error::AppResult;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppConfig {
     #[serde(default)]
@@ -15,6 +15,23 @@ pub struct AppConfig {
     pub theme: Theme,
     #[serde(default)]
     pub language: Language,
+    #[serde(default = "default_outline_sound")]
+    pub outline_sound: bool,
+}
+
+const fn default_outline_sound() -> bool {
+    true
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            vault_path: None,
+            theme: Theme::default(),
+            language: Language::default(),
+            outline_sound: default_outline_sound(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
@@ -68,6 +85,7 @@ mod tests {
     fn old_config_defaults_to_english() {
         let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
         assert_eq!(config.language, Language::English);
+        assert!(config.outline_sound);
     }
 
     #[test]
@@ -75,5 +93,14 @@ mod tests {
         let config: AppConfig = serde_json::from_str(r#"{"language":"zh-CN"}"#).unwrap();
         assert_eq!(config.language, Language::SimplifiedChinese);
         assert!(serde_json::to_string(&config).unwrap().contains("zh-CN"));
+    }
+
+    #[test]
+    fn outline_sound_preference_roundtrips() {
+        let config: AppConfig = serde_json::from_str(r#"{"outlineSound":false}"#).unwrap();
+        assert!(!config.outline_sound);
+        assert!(serde_json::to_string(&config)
+            .unwrap()
+            .contains(r#""outlineSound":false"#));
     }
 }

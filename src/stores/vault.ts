@@ -27,6 +27,7 @@ interface VaultState {
   name: string;
   tree: TreeNode[];
   theme: Theme;
+  outlineSound: boolean;
   view: View | null;
   expanded: Set<string>;
   /** note rels most recently opened, newest first (session MRU) */
@@ -52,6 +53,7 @@ interface VaultState {
   deleteExternalNote: (path: string) => Promise<void>;
 
   setTheme: (theme: Theme) => Promise<void>;
+  setOutlineSound: (enabled: boolean) => Promise<void>;
   cycleTheme: () => Promise<void>;
 }
 
@@ -86,6 +88,7 @@ function openVaultSnapshot(
     name: snapshot.name,
     tree: snapshot.tree,
     theme: snapshot.theme,
+    outlineSound: snapshot.outlineSound,
     view: null,
     expanded: new Set<string>(),
     recentNotes: seedRecents(snapshot.tree),
@@ -129,6 +132,7 @@ export const useVault = create<VaultState>((set, get) => ({
   name: "",
   tree: [],
   theme: "system",
+  outlineSound: true,
   view: null,
   expanded: new Set<string>(),
   recentNotes: [],
@@ -149,6 +153,7 @@ export const useVault = create<VaultState>((set, get) => ({
         name: snapshot.name,
         tree: snapshot.tree,
         theme: snapshot.theme,
+        outlineSound: snapshot.outlineSound,
         recentNotes: seedRecents(snapshot.tree),
       });
     } catch (err) {
@@ -384,6 +389,15 @@ export const useVault = create<VaultState>((set, get) => ({
     set({ theme });
     try {
       await ipc.setTheme(theme);
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  setOutlineSound: async (outlineSound) => {
+    set({ outlineSound });
+    try {
+      await ipc.setOutlineSound(outlineSound);
     } catch (err) {
       oops(err);
     }

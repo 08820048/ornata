@@ -80,6 +80,7 @@ pub fn run() {
             external_notes::export_external_note,
             commands::save_image_asset,
             commands::set_theme,
+            commands::set_outline_sound,
             commands::get_language,
             commands::set_language,
         ])
