@@ -385,8 +385,15 @@ export const NoteEditor = memo(function NoteEditor({
     const onFocus = () => {
       if (activeRef.current) reloadIfChanged();
     };
+    const onAgentChange = () => {
+      if (activeRef.current) void reloadIfChanged();
+    };
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("ornata-agent-notes-changed", onAgentChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("ornata-agent-notes-changed", onAgentChange);
+    };
   }, [reloadIfChanged]);
 
   // On tab activation: restore the pane's scroll offset (display:none wiped

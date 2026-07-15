@@ -1,4 +1,8 @@
+mod agent;
+mod agent_bridge;
 mod agent_docs;
+mod agent_locator;
+mod agent_tools;
 mod assets;
 mod bookmarks;
 mod commands;
@@ -23,7 +27,14 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState::default())
+        .manage(agent::AgentState::default())
         .invoke_handler(tauri::generate_handler![
+            agent::agent_status,
+            agent::agent_start,
+            agent::agent_send,
+            agent::agent_set_permission,
+            agent::agent_abort,
+            agent::agent_stop,
             commands::startup,
             commands::choose_vault,
             commands::create_vault,

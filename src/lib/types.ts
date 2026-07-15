@@ -1,5 +1,6 @@
 export type Theme = "system" | "light" | "dark";
 export type Language = "en" | "zh-CN";
+export type AgentPermission = "readOnly" | "readWrite" | "fullAccess";
 
 export type NodeKind = "folder" | "note";
 
@@ -49,6 +50,14 @@ export interface SearchHit {
 export interface ExternalNote {
   path: string;
   title: string;
+}
+
+export interface PiStatus {
+  installed: boolean;
+  running: boolean;
+  path: string | null;
+  version: string | null;
+  permission: AgentPermission;
 }
 
 export type NoteRef =

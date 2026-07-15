@@ -1,8 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   Bookmark,
+  AgentPermission,
   ExternalNote,
   Language,
+  PiStatus,
   SearchHit,
   Theme,
   Todo,
@@ -36,6 +38,14 @@ async function call<T>(command: string, args?: Record<string, unknown>) {
 }
 
 export const ipc = {
+  agentStatus: () => call<PiStatus>("agent_status"),
+  agentStart: () => call<PiStatus>("agent_start"),
+  agentSend: (message: string) => call<void>("agent_send", { message }),
+  agentAbort: () => call<void>("agent_abort"),
+  agentStop: () => call<void>("agent_stop"),
+  agentSetPermission: (permission: AgentPermission) =>
+    call<void>("agent_set_permission", { permission }),
+
   startup: () => call<VaultSnapshot | null>("startup"),
   chooseVault: () => call<VaultSnapshot | null>("choose_vault"),
   createVault: () => call<VaultSnapshot | null>("create_vault"),

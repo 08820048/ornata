@@ -19,3 +19,4 @@ public/updates/*.tar.gz
 
 # TS build cache
 *.tsbuildinfo
+.vercel

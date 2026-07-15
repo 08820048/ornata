@@ -23,7 +23,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    fn root(&self) -> AppResult<PathBuf> {
+    pub(crate) fn root(&self) -> AppResult<PathBuf> {
         self.vault
             .read()
             .map_err(|_| AppError::Other("state lock poisoned".to_string()))?
@@ -97,7 +97,7 @@ pub struct VaultSnapshot {
     pub theme: Theme,
 }
 
-fn snapshot(app: &AppHandle, root: &PathBuf) -> AppResult<VaultSnapshot> {
+fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
     let tree = vault::scan_tree(root)?;
     let name = root
         .file_name()

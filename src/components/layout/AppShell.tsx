@@ -26,6 +26,7 @@ import { useTodos } from "@/stores/todos";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
+import { AgentPanel } from "@/components/agent/AgentPanel";
 
 const SIDEBAR_WIDTH = 240;
 
@@ -245,6 +246,7 @@ export function AppShell() {
             </div>
           )}
           {!view && <EmptyState />}
+          <AgentPanel />
         </div>
       </main>
     </div>
