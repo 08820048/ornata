@@ -20,6 +20,14 @@ export interface AgentMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  selection?: AgentSelection;
+}
+
+export interface AgentSelection {
+  sourceKey: string;
+  source: string;
+  title: string;
+  text: string;
 }
 
 export interface AgentActivity {
@@ -39,12 +47,14 @@ interface AgentStore {
   streamingMessageId: string | null;
   vaultRoot: string | null;
   permission: AgentPermission;
+  selection: AgentSelection | null;
   initialize: (root: string) => Promise<void>;
   start: () => Promise<boolean>;
   send: (message: string) => Promise<void>;
   abort: () => Promise<void>;
   retry: () => Promise<void>;
   setPermission: (permission: AgentPermission) => Promise<void>;
+  setSelection: (selection: AgentSelection | null) => void;
 }
 
 let listenerPromise: Promise<UnlistenFn[]> | null = null;
@@ -67,6 +77,24 @@ function activityDetail(value: unknown) {
     if (typeof detail === "string" && detail.trim()) return detail;
   }
   return null;
+}
+
+function messageWithSelection(message: string, selection: AgentSelection | null) {
+  if (!selection) return message;
+  const available = Math.max(0, 28_000 - message.length);
+  const selectedText = selection.text.slice(0, available);
+  const truncated = selectedText.length < selection.text.length;
+  return [
+    "The user attached a text selection from an Ornata note.",
+    JSON.stringify({
+      source: selection.source,
+      title: selection.title,
+      selectedText,
+      truncated,
+    }),
+    "User request:",
+    message,
+  ].join("\n\n");
 }
 
 function ensureListeners() {
@@ -235,12 +263,13 @@ export const useAgent = create<AgentStore>((set, get) => ({
   streamingMessageId: null,
   vaultRoot: null,
   permission: "readOnly",
+  selection: null,
 
   initialize: async (root) => {
     await ensureListeners();
     if (get().vaultRoot && get().vaultRoot !== root) {
       await ipc.agentStop().catch(() => undefined);
-      set({ messages: [], activities: [], model: null });
+      set({ messages: [], activities: [], model: null, selection: null });
     }
     set({ vaultRoot: root, connection: "starting", error: null });
     await ipc.agentSetPermission(get().permission);
@@ -275,16 +304,21 @@ export const useAgent = create<AgentStore>((set, get) => ({
   send: async (message) => {
     const text = message.trim();
     if (!text || get().connection === "running") return;
+    const selection = get().selection;
     let ready = get().connection === "ready";
     if (!ready) ready = await get().start();
     if (!ready) return;
     set((state) => ({
       connection: "running",
-      messages: [...state.messages, { id: id(), role: "user", content: text }],
+      messages: [
+        ...state.messages,
+        { id: id(), role: "user", content: text, selection: selection ?? undefined },
+      ],
+      selection: null,
       error: null,
     }));
     try {
-      await ipc.agentSend(text);
+      await ipc.agentSend(messageWithSelection(text, selection));
     } catch (error) {
       set({ connection: "error", error: String(error) });
     }
@@ -316,4 +350,6 @@ export const useAgent = create<AgentStore>((set, get) => ({
       set({ error: String(error) });
     }
   },
+
+  setSelection: (selection) => set({ selection }),
 }));

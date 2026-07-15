@@ -31,6 +31,7 @@ import { flattenNotes } from "@/lib/tree";
 import type { NoteRef } from "@/lib/types";
 import { cx, debounce } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
+import { useAgent } from "@/stores/agent";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
@@ -178,6 +179,22 @@ export const NoteEditor = memo(function NoteEditor({
     });
   }, []);
 
+  const publishAgentSelection = useCallback((text: string) => {
+    if (!activeRef.current) return;
+    const agent = useAgent.getState();
+    if (!text.trim()) {
+      agent.setSelection(null);
+      return;
+    }
+    const current = noteRef.current;
+    agent.setSelection({
+      sourceKey: noteKey(current),
+      source: current.kind === "vault" ? `notes/${current.rel}` : current.path,
+      title: noteTitle(current),
+      text,
+    });
+  }, []);
+
   const editor = useEditor(
     {
       content: "",
@@ -246,10 +263,32 @@ export const NoteEditor = memo(function NoteEditor({
       },
       onSelectionUpdate({ editor }) {
         updateSlashMenu(editor);
+        if (!activeRef.current) return;
+        const { from, to, empty } = editor.state.selection;
+        publishAgentSelection(
+          empty ? "" : editor.state.doc.textBetween(from, to, "\n", "\n"),
+        );
       },
     },
     [extensions],
   );
+
+  useEffect(() => {
+    if (!active || !editor) return;
+    if (markdownSource) {
+      const agent = useAgent.getState();
+      if (agent.selection?.sourceKey === currentKey) agent.setSelection(null);
+      return;
+    }
+    const { from, to, empty } = editor.state.selection;
+    publishAgentSelection(
+      empty ? "" : editor.state.doc.textBetween(from, to, "\n", "\n"),
+    );
+    return () => {
+      const agent = useAgent.getState();
+      if (agent.selection?.sourceKey === currentKey) agent.setSelection(null);
+    };
+  }, [active, currentKey, editor, markdownSource, publishAgentSelection]);
 
   // Load the note (and swap in its content) whenever `note` changes. The old
   // note's pending edit is flushed to *its* path first, before we switch.
@@ -558,6 +597,7 @@ export const NoteEditor = memo(function NoteEditor({
             <Suspense fallback={null}>
               <MarkdownSourceEditor
                 value={rawText}
+                onSelectionChange={publishAgentSelection}
                 onChange={(text) => {
                 setRawText(text);
                 const { frontmatter: fm, body } = splitFrontmatter(text);

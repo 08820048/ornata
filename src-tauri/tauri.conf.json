@@ -13,11 +13,12 @@
     "windows": [
       {
         "title": "Ornata",
-        "width": 1200,
-        "height": 800,
+        "width": 1656,
+        "height": 1180,
         "minWidth": 800,
         "minHeight": 600,
-        "maximized": true,
+        "center": true,
+        "maximized": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "decorations": true,

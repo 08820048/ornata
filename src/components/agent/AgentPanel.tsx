@@ -16,6 +16,7 @@ import {
   Sparkles,
   Square,
   Terminal,
+  TextQuote,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -25,6 +26,7 @@ import { cx } from "@/lib/utils";
 import {
   useAgent,
   type AgentActivity,
+  type AgentSelection,
 } from "@/stores/agent";
 import { useT } from "@/stores/locale";
 import { useUi } from "@/stores/ui";
@@ -56,6 +58,8 @@ export function AgentPanel() {
   const retry = useAgent((state) => state.retry);
   const permission = useAgent((state) => state.permission);
   const setPermission = useAgent((state) => state.setPermission);
+  const selection = useAgent((state) => state.selection);
+  const setSelection = useAgent((state) => state.setSelection);
   const [draft, setDraft] = useState("");
   const [copied, setCopied] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -209,6 +213,9 @@ export function AgentPanel() {
                       <p className="mb-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-faint">
                         {t("agent.you")}
                       </p>
+                      {message.selection && (
+                        <SelectionAttachment selection={message.selection} />
+                      )}
                       <div className="text-pretty text-[13px] leading-6 text-ink">
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       </div>
@@ -253,6 +260,28 @@ export function AgentPanel() {
               </div>
             )}
             <div className="rounded-2xl border border-line-soft bg-bg p-2 transition-[border-color] duration-100 focus-within:border-line">
+              <AnimatePresence initial={false}>
+                {selection && (
+                  <motion.div
+                    key={`${selection.sourceKey}:${selection.text}`}
+                    initial={{ opacity: 0, y: 5, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{
+                      opacity: 0,
+                      y: -4,
+                      filter: "blur(4px)",
+                      transition: { duration: 0.14, ease: EASE_OUT },
+                    }}
+                    transition={{ duration: 0.16, ease: EASE_OUT }}
+                  >
+                    <SelectionAttachment
+                      compact
+                      selection={selection}
+                      onRemove={() => setSelection(null)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <textarea
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
@@ -314,6 +343,60 @@ export function AgentPanel() {
           </motion.aside>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function SelectionAttachment({
+  selection,
+  compact = false,
+  onRemove,
+}: {
+  selection: AgentSelection;
+  compact?: boolean;
+  onRemove?: () => void;
+}) {
+  const t = useT();
+  const label = `${t("agent.selection")} · ${selection.title}`;
+
+  if (!compact) {
+    return (
+      <div className="mb-3 rounded-xl bg-hover px-3 py-2.5">
+        <div className="flex items-center gap-2 text-[10.5px] text-faint">
+          <TextQuote size={12.5} />
+          <span className="truncate">{label}</span>
+        </div>
+        <p className="mt-2 max-h-36 overflow-y-auto whitespace-pre-wrap break-words text-[12px] leading-5 text-muted">
+          {selection.text}
+        </p>
+      </div>
+    );
+  }
+
+  const preview = selection.text.replace(/\s+/g, " ").trim();
+  return (
+    <div className="relative mb-1 flex min-h-14 items-center gap-2.5 rounded-xl bg-hover p-2 pr-10">
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-line-soft bg-bg text-muted">
+        <TextQuote size={14} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[12px] font-medium text-ink" title={selection.text}>
+          {preview}
+        </span>
+        <span className="mt-0.5 block truncate text-[10.5px] text-faint">
+          {label}
+        </span>
+      </span>
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={t("agent.removeSelection")}
+          onClick={onRemove}
+          className="absolute right-0 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-xl text-faint transition-[background-color,color,transform] duration-100 hover:bg-active hover:text-ink active:scale-[0.96]"
+        >
+          <X size={13} />
+        </button>
+      )}
     </div>
   );
 }
