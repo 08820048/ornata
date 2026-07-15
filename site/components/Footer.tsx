@@ -28,6 +28,13 @@ const COLUMNS = [
   },
 ];
 
+const MORE_PRODUCTS = [
+  { label: "hoolo.cc", href: "https://hoolo.cc" },
+  { label: "clibo.us", href: "https://clibo.us" },
+  { label: "citu.work", href: "https://citu.work" },
+  { label: "waer.ltd", href: "https://waer.ltd" },
+];
+
 export function Footer() {
   const reduce = useReducedMotion();
   return (
@@ -52,8 +59,8 @@ export function Footer() {
               transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.15 }}
               className="mx-auto mt-5 max-w-md text-pretty text-[15px] leading-7 text-muted-foreground"
             >
-              No account, no cloud, no lock-in. Just the last notes app
-              you&apos;ll download. Probably. Grab it and start writing.
+              No required account, no proprietary note format, no lock-in. Just
+              plain Markdown, with AssistantPi available when you invite it in.
             </motion.p>
             <motion.div
               initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -85,8 +92,8 @@ export function Footer() {
                 </span>
               </div>
               <p className="mt-4 text-[13.5px] leading-6 text-muted-foreground">
-                Local-first markdown notes for macOS. Your words stay on your
-                disk.
+                Local-first Markdown notes for macOS, with permission-controlled
+                AssistantPi and files that stay yours.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-12 sm:gap-20">
@@ -111,9 +118,22 @@ export function Footer() {
               ))}
             </div>
           </div>
-          <div className="mt-12 flex flex-col items-start justify-between gap-2 border-t border-border pt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-faint sm:flex-row sm:items-center">
+          <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-faint sm:flex-row sm:items-center">
             <span>© Ornata · v{VERSION}</span>
-            <span>Built local-first · Your files stay yours</span>
+            <div className="flex flex-wrap items-center gap-x-5 sm:justify-end">
+              <span className="shrink-0">More products</span>
+              {MORE_PRODUCTS.map((product) => (
+                <a
+                  key={product.href}
+                  href={product.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-10 items-center normal-case tracking-normal text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                >
+                  {product.label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>

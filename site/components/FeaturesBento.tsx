@@ -1,6 +1,16 @@
 "use client";
 
-import { Check, FileText, Folder, Search } from "lucide-react";
+import {
+  Code2,
+  FileInput,
+  FileText,
+  Folder,
+  ImageIcon,
+  Languages,
+  ListTodo,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Grainient } from "./Grainient";
@@ -39,6 +49,39 @@ function Stage({
 }
 
 const CARD = "w-full rounded-2xl border border-black/[0.06] bg-paper shadow-[0_24px_50px_-28px_rgba(0,0,0,0.5)]";
+
+const QUICK_FEATURES = [
+  {
+    icon: FileInput,
+    title: "Open any Markdown file",
+    body: "Edit, rename, delete, and paste images even when the file lives outside your vault.",
+  },
+  {
+    icon: Code2,
+    title: "Syntax-aware code blocks",
+    body: "Fenced code stays readable with language-specific highlighting in the editor.",
+  },
+  {
+    icon: ImageIcon,
+    title: "Images that stay portable",
+    body: "Paste an image normally; Ornata saves it beside the Markdown workflow it belongs to.",
+  },
+  {
+    icon: ListTodo,
+    title: "Todos and bookmarks",
+    body: "Organize tasks and saved links with tags, without turning notes into a database.",
+  },
+  {
+    icon: Languages,
+    title: "English + 简体中文",
+    body: "Switch the entire interface language from Settings whenever you like.",
+  },
+  {
+    icon: RefreshCw,
+    title: "Signed in-app updates",
+    body: "Ornata checks, downloads, and installs Apple-notarized releases without a GitHub detour.",
+  },
+];
 
 /* ── Command palette (featured) ─────────────────────────────────────── */
 
@@ -301,8 +344,8 @@ export function FeaturesBento() {
             className="mt-5 text-balance font-serif text-[32px] leading-[1.1] text-foreground sm:text-[42px]"
           />
           <p className="mt-4 max-w-xl text-pretty text-[14.5px] leading-7 text-muted-foreground">
-            The things other apps ship in v3 — real search, page links, a command
-            palette, honest markdown — here on day one, and out of your way.
+            Search, page links, external files, highlighted code, and honest
+            markdown — fast when you need them and out of your way when you do not.
           </p>
         </div>
 
@@ -317,7 +360,7 @@ export function FeaturesBento() {
           </Cell>
           <Cell reduce={reduce} index={2} className="lg:col-span-2">
             <LinksCell still={still} />
-            <Caption title="Link ideas together" body="Type [[ to connect notes — stored as clean markdown, with backlinks." />
+            <Caption title="Link ideas together" body="Type [[ to connect notes — stored as standard Markdown links any editor can understand." />
           </Cell>
           <Cell reduce={reduce} index={3} className="lg:col-span-2">
             <FrontmatterCell still={still} />
@@ -327,6 +370,29 @@ export function FeaturesBento() {
             <SearchCell still={still} />
             <Caption title="Find it instantly" body="Title and content search, ranked — the note you meant surfaces first." />
           </Cell>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {QUICK_FEATURES.map(({ icon: Icon, title, body }, index) => (
+            <motion.div
+              key={title}
+              initial={reduce ? false : { opacity: 0, y: 14, filter: "blur(4px)" }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={reduce ? undefined : { duration: 0.4, ease: EASE_OUT, delay: Math.min(index * 0.05, 0.2) }}
+              className="flex items-start gap-3 rounded-2xl border border-border p-4"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-card text-fg-soft">
+                <Icon className="size-4" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-[14px] font-medium text-foreground">{title}</h3>
+                <p className="mt-1 text-pretty text-[12.5px] leading-5 text-muted-foreground">
+                  {body}
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>

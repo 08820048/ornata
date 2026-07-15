@@ -4,11 +4,6 @@ export const alt = "Ornata — the last notes app you'll download";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// A compact vector rendering of the folded-paper O for the generated social card.
-const MARK = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024' viewBox='0 0 1024 1024'><rect width='1024' height='1024' rx='224' fill='#191919'/><path fill='#fbfbfa' fill-rule='evenodd' d='M512 178c-190 0-292 133-292 334s102 334 292 334 292-133 292-334-102-334-292-334Zm0 168c81 0 116 61 116 166s-35 166-116 166-116-61-116-166 35-166 116-166Z'/><path d='M628 512v166l-116 168c111 0 206-49 254-140L628 512Z' fill='#c8c6c0'/></svg>`,
-)}`;
-
 export default function Image() {
   return new ImageResponse(
     (
@@ -28,7 +23,7 @@ export default function Image() {
         {/* brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={MARK} width={64} height={64} alt="" />
+          <img src="https://ornata.app/ornata-icon.png" width={64} height={64} alt="" />
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -0.5 }}>
             Ornata
           </div>
@@ -51,7 +46,7 @@ export default function Image() {
             <span style={{ color: "#9c9c95" }}>you&rsquo;ll download.</span>
           </div>
           <div style={{ display: "flex", fontSize: 30, color: "#6a6a64", maxWidth: 860 }}>
-            Local-first markdown for macOS — with AI that reads your notes.
+            Local-first Markdown for macOS — with AssistantPi on your terms.
           </div>
         </div>
 

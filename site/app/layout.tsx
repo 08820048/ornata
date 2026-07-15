@@ -10,7 +10,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono" });
 
 const TITLE = "Ornata — the last notes app you'll download";
 const DESCRIPTION =
-  "Everyone's built a notes app; few are worth keeping. Ornata is a fast, local-first markdown editor for macOS — real UI, real speed, and AI that reads your notes. Plain .md files in a folder you own.";
+  "Ornata is a local-first Markdown editor for macOS with plain files, syntax highlighting, todos, bookmarks, and permission-controlled AssistantPi.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ornata.app"),
@@ -24,9 +24,15 @@ export const metadata: Metadata = {
     "markdown editor mac",
     "Obsidian alternative",
     "AI notes app",
+    "AssistantPi",
+    "Pi coding agent",
     "note taking app",
     "plain text notes",
   ],
+  icons: {
+    icon: "/ornata-icon.png",
+    apple: "/ornata-icon.png",
+  },
   authors: [{ name: "Ornata" }],
   openGraph: {
     title: TITLE,

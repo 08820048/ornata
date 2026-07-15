@@ -30,7 +30,7 @@ export function Hero() {
           <span className="rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-wide text-foreground">
             New
           </span>
-          An AI that actually reads your notes
+          AssistantPi is here
         </motion.a>
 
         <motion.h1
@@ -50,12 +50,12 @@ export function Hero() {
         >
           Everyone&apos;s built one; most don&apos;t survive their own v2. Ornata
           is the fast, local-first markdown editor for macOS you actually keep.
-          Clean UI, instant everything, and AI that reads and writes your notes.
-          Plain{" "}
+          Clean UI, instant everything, and AssistantPi when you want it. Keep
+          every note as a plain{" "}
           <code className="rounded bg-card px-1.5 py-0.5 font-mono text-[0.85em] text-fg-soft">
             .md
           </code>{" "}
-          files in a folder you own.
+          file in a folder you own.
         </motion.p>
 
         <motion.div

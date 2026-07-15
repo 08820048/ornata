@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 const FAQS: { q: string; a: string }[] = [
   {
     q: "Where are my notes stored?",
-    a: "On your Mac, as plain Markdown files in a folder you choose. No database, no cloud, no account — open the folder in Finder anytime. The app sends nothing anywhere.",
+    a: "On your Mac, as plain Markdown files in a folder you choose. The core editor needs no account or proprietary database, and you can open the folder in Finder at any time.",
   },
   {
     q: "Is there sync?",
@@ -22,8 +22,24 @@ const FAQS: { q: string; a: string }[] = [
     a: "macOS first. Ornata is built on Tauri, which is cross-platform, so other platforms may follow — but macOS is where it's polished today.",
   },
   {
-    q: "What's the AI agent?",
-    a: "Coming soon: an agent that reads and writes your vault with your review on every edit, powered by your existing Claude subscription — no API keys, nothing leaves your Mac.",
+    q: "How does AssistantPi work?",
+    a: "Install and configure Pi on your Mac, then Ornata connects to that local Pi process. You keep control of the model and provider in Pi, while Ornata supplies permission-controlled tools for notes, todos, and bookmarks. Selected note text can be attached directly to a request.",
+  },
+  {
+    q: "What can AssistantPi access?",
+    a: "Read only is the default. Read & write can create and update content but cannot run shell commands or perform destructive structured actions. Full Access enables every Pi tool, including shell commands, plus complete Ornata CRUD. You choose the mode in the composer before sending.",
+  },
+  {
+    q: "Does AssistantPi keep everything on my Mac?",
+    a: "The Pi process and your Ornata files run locally. If the model configured in Pi is remote, the prompt and attached context are sent to that model provider under its terms. Fully local or offline behavior depends on the model setup you choose in Pi.",
+  },
+  {
+    q: "How do updates work?",
+    a: "Ornata automatically checks its signed update feed. When a release is available, you can download it with visible progress and restart to install it. Production builds are Developer ID signed and notarized by Apple.",
+  },
+  {
+    q: "Which interface languages are supported?",
+    a: "English and Simplified Chinese are built in. You can switch languages from Settings without changing the language of your notes.",
   },
 ];
 

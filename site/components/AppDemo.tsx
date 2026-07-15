@@ -220,15 +220,15 @@ function NotePane({ still }: { still: boolean }) {
       <h1 className="text-[30px] font-[680] tracking-[-0.025em] text-foreground">Q3 Roadmap</h1>
       <div className="mt-4 space-y-4 text-[15px] leading-[1.75] text-foreground/85">
         <p>
-          The quarter is about speed and focus — ship the editor rewrite, then open
-          up the workflow to an in-app agent.
+          The quarter is about speed and focus — make writing feel instant, then
+          let AssistantPi help only when it is invited.
         </p>
         <h2 className="pt-1 text-[19px] font-semibold tracking-[-0.01em] text-foreground">Milestones</h2>
         <ul className="space-y-2">
           {[
             { done: true, text: "Persistent editor — instant note switching" },
-            { done: false, text: "Agent panel with review-before-apply" },
-            { done: false, text: "Optional end-to-end sync" },
+            { done: true, text: "AssistantPi with three permission modes" },
+            { done: true, text: "External Markdown files and image paste" },
           ].map((t) => (
             <li key={t.text} className="flex items-center gap-2.5">
               <span className={cn("grid size-[18px] shrink-0 place-items-center rounded border", t.done ? "border-foreground bg-foreground text-background" : "border-border-strong")}>
@@ -301,9 +301,9 @@ const TODO_TAGS = ["work", "personal", "ornata"];
 const TODOS = [
   { done: false, text: "Reply to design feedback", tag: "work" },
   { done: false, text: "Book flights for the offsite", tag: "personal" },
-  { done: true, text: "Ship v0.1.1 to the updater", tag: "ornata" },
+  { done: true, text: "Ship the signed update", tag: "ornata" },
   { done: false, text: "Draft the Q3 roadmap", tag: "ornata" },
-  { done: false, text: "Review agent ACP notes", tag: "ornata" },
+  { done: false, text: "Test AssistantPi permissions", tag: "ornata" },
 ];
 
 function TodosPane() {
@@ -355,7 +355,7 @@ const BOOKMARKS = [
   { title: "Local-first software", host: "inkandswitch.com", tag: "reading" },
   { title: "Designing calm software", host: "calmtech.com", tag: "reading" },
   { title: "Tauri 2.0 — a new era", host: "tauri.app", tag: "dev" },
-  { title: "The Agent Client Protocol", host: "agentclientprotocol.com", tag: "agents" },
+  { title: "Pi documentation", host: "pi.dev", tag: "agents" },
 ];
 
 function BookmarksPane() {
