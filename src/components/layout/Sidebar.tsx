@@ -1,7 +1,5 @@
 import {
   ArrowDownToLine,
-  Bookmark,
-  CheckSquare,
   FilePlus,
   FolderPlus,
   Loader2,
@@ -10,8 +8,8 @@ import {
   Settings,
 } from "lucide-react";
 import { FileTree } from "@/components/tree/FileTree";
+import { SidebarCollections } from "@/components/layout/SidebarCollections";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { cx } from "@/lib/utils";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { activeDir, useVault } from "@/stores/vault";
@@ -19,8 +17,6 @@ import { useT } from "@/stores/locale";
 
 export function Sidebar() {
   const name = useVault((s) => s.name);
-  const view = useVault((s) => s.view);
-  const setView = useVault((s) => s.setView);
   const createNote = useVault((s) => s.createNote);
   const createFolder = useVault((s) => s.createFolder);
   const setSettingsOpen = useUi((s) => s.setSettingsOpen);
@@ -56,18 +52,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-0.5 px-2 pb-1">
-        <PageLink
-          active={view?.type === "todos"}
-          icon={<CheckSquare size={15} strokeWidth={1.75} />}
-          label={t("common.todos")}
-          onClick={() => setView({ type: "todos" })}
-        />
-        <PageLink
-          active={view?.type === "bookmarks"}
-          icon={<Bookmark size={15} strokeWidth={1.75} />}
-          label={t("common.bookmarks")}
-          onClick={() => setView({ type: "bookmarks" })}
-        />
+        <SidebarCollections />
       </nav>
 
       <div className="mx-4 my-2 border-t border-line-soft" />
@@ -193,33 +178,5 @@ function UpdateRow() {
         )}
       </button>
     </div>
-  );
-}
-
-function PageLink({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "flex h-[30px] w-full items-center gap-2.5 rounded-md px-2 text-[13px] transition-colors duration-100",
-        active
-          ? "bg-active text-ink"
-          : "text-muted hover:bg-hover hover:text-ink",
-      )}
-    >
-      {icon}
-      <span className="font-medium">{label}</span>
-    </button>
   );
 }

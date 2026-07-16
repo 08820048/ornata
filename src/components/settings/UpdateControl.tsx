@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { EASE_OUT } from "@/lib/ease";
 import { useUpdater } from "@/stores/updater";
 import { useT } from "@/stores/locale";
+import packageInfo from "../../../package.json";
 
 const SWAP = {
   duration: 0.14,
@@ -32,7 +33,9 @@ export function UpdateControl() {
               ? t("updates.checking")
               : status === "error"
                 ? t("updates.error")
-                : t("updates.latest");
+                : t("updates.currentVersion", {
+                    version: packageInfo.version,
+                  });
 
   return (
     <div className="mt-2 flex min-h-10 items-center justify-between gap-3">
