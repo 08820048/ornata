@@ -13,6 +13,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.1.10",
+    date: "July 16, 2026",
+    dateTime: "2026-07-16",
+    summary: "Todos and bookmarks are now useful without leaving your note.",
+    changes: [
+      "Added expandable Todo and Bookmark previews directly in the sidebar.",
+      "Complete or reopen todos from the preview without leaving the current note.",
+      "Bookmark indicators follow their first assigned tag color, and links open directly in your browser.",
+      "Settings now shows the installed Ornata version in the update section.",
+    ],
+  },
+  {
     version: "0.1.9",
     date: "July 15, 2026",
     dateTime: "2026-07-15",
