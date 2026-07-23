@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { EASE_OUT } from "@/lib/ease";
 import { noteKey, noteTitle } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
@@ -35,7 +36,7 @@ import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import type { AgentPermission } from "@/lib/types";
 
-const PANEL_WIDTH = 408;
+const PANEL_WIDTH = "clamp(408px, 44vw, 640px)";
 const INSTALL_COMMAND =
   "npm install -g --ignore-scripts @earendil-works/pi-coding-agent";
 const AgentMarkdown = lazy(() =>
@@ -159,7 +160,7 @@ export function AgentPanel() {
             style={{
               width: PANEL_WIDTH,
               maxWidth: "calc(100% - 24px)",
-              height: "min(720px, calc(100% - 24px))",
+              height: "75%",
             }}
             className="pointer-events-auto absolute bottom-3 right-3 flex origin-bottom-right flex-col overflow-hidden rounded-[20px] bg-bg shadow-2xl shadow-black/20 will-change-[transform,opacity] dark:shadow-black/60"
           >
@@ -254,6 +255,15 @@ export function AgentPanel() {
                           <ResponseLoading />
                         )}
                       </div>
+                      {message.content && (
+                        <div className="-mb-2 -mr-2 mt-1 flex justify-end">
+                          <CopyButton
+                            value={message.content}
+                            label={t("agent.copyResponse")}
+                            className="size-10 rounded-xl"
+                          />
+                        </div>
+                      )}
                     </>
                   )}
                 </motion.section>

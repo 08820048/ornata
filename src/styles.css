@@ -335,74 +335,74 @@ body {
 
 /* Lowlight syntax tokens. Color is confined to code so prose and product
    chrome keep Ornata's monochrome identity. */
-.prose-note .hljs-comment,
-.prose-note .hljs-quote {
+:is(.prose-note, .agent-markdown) .hljs-comment,
+:is(.prose-note, .agent-markdown) .hljs-quote {
     color: var(--syntax-comment);
     font-style: italic;
 }
 
-.prose-note .hljs-keyword,
-.prose-note .hljs-selector-tag {
+:is(.prose-note, .agent-markdown) .hljs-keyword,
+:is(.prose-note, .agent-markdown) .hljs-selector-tag {
     color: var(--syntax-keyword);
     font-weight: 650;
 }
 
-.prose-note .hljs-section,
-.prose-note .hljs-title.function_,
-.prose-note .hljs-title.class_ {
+:is(.prose-note, .agent-markdown) .hljs-section,
+:is(.prose-note, .agent-markdown) .hljs-title.function_,
+:is(.prose-note, .agent-markdown) .hljs-title.class_ {
     color: var(--syntax-type);
     font-weight: 650;
 }
 
-.prose-note .hljs-string,
-.prose-note .hljs-regexp,
-.prose-note .hljs-template-tag,
-.prose-note .hljs-template-variable {
+:is(.prose-note, .agent-markdown) .hljs-string,
+:is(.prose-note, .agent-markdown) .hljs-regexp,
+:is(.prose-note, .agent-markdown) .hljs-template-tag,
+:is(.prose-note, .agent-markdown) .hljs-template-variable {
     color: var(--syntax-string);
 }
 
-.prose-note .hljs-number,
-.prose-note .hljs-literal,
-.prose-note .hljs-symbol,
-.prose-note .hljs-bullet {
+:is(.prose-note, .agent-markdown) .hljs-number,
+:is(.prose-note, .agent-markdown) .hljs-literal,
+:is(.prose-note, .agent-markdown) .hljs-symbol,
+:is(.prose-note, .agent-markdown) .hljs-bullet {
     color: var(--syntax-number);
 }
 
-.prose-note .hljs-variable,
-.prose-note .hljs-variable.constant_,
-.prose-note .hljs-attr,
-.prose-note .hljs-attribute {
+:is(.prose-note, .agent-markdown) .hljs-variable,
+:is(.prose-note, .agent-markdown) .hljs-variable.constant_,
+:is(.prose-note, .agent-markdown) .hljs-attr,
+:is(.prose-note, .agent-markdown) .hljs-attribute {
     color: var(--syntax-variable);
 }
 
-.prose-note .hljs-built_in,
-.prose-note .hljs-type {
+:is(.prose-note, .agent-markdown) .hljs-built_in,
+:is(.prose-note, .agent-markdown) .hljs-type {
     color: var(--syntax-type);
 }
 
-.prose-note .hljs-meta,
-.prose-note .hljs-doctag {
+:is(.prose-note, .agent-markdown) .hljs-meta,
+:is(.prose-note, .agent-markdown) .hljs-doctag {
     color: var(--syntax-meta);
 }
 
-.prose-note .hljs-operator,
-.prose-note .hljs-punctuation {
+:is(.prose-note, .agent-markdown) .hljs-operator,
+:is(.prose-note, .agent-markdown) .hljs-punctuation {
     color: var(--syntax-operator);
 }
 
-.prose-note .hljs-addition {
+:is(.prose-note, .agent-markdown) .hljs-addition {
     color: var(--syntax-meta);
 }
 
-.prose-note .hljs-deletion {
+:is(.prose-note, .agent-markdown) .hljs-deletion {
     color: var(--syntax-keyword);
 }
 
-.prose-note .hljs-emphasis {
+:is(.prose-note, .agent-markdown) .hljs-emphasis {
     font-style: italic;
 }
 
-.prose-note .hljs-strong {
+:is(.prose-note, .agent-markdown) .hljs-strong {
     font-weight: 700;
 }
 
@@ -592,6 +592,7 @@ body {
 }
 
 .agent-markdown pre code {
+    color: var(--syntax-plain);
     border-radius: 0;
     background: transparent;
     padding: 0;
