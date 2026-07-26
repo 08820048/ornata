@@ -28,6 +28,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { toast } from "sonner";
+import { ipc } from "@/lib/ipc";
 import type { TreeNode } from "@/lib/types";
 import { EASE_OUT } from "@/lib/ease";
 import { vaultNote } from "@/lib/noteRef";
@@ -161,6 +163,15 @@ export function FileTree() {
       );
     }
     items.push(
+      {
+        label: t("tree.revealInFinder"),
+        icon: FolderOpen,
+        onSelect: () => {
+          void ipc.revealEntry(node.rel).catch((error) => {
+            toast.error(error instanceof Error ? error.message : String(error));
+          });
+        },
+      },
       {
         label: t("tree.rename"),
         icon: Pencil,

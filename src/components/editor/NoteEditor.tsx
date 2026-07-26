@@ -51,8 +51,8 @@ const MarkdownSourceEditor = lazy(() =>
 
 /**
  * One live Tiptap instance per mounted editor. Tab panes keep an instance per
- * open note (hidden via display:none when inactive) so switching tabs is a
- * pure CSS toggle — no parse, no remount, cursor/undo/scroll preserved. The
+ * open note (hidden with visibility when inactive) so switching tabs is a
+ * paint-only CSS toggle — no parse, remount, or layout rebuild. The
  * per-mount work (schema build, plugin setup, view creation) is paid once per
  * tab open, never on switch.
  *
@@ -97,8 +97,8 @@ export const NoteEditor = memo(function NoteEditor({
   const languageRef = useRef(language);
   languageRef.current = language;
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Tracked continuously — reading scrollTop after display:none flips is too
-  // late (layout is gone), so the pane restores from this on re-activation.
+  // Tracked continuously so each pane restores its own reading position when
+  // it becomes active again.
   const savedScroll = useRef(0);
   const lastSaved = useRef("");
   const pending = useRef<string | null>(null);
@@ -107,6 +107,7 @@ export const NoteEditor = memo(function NoteEditor({
   // resulting onUpdate doesn't mark the fresh content as an unsaved edit.
   const swapping = useRef(false);
   const outlineFrame = useRef<number | null>(null);
+  const refreshWhenActive = useRef(false);
 
   const syncOutline = useCallback((instance: NonNullable<EditorInstance>) => {
     const next = outlineHeadingElements(instance).map((heading, index) => {
@@ -503,26 +504,32 @@ export const NoteEditor = memo(function NoteEditor({
   }, [editor, language, markdownSource, rawText]);
 
   useEffect(() => {
-    const onFocus = () => {
-      if (activeRef.current) reloadIfChanged();
+    const refreshOrDefer = () => {
+      if (activeRef.current) {
+        refreshWhenActive.current = false;
+        void reloadIfChanged();
+      } else {
+        refreshWhenActive.current = true;
+      }
     };
-    const onAgentChange = () => {
-      if (activeRef.current) void reloadIfChanged();
-    };
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("ornata-agent-notes-changed", onAgentChange);
+    window.addEventListener("focus", refreshOrDefer);
+    window.addEventListener("ornata-agent-notes-changed", refreshOrDefer);
     return () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("ornata-agent-notes-changed", onAgentChange);
+      window.removeEventListener("focus", refreshOrDefer);
+      window.removeEventListener("ornata-agent-notes-changed", refreshOrDefer);
     };
   }, [reloadIfChanged]);
 
-  // On tab activation: restore the pane's scroll offset (display:none wiped
-  // the layout) and pick up any external edit that landed while hidden.
+  // On tab activation, restore the pane's scroll offset. A disk read is only
+  // needed when a window-focus or agent-change event occurred while hidden;
+  // ordinary in-app tab switches stay entirely in memory.
   useEffect(() => {
     if (!active) return;
     if (scrollRef.current) scrollRef.current.scrollTop = savedScroll.current;
-    reloadIfChanged();
+    if (refreshWhenActive.current) {
+      refreshWhenActive.current = false;
+      void reloadIfChanged();
+    }
   }, [active, reloadIfChanged]);
 
   // Handle link clicks in the capture phase, before the anchor's native
@@ -663,6 +670,7 @@ export const NoteEditor = memo(function NoteEditor({
             <TitleInput
               key={currentKey}
               title={noteTitle(note)}
+              active={active}
               focusNonce={
                 titleFocusReq?.key === currentKey
                   ? titleFocusReq.nonce
@@ -757,10 +765,12 @@ type EditorInstance = ReturnType<typeof useEditor>;
 
 function TitleInput({
   title,
+  active,
   focusNonce,
   onRename,
 }: {
   title: string;
+  active: boolean;
   focusNonce?: number;
   onRename: (name: string) => void;
 }) {
@@ -768,15 +778,32 @@ function TitleInput({
   const t = useT();
 
   useLayoutEffect(() => {
+    if (!active) return;
     const element = ref.current;
     const container = element?.parentElement;
     if (!element || !container) return;
-    const resize = () => resizeTitle(element);
-    resize();
-    const observer = new ResizeObserver(resize);
+    let frame: number | null = null;
+    let observedWidth = container.getBoundingClientRect().width;
+    const resize = () => {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = null;
+        resizeTitle(element);
+      });
+    };
+    resizeTitle(element);
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry?.contentRect.width ?? 0;
+      if (width <= 0 || Math.abs(width - observedWidth) < 0.5) return;
+      observedWidth = width;
+      resize();
+    });
     observer.observe(container);
-    return () => observer.disconnect();
-  }, [title]);
+    return () => {
+      observer.disconnect();
+      if (frame !== null) window.cancelAnimationFrame(frame);
+    };
+  }, [active, title]);
 
   useEffect(() => {
     if (focusNonce === undefined) return;

@@ -11,6 +11,7 @@ mod error;
 mod external_notes;
 mod link_meta;
 mod notes;
+mod reveal;
 mod search;
 mod todos;
 mod util;
@@ -55,6 +56,7 @@ pub fn run() {
             commands::rename_entry,
             commands::move_entry,
             commands::delete_entry,
+            reveal::reveal_entry,
             commands::search_notes,
             commands::todos_list,
             commands::todo_add,

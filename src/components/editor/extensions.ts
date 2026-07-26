@@ -71,7 +71,6 @@ export function createExtensions(assetRoot: string) {
       autolink: true,
       defaultProtocol: "https",
       openOnClick: false,
-      protocols: ["http", "https", "mailto"],
       // Keep relative hrefs (our internal page links, e.g. "projects/app.md").
       // Without this the default sanitizer resolves them against the app's
       // tauri:// origin and strips them. External URLs still get validated.

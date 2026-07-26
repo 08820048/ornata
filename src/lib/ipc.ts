@@ -82,6 +82,7 @@ export const ipc = {
   moveEntry: (rel: string, dir: string) =>
     call<string>("move_entry", { rel, dir }),
   deleteEntry: (rel: string) => call<void>("delete_entry", { rel }),
+  revealEntry: (rel: string) => call<void>("reveal_entry", { rel }),
   searchNotes: (query: string, limit?: number) =>
     call<SearchHit[]>("search_notes", { query, limit }),
 
