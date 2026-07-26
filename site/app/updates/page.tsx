@@ -14,6 +14,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.1.11",
+    date: "July 26, 2026",
+    dateTime: "2026-07-26",
+    summary: "Faster note switching and a direct path back to Finder.",
+    changes: [
+      "Added Show in Finder to the context menu for notes and folders.",
+      "Kept open editors laid out in memory so switching notes avoids rebuilding the document view.",
+      "Removed redundant Linkify initialization and fixed title resize feedback loops.",
+      "Limited disk refreshes to window-focus and AssistantPi change events instead of every tab switch.",
+    ],
+  },
+  {
     version: "0.1.10",
     date: "July 16, 2026",
     dateTime: "2026-07-16",
