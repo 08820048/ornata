@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { DownloadModal } from "@/components/DownloadModal";
 import { DownloadButton } from "@/components/ui/download-button";
 
 type Release = {
@@ -152,77 +153,91 @@ export default function UpdatesPage() {
   return (
     <>
       <Nav />
-      <main className="px-4 pb-16 pt-36 sm:px-8 sm:pt-44">
-        <header className="mx-auto w-full max-w-4xl">
-          <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 font-medium text-[12px] text-muted-foreground">
-            Product updates
-          </span>
-          <div className="mt-6 flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
-            <div className="max-w-2xl">
-              <h1 className="text-balance font-serif text-[44px] leading-[1.02] tracking-[-0.025em] text-foreground sm:text-[64px]">
-                What&apos;s new in Ornata.
-              </h1>
-              <p className="mt-5 max-w-xl text-pretty text-[15.5px] leading-7 text-muted-foreground">
-                New capabilities, thoughtful improvements, and the fixes that
-                make Ornata feel quieter and more dependable with every release.
+      <main className="px-3 pb-3 pt-24 sm:px-6 sm:pb-6 sm:pt-28">
+        <div className="mx-auto w-full max-w-[1440px] border-x border-t border-border bg-paper">
+          <header className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
+            <aside className="hidden border-r border-border px-8 py-16 lg:block">
+              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
+                Release archive
               </p>
-            </div>
-            <DownloadButton label="Download latest" size="md" />
-          </div>
-        </header>
-
-        <section
-          aria-label="Ornata release history"
-          className="mx-auto mt-20 w-full max-w-4xl border-t border-border"
-        >
-          {RELEASES.map((release, index) => (
-            <article
-              key={release.version}
-              className="grid gap-6 border-b border-border py-10 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-10 sm:py-14"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-mono text-[12px] font-medium text-foreground">
-                    v{release.version}
+            </aside>
+            <div className="px-5 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
+              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
+                Product updates
+              </p>
+              <div className="mt-6 flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
+                <div className="max-w-2xl">
+                  <h1 className="text-balance font-serif text-[48px] leading-[0.96] tracking-[-0.04em] text-foreground sm:text-[72px]">
+                    What&apos;s new in Ornata.
+                  </h1>
+                  <p className="mt-6 max-w-xl text-pretty text-[15px] leading-7 text-muted-foreground">
+                    New capabilities, thoughtful improvements, and the fixes
+                    that make Ornata quieter and more dependable with every
+                    release.
                   </p>
-                  {index === 0 ? (
-                    <span className="rounded-full bg-primary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-primary-foreground">
-                      Latest
-                    </span>
-                  ) : null}
                 </div>
-                <time
-                  dateTime={release.dateTime}
-                  className="mt-2 block font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint"
-                >
-                  {release.date}
-                </time>
+                <DownloadButton label="Download latest" size="md" />
               </div>
+            </div>
+          </header>
 
-              <div className="min-w-0">
-                <h2 className="text-balance text-[21px] font-medium leading-7 tracking-[-0.015em] text-foreground sm:text-[24px]">
-                  {release.summary}
-                </h2>
-                <ul className="mt-6 space-y-3">
-                  {release.changes.map((change) => (
-                    <li
-                      key={change}
-                      className="flex items-start gap-3 text-pretty text-[14px] leading-6 text-muted-foreground"
+          <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="hidden border-r border-border lg:block" />
+            <section
+              aria-label="Ornata release history"
+              className="px-5 sm:px-10 lg:px-16"
+            >
+              {RELEASES.map((release, index) => (
+                <article
+                  key={release.version}
+                  className="grid gap-6 border-b border-border py-10 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-10 sm:py-14"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-[12px] font-medium text-foreground">
+                        v{release.version}
+                      </p>
+                      {index === 0 ? (
+                        <span className="rounded-full bg-primary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-primary-foreground">
+                          Latest
+                        </span>
+                      ) : null}
+                    </div>
+                    <time
+                      dateTime={release.dateTime}
+                      className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-faint"
                     >
-                      <span
-                        aria-hidden="true"
-                        className="mt-[10px] size-1 shrink-0 rounded-full bg-faint"
-                      />
-                      <span>{change}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          ))}
-        </section>
+                      {release.date}
+                    </time>
+                  </div>
+
+                  <div className="min-w-0">
+                    <h2 className="text-balance text-[21px] font-medium leading-7 tracking-[-0.015em] text-foreground sm:text-[24px]">
+                      {release.summary}
+                    </h2>
+                    <ul className="mt-6 space-y-3">
+                      {release.changes.map((change) => (
+                        <li
+                          key={change}
+                          className="flex items-start gap-3 text-pretty text-[14px] leading-6 text-muted-foreground"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="mt-[10px] size-1 shrink-0 rounded-full bg-faint"
+                          />
+                          <span>{change}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </article>
+              ))}
+            </section>
+          </div>
+        </div>
       </main>
       <Footer />
+      <DownloadModal />
     </>
   );
 }

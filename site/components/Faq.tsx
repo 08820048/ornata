@@ -14,8 +14,8 @@ const FAQS: { q: string; a: string }[] = [
     a: "Yes. Ornata uses the same plain-Markdown vault with real folders, and preserves frontmatter from other tools. Point Ornata and Obsidian at the same folder and both just work.",
   },
   {
-    q: "Why does macOS say the app can't be verified?",
-    a: "Production downloads are signed with a Developer ID certificate and notarized by Apple. Download the latest build from ornata.app; if verification fails, confirm that you have the current installer.",
+    q: "Is the macOS download signed?",
+    a: "Yes. Production downloads are signed with an Apple Developer ID certificate, notarized by Apple, and distributed through Ornata’s signed update feed.",
   },
   {
     q: "Windows or Linux?",
@@ -55,35 +55,61 @@ const JSON_LD = {
 
 export function Faq() {
   return (
-    <section id="faq" className="w-full scroll-mt-24 px-4 py-24 sm:px-8">
+    <section
+      id="faq"
+      className="section-contain w-full scroll-mt-20 px-3 sm:px-6"
+    >
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      <div className="mx-auto w-full max-w-3xl">
-        <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 font-medium text-[12px] text-muted-foreground">
-          FAQ
-        </span>
-        <h2 className="mt-5 text-balance font-serif text-[32px] leading-[1.1] text-foreground sm:text-[42px]">
-          Questions, answered.
-        </h2>
+      <div className="mx-auto grid w-full max-w-[1440px] border-x border-b border-border bg-paper lg:grid-cols-[220px_minmax(0,1fr)]">
+        <aside className="hidden border-r border-border px-8 py-20 lg:block">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
+            Details
+          </p>
+        </aside>
+        <div className="grid gap-12 px-5 py-20 sm:px-10 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-16 lg:py-28">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
+              FAQ
+            </p>
+            <h2 className="mt-5 text-balance font-serif text-[42px] leading-[1] tracking-[-0.035em] text-foreground sm:text-[54px]">
+              The practical questions.
+            </h2>
+            <p className="mt-5 max-w-xs text-pretty text-[14px] leading-7 text-muted-foreground">
+              Storage, compatibility, updates, and exactly what AssistantPi can
+              access.
+            </p>
+          </div>
 
-        <div className="mt-10 border-t border-border">
-          {FAQS.map((f) => (
-            <details key={f.q} className="group border-b border-border py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[16px] font-medium text-foreground">
-                {f.q}
-                <Plus
-                  className="size-4 shrink-0 text-faint transition-transform duration-200 group-open:rotate-45"
-                  aria-hidden
-                />
-              </summary>
-              <p className="mt-3 max-w-2xl text-pretty text-[14.5px] leading-7 text-muted-foreground">
-                {f.a}
-              </p>
-            </details>
-          ))}
+          <div className="border-t border-border">
+            {FAQS.map((f, index) => (
+              <details
+                key={f.q}
+                className="group border-b border-border py-5"
+              >
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-6 text-[15px] font-medium text-foreground">
+                  <span className="flex items-start gap-4">
+                    <span className="mt-0.5 hidden font-mono text-[9px] text-faint sm:block">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    {f.q}
+                  </span>
+                  <span className="grid size-10 shrink-0 place-items-center">
+                    <Plus
+                      className="size-4 text-faint transition-transform duration-200 group-open:rotate-45"
+                      aria-hidden
+                    />
+                  </span>
+                </summary>
+                <p className="max-w-2xl pb-2 pl-0 pr-10 pt-2 text-pretty text-[14px] leading-7 text-muted-foreground sm:pl-9">
+                  {f.a}
+                </p>
+              </details>
+            ))}
+          </div>
         </div>
       </div>
     </section>

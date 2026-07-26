@@ -1,138 +1,145 @@
 "use client";
 
+import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { Grainient } from "./Grainient";
-import { MONO } from "./grainient-presets";
-import { LogoMark } from "./Logo";
-import { TextReveal } from "./ui/text-reveal";
-import { ButtonLink } from "./ui/button";
 import { DownloadButton } from "./ui/download-button";
+import { ButtonLink } from "./ui/button";
+import { LogoMark } from "./Logo";
 import { EASE_OUT } from "@/lib/ease";
 import { DMG, VERSION } from "@/lib/config";
 
-const COLUMNS = [
-  {
-    title: "Product",
-    links: [
-      { label: "Features", href: "/#features" },
-      { label: "Agent", href: "/#agent" },
-      { label: "Download", href: DMG },
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      { label: "Updates", href: "/updates" },
-      { label: "FAQ", href: "/#faq" },
-    ],
-  },
-];
+const LINKS = [
+  { label: "Why Ornata", href: "/#principles" },
+  { label: "Inside the app", href: "/#features" },
+  { label: "AssistantPi", href: "/#agent" },
+  { label: "Updates", href: "/updates" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Direct download", href: DMG },
+] as const;
 
 const MORE_PRODUCTS = [
   { label: "hoolo.cc", href: "https://hoolo.cc" },
   { label: "clibo.us", href: "https://clibo.us" },
   { label: "citu.work", href: "https://citu.work" },
   { label: "waer.ltd", href: "https://waer.ltd" },
-];
+] as const;
 
 export function Footer() {
   const reduce = useReducedMotion();
+
   return (
-    <footer className="w-full px-4 pb-12 sm:px-8">
-      <div className="mx-auto w-full max-w-6xl">
-        {/* CTA panel. */}
-        <div className="relative overflow-hidden">
-          {/*<Grainient className="absolute inset-0" {...MONO} />*/}
-          <div className="relative m-3 rounded-[2rem] px-6 py-16 text-center backdrop-blur-sm sm:px-10 sm:py-20">
-            <TextReveal
-              as="h2"
-              text={["Your notes,", "on your disk."]}
-              split="word"
-              blur={10}
-              whileInView
-              className="mx-auto max-w-2xl font-serif text-[36px] leading-[1.02] text-foreground sm:text-[56px]"
+    <footer className="px-3 pb-3 sm:px-6 sm:pb-6">
+      <div className="mx-auto w-full max-w-[1440px] overflow-hidden bg-night text-night-ink">
+        <div className="relative grid min-h-[500px] border-b border-night-line lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside className="hidden border-r border-night-line px-8 py-14 lg:flex lg:flex-col lg:justify-between">
+            <LogoMark size={30} />
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-night-muted">
+              Made for macOS
+            </span>
+          </aside>
+
+          <div className="relative overflow-hidden px-5 py-20 sm:px-10 lg:px-16 lg:py-24">
+            <Image
+              src="/ornata-mark-2026.png"
+              alt=""
+              width={520}
+              height={520}
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-28 -top-28 w-[420px] invert opacity-[0.035] sm:w-[520px]"
             />
             <motion.p
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.15 }}
-              className="mx-auto mt-5 max-w-md text-pretty text-[15px] leading-7 text-muted-foreground"
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, ease: EASE_OUT }}
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-night-muted"
             >
-              No required account, no proprietary note format, no lock-in. Just
-              plain Markdown, with AssistantPi available when you invite it in.
+              Start with a folder
+            </motion.p>
+            <motion.h2
+              initial={reduce ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
+              whileInView={
+                reduce ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }
+              }
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.06 }}
+              className="mt-6 max-w-4xl text-balance font-serif text-[50px] leading-[0.94] tracking-[-0.045em] sm:text-[74px] lg:text-[88px]"
+            >
+              Give your notes less software.
+            </motion.h2>
+            <motion.p
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.14 }}
+              className="mt-7 max-w-md text-pretty text-[15px] leading-7 text-night-muted"
+            >
+              Download Ornata, choose a folder, and keep writing in files that
+              never stop being yours.
             </motion.p>
             <motion.div
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.22 }}
-              className="mt-9 flex flex-wrap items-center justify-center gap-3"
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.2 }}
+              className="mt-9 flex flex-col gap-3 sm:flex-row"
             >
-              <DownloadButton size="lg" />
+              <DownloadButton
+                size="lg"
+                className="bg-night-ink text-night hover:bg-paper"
+              />
               <ButtonLink
-                href="/#features"
+                href="/updates"
                 variant="outline"
                 size="lg"
+                className="border-night-line text-night-ink hover:bg-night-line"
               >
-                Explore features
+                Read the updates
               </ButtonLink>
             </motion.div>
           </div>
         </div>
 
-        {/* Links. */}
-        <div className="mt-4 p-8 sm:p-12">
-          <div className="flex flex-col justify-between gap-12 md:flex-row">
-            <div className="max-w-xs">
-              <div className="flex items-center gap-2.5">
-                <LogoMark size={24} />
-                <span className="text-[16px] font-semibold tracking-tight text-foreground">
-                  Ornata
-                </span>
-              </div>
-              <p className="mt-4 text-[13.5px] leading-6 text-muted-foreground">
-                Local-first Markdown notes for macOS, with permission-controlled
-                AssistantPi and files that stay yours.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-12 sm:gap-20">
-              {COLUMNS.map((col) => (
-                <div key={col.title}>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
-                    {col.title}
-                  </p>
-                  <ul className="mt-4 flex flex-col gap-2.5">
-                    {col.links.map((link) => (
-                      <li key={link.label}>
-                        <a
-                          href={link.href}
-                          className="text-[13.5px] text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {link.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+        <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="hidden border-r border-night-line lg:block" />
+          <div className="px-5 py-10 sm:px-10 lg:px-16">
+            <div className="grid gap-12 md:grid-cols-[1fr_1fr]">
+              <nav className="grid grid-cols-2 gap-x-8 gap-y-1">
+                {LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="inline-flex min-h-10 items-center text-[12.5px] text-night-muted transition-colors duration-150 hover:text-night-ink"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-night-muted">
+                  More products
+                </p>
+                <div className="mt-3 flex flex-wrap gap-x-5">
+                  {MORE_PRODUCTS.map((product) => (
+                    <a
+                      key={product.href}
+                      href={product.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-10 items-center gap-1 text-[12px] text-night-muted transition-colors duration-150 hover:text-night-ink"
+                    >
+                      {product.label}
+                      <ArrowUpRight size={11} />
+                    </a>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-          <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-faint sm:flex-row sm:items-center">
-            <span>© Ornata · v{VERSION}</span>
-            <div className="flex flex-wrap items-center gap-x-5 sm:justify-end">
-              <span className="shrink-0">More products</span>
-              {MORE_PRODUCTS.map((product) => (
-                <a
-                  key={product.href}
-                  href={product.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-10 items-center normal-case tracking-normal text-muted-foreground transition-colors duration-150 hover:text-foreground"
-                >
-                  {product.label}
-                </a>
-              ))}
+
+            <div className="mt-10 flex flex-col gap-2 border-t border-night-line pt-5 font-mono text-[9px] uppercase tracking-[0.12em] text-night-muted sm:flex-row sm:items-center sm:justify-between">
+              <span>© Ornata · version {VERSION}</span>
+              <span>Plain Markdown · no required account</span>
             </div>
           </div>
         </div>

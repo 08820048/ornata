@@ -412,14 +412,14 @@ export function AppDemo() {
   return (
     <div
       ref={ref}
-      className="overflow-hidden rounded-t-xl border border-b-0 border-border-strong bg-background shadow-[0_40px_90px_-50px_rgba(0,0,0,0.5)]"
+      className="overflow-hidden rounded-xl border border-border-strong bg-background shadow-workbench"
     >
       <div className="flex items-center gap-2 border-b border-border bg-sunken px-4 py-3">
-        <span className="size-3 rounded-full bg-black/20" />
-        <span className="size-3 rounded-full bg-black/12" />
-        <span className="size-3 rounded-full bg-black/[0.08]" />
+        <span className="size-3 rounded-full bg-foreground/20" />
+        <span className="size-3 rounded-full bg-foreground/12" />
+        <span className="size-3 rounded-full bg-foreground/[0.08]" />
       </div>
-      <div className="flex h-[520px]">
+      <div className="flex h-[500px] sm:aspect-[16/10] sm:h-auto">
         <Sidebar view={view} />
         <main className="flex min-w-0 flex-1 flex-col">
           <Tabs />

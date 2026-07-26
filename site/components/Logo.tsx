@@ -15,7 +15,7 @@ export function LogoMark({
       height={size}
       priority={priority}
       aria-hidden="true"
-      className="shrink-0 rounded-[22%] outline outline-1 -outline-offset-1 outline-black/10"
+      className="shrink-0"
     />
   );
 }
@@ -30,7 +30,7 @@ export function Wordmark({
   return (
     <span className="flex items-center gap-2.5">
       <LogoMark size={size} priority={priority} />
-      <span className="text-[16px] font-semibold tracking-tight text-foreground">
+      <span className="text-[16px] font-medium tracking-[-0.02em] text-foreground">
         Ornata
       </span>
     </span>

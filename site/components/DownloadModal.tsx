@@ -1,16 +1,20 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
 
-const CMD = "xattr -dr com.apple.quarantine /Applications/Ornata.app";
-
 export const DOWNLOAD_EVENT = "ornata:download";
+
+const STEPS = [
+  "Open the downloaded Ornata .dmg",
+  "Drag Ornata into Applications",
+  "Open it and choose your notes folder",
+] as const;
 
 export function DownloadModal() {
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const onDownload = () => setOpen(true);
@@ -20,85 +24,82 @@ export function DownloadModal() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const copy = () => {
-    navigator.clipboard?.writeText(CMD).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    });
-  };
-
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {open ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2, ease: EASE_OUT }}
+          transition={{ duration: 0.18, ease: EASE_OUT }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
         >
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          <button
+            type="button"
+            aria-label="Close download instructions"
+            className="absolute inset-0 bg-night/45 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
           <motion.div
             role="dialog"
             aria-modal="true"
+            aria-labelledby="download-title"
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.24, ease: EASE_OUT }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border-strong bg-paper shadow-[0_40px_90px_-40px_rgba(0,0,0,0.5)]"
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: EASE_OUT }}
+            className="surface relative w-full max-w-md overflow-hidden rounded-[18px] bg-paper p-2"
           >
-            <div className="p-6 sm:p-7">
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">
-                Downloading Ornata…
+            <div className="rounded-[10px] bg-card p-6 sm:p-7">
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setOpen(false)}
+                className="absolute right-3 top-3 grid size-10 place-items-center rounded-lg text-faint transition-[background-color,color,transform] duration-150 hover:bg-active hover:text-foreground active:scale-[0.96]"
+              >
+                <X size={15} />
+              </button>
+              <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-faint">
+                Download started
               </p>
-              <h3 className="mt-2 font-serif text-[24px] leading-tight text-foreground">
-                One quick step on macOS
+              <h3
+                id="download-title"
+                className="mt-3 max-w-xs text-balance font-serif text-[32px] leading-[1] tracking-[-0.03em] text-foreground"
+              >
+                Three small steps, then it is yours.
               </h3>
-              <p className="mt-3 text-[14px] leading-6 text-muted-foreground">
-                Ornata is signed but not yet notarized, so macOS blocks it on the
-                first launch. Once it finishes downloading, open it once — either
-                way below.
+              <p className="mt-4 text-pretty text-[13.5px] leading-6 text-muted-foreground">
+                Ornata releases are signed with a Developer ID and notarized by
+                Apple before distribution.
               </p>
 
-              <p className="mt-5 text-[12.5px] font-semibold text-foreground">
-                Terminal
-              </p>
-              <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-border bg-background p-1.5 pl-3">
-                <code className="min-w-0 flex-1 truncate font-mono text-[12px] text-fg-soft">
-                  {CMD}
-                </code>
-                <button
-                  type="button"
-                  onClick={copy}
-                  className="shrink-0 rounded-md border border-border-strong bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground transition-colors hover:bg-hover"
-                >
-                  {copied ? "Copied" : "Copy"}
-                </button>
-              </div>
-
-              <p className="mt-4 text-[12.5px] font-semibold text-foreground">
-                Or in Settings
-              </p>
-              <p className="mt-1 text-[13.5px] leading-6 text-muted-foreground">
-                Double-click Ornata → <span className="text-foreground">Done</span> →{" "}
-                <span className="text-foreground">System Settings → Privacy &amp; Security</span>{" "}
-                → <span className="text-foreground">Open Anyway</span>. macOS
-                remembers it after that.
-              </p>
+              <ol className="mt-6 space-y-2">
+                {STEPS.map((step, index) => (
+                  <li
+                    key={step}
+                    className="flex min-h-11 items-center gap-3 rounded-lg bg-paper px-3 text-[12.5px] text-fg-soft"
+                  >
+                    <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                      {index + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
 
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="mt-6 h-11 w-full rounded-[7px] bg-invert text-[15px] font-medium text-invert-ink transition-opacity hover:opacity-90"
+                className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-primary text-[13px] font-medium text-primary-foreground transition-[background-color,transform] duration-150 hover:bg-fg-soft active:scale-[0.96]"
               >
+                <Check size={14} />
                 Got it
               </button>
             </div>

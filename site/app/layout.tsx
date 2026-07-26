@@ -1,16 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Newsreader } from "next/font/google";
 import Script from "next/script";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import { UMAMI_SRC, UMAMI_WEBSITE_ID } from "@/lib/analytics";
 import "./globals.css";
 
-const sans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
-const serif = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono" });
+const serif = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-newsreader",
+  display: "swap",
+});
 
-const TITLE = "Ornata — the last notes app you'll download";
+const TITLE = "Ornata — Markdown, without the machinery";
 const DESCRIPTION =
-  "Ornata is a local-first Markdown editor for macOS with plain files, syntax highlighting, todos, bookmarks, and permission-controlled AssistantPi.";
+  "A focused, local-first Markdown editor for macOS. Plain files, real folders, and AssistantPi only when you invite it.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ornata.app"),
@@ -65,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${serif.variable} ${mono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${serif.variable}`}
     >
       <body>
         <script

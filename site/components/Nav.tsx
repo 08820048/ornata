@@ -7,45 +7,59 @@ import { DownloadButton } from "./ui/download-button";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { label: "Features", href: "/#features" },
-  { label: "Agent", href: "/#agent" },
+  { label: "Why Ornata", href: "/#principles" },
+  { label: "Inside the app", href: "/#features" },
+  { label: "AssistantPi", href: "/#agent" },
   { label: "Updates", href: "/updates" },
-  { label: "FAQ", href: "/#faq" },
 ];
 
 export function Nav() {
   const pathname = usePathname();
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
-      <motion.header
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
-        className="pointer-events-auto mx-auto flex h-14 w-full max-w-5xl items-center justify-between rounded-full border border-border/50 bg-background/60 px-3 backdrop-blur-xl sm:px-4"
-      >
-        <a href="/" aria-label="Ornata home" className="px-1">
-          <Wordmark size={22} priority />
+    <motion.header
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
+      className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl"
+    >
+      <div className="mx-auto grid h-16 w-full max-w-[1440px] grid-cols-[1fr_auto] items-center px-5 sm:px-8 lg:grid-cols-[220px_1fr_220px] lg:px-10">
+        <a
+          href="/"
+          aria-label="Ornata home"
+          className="inline-flex min-h-11 items-center justify-self-start"
+        >
+          <Wordmark size={24} priority />
         </a>
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
-          {LINKS.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              aria-current={pathname === l.href ? "page" : undefined}
-              className={cn(
-                "rounded-full px-3.5 py-2 text-[13.5px] font-medium transition-colors duration-150",
-                pathname === l.href
-                  ? "bg-card text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {l.label}
-            </a>
-          ))}
+
+        <nav className="hidden items-center justify-center gap-1 lg:flex">
+          {LINKS.map((link) => {
+            const active =
+              link.href === "/updates"
+                ? pathname === "/updates"
+                : pathname === "/" && link.href === "/#principles";
+            return (
+              <a
+                key={link.label}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-10 items-center px-3 text-[12.5px] transition-colors duration-150",
+                  active
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {link.label}
+              </a>
+            );
+          })}
         </nav>
-        <DownloadButton label="Download" size="sm" />
-      </motion.header>
-    </div>
+
+        <div className="flex items-center justify-self-end">
+          <DownloadButton label="Download" size="sm" />
+        </div>
+      </div>
+    </motion.header>
   );
 }
