@@ -279,15 +279,16 @@ body {
     margin: 1em 0 0.25em;
 }
 
-.prose-note a {
+.prose-note a.ornata-link {
     color: var(--ink);
     text-decoration: underline;
-    text-decoration-color: var(--faint);
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 1px;
     text-underline-offset: 3px;
     cursor: pointer;
     transition: text-decoration-color 120ms ease-out;
 }
-.prose-note a:hover {
+.prose-note a.ornata-link:hover {
     text-decoration-color: var(--ink);
 }
 

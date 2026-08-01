@@ -1,11 +1,22 @@
 import { X } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
+import {
+  ContextMenu,
+  type MenuItem,
+  type MenuPosition,
+} from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { SPRING_LAYOUT } from "@/lib/ease";
 import { noteKey, noteTitle, sameNote } from "@/lib/noteRef";
 import type { NoteRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
-import { nextAfterClose, useTabs } from "@/stores/tabs";
+import {
+  nextAfterClose,
+  tabsForBulkClose,
+  type BulkCloseScope,
+  useTabs,
+} from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
 
@@ -17,26 +28,41 @@ export function TabBar() {
   const tabs = useTabs((s) => s.tabs);
   const view = useVault((s) => s.view);
   const active = view?.type === "note" ? view.note : null;
+  const t = useT();
+  const [menu, setMenu] = useState<{
+    note: NoteRef;
+    position: MenuPosition;
+  } | null>(null);
 
   if (tabs.length === 0) return null;
 
   return (
-    // layoutRoot scopes the sliding active-tab fill to this strip so the
-    // horizontal scroll offset can't smear its projection.
-    <motion.div
-      layoutRoot
-      role="tablist"
-      className="flex min-w-0 flex-1 items-stretch overflow-x-auto [scrollbar-width:none]"
-    >
-      {tabs.map((note, index) => (
-        <Tab
-          key={noteKey(note)}
-          note={note}
-          active={active ? sameNote(note, active) : false}
-          focusable={(active ? sameNote(note, active) : false) || (!active && index === 0)}
+    <>
+      {/* layoutRoot scopes the sliding active-tab fill to this strip so the
+          horizontal scroll offset can't smear its projection. */}
+      <motion.div
+        layoutRoot
+        role="tablist"
+        className="flex min-w-0 flex-1 items-stretch overflow-x-auto [scrollbar-width:none]"
+      >
+        {tabs.map((note, index) => (
+          <Tab
+            key={noteKey(note)}
+            note={note}
+            active={active ? sameNote(note, active) : false}
+            focusable={(active ? sameNote(note, active) : false) || (!active && index === 0)}
+            onContextMenu={(position) => setMenu({ note, position })}
+          />
+        ))}
+      </motion.div>
+      {menu && (
+        <ContextMenu
+          position={menu.position}
+          items={tabMenuItems(menu.note, tabs, t)}
+          onClose={() => setMenu(null)}
         />
-      ))}
-    </motion.div>
+      )}
+    </>
   );
 }
 
@@ -53,14 +79,60 @@ export function closeTab(note: NoteRef) {
   }
 }
 
+function closeTabsAround(note: NoteRef, scope: BulkCloseScope) {
+  const tabsState = useTabs.getState();
+  const closing = tabsForBulkClose(tabsState.tabs, note, scope);
+  if (closing.length === 0) return;
+
+  const vault = useVault.getState();
+  const active = vault.view?.type === "note" ? vault.view.note : null;
+  tabsState.closeMany(closing);
+  if (active && closing.some((tab) => sameNote(tab, active))) {
+    // The context-clicked tab always survives a left/right/others operation.
+    vault.setView({ type: "note", note });
+  }
+}
+
+function tabMenuItems(
+  note: NoteRef,
+  tabs: NoteRef[],
+  t: ReturnType<typeof useT>,
+): MenuItem[] {
+  const index = tabs.findIndex((tab) => sameNote(tab, note));
+  const items: MenuItem[] = [
+    { label: t("editor.closeTabMenu"), onSelect: () => closeTab(note) },
+  ];
+  if (tabs.length > 1) {
+    items.push({
+      label: t("editor.closeOtherTabs"),
+      onSelect: () => closeTabsAround(note, "others"),
+    });
+  }
+  if (index > 0) {
+    items.push({
+      label: t("editor.closeTabsToLeft"),
+      onSelect: () => closeTabsAround(note, "left"),
+    });
+  }
+  if (index >= 0 && index < tabs.length - 1) {
+    items.push({
+      label: t("editor.closeTabsToRight"),
+      onSelect: () => closeTabsAround(note, "right"),
+    });
+  }
+  return items;
+}
+
 function Tab({
   note,
   active,
   focusable,
+  onContextMenu,
 }: {
   note: NoteRef;
   active: boolean;
   focusable: boolean;
+  onContextMenu: (position: MenuPosition) => void;
 }) {
   const setView = useVault((s) => s.setView);
   const t = useT();
@@ -81,6 +153,14 @@ function Tab({
       onAuxClick={(event) => {
         // middle-click closes, like every code editor
         if (event.button === 1) closeTab(note);
+      }}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        // ContextMenu installs a window-level contextmenu listener to dismiss
+        // itself. Keep this opening event from reaching that listener and
+        // immediately closing the newly mounted menu.
+        event.stopPropagation();
+        onContextMenu({ x: event.clientX, y: event.clientY });
       }}
       onKeyDown={(event) => {
         const tabs = Array.from(

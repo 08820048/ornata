@@ -1,0 +1,86 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Ornata 架构导览 — 新成员上手",
+  "description": "面向第一次接触 Ornata 的开发者：沿着启动、状态、编辑、落盘、Agent 与官网，建立端到端心智模型。",
+  "ref": "main",
+  "steps": [
+    {
+      "file": "README.md",
+      "line": 1,
+      "title": "先抓住产品约束",
+      "description": "Ornata 是 macOS 优先、local-first 的 Markdown 笔记应用。用户数据没有账号或服务端真源：笔记始终是用户 vault 里的普通 .md 文件。这个产品承诺决定了后面的架构——桌面端不是缓存客户端，Rust 文件系统层本身就是数据层。"
+    },
+    {
+      "file": "src/App.tsx",
+      "line": 30,
+      "title": "前端启动编排",
+      "description": "App 依次恢复语言、vault 和更新状态；vault ready 后再恢复每个 vault 独立的 UI session，并接收 Finder 打开的外部 Markdown。窗口重新获得焦点时刷新目录树。这里是前端生命周期的总入口，但它不直接读写文件。"
+    },
+    {
+      "file": "src-tauri/src/lib.rs",
+      "line": 24,
+      "title": "Rust 注册系统能力",
+      "description": "Tauri Builder 装配对话框、打开器、更新器、共享状态和全部 command。invoke_handler 是前后端能力清单：笔记、待办、书签、外部文件和 Agent 都从这里进入。新增系统能力时通常要实现模块、写薄 command，并在这里注册。"
+    },
+    {
+      "file": "src-tauri/src/commands.rs",
+      "line": 117,
+      "title": "激活 vault 的真实含义",
+      "description": "activate_vault 创建标准布局、迁移旧 .markd 数据、为新 vault 播种 Welcome、授权图片 asset 协议、保存最近 vault，并返回树和偏好快照。阻塞式原生文件选择器必须放到 spawn_blocking；直接在主线程调用会让应用死锁。"
+    },
+    {
+      "file": "src-tauri/src/vault.rs",
+      "line": 57,
+      "title": "路径就是笔记身份，也是信任边界",
+      "description": "vault 笔记以 notes/ 下的相对路径寻址，没有数据库 ID。resolve_rel 拒绝绝对路径和向上穿越，随后所有 CRUD 都复用这条边界；scan_tree 只暴露非隐藏的 .md 文件，按文件夹优先排序。改路径逻辑时要同时考虑身份变化与安全性。"
+    },
+    {
+      "file": "src/lib/ipc.ts",
+      "line": 1,
+      "title": "唯一的前端 IPC 边界",
+      "description": "前端所有 invoke 都集中在 ipc 对象中，并在这里把序列化错误变成 Error。组件和 Zustand store 只能调用这个类型化门面，不能散落直接 invoke；因此 Rust command 改名或参数变化时，这里是同步类型契约的唯一位置。"
+    },
+    {
+      "file": "src/stores/vault.ts",
+      "line": 129,
+      "title": "Zustand 负责用例编排",
+      "description": "vault store 持有启动状态、目录树、当前 view、展开项和最近笔记，并把 IPC 调用串成创建、移动、删除等用户用例。注意当前激活笔记存于 vault.view；tabs store 只保存顺序，避免出现两个 active 真源。重命名或移动还必须同步 remap 已开标签和最近列表。"
+    },
+    {
+      "file": "src/components/editor/NotesWorkspace.tsx",
+      "line": 7,
+      "title": "标签切换为何足够快",
+      "description": "每个打开的标签对应一个持续挂载的 NoteEditor。非活动 pane 只通过 CSS visibility 和 inert 隐藏，切换标签不会重新创建 Tiptap、解析 Markdown 或重排全文；切去 Todo/Bookmark 页面时整个 workspace 也不卸载。不要把这里改成条件挂载。"
+    },
+    {
+      "file": "src/components/editor/NoteEditor.tsx",
+      "line": 128,
+      "title": "编辑到落盘的关键路径",
+      "description": "Tiptap 以 Markdown contentType 工作，onUpdate 取得干净 Markdown，经 500ms debounce 调 ipc.writeNote；切换笔记和卸载时会先 flush。加载时 frontmatter 被完整拆出并只读展示，保存时原样接回；wiki 链接只作为输入兼容，进入编辑器后转成标准 Markdown 链接。外部改动仅在编辑器干净时覆盖，dirty editor wins。"
+    },
+    {
+      "file": "src/lib/session.ts",
+      "line": 11,
+      "title": "区分数据持久化与 UI session",
+      "description": "笔记、待办和书签由 Rust 写入 vault；打开标签、当前页面和筛选器则由前端写 localStorage，并用 vault 根路径隔离。恢复时会丢弃已不存在的 vault 笔记并重新授权外部文件。不要把业务数据塞进这个 session，也不要把 UI 布局写进 vault。"
+    },
+    {
+      "file": "src-tauri/src/agent.rs",
+      "line": 63,
+      "title": "本地 Agent 是受控子进程",
+      "description": "Agent 面板不是远程聊天 iframe。Rust 定位并启动本机 AssistantPi 的 RPC 模式，通过 stdin/stdout 交换逐行 JSON；stdout 事件再转发给 React。进程工作目录是当前 vault，启动参数禁用外部扩展、技能和上下文，并加载 Ornata 自己的结构化工具扩展。"
+    },
+    {
+      "file": "src-tauri/src/agent_tools.rs",
+      "line": 65,
+      "title": "权限在宿主侧二次执行",
+      "description": "Read Only、Read & Write、Full Access 不只是提示词：每个结构化 notes/todos/bookmarks 请求都在 Rust execute 中按 Read、Write、Destructive 再校验。写操作完成后桥接层发 mutation 事件，让目录树、编辑器和集合页刷新。继续开发 Agent 时，应优先复用现有领域函数而不是绕过它直接碰文件。"
+    },
+    {
+      "file": "site/app/page.tsx",
+      "line": 9,
+      "title": "官网是独立的 Next.js 应用",
+      "description": "site/ 有自己的 package.json、构建与部署配置，不参与 Tauri 运行时。首页按 Nav、Hero、动态 FeaturesBento、AgentTrace、FAQ 和下载弹窗组成。新增官网功能展示必须延续 FeaturesBento 的动画行为演示，而不是静态功能卡片。到这里你已经可以从一个 UI 行为追到 Zustand、IPC、Rust 领域模块和磁盘文件。"
+    }
+  ]
+}

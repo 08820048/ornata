@@ -1,6 +1,5 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "@tiptap/markdown";
 import { Table } from "@tiptap/extension-table";
@@ -13,6 +12,7 @@ import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { WikiLink } from "./wikiLink";
+import { NonInclusiveLink } from "./link";
 import { t } from "@/stores/locale";
 
 function isRemoteSource(src: string) {
@@ -67,7 +67,7 @@ export function createExtensions(assetRoot: string) {
     StarterKit.configure({ link: false, codeBlock: false }),
     CodeBlockWithCopy,
     Typography,
-    Link.configure({
+    NonInclusiveLink.configure({
       autolink: true,
       defaultProtocol: "https",
       openOnClick: false,

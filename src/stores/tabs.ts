@@ -16,6 +16,7 @@ interface TabsState {
   /** Add a tab for `rel` if not already open (no-op otherwise). */
   open: (note: NoteRef) => void;
   close: (note: NoteRef) => void;
+  closeMany: (notes: NoteRef[]) => void;
   /** Replace a note reference in place after its path changes. */
   replace: (note: NoteRef, next: NoteRef) => void;
   /** Rewrite rels after a rename/move of `rel` → `next` (note or folder). */
@@ -42,6 +43,11 @@ export const useTabs = create<TabsState>((set, get) => ({
 
   close: (note) =>
     set({ tabs: get().tabs.filter((tab) => !sameNote(tab, note)) }),
+
+  closeMany: (notes) => {
+    const closing = new Set(notes.map(noteKey));
+    set({ tabs: get().tabs.filter((tab) => !closing.has(noteKey(tab))) });
+  },
 
   replace: (note, next) =>
     set({
@@ -92,4 +98,19 @@ export function nextAfterClose(tabs: NoteRef[], note: NoteRef): NoteRef | null {
   const index = tabs.findIndex((tab) => sameNote(tab, note));
   if (index === -1) return tabs[0] ?? null;
   return tabs[index + 1] ?? tabs[index - 1] ?? null;
+}
+
+export type BulkCloseScope = "left" | "right" | "others";
+
+/** Resolve the tabs affected by a context-menu bulk close operation. */
+export function tabsForBulkClose(
+  tabs: NoteRef[],
+  note: NoteRef,
+  scope: BulkCloseScope,
+): NoteRef[] {
+  const index = tabs.findIndex((tab) => sameNote(tab, note));
+  if (index === -1) return [];
+  if (scope === "left") return tabs.slice(0, index);
+  if (scope === "right") return tabs.slice(index + 1);
+  return tabs.filter((tab) => !sameNote(tab, note));
 }
