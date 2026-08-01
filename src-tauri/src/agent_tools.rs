@@ -19,8 +19,8 @@ impl AgentPermission {
     pub fn prompt(self) -> &'static str {
         match self {
             Self::ReadOnly => "READ ONLY. Pi may use read, grep, find, and ls. Ornata data may only be listed, searched, and read.",
-            Self::ReadWrite => "READ & WRITE. Pi may also use edit and write, but not bash. Ornata data may be created and updated; destructive structured actions remain blocked.",
-            Self::FullAccess => "FULL ACCESS. Pi has all of its permissions, including bash, and all Ornata CRUD actions. Use destructive actions only when required by the user's request.",
+            Self::ReadWrite => "ASK TO EDIT. Read operations run automatically. Every mutation requires explicit user approval from the Ornata host.",
+            Self::FullAccess => "AUTO. Ornata CRUD actions may run without per-action approval. Use destructive actions only when required by the user's request.",
         }
     }
 
@@ -42,10 +42,22 @@ enum PermissionRequirement {
 
 #[derive(Debug, Deserialize)]
 pub struct BridgeRequest {
-    resource: String,
-    action: String,
+    pub(crate) resource: String,
+    pub(crate) action: String,
     #[serde(default)]
-    args: Value,
+    pub(crate) args: Value,
+}
+
+impl BridgeRequest {
+    pub fn mutation(&self) -> bool {
+        !matches!(
+            (self.resource.as_str(), self.action.as_str()),
+            ("notes", "list" | "search" | "read")
+                | ("todos", "list" | "listTags")
+                | ("bookmarks", "list" | "listTags")
+                | ("permission", _)
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]

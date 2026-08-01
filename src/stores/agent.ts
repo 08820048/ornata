@@ -2,7 +2,13 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import { ipc, IpcError } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
-import type { AgentPermission, PiStatus } from "@/lib/types";
+import type {
+  AgentConnection as AgentModelConnection,
+  AgentConnectionConfig,
+  AgentConnections,
+  AgentPermission,
+  AgentStatus,
+} from "@/lib/types";
 import { useBookmarks } from "@/stores/bookmarks";
 import { useTabs } from "@/stores/tabs";
 import { useTodos } from "@/stores/todos";
@@ -43,12 +49,23 @@ export interface AgentActivity {
   status: "running" | "done" | "error";
 }
 
+export interface AgentApproval {
+  id: string;
+  resource: string;
+  action: string;
+  args: Record<string, unknown>;
+}
+
 interface AgentStore {
   connection: AgentConnection;
-  pi: PiStatus | null;
+  pi: AgentStatus | null;
+  modelConnection: AgentModelConnection | null;
+  connections: AgentModelConnection[];
+  activeConnectionSlug: string | null;
   model: string | null;
   messages: AgentMessage[];
   activities: AgentActivity[];
+  approval: AgentApproval | null;
   error: string | null;
   streamingMessageId: string | null;
   vaultRoot: string | null;
@@ -58,8 +75,15 @@ interface AgentStore {
   start: () => Promise<boolean>;
   send: (message: string, note?: AgentNoteReference | null) => Promise<void>;
   abort: () => Promise<void>;
+  respondApproval: (allow: boolean) => Promise<void>;
   retry: () => Promise<void>;
   setPermission: (permission: AgentPermission) => Promise<void>;
+  saveConnection: (
+    connection: AgentConnectionConfig,
+    apiKey?: string,
+  ) => Promise<boolean>;
+  activateConnection: (slug: string) => Promise<boolean>;
+  deleteConnection: (slug: string) => Promise<void>;
   setSelection: (selection: AgentSelection | null) => void;
 }
 
@@ -120,18 +144,8 @@ function messageWithContext(
 function ensureListeners() {
   if (listenerPromise) return listenerPromise;
   listenerPromise = Promise.all([
-    listen<Record<string, unknown>>("pi-agent-event", ({ payload }) => {
-      handleRpcEvent(payload);
-    }),
-    listen<string>("pi-agent-stderr", ({ payload }) => {
-      useAgent.setState({ error: payload });
-    }),
-    listen("pi-agent-exit", () => {
-      const state = useAgent.getState();
-      useAgent.setState({
-        connection: state.pi?.installed ? "idle" : "missing",
-        streamingMessageId: null,
-      });
+    listen<Record<string, unknown>>("ornata-agent-event", ({ payload }) => {
+      handleAgentEvent(payload);
     }),
     listen<"notes" | "todos" | "bookmarks" | "all">(
       "ornata-agent-mutated",
@@ -173,9 +187,17 @@ async function refreshAfterMutation(
   }
 }
 
-function handleRpcEvent(event: Record<string, unknown>) {
+function handleAgentEvent(event: Record<string, unknown>) {
   const type = event.type;
-  if (type === "agent_start") {
+  if (type === "ready") {
+    useAgent.setState({
+      connection: "ready",
+      model: typeof event.model === "string" ? event.model : null,
+    });
+    return;
+  }
+
+  if (type === "runStarted") {
     const messageId = id();
     useAgent.setState((state) => ({
       connection: "running",
@@ -189,34 +211,20 @@ function handleRpcEvent(event: Record<string, unknown>) {
     return;
   }
 
-  if (type === "agent_end") {
+  if (type === "runCompleted") {
     useAgent.setState((state) => ({
       connection: "ready",
       messages: state.messages.filter(
         (message) => message.id !== state.streamingMessageId || message.content,
       ),
       streamingMessageId: null,
+      approval: null,
     }));
     return;
   }
 
-  if (type === "message_update") {
-    const update = object(event.assistantMessageEvent);
-    if (update?.type === "error") {
-      const detail = object(update.error);
-      const message =
-        typeof detail?.errorMessage === "string"
-          ? detail.errorMessage
-          : typeof update.reason === "string"
-            ? update.reason
-            : "Pi request failed";
-      if (update.reason !== "aborted") useAgent.setState({ error: message });
-      return;
-    }
-    if (update?.type !== "text_delta" || typeof update.delta !== "string") {
-      return;
-    }
-    const delta = update.delta;
+  if (type === "textDelta" && typeof event.delta === "string") {
+    const delta = event.delta;
     useAgent.setState((state) => ({
       messages: state.messages.map((message) =>
         message.id === state.streamingMessageId
@@ -227,13 +235,13 @@ function handleRpcEvent(event: Record<string, unknown>) {
     return;
   }
 
-  if (type === "tool_execution_start" && typeof event.toolCallId === "string") {
+  if (type === "toolStarted" && typeof event.id === "string") {
     useAgent.setState((state) => ({
       activities: [
         ...state.activities,
         {
-          id: event.toolCallId as string,
-          name: typeof event.toolName === "string" ? event.toolName : "tool",
+          id: event.id as string,
+          name: typeof event.name === "string" ? event.name : "tool",
           detail: activityDetail(event.args),
           status: "running",
         },
@@ -242,10 +250,10 @@ function handleRpcEvent(event: Record<string, unknown>) {
     return;
   }
 
-  if (type === "tool_execution_end" && typeof event.toolCallId === "string") {
+  if (type === "toolFinished" && typeof event.id === "string") {
     useAgent.setState((state) => ({
       activities: state.activities.map((activity) =>
-        activity.id === event.toolCallId
+        activity.id === event.id
           ? { ...activity, status: event.isError ? "error" : "done" }
           : activity,
       ),
@@ -253,32 +261,51 @@ function handleRpcEvent(event: Record<string, unknown>) {
     return;
   }
 
-  if (type === "response") {
-    if (event.success === false) {
-      useAgent.setState({
-        connection: "error",
-        error: typeof event.error === "string" ? event.error : "Pi request failed",
-      });
-      return;
-    }
-    if (event.command === "get_state") {
-      const data = object(event.data);
-      const model = object(data?.model);
-      const name = typeof model?.name === "string" ? model.name : null;
-      useAgent.setState({
-        connection: data?.isStreaming ? "running" : "ready",
-        model: name,
-      });
-    }
+  if (type === "runError" || type === "runtimeError") {
+    useAgent.setState({
+      connection: "error",
+      streamingMessageId: null,
+      approval: null,
+      error:
+        typeof event.message === "string"
+          ? event.message
+          : "AssistantPi request failed",
+    });
+    return;
+  }
+
+  if (
+    type === "approvalRequested" &&
+    typeof event.id === "string" &&
+    typeof event.resource === "string" &&
+    typeof event.action === "string"
+  ) {
+    useAgent.setState({
+      approval: {
+        id: event.id,
+        resource: event.resource,
+        action: event.action,
+        args: object(event.args) ?? {},
+      },
+    });
+    return;
+  }
+
+  if (type === "approvalResolved") {
+    useAgent.setState({ approval: null });
   }
 }
 
 export const useAgent = create<AgentStore>((set, get) => ({
   connection: "idle",
   pi: null,
+  modelConnection: null,
+  connections: [],
+  activeConnectionSlug: null,
   model: null,
   messages: [],
   activities: [],
+  approval: null,
   error: null,
   streamingMessageId: null,
   vaultRoot: null,
@@ -293,6 +320,24 @@ export const useAgent = create<AgentStore>((set, get) => ({
     }
     set({ vaultRoot: root, connection: "starting", error: null });
     await ipc.agentSetPermission(get().permission);
+    const connectionState = await ipc.agentConnectionsList();
+    const modelConnection = activeConnection(connectionState);
+    if (!modelConnection?.credentialConfigured) {
+      set({
+        modelConnection,
+        connections: connectionState.connections,
+        activeConnectionSlug: connectionState.activeSlug,
+        connection: "missing",
+        pi: null,
+        model: modelConnection?.model ?? null,
+      });
+      return;
+    }
+    set({
+      modelConnection,
+      connections: connectionState.connections,
+      activeConnectionSlug: connectionState.activeSlug,
+    });
     await get().start();
   },
 
@@ -300,7 +345,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
     set({ connection: "starting", error: null });
     try {
       const pi = await ipc.agentStart();
-      set({ pi, connection: "ready" });
+      set({ pi, connection: "ready", model: pi.model });
       return true;
     } catch (error) {
       const missing = error instanceof IpcError && error.kind === "not_found";
@@ -308,10 +353,11 @@ export const useAgent = create<AgentStore>((set, get) => ({
         connection: missing ? "missing" : "error",
         pi: missing
           ? {
-              installed: false,
+              configured: false,
               running: false,
-              path: null,
-              version: null,
+              provider: null,
+              model: null,
+              runtimeVersion: "",
               permission: get().permission,
             }
           : get().pi,
@@ -357,6 +403,17 @@ export const useAgent = create<AgentStore>((set, get) => ({
     }
   },
 
+  respondApproval: async (allow) => {
+    const approval = get().approval;
+    if (!approval) return;
+    set({ approval: null });
+    try {
+      await ipc.agentRespondApproval(approval.id, allow);
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
   retry: async () => {
     const root = get().vaultRoot;
     if (root) await get().initialize(root);
@@ -376,5 +433,80 @@ export const useAgent = create<AgentStore>((set, get) => ({
     }
   },
 
+  saveConnection: async (connection, apiKey) => {
+    try {
+      await ipc.agentStop().catch(() => undefined);
+      const connectionState = await ipc.agentConnectionSave(connection, apiKey, true);
+      const saved = activeConnection(connectionState);
+      set({
+        modelConnection: saved,
+        connections: connectionState.connections,
+        activeConnectionSlug: connectionState.activeSlug,
+        model: saved?.model ?? null,
+        connection: saved?.credentialConfigured ? "starting" : "missing",
+        messages: [],
+        activities: [],
+        streamingMessageId: null,
+        approval: null,
+        error: null,
+      });
+      return saved?.credentialConfigured ? await get().start() : false;
+    } catch (error) {
+      set({ connection: "missing", error: String(error) });
+      return false;
+    }
+  },
+
+  activateConnection: async (slug) => {
+    try {
+      await ipc.agentStop().catch(() => undefined);
+      const connectionState = await ipc.agentConnectionActivate(slug);
+      const active = activeConnection(connectionState);
+      set({
+        connections: connectionState.connections,
+        activeConnectionSlug: connectionState.activeSlug,
+        modelConnection: active,
+        model: active?.model ?? null,
+        connection: active?.credentialConfigured ? "starting" : "missing",
+        messages: [],
+        activities: [],
+        streamingMessageId: null,
+        approval: null,
+        error: null,
+      });
+      return active?.credentialConfigured ? await get().start() : false;
+    } catch (error) {
+      set({ connection: "error", error: String(error) });
+      return false;
+    }
+  },
+
+  deleteConnection: async (slug) => {
+    try {
+      const wasActive = get().activeConnectionSlug === slug;
+      if (wasActive) await ipc.agentStop().catch(() => undefined);
+      const connectionState = await ipc.agentConnectionDelete(slug);
+      const active = activeConnection(connectionState);
+      set({
+        connections: connectionState.connections,
+        activeConnectionSlug: connectionState.activeSlug,
+        modelConnection: active,
+        model: active?.model ?? null,
+        connection: active?.credentialConfigured ? "idle" : "missing",
+        ...(wasActive
+          ? { messages: [], activities: [], streamingMessageId: null, approval: null }
+          : {}),
+        error: null,
+      });
+      if (wasActive && active?.credentialConfigured) await get().start();
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
   setSelection: (selection) => set({ selection }),
 }));
+
+function activeConnection(state: AgentConnections) {
+  return state.connections.find((connection) => connection.slug === state.activeSlug) ?? null;
+}

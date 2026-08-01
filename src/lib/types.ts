@@ -53,12 +53,60 @@ export interface ExternalNote {
   title: string;
 }
 
-export interface PiStatus {
-  installed: boolean;
+export interface AgentStatus {
+  configured: boolean;
   running: boolean;
-  path: string | null;
-  version: string | null;
+  provider: string | null;
+  model: string | null;
+  runtimeVersion: string;
   permission: AgentPermission;
+}
+
+export type AgentEndpointApi =
+  | "openai-completions"
+  | "anthropic-messages";
+
+export type AgentAuthType =
+  | "apiKey"
+  | "oauth"
+  | "iam"
+  | "serviceAccount"
+  | "environment"
+  | "none";
+
+export interface AgentConnectionConfig {
+  slug: string;
+  name: string;
+  provider: string;
+  model: string;
+  authType: AgentAuthType;
+  baseUrl: string | null;
+  endpointApi: AgentEndpointApi | null;
+}
+
+export interface AgentConnection extends AgentConnectionConfig {
+  credentialConfigured: boolean;
+}
+
+export interface AgentConnections {
+  connections: AgentConnection[];
+  activeSlug: string | null;
+}
+
+export interface AgentProvider {
+  id: string;
+  name: string;
+  authMethods: AgentAuthType[];
+  modelCount: number;
+  dynamicModels: boolean;
+}
+
+export interface AgentModel {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  contextWindow: number;
+  input: string[];
 }
 
 export type NoteRef =

@@ -14,6 +14,19 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.1.12",
+    date: "August 1, 2026",
+    dateTime: "2026-08-01",
+    summary: "AssistantPi now brings its own runtime and connects to the models you choose.",
+    changes: [
+      "Rebuilt AssistantPi around a bundled Pi sidecar, removing the separate command-line installation requirement.",
+      "Loaded providers and models dynamically from Pi, including OpenAI, Anthropic, DeepSeek, Kimi, Z.AI, GitHub Copilot, and local or custom endpoints.",
+      "Added API key, OAuth, IAM, service-account, environment, and local authentication flows where supported by each provider.",
+      "Added multiple named model connections with secure credential storage and explicit approval before AssistantPi edits your workspace.",
+      "Added close-left and close-right tab actions, and fixed hyperlink formatting so text typed after a link remains plain.",
+    ],
+  },
+  {
     version: "0.1.11",
     date: "July 26, 2026",
     dateTime: "2026-07-26",

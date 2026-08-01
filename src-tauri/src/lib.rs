@@ -1,7 +1,6 @@
 mod agent;
-mod agent_bridge;
+mod agent_connection;
 mod agent_docs;
-mod agent_locator;
 mod agent_tools;
 mod assets;
 mod bookmarks;
@@ -35,7 +34,18 @@ pub fn run() {
             agent::agent_send,
             agent::agent_set_permission,
             agent::agent_abort,
+            agent::agent_respond_approval,
+            agent::agent_providers_list,
+            agent::agent_models_list,
+            agent::agent_oauth_start,
+            agent::agent_oauth_respond,
+            agent::agent_oauth_cancel,
             agent::agent_stop,
+            agent_connection::agent_connections_list,
+            agent_connection::agent_connection_get,
+            agent_connection::agent_connection_save,
+            agent_connection::agent_connection_activate,
+            agent_connection::agent_connection_delete,
             commands::startup,
             commands::choose_vault,
             commands::create_vault,
