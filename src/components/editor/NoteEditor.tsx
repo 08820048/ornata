@@ -216,6 +216,35 @@ export const NoteEditor = memo(function NoteEditor({
     });
   }, []);
 
+  const askAIAboutSelection = useCallback(
+    (request: string, selectedText: string) => {
+      const current = noteRef.current;
+      const selection = {
+        sourceKey: noteKey(current),
+        source: current.kind === "vault" ? `notes/${current.rel}` : current.path,
+        title: noteTitle(current),
+        text: selectedText,
+      };
+      const noteReference = {
+        sourceKey: selection.sourceKey,
+        source: selection.source,
+        title: selection.title,
+      };
+      const agent = useAgent.getState();
+      agent.setSelection(selection);
+      useUi.getState().setAgentOpen(true);
+      void (async () => {
+        if (vaultRoot && agent.vaultRoot !== vaultRoot) {
+          await agent.initialize(vaultRoot).catch(() => undefined);
+        }
+        const readyAgent = useAgent.getState();
+        readyAgent.setSelection(selection);
+        await readyAgent.send(request, noteReference);
+      })();
+    },
+    [vaultRoot],
+  );
+
   const editor = useEditor(
     {
       content: "",
@@ -710,7 +739,7 @@ export const NoteEditor = memo(function NoteEditor({
             )}
           </div>
           {active && editor && !markdownSource && (
-            <SelectionMenu editor={editor} />
+            <SelectionMenu editor={editor} onAskAI={askAIAboutSelection} />
           )}
           {active && !markdownSource && (
             <SlashMenu

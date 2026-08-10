@@ -313,12 +313,13 @@ export const useAgent = create<AgentStore>((set, get) => ({
   selection: null,
 
   initialize: async (root) => {
+    const previousRoot = get().vaultRoot;
+    set({ vaultRoot: root, connection: "starting", error: null });
     await ensureListeners();
-    if (get().vaultRoot && get().vaultRoot !== root) {
+    if (previousRoot && previousRoot !== root) {
       await ipc.agentStop().catch(() => undefined);
       set({ messages: [], activities: [], model: null, selection: null });
     }
-    set({ vaultRoot: root, connection: "starting", error: null });
     await ipc.agentSetPermission(get().permission);
     const connectionState = await ipc.agentConnectionsList();
     const modelConnection = activeConnection(connectionState);
