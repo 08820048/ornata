@@ -383,7 +383,7 @@ function AppMark() {
       height="64"
       alt=""
       aria-hidden="true"
-      className="h-16 w-16"
+      className="h-16 w-16 rounded-2xl"
     />
   );
 }
