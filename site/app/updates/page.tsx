@@ -14,6 +14,21 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.2.0",
+    date: "August 28, 2026",
+    dateTime: "2026-08-28",
+    summary: "Math, diagrams, and an assistant that can search the web and run commands.",
+    changes: [
+      "Added LaTeX math rendering: inline $…$ and block $$…$$ formulas via KaTeX, with click-to-edit LaTeX source.",
+      "Added Mermaid diagram rendering in fenced code blocks, themed for light and dark.",
+      "AssistantPi now ships read, grep, find, and ls tools over your vault, plus a host shell (permission-gated), web search, and web fetch.",
+      "Added thinking-orb activity animations that mirror what AssistantPi is doing, and a dismissible current-note attachment.",
+      "A file watcher now refreshes the sidebar in real time when notes change outside the app.",
+      "Closed a gap where ask-to-edit mode could run shell commands without approval, and capped pasted images at 20 MB.",
+      "Resolved Rust dependency security advisories, including the Tauri IPC origin-confusion fix (2.11.5).",
+    ],
+  },
+  {
     version: "0.1.12",
     date: "August 1, 2026",
     dateTime: "2026-08-01",

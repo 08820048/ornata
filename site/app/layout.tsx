@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   applicationName: "Ornata",
+  alternates: { canonical: "/" },
   keywords: [
     "markdown notes app",
     "notes app for macOS",

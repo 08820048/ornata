@@ -217,7 +217,14 @@ function NotePane({ still }: { still: boolean }) {
   return (
     <div className="mx-auto w-full max-w-[620px] px-8 pt-6 sm:px-10">
       <Properties />
-      <h1 className="text-[30px] font-[680] tracking-[-0.025em] text-foreground">Q3 Roadmap</h1>
+      {/* UI mock, not document structure — a real h1 here would fight the
+          page's own heading outline. */}
+      <div
+        role="presentation"
+        className="text-[30px] font-[680] tracking-[-0.025em] text-foreground"
+      >
+        Q3 Roadmap
+      </div>
       <div className="mt-4 space-y-4 text-[15px] leading-[1.75] text-foreground/85">
         <p>
           The quarter is about speed and focus — make writing feel instant, then

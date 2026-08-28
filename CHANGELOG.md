@@ -6,6 +6,7 @@ All notable changes to Ornata are documented in this file.
 
 ### Added
 
+- Added an **Ask AI** action to the text-selection toolbar. It opens an inline prompt and sends the request, selected text, and current note to AssistantPi when submitted.
 - **LaTeX math rendering**: inline `$…$` and block `$$…$$` formulas via KaTeX. Click a formula to edit its LaTeX source in place — Enter or clicking away re-renders, Escape cancels.
 - **Mermaid diagrams**: fenced code blocks tagged `mermaid` render as flowcharts, sequence diagrams, and more, themed to match light/dark.
 - **Agent tools**: AssistantPi now ships read/grep/find/ls over the vault, a host shell (permission-gated: blocked in read-only, approval in ask-to-edit, auto in full access), web search, and web fetch — so it can answer questions beyond the vault.
@@ -21,9 +22,3 @@ All notable changes to Ornata are documented in this file.
 
 - Rust dependency security advisories resolved (tauri 2.11.5, quinn-proto, rustls-webpki and more); the remaining glib/rand alerts are upstream-pinned with no fix available.
 - The agent trace shows the latest eight tool calls with a reveal for earlier steps, keeping long sessions fast.
-
-## [Unreleased]
-
-### Added
-
-- Added an **Ask AI** action to the text-selection toolbar. It opens an inline prompt and sends the request, selected text, and current note to AssistantPi when submitted.
