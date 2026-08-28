@@ -341,6 +341,63 @@ body {
     margin: 0;
 }
 
+/* In-place math source editing: the formula node swaps to this field on
+   click; Enter/blur commits, Escape cancels (see Mathematics.ts). */
+.prose-note .math-editable {
+    cursor: pointer;
+}
+
+.prose-note .math-editing {
+    cursor: text;
+}
+
+/* While editing, the wrapper must not paint its own box (padding, selected
+   background) around the source field — the field IS the surface. */
+.prose-note .tiptap-mathematics-render[data-type="block-math"].math-editing {
+    padding: 0;
+    background: transparent;
+    overflow: visible;
+}
+
+.prose-note .math-source-editor {
+    display: block;
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 10px;
+    resize: vertical;
+    outline: none;
+}
+
+.prose-note .math-editable[data-type="inline-math"] .math-source-editor {
+    display: inline-block;
+    width: auto;
+    min-width: 6em;
+    resize: none;
+    /* Collapse the textarea to exactly one text line — a bare rows=1 field
+       keeps extra built-in height that shows as a gap under the border. */
+    height: auto;
+    line-height: 1.3;
+    padding: 1px 6px;
+    font-size: 0.86em;
+    field-sizing: content;
+}
+
+.prose-note .math-editable[data-type="inline-math"].math-editing {
+    display: inline-block;
+    /* Keep the editing wrapper on the text baseline instead of the formula's
+       taller inline-block box, so surrounding line spacing doesn't jump. */
+    vertical-align: baseline;
+    line-height: 1.3;
+    overflow: visible;
+}
+
+
 .prose-note .code-block-wrap {
     margin: 1em 0;
     overflow: hidden;
