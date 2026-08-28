@@ -7,6 +7,7 @@ import {
   Eye,
   FileSearch,
   FolderSearch,
+  Globe,
   LoaderCircle,
   PencilLine,
   Search,
@@ -138,6 +139,13 @@ export function AgentPanel() {
   const unavailable = connection === "missing";
   const starting = connection === "starting";
   const running = connection === "running";
+  // Newest tool call still in flight — drives the live status line above the
+  // composer so the agent's current action stays visible while it works.
+  const liveActivity =
+    activities
+      .slice()
+      .reverse()
+      .find((activity) => activity.status === "running") ?? null;
   const showComposerAction = running || Boolean(draft.trim());
   const lastAssistantId = [...messages]
     .reverse()
@@ -285,6 +293,28 @@ export function AgentPanel() {
 
         {!unavailable && !showSetup && (
           <footer className="shrink-0 px-5 pb-4 pt-2">
+            <AnimatePresence initial={false}>
+              {running && liveActivity && (
+                <motion.div
+                  key={liveActivity.id}
+                  initial={{ opacity: 0, y: 4, filter: "blur(3px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -3, filter: "blur(3px)" }}
+                  transition={{ duration: 0.16, ease: EASE_OUT }}
+                  className="mb-2 flex items-center gap-2 px-1 text-[11px] text-muted"
+                >
+                  <LoaderCircle className="shrink-0 animate-spin text-faint" size={12} />
+                  <span className="shrink-0 font-medium text-ink">
+                    {toolLabel(liveActivity.name, t)}
+                  </span>
+                  {liveActivity.detail && (
+                    <span className="truncate font-mono text-[10.5px] text-faint" title={liveActivity.detail}>
+                      {liveActivity.detail}
+                    </span>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
             {approval && (
               <ApprovalCard
                 approval={approval}
@@ -1045,7 +1075,7 @@ function AgentWelcome({ onSuggestion }: { onSuggestion: (value: string) => void 
             {t("agent.run")}
           </span>
           <span className="flex items-center gap-1.5 text-[10px] text-faint">
-            <span className="size-1.5 rounded-full bg-muted" />
+            <StatusDot working={false} />
             {t("agent.status.ready")}
           </span>
         </div>
@@ -1097,7 +1127,7 @@ function AgentTrace({
           {t("agent.run")}
         </span>
         <span className="flex items-center gap-1.5 text-[10px] text-faint">
-          <span className={cx("size-1.5 rounded-full bg-muted", running && "animate-pulse")} />
+          <StatusDot working={running} />
           {running ? t("agent.status.working") : t("agent.status.ready")}
         </span>
       </div>
@@ -1141,13 +1171,27 @@ function AgentTrace({
   );
 }
 
+/** Run-status dot: green pulsing while the agent works, neutral at rest. */
+function StatusDot({ working }: { working: boolean }) {
+  return (
+    <span
+      className={cx(
+        "size-1.5 rounded-full",
+        working ? "animate-pulse bg-success" : "bg-muted",
+      )}
+    />
+  );
+}
+
 function toolIcon(name: string) {
   if (name === "read") return BookOpenText;
   if (name === "grep") return Search;
   if (name === "find") return FileSearch;
   if (name === "ls") return FolderSearch;
   if (name === "edit" || name === "write") return PencilLine;
-  if (name === "bash") return Terminal;
+  if (name === "bash" || name === "ornata_bash") return Terminal;
+  if (name === "web_search") return Globe;
+  if (name === "web_fetch") return Globe;
   return Sparkles;
 }
 
@@ -1158,7 +1202,9 @@ function toolLabel(name: string, t: ReturnType<typeof useT>) {
   if (name === "ls") return t("agent.tool.ls");
   if (name === "edit") return t("agent.tool.edit");
   if (name === "write") return t("agent.tool.write");
-  if (name === "bash") return t("agent.tool.bash");
+  if (name === "bash" || name === "ornata_bash") return t("agent.tool.bash");
+  if (name === "web_search") return t("agent.tool.webSearch");
+  if (name === "web_fetch") return t("agent.tool.webFetch");
   if (name === "ornata_notes") return t("agent.tool.notes");
   if (name === "ornata_todos") return t("agent.tool.todos");
   if (name === "ornata_bookmarks") return t("agent.tool.bookmarks");

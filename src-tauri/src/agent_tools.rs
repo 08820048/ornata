@@ -18,9 +18,9 @@ pub enum AgentPermission {
 impl AgentPermission {
     pub fn prompt(self) -> &'static str {
         match self {
-            Self::ReadOnly => "READ ONLY. Pi may use read, grep, find, and ls. Ornata data may only be listed, searched, and read.",
-            Self::ReadWrite => "ASK TO EDIT. Read operations run automatically. Every mutation requires explicit user approval from the Ornata host.",
-            Self::FullAccess => "AUTO. Ornata CRUD actions may run without per-action approval. Use destructive actions only when required by the user's request.",
+            Self::ReadOnly => "READ ONLY. Pi may use read, grep, find, ls, web_search, and web_fetch. Ornata data may only be listed, searched, and read. Shell commands are blocked.",
+            Self::ReadWrite => "ASK TO EDIT. Read operations, web search, and web fetch run automatically. Every mutation — including any shell command — requires explicit user approval from the Ornata host.",
+            Self::FullAccess => "AUTO. Ornata CRUD actions and shell commands may run without per-action approval. Use destructive actions only when required by the user's request.",
         }
     }
 
@@ -55,6 +55,7 @@ impl BridgeRequest {
             ("notes", "list" | "search" | "read")
                 | ("todos", "list" | "listTags")
                 | ("bookmarks", "list" | "listTags")
+                | ("bash", "run")
                 | ("permission", _)
         )
     }
@@ -83,9 +84,109 @@ pub fn execute(
         "notes" => execute_notes(root, permission, &request.action, &request.args),
         "todos" => execute_todos(root, permission, &request.action, &request.args),
         "bookmarks" => execute_bookmarks(root, permission, &request.action, &request.args),
+        "bash" => execute_bash(root, permission, &request.action, &request.args),
         "permission" => execute_permission(permission, &request.action, &request.args),
         _ => Err(AppError::InvalidInput("unknown agent resource".into())),
     }
+}
+
+/// Run a shell command inside the vault working directory. Treated as
+/// destructive: full-access only. Output is capped so a runaway command
+/// can't flood the model context.
+fn execute_bash(
+    root: &Path,
+    permission: AgentPermission,
+    action: &str,
+    args: &Value,
+) -> AppResult<BridgeOutcome> {
+    if action != "run" {
+        return Err(AppError::InvalidInput(format!(
+            "unknown bash action: {action}"
+        )));
+    }
+    require(permission, PermissionRequirement::Destructive, action)?;
+    let command = required_string(args, "command")?;
+    if command.len() > 8_000 {
+        return Err(AppError::InvalidInput("command is too long".into()));
+    }
+    let timeout = args
+        .get("timeout")
+        .and_then(Value::as_u64)
+        .unwrap_or(30)
+        .clamp(1, 120);
+
+    use std::process::{Command, Stdio};
+    use std::time::Instant;
+    let mut child = Command::new("/bin/zsh")
+        .arg("-c")
+        .arg(&command)
+        .current_dir(root)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| AppError::Other(format!("failed to spawn shell: {error}")))?;
+
+    // Drain pipes on threads so a chatty command can't fill the OS pipe
+    // buffer and deadlock while we poll for exit.
+    let stdout_handle = child.stdout.take().map(spawn_drain);
+    let stderr_handle = child.stderr.take().map(spawn_drain);
+
+    let deadline = Instant::now() + std::time::Duration::from_secs(timeout);
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                // Join drains so the threads never leak.
+                if let Some(handle) = stdout_handle {
+                    let _ = handle.join();
+                }
+                if let Some(handle) = stderr_handle {
+                    let _ = handle.join();
+                }
+                return Err(AppError::Other(format!(
+                    "command timed out after {timeout}s"
+                )));
+            }
+            Ok(None) => std::thread::sleep(std::time::Duration::from_millis(50)),
+            Err(error) => {
+                return Err(AppError::Other(format!("shell wait failed: {error}")))
+            }
+        }
+    };
+    let stdout = stdout_handle
+        .and_then(|handle| handle.join().ok())
+        .unwrap_or_default();
+    let stderr = stderr_handle
+        .and_then(|handle| handle.join().ok())
+        .unwrap_or_default();
+    let exit_code = status.code().unwrap_or(-1);
+    Ok(BridgeOutcome {
+        value: json!({
+            "exitCode": exit_code,
+            "stdout": stdout,
+            "stderr": stderr,
+        }),
+        mutation: Some(MutationKind::All),
+    })
+}
+
+/// Read a child pipe to end on a helper thread, returning the (clipped) text.
+fn spawn_drain(
+    pipe: impl std::io::Read + Send + 'static,
+) -> std::thread::JoinHandle<String> {
+    std::thread::spawn(move || {
+        let mut text = String::new();
+        let mut reader = pipe;
+        let _ = std::io::Read::read_to_string(&mut reader, &mut text);
+        let mut result: String = text.chars().take(20_000).collect();
+        if text.chars().count() > 20_000 {
+            result.push_str("\n…[truncated]");
+        }
+        result
+    })
 }
 
 fn execute_permission(
@@ -97,9 +198,11 @@ fn execute_permission(
         "authorizeTool" => {
             let tool = required_string(args, "tool")?;
             let needed = match tool {
-                "read" | "grep" | "find" | "ls" => PermissionRequirement::Read,
+                "read" | "grep" | "find" | "ls" | "web_fetch" | "web_search" => {
+                    PermissionRequirement::Read
+                }
                 "edit" | "write" => PermissionRequirement::Write,
-                "bash" => PermissionRequirement::Destructive,
+                "bash" | "ornata_bash" => PermissionRequirement::Destructive,
                 _ => PermissionRequirement::Destructive,
             };
             let allowed = permission.permits(needed);
@@ -115,7 +218,7 @@ fn execute_permission(
             let tool = required_string(args, "tool")?;
             let mutation = match tool {
                 "edit" | "write" => Some(MutationKind::Notes),
-                "bash" => Some(MutationKind::All),
+                "bash" | "ornata_bash" => Some(MutationKind::All),
                 _ => None,
             };
             Ok(BridgeOutcome {

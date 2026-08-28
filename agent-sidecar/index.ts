@@ -17,7 +17,7 @@ import { getOAuthProvider } from "@earendil-works/pi-ai/oauth";
 
 const PROTOCOL_VERSION = 1;
 const SYSTEM_PROMPT =
-  "You are AssistantPi, Ornata's notes assistant. Use the Ornata tools for every note, todo, and bookmark operation. The host validates permissions and all data access. Never claim a mutation succeeded before its tool returns successfully. Use the least-destructive action that satisfies the request. Be concise and preserve the user's language. Avoid decorative emoji unless explicitly requested.";
+  "You are AssistantPi, Ornata's notes assistant. Use the Ornata tools for every note, todo, and bookmark operation. The host validates permissions and all data access. Never claim a mutation succeeded before its tool returns successfully. Use the least-destructive action that satisfies the request. The built-in read, grep, find, and ls tools inspect the vault folder directly; bash runs on the host and is subject to the permission mode the user selected; web_search and web_fetch reach the internet for anything outside the vault. Be concise and preserve the user's language. Avoid decorative emoji unless explicitly requested.";
 
 type EndpointApi = "openai-completions" | "anthropic-messages";
 
@@ -78,7 +78,7 @@ function fail(requestId: string | undefined, error: unknown) {
 }
 
 function proxyTool(
-  name: "ornata_notes" | "ornata_todos" | "ornata_bookmarks",
+  name: "ornata_notes" | "ornata_todos" | "ornata_bookmarks" | "ornata_bash",
   label: string,
   description: string,
   parameters: ToolDefinition["parameters"],
@@ -181,6 +181,137 @@ const bookmarksTool = proxyTool(
     name: Type.Optional(Type.String()),
   }),
 );
+
+/** Shell commands execute on the host via Ornata's permission-controlled bridge. */
+const bashTool = proxyTool(
+  "ornata_bash",
+  "Host Shell",
+  "Run a shell command on the host through Ornata's permission-controlled bridge. Requires at least ask-to-edit permission; auto-allowed only in full-access mode.",
+  Type.Object({
+    command: Type.String({ description: "The shell command to execute" }),
+    timeout: Type.Optional(Type.Number({ minimum: 1, maximum: 120 })),
+  }),
+);
+
+/** Fetch a URL and return its content as text. Read-only, no host access. */
+const webFetchTool: ToolDefinition = {
+  name: "web_fetch",
+  label: "Fetch Web Page",
+  description:
+    "Fetch a URL over HTTP(S) and return the response body as text (HTML is stripped to readable text). Use for documentation, articles, APIs, or any public web content.",
+  promptSnippet:
+    "Fetch a URL over HTTP(S) and return the response body as text.",
+  parameters: Type.Object({
+    url: Type.String({ description: "Absolute http(s) URL to fetch" }),
+  }),
+  async execute(_toolCallId, params, signal) {
+    const { url } = params as { url: string };
+    if (!/^https?:\/\//i.test(url)) {
+      throw new Error("Only http(s) URLs are supported");
+    }
+    const response = await fetch(url, {
+      signal: signal ?? null,
+      headers: { "User-Agent": "OrnataAssistantPi/0.2" },
+      redirect: "follow",
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    const body = await response.text();
+    const text = contentType.includes("html")
+      ? htmlToText(body)
+      : body.trim();
+    const clipped = text.length > 40_000 ? `${text.slice(0, 40_000)}\n…[truncated]` : text;
+    return {
+      content: [{
+        type: "text" as const,
+        text: clipped || `(${response.status} ${response.statusText || "empty response"})`,
+      }],
+      details: { url, status: response.status },
+    };
+  },
+};
+
+/** DuckDuckGo HTML search — no API key, returns titles/URLs/snippets. */
+const webSearchTool: ToolDefinition = {
+  name: "web_search",
+  label: "Web Search",
+  description:
+    "Search the public web and return a list of result titles, URLs, and snippets. Use for current events, facts outside the vault, or documentation lookups.",
+  promptSnippet: "Search the public web for current information.",
+  parameters: Type.Object({
+    query: Type.String({ description: "Search query" }),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 10 })),
+  }),
+  async execute(_toolCallId, params, signal) {
+    const { query } = params as { query: string };
+    const limit = Math.min(Math.max((params as { limit?: number }).limit ?? 6, 1), 10);
+    const response = await fetch(
+      `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
+      {
+        signal: signal ?? null,
+        headers: { "User-Agent": "OrnataAssistantPi/0.2" },
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Search failed: HTTP ${response.status}`);
+    }
+    const results = parseSearchResults(await response.text(), limit);
+    if (results.length === 0) {
+      return {
+        content: [{ type: "text" as const, text: "No results found." }],
+        details: { query },
+      };
+    }
+    const text = results
+      .map((result, index) => `${index + 1}. ${result.title}\n   ${result.url}${result.snippet ? `\n   ${result.snippet}` : ""}`)
+      .join("\n\n");
+    return {
+      content: [{ type: "text" as const, text }],
+      details: { query, count: results.length },
+    };
+  },
+};
+
+/** Minimal HTML → text: drop script/style, strip tags, collapse whitespace. */
+function htmlToText(html: string) {
+  return html
+    .replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|h[1-6]|tr|section|article|blockquote)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Extract organic results from DuckDuckGo's HTML endpoint. */
+function parseSearchResults(html: string, limit: number) {
+  const results: Array<{ title: string; url: string; snippet: string }> = [];
+  const pattern = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+  const snippets = /<a[^>]+class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/g;
+  const snippetList: string[] = [];
+  for (const match of html.matchAll(snippets)) {
+    snippetList.push(htmlToText(match[1]).slice(0, 200));
+  }
+  let index = 0;
+  for (const match of html.matchAll(pattern)) {
+    const rawUrl = match[1];
+    // DDG wraps outbound links: //duckduckgo.com/l/?uddg=<encoded>&rut=...
+    const uddg = /[?&]uddg=([^&]+)/.exec(rawUrl)?.[1];
+    const url = uddg ? decodeURIComponent(uddg) : rawUrl.startsWith("//") ? `https:${rawUrl}` : rawUrl;
+    const title = htmlToText(match[2]);
+    if (!title || !/^https?:\/\//.test(url)) continue;
+    results.push({ title, url, snippet: snippetList[index] ?? "" });
+    index += 1;
+    if (results.length >= limit) break;
+  }
+  return results;
+}
 
 function normalizeEvent(event: AgentSessionEvent) {
   switch (event.type) {
@@ -310,9 +441,18 @@ async function initialize(message: InitMessage) {
     modelRegistry: registry,
     model,
     thinkingLevel: message.thinkingLevel ?? "medium",
+    // Built-in read/grep/find/ls operate on the vault folder inside the
+    // sidecar; everything else (bash + Ornata data) is proxied to the host.
     noTools: "all",
-    tools: [notesTool.name, todosTool.name, bookmarksTool.name],
-    customTools: [notesTool, todosTool, bookmarksTool],
+    tools: [
+      "read", "grep", "find", "ls",
+      bashTool.name, webFetchTool.name, webSearchTool.name,
+      notesTool.name, todosTool.name, bookmarksTool.name,
+    ],
+    customTools: [
+      notesTool, todosTool, bookmarksTool,
+      bashTool, webFetchTool, webSearchTool,
+    ],
     resourceLoader,
     settingsManager: SettingsManager.inMemory({
       compaction: { enabled: true },
