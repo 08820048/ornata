@@ -11,6 +11,7 @@ import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
+import { MathBlock, MathInline } from "./Mathematics";
 import { WikiLink } from "./wikiLink";
 import { NonInclusiveLink } from "./link";
 import { t } from "@/stores/locale";
@@ -66,6 +67,8 @@ export function createExtensions(assetRoot: string) {
     }),
     StarterKit.configure({ link: false, codeBlock: false }),
     CodeBlockWithCopy,
+    MathBlock,
+    MathInline,
     Typography,
     NonInclusiveLink.configure({
       autolink: true,

@@ -27,6 +27,7 @@
         "@tiptap/extension-code-block-lowlight": "3.23.6",
         "@tiptap/extension-image": "^3.23.6",
         "@tiptap/extension-link": "^3.23.6",
+        "@tiptap/extension-mathematics": "3.23.6",
         "@tiptap/extension-placeholder": "^3.23.6",
         "@tiptap/extension-table": "^3.23.6",
         "@tiptap/extension-table-cell": "^3.23.6",
@@ -40,6 +41,7 @@
         "@tiptap/starter-kit": "^3.23.6",
         "clsx": "^2.1.1",
         "highlight.js": "^11.11.1",
+        "katex": "^0.16.47",
         "lowlight": "^3.3.0",
         "lucide-react": "^1.23.0",
         "mermaid": "^11.17.2",
@@ -514,6 +516,8 @@
     "@tiptap/extension-list-item": ["@tiptap/extension-list-item@3.23.6", "https://registry.npmmirror.com/@tiptap/extension-list-item/-/extension-list-item-3.23.6.tgz", { "peerDependencies": { "@tiptap/extension-list": "3.23.6" } }, "sha512-3zzyhdkUWcHVpXuvy6KiIwjh29rbH6gEDEqPQqHLrl1XGnO9pnShC7pSHctlCDjmcx3O4n9cd4QMtVBlUerbiA=="],
 
     "@tiptap/extension-list-keymap": ["@tiptap/extension-list-keymap@3.23.6", "https://registry.npmmirror.com/@tiptap/extension-list-keymap/-/extension-list-keymap-3.23.6.tgz", { "peerDependencies": { "@tiptap/extension-list": "3.23.6" } }, "sha512-x8bPcLViGzg/RAmQM/XtmfqIwQ/Pv9Q8mkd+OgfUiTqjeJqKwVQmiqbLFNa7zw81+H61M+HDU+qGAaQ3vRIMjw=="],
+
+    "@tiptap/extension-mathematics": ["@tiptap/extension-mathematics@3.23.6", "https://registry.npmmirror.com/@tiptap/extension-mathematics/-/extension-mathematics-3.23.6.tgz", { "peerDependencies": { "@tiptap/core": "3.23.6", "@tiptap/pm": "3.23.6", "katex": "^0.16.4" } }, "sha512-ny9hQJy0eGF4nFLg4SkJcID7U7ias1B9rcoXOhm+LWZ4TJcZiU5VdVk2VaUWT89++i7M+aUirKEYOie9g697/g=="],
 
     "@tiptap/extension-ordered-list": ["@tiptap/extension-ordered-list@3.23.6", "https://registry.npmmirror.com/@tiptap/extension-ordered-list/-/extension-ordered-list-3.23.6.tgz", { "peerDependencies": { "@tiptap/extension-list": "3.23.6" } }, "sha512-1m/wWB/ZtXcmG2vNdiUkCqsOgqv5vBjCv/mVaHhF9OvV+zQS8YDjoWE7zEuT/GgELdT77Xq8lHrn4nCDudB3/A=="],
 
