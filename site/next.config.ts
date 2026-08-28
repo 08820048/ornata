@@ -13,6 +13,6 @@ export default nextConfig;
 // Enables the Cloudflare bindings + dev platform when running `next dev`.
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
-if (process.env.NODE_ENV === "development" && !process.env.VERCEL) {
+if (process.env.NODE_ENV === "development") {
   initOpenNextCloudflareForDev();
 }

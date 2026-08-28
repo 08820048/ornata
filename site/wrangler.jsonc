@@ -10,5 +10,8 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  // Own the apex so no stray DNS record (e.g. a leftover Vercel A record)
+  // can serve stale traffic alongside the Worker.
+  "routes": [{ "pattern": "ornata.app", "custom_domain": true }]
 }
