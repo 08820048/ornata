@@ -18,6 +18,8 @@ import {
   TextQuote,
   X,
 } from "lucide-react";
+import type { OrbState } from "thinking-orbs";
+import { ThinkingOrb } from "thinking-orbs";
 import { AnimatePresence, motion } from "motion/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
@@ -301,9 +303,14 @@ export function AgentPanel() {
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   exit={{ opacity: 0, y: -3, filter: "blur(3px)" }}
                   transition={{ duration: 0.16, ease: EASE_OUT }}
-                  className="mb-2 flex items-center gap-2 px-1 text-[11px] text-muted"
+                  className="mb-2 flex items-center gap-2.5 px-1 text-[11px] text-muted"
                 >
-                  <LoaderCircle className="shrink-0 animate-spin text-faint" size={12} />
+                  <ThinkingOrb
+                    state={orbStateForTool(liveActivity.name)}
+                    size={20}
+                    className="shrink-0"
+                    aria-label={toolLabel(liveActivity.name, t)}
+                  />
                   <span className="shrink-0 font-medium text-ink">
                     {toolLabel(liveActivity.name, t)}
                   </span>
@@ -1058,10 +1065,13 @@ function AgentWelcome({ onSuggestion }: { onSuggestion: (value: string) => void 
 
   return (
     <div className="mx-auto flex min-h-full max-w-[336px] flex-col justify-center py-5">
-      <span className="inline-flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">
-        <Sparkles size={13} />
-        {t(permissionLabel)}
-      </span>
+      <div className="mb-4">
+        <ThinkingOrb
+          state={permission === "readOnly" ? "breathing" : "shaping"}
+          size={64}
+          aria-label={t(permissionLabel)}
+        />
+      </div>
       <h3 className="mt-4 text-balance text-[20px] font-semibold leading-7 tracking-[-0.02em] text-ink">
         {t("agent.emptyTitle")}
       </h3>
@@ -1120,6 +1130,12 @@ function AgentTrace({
   running: boolean;
 }) {
   const t = useT();
+  // The orb mirrors the newest in-flight tool; falls back to "working" while
+  // running without tool detail (model thinking between calls).
+  const liveName = activities
+    .slice()
+    .reverse()
+    .find((activity) => activity.status === "running")?.name;
   return (
     <div className="py-1">
       <div className="flex items-center justify-between">
@@ -1127,7 +1143,15 @@ function AgentTrace({
           {t("agent.run")}
         </span>
         <span className="flex items-center gap-1.5 text-[10px] text-faint">
-          <StatusDot working={running} />
+          {running ? (
+            <ThinkingOrb
+              state={liveName ? orbStateForTool(liveName) : "working"}
+              size={20}
+              aria-label={t("agent.status.working")}
+            />
+          ) : (
+            <StatusDot working={false} />
+          )}
           {running ? t("agent.status.working") : t("agent.status.ready")}
         </span>
       </div>
@@ -1181,6 +1205,22 @@ function StatusDot({ working }: { working: boolean }) {
       )}
     />
   );
+}
+
+/** Map the in-flight tool call to a thinking-orb animation. */
+function orbStateForTool(name: string): OrbState {
+  if (name === "grep" || name === "find" || name === "web_search") {
+    return "searching";
+  }
+  if (name === "web_fetch" || name === "ls") return "connecting";
+  if (name === "edit" || name === "write" || name === "ornata_notes") {
+    return "composing";
+  }
+  if (name === "ornata_todos" || name === "ornata_bookmarks") {
+    return "weaving";
+  }
+  if (name === "bash" || name === "ornata_bash") return "working";
+  return "breathing";
 }
 
 function toolIcon(name: string) {
