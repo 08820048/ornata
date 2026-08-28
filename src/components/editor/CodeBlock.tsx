@@ -15,6 +15,7 @@ function CodeBlockView({ node }: NodeViewProps) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t = useT();
+  const language = node.attrs.language || "plaintext";
 
   useEffect(
     () => () => {
@@ -32,30 +33,32 @@ function CodeBlockView({ node }: NodeViewProps) {
 
   return (
     <NodeViewWrapper className="code-block-wrap">
+      <div className="code-block-toolbar" contentEditable={false}>
+        <span className="code-block-language">{language}</span>
+        <button
+          type="button"
+          aria-label={copied ? t("common.copied") : t("editor.copyCode")}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={copy}
+          className="code-block-copy press"
+        >
+          <ActionSwapIcon
+            value={copied ? "copied" : "copy"}
+            animation="roll"
+            className="h-[13px] w-[13px]"
+          >
+            {copied ? (
+              <Check size={13} strokeWidth={2} />
+            ) : (
+              <Copy size={13} strokeWidth={2} />
+            )}
+          </ActionSwapIcon>
+          <span>{copied ? t("common.copied") : t("common.copy")}</span>
+        </button>
+      </div>
       <pre>
         <NodeViewContent<"code"> as="code" />
       </pre>
-      <button
-        type="button"
-        contentEditable={false}
-        aria-label={copied ? t("common.copied") : t("editor.copyCode")}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={copy}
-        className="code-block-copy"
-      >
-        <ActionSwapIcon
-          value={copied ? "copied" : "copy"}
-          animation="roll"
-          className="h-[13px] w-[13px]"
-        >
-          {copied ? (
-            <Check size={13} strokeWidth={2} />
-          ) : (
-            <Copy size={13} strokeWidth={2} />
-          )}
-        </ActionSwapIcon>
-        <span>{copied ? t("common.copied") : t("common.copy")}</span>
-      </button>
     </NodeViewWrapper>
   );
 }

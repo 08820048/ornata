@@ -312,17 +312,44 @@ body {
 }
 
 .prose-note .code-block-wrap {
-    position: relative;
     margin: 1em 0;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    background: var(--panel);
+}
+
+.prose-note .code-block-toolbar {
+    display: flex;
+    height: 40px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--sunken);
+    padding: 0 7px 0 14px;
+    user-select: none;
+}
+
+.prose-note .code-block-language {
+    overflow: hidden;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .prose-note pre {
     font-family: var(--font-mono);
     font-size: 0.86em;
-    background: var(--panel);
-    border: 1px solid var(--line-soft);
-    border-radius: 8px;
-    padding: 14px 52px 14px 16px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 14px 16px 16px;
     margin: 0;
     overflow-x: auto;
 }
@@ -408,34 +435,29 @@ body {
 }
 
 .prose-note .code-block-copy {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+    position: relative;
     display: inline-flex;
-    height: 26px;
+    height: 30px;
     align-items: center;
     gap: 5px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg);
-    padding: 0 8px;
-    color: var(--faint);
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    padding: 0 7px 0 8px;
+    color: var(--muted);
     font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 550;
-    opacity: 0;
-    transform: translateY(-2px);
     transition:
-        opacity 120ms var(--ease-out),
         transform 120ms var(--ease-out),
         color 100ms ease,
         background-color 100ms ease;
 }
 
-.prose-note .code-block-wrap:hover .code-block-copy,
-.prose-note .code-block-copy:focus-visible {
-    opacity: 1;
-    transform: translateY(0);
+.prose-note .code-block-copy::before {
+    position: absolute;
+    inset: -5px;
+    content: "";
 }
 
 .prose-note .code-block-copy:hover {
