@@ -343,6 +343,70 @@ body {
     white-space: nowrap;
 }
 
+.prose-note .mermaid-preview {
+    display: flex;
+    min-height: 120px;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    background: var(--bg);
+    padding: 20px;
+    user-select: none;
+    transition: background-color 120ms var(--ease-out);
+}
+
+.prose-note .mermaid-summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.prose-note .mermaid-summary::-webkit-details-marker {
+    display: none;
+}
+
+.prose-note .mermaid-summary:hover .mermaid-preview {
+    background: var(--panel);
+}
+
+.prose-note .mermaid-summary:focus-visible {
+    border-radius: 6px;
+    outline: 2px solid var(--ink);
+    outline-offset: -3px;
+}
+
+.prose-note .mermaid-details[open] .mermaid-preview {
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.prose-note .mermaid-diagram {
+    display: flex;
+    min-width: 100%;
+    justify-content: center;
+}
+
+.prose-note .mermaid-diagram svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.prose-note .mermaid-rendering,
+.prose-note .mermaid-error {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.prose-note .mermaid-rendering {
+    color: var(--muted);
+}
+
+.prose-note .mermaid-error {
+    width: 100%;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+}
+
 .prose-note pre {
     font-family: var(--font-mono);
     font-size: 0.86em;
