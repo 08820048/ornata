@@ -18,21 +18,23 @@ export function Nav() {
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
-      className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl"
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4"
     >
-      <div className="mx-auto grid h-16 w-full max-w-[1440px] grid-cols-[1fr_auto] items-center px-5 sm:px-8 lg:grid-cols-[220px_1fr_220px] lg:px-10">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-paper/85 p-1.5 pl-3 shadow-[0_1px_2px_rgba(22,23,20,0.06),0_16px_40px_-20px_rgba(22,23,20,0.3)] backdrop-blur-xl">
         <a
           href="/"
           aria-label="Ornata home"
-          className="inline-flex min-h-11 items-center justify-self-start"
+          className="inline-flex min-h-9 items-center rounded-full pr-1.5"
         >
-          <Wordmark size={24} priority />
+          <Wordmark size={22} priority />
         </a>
 
-        <nav className="hidden items-center justify-center gap-1 lg:flex">
+        <div className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
+
+        <nav className="hidden items-center gap-0.5 md:flex">
           {LINKS.map((link) => {
             const active =
               link.href === "/updates"
@@ -44,10 +46,10 @@ export function Nav() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-10 items-center px-3 text-[12.5px] transition-colors duration-150",
+                  "inline-flex min-h-9 items-center rounded-full px-3 text-[12.5px] transition-colors duration-150",
                   active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-active text-foreground"
+                    : "text-muted-foreground hover:bg-hover hover:text-foreground",
                 )}
               >
                 {link.label}
@@ -56,9 +58,11 @@ export function Nav() {
           })}
         </nav>
 
-        <div className="flex items-center justify-self-end">
-          <DownloadButton label="Download" size="sm" />
-        </div>
+        <DownloadButton
+          label="Download"
+          size="sm"
+          className="ml-1 h-9 rounded-full px-4"
+        />
       </div>
     </motion.header>
   );
