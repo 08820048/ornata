@@ -15,7 +15,7 @@ import {
   TextQuote,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cx } from "@/lib/utils";
 import type { MessageKey } from "@/lib/i18n";
 import { useT } from "@/stores/locale";
@@ -137,6 +137,8 @@ export function SlashMenu({
   allowNoteLinks?: boolean;
 }) {
   const [selected, setSelected] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const keyboardNav = useRef(false);
   const t = useT();
 
   const filtered = useMemo(() => {
@@ -150,10 +152,20 @@ export function SlashMenu({
     );
   }, [allowNoteLinks, menu?.query, t]);
 
-  useEffect(() => setSelected(0), [menu?.query]);
+  useEffect(() => {
+    keyboardNav.current = false;
+    setSelected(0);
+  }, [menu?.query]);
 
   useEffect(() => {
-    if (!menu || !editor) return;
+    if (!keyboardNav.current) return;
+    listRef.current
+      ?.querySelector('[data-selected="true"]')
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selected]);
+
+  useEffect(() => {
+    if (!menu || !editor || filtered.length === 0) return;
     const execute = (command: SlashCommand) => {
       // The note-link command hands off to the picker, which owns deleting
       // the "/…" range and inserting the link.
@@ -172,9 +184,11 @@ export function SlashMenu({
         onClose();
       } else if (event.key === "ArrowDown") {
         event.preventDefault();
+        keyboardNav.current = true;
         setSelected((i) => (i + 1) % filtered.length);
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
+        keyboardNav.current = true;
         setSelected((i) => (i - 1 + filtered.length) % filtered.length);
       } else if (event.key === "Enter" || event.key === "Tab") {
         event.preventDefault();
@@ -190,6 +204,7 @@ export function SlashMenu({
 
   return (
     <motion.div
+      ref={listRef}
       initial={{ opacity: 0, y: menu.side === "bottom" ? -4 : 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12, ease: "easeOut" }}
@@ -200,6 +215,7 @@ export function SlashMenu({
         <button
           key={command.id}
           type="button"
+          data-selected={index === selected}
           className={cx(
             "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
             index === selected ? "bg-hover text-ink" : "text-muted",
@@ -215,7 +231,10 @@ export function SlashMenu({
             command.run?.(editor);
             onClose();
           }}
-          onMouseEnter={() => setSelected(index)}
+          onMouseEnter={() => {
+            keyboardNav.current = false;
+            setSelected(index);
+          }}
         >
           <command.icon size={14.5} strokeWidth={1.75} className="shrink-0" />
           {t(command.label)}
