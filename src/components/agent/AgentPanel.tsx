@@ -80,10 +80,13 @@ export function AgentPanel() {
   const setSelection = useAgent((state) => state.setSelection);
   const [draft, setDraft] = useState("");
   const [showSetup, setShowSetup] = useState(false);
+  // The auto-attached current note can be dismissed; it comes back only when
+  // a different note is opened.
+  const [noteDismissed, setNoteDismissed] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const t = useT();
   const currentNote: AgentNoteReference | null =
-    view?.type === "note"
+    view?.type === "note" && !noteDismissed
       ? {
           sourceKey: noteKey(view.note),
           source:
@@ -93,6 +96,12 @@ export function AgentPanel() {
           title: noteTitle(view.note),
         }
       : null;
+
+  // A newly opened note re-arms the attachment even if the previous one was
+  // dismissed — the dismissal only covers the note it was made on.
+  useEffect(() => {
+    setNoteDismissed(false);
+  }, [view?.type === "note" ? noteKey(view.note) : ""]);
 
   useEffect(() => {
     if (open && root && useAgent.getState().vaultRoot !== root) {
@@ -222,7 +231,7 @@ export function AgentPanel() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.16, ease: EASE_OUT }}
-                  className={cx(index > 0 && "border-t border-line-soft pt-6")}
+                  className={cx(index > 0 && "pt-2")}
                 >
                   {message.role === "user" ? (
                     <>
@@ -305,7 +314,10 @@ export function AgentPanel() {
                     }}
                     transition={{ duration: 0.16, ease: EASE_OUT }}
                   >
-                    <NoteAttachment note={currentNote} />
+                    <NoteAttachment
+                      note={currentNote}
+                      onRemove={() => setNoteDismissed(true)}
+                    />
                   </motion.div>
                 )}
                 {selection && (
@@ -768,13 +780,15 @@ function ApprovalCard({
 
 function NoteAttachment({
   note,
+  onRemove,
 }: {
   note: AgentNoteReference;
+  onRemove?: () => void;
 }) {
   const t = useT();
 
   return (
-    <div className="mb-1 flex min-h-12 items-center gap-2.5 rounded-xl bg-hover p-2">
+    <div className="relative mb-1 flex min-h-12 items-center gap-2.5 rounded-xl bg-hover p-2 pr-10">
       <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-line-soft bg-bg text-muted">
         <BookOpenText size={14} />
       </span>
@@ -786,6 +800,16 @@ function NoteAttachment({
           {t("agent.currentNote")}
         </span>
       </span>
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={t("agent.removeNote")}
+          onClick={onRemove}
+          className="absolute right-0 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-xl text-faint transition-[background-color,color,transform] duration-100 hover:bg-active hover:text-ink active:scale-[0.96]"
+        >
+          <X size={13} />
+        </button>
+      )}
     </div>
   );
 }
@@ -1015,8 +1039,8 @@ function AgentWelcome({ onSuggestion }: { onSuggestion: (value: string) => void 
         {t("agent.emptyDetail")}
       </p>
 
-      <div className="mt-6 border-y border-line-soft py-4">
-        <div className="flex items-center justify-between border-b border-line-soft pb-3">
+      <div className="mt-6">
+        <div className="flex items-center justify-between">
           <span className="font-mono text-[11px] font-medium text-muted">
             {t("agent.run")}
           </span>
@@ -1067,8 +1091,8 @@ function AgentTrace({
 }) {
   const t = useT();
   return (
-    <div className="border-y border-line-soft py-4">
-      <div className="flex items-center justify-between border-b border-line-soft pb-3">
+    <div className="py-1">
+      <div className="flex items-center justify-between">
         <span className="font-mono text-[11px] font-medium text-muted">
           {t("agent.run")}
         </span>
@@ -1077,7 +1101,7 @@ function AgentTrace({
           {running ? t("agent.status.working") : t("agent.status.ready")}
         </span>
       </div>
-      <div className="mt-4 flex flex-col gap-3.5">
+      <div className="mt-3.5 flex flex-col gap-3">
         <AnimatePresence initial={false}>
           {activities.map((activity) => {
             const Icon = toolIcon(activity.name);
