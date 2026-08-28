@@ -55,7 +55,6 @@ impl BridgeRequest {
             ("notes", "list" | "search" | "read")
                 | ("todos", "list" | "listTags")
                 | ("bookmarks", "list" | "listTags")
-                | ("bash", "run")
                 | ("permission", _)
         )
     }

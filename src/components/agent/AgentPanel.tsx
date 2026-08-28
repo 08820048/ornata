@@ -49,6 +49,8 @@ import type {
 } from "@/lib/types";
 
 const PANEL_WIDTH = "clamp(408px, 44vw, 640px)";
+/// Tool calls kept visible in the trace before a "show all" reveal.
+const VISIBLE_ACTIVITIES = 8;
 const AgentMarkdown = lazy(() =>
   import("@/components/agent/AgentMarkdown").then((module) => ({
     default: module.AgentMarkdown,
@@ -1130,12 +1132,17 @@ function AgentTrace({
   running: boolean;
 }) {
   const t = useT();
+  const [expanded, setExpanded] = useState(false);
   // The orb mirrors the newest in-flight tool; falls back to "working" while
   // running without tool detail (model thinking between calls).
   const liveName = activities
     .slice()
     .reverse()
     .find((activity) => activity.status === "running")?.name;
+  // Long sessions rack up dozens of tool calls; show the latest slice until
+  // the user asks for the full history so the panel DOM stays small.
+  const visible = expanded ? activities : activities.slice(-VISIBLE_ACTIVITIES);
+  const hidden = activities.length - visible.length;
   return (
     <div className="py-1">
       <div className="flex items-center justify-between">
@@ -1157,7 +1164,7 @@ function AgentTrace({
       </div>
       <div className="mt-3.5 flex flex-col gap-3">
         <AnimatePresence initial={false}>
-          {activities.map((activity) => {
+          {visible.map((activity) => {
             const Icon = toolIcon(activity.name);
             return (
               <motion.div
@@ -1190,6 +1197,15 @@ function AgentTrace({
             );
           })}
         </AnimatePresence>
+        {hidden > 0 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="self-start text-[10.5px] font-medium text-muted transition-colors hover:text-ink"
+          >
+            {t("agent.trace.showAll", { count: hidden })}
+          </button>
+        )}
       </div>
     </div>
   );

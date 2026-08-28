@@ -15,6 +15,7 @@ mod search;
 mod todos;
 mod util;
 mod vault;
+mod watcher;
 
 use commands::AppState;
 use tauri::{Emitter, Manager};

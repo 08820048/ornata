@@ -8,6 +8,10 @@ use crate::vault::ASSETS_DIR;
 
 const ALLOWED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "svg"];
 
+/// Reject images beyond 20 MB decoded — pasted screenshots are far below
+/// this, and the cap keeps a stray huge paste from ballooning memory.
+const MAX_IMAGE_BYTES: usize = 20 * 1024 * 1024;
+
 /// Save image bytes (sent from the editor as base64) into the vault's
 /// asset folder. Returns the absolute path for use with the asset protocol.
 pub fn save_image(root: &Path, base64_data: &str, extension: &str) -> AppResult<PathBuf> {
@@ -31,6 +35,15 @@ fn save_image_in(dir: PathBuf, base64_data: &str, extension: &str) -> AppResult<
     if !ALLOWED_EXTENSIONS.contains(&ext.as_str()) {
         return Err(AppError::InvalidInput(format!(
             "unsupported image type: {ext}"
+        )));
+    }
+    // Base64 inflates by 4/3 — check the encoded length first so an oversized
+    // payload is rejected before allocating the decode buffer.
+    if base64_data.len() > MAX_IMAGE_BYTES / 3 * 4 {
+        return Err(AppError::InvalidInput(format!(
+            "image exceeds the {}/{} MB limit",
+            MAX_IMAGE_BYTES / 1024 / 1024,
+            MAX_IMAGE_BYTES / 1024 / 1024
         )));
     }
     let bytes = decode_base64(base64_data)?;
@@ -113,5 +126,14 @@ mod tests {
     fn base64_roundtrip() {
         assert_eq!(base64_decode("aGVsbG8=").unwrap(), b"hello");
         assert!(base64_decode("!!!").is_none());
+    }
+
+    #[test]
+    fn rejects_oversized_images() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        let big = "A".repeat(MAX_IMAGE_BYTES / 3 * 4 + 1);
+        let error = save_image(dir.path(), &big, "png").unwrap_err();
+        assert!(error.to_string().contains("limit"));
     }
 }

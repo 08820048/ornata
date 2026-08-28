@@ -130,6 +130,8 @@ fn activate_vault(app: &AppHandle, state: &AppState, root: PathBuf) -> AppResult
         .asset_protocol_scope()
         .allow_directory(root.join(vault::ASSETS_DIR), true);
     state.set_root(Some(root.clone()));
+    // Push tree refreshes to the frontend when the vault changes on disk.
+    crate::watcher::spawn(app.clone(), root.clone());
     let mut cfg = config::load(app);
     cfg.vault_path = Some(root.display().to_string());
     config::save(app, &cfg)?;

@@ -87,12 +87,34 @@ export default function App() {
     };
   }, [status, root]);
 
-  // Pick up edits made outside the app when the window regains focus.
+  // Pick up edits made outside the app when the window regains focus. The
+  // Rust watcher (ornata-vault-changed) covers live changes while focused;
+  // this catches anything missed when focus was elsewhere entirely.
   useEffect(() => {
     const onFocus = () => refreshTree();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [refreshTree]);
+
+  // The backend watches the vault folder and asks for a tree refresh when
+  // files change outside the app (editors, iCloud sync, git).
+  useEffect(() => {
+    if (status !== "ready") return;
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    listen("ornata-vault-changed", () => {
+      useVault.getState().refreshTree();
+    })
+      .then((unlisten) => {
+        if (cancelled) unlisten();
+        else stop = unlisten;
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [status]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
