@@ -2,6 +2,13 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.4.0] - 2026-08-29
+
+### Added
+
+- Smooth editor cursor trail that follows the pointer with spring physics, honoring reduced-motion settings.
+- Text edit trail: short insertions and deletions animate as they land, and the caret gains a tapered line look.
+
 ## [0.3.0] - 2026-08-29
 
 ### Added
