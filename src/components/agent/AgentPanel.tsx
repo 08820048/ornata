@@ -150,6 +150,11 @@ export function AgentPanel() {
       .slice()
       .reverse()
       .find((activity) => activity.status === "running") ?? null;
+  const composerStatus = starting
+    ? t("agent.status.connecting")
+    : running
+      ? t("agent.status.working")
+      : t("agent.status.ready");
   const showComposerAction = running || Boolean(draft.trim());
   const lastAssistantId = [...messages]
     .reverse()
@@ -260,7 +265,7 @@ export function AgentPanel() {
                   ) : (
                     <>
                       {message.id === lastAssistantId && activities.length > 0 && (
-                        <AgentTrace activities={activities} running={running} />
+                        <AgentTrace activities={activities} />
                       )}
                       <div className={cx("flex items-center gap-2", activities.length > 0 && message.id === lastAssistantId && "mt-5")}>
                         <Sparkles size={13} className="text-muted" />
@@ -338,7 +343,24 @@ export function AgentPanel() {
                 </span>
               </div>
             )}
-            <div className="rounded-2xl border border-line-soft bg-bg p-2 transition-[border-color] duration-100 focus-within:border-line">
+            <div className="relative mt-2 rounded-2xl border border-line-soft bg-bg p-2 transition-[border-color] duration-100 focus-within:border-line">
+              <span
+                role="status"
+                aria-live="polite"
+                className="absolute -top-2.5 left-4 z-10 inline-flex h-5 items-center gap-1.5 bg-bg px-1.5 text-[10px] text-faint"
+              >
+                <span
+                  aria-hidden="true"
+                  className="relative size-[11px] shrink-0 overflow-hidden"
+                >
+                  <ThinkingOrb
+                    state={starting ? "connecting" : running ? "working" : "breathing"}
+                    size={20}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.55]"
+                  />
+                </span>
+                {composerStatus}
+              </span>
               <AnimatePresence initial={false}>
                 {currentNote && (
                   <motion.div
@@ -795,9 +817,7 @@ function ApprovalCard({
   return (
     <div className="mb-2 rounded-2xl border border-line bg-bg p-3 shadow-lg shadow-black/5">
       <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-hover text-muted">
-          <PencilLine size={13} />
-        </span>
+        <PencilLine className="mt-1 shrink-0 text-muted" size={15} />
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-medium text-ink">{t("agent.approval.title")}</p>
           <p className="mt-0.5 truncate text-[10.5px] text-faint">
@@ -1082,21 +1102,13 @@ function AgentWelcome({ onSuggestion }: { onSuggestion: (value: string) => void 
       </p>
 
       <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-[11px] font-medium text-muted">
-            {t("agent.run")}
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-faint">
-            <StatusDot working={false} />
-            {t("agent.status.ready")}
-          </span>
-        </div>
+        <span className="font-mono text-[11px] font-medium text-muted">
+          {t("agent.run")}
+        </span>
         <div className="mt-4 flex flex-col gap-4">
           {capabilities.map(([Icon, label, detail]) => (
             <div key={label} className="flex items-start gap-3">
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-hover text-muted">
-                <Icon size={13.5} />
-              </span>
+              <Icon className="mt-1 shrink-0 text-muted" size={15} />
               <div className="min-w-0 flex-1 pt-0.5">
                 <p className="text-[12.5px] font-medium text-ink">{label}</p>
                 <p className="mt-0.5 text-pretty text-[10.5px] leading-4 text-faint">
@@ -1126,42 +1138,20 @@ function AgentWelcome({ onSuggestion }: { onSuggestion: (value: string) => void 
 
 function AgentTrace({
   activities,
-  running,
 }: {
   activities: AgentActivity[];
-  running: boolean;
 }) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
-  // The orb mirrors the newest in-flight tool; falls back to "working" while
-  // running without tool detail (model thinking between calls).
-  const liveName = activities
-    .slice()
-    .reverse()
-    .find((activity) => activity.status === "running")?.name;
   // Long sessions rack up dozens of tool calls; show the latest slice until
   // the user asks for the full history so the panel DOM stays small.
   const visible = expanded ? activities : activities.slice(-VISIBLE_ACTIVITIES);
   const hidden = activities.length - visible.length;
   return (
     <div className="py-1">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] font-medium text-muted">
-          {t("agent.run")}
-        </span>
-        <span className="flex items-center gap-1.5 text-[10px] text-faint">
-          {running ? (
-            <ThinkingOrb
-              state={liveName ? orbStateForTool(liveName) : "working"}
-              size={20}
-              aria-label={t("agent.status.working")}
-            />
-          ) : (
-            <StatusDot working={false} />
-          )}
-          {running ? t("agent.status.working") : t("agent.status.ready")}
-        </span>
-      </div>
+      <span className="font-mono text-[11px] font-medium text-muted">
+        {t("agent.run")}
+      </span>
       <div className="mt-3.5 flex flex-col gap-3">
         <AnimatePresence initial={false}>
           {visible.map((activity) => {
@@ -1174,15 +1164,16 @@ function AgentTrace({
                 transition={{ duration: 0.14, ease: EASE_OUT }}
                 className="flex items-start gap-3"
               >
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-hover text-muted">
-                  {activity.status === "running" ? (
-                    <LoaderCircle className="animate-spin" size={13} />
-                  ) : activity.status === "error" ? (
-                    <AlertCircle size={13} />
-                  ) : (
-                    <Icon size={13} />
-                  )}
-                </span>
+                {activity.status === "running" ? (
+                  <LoaderCircle
+                    className="mt-1 shrink-0 animate-spin text-muted"
+                    size={15}
+                  />
+                ) : activity.status === "error" ? (
+                  <AlertCircle className="mt-1 shrink-0 text-muted" size={15} />
+                ) : (
+                  <Icon className="mt-1 shrink-0 text-muted" size={15} />
+                )}
                 <div className="min-w-0 flex-1 pt-0.5">
                   <p className="text-[12.5px] font-medium text-ink">
                     {toolLabel(activity.name, t)}
@@ -1208,18 +1199,6 @@ function AgentTrace({
         )}
       </div>
     </div>
-  );
-}
-
-/** Run-status dot: green pulsing while the agent works, neutral at rest. */
-function StatusDot({ working }: { working: boolean }) {
-  return (
-    <span
-      className={cx(
-        "size-1.5 rounded-full",
-        working ? "animate-pulse bg-success" : "bg-muted",
-      )}
-    />
   );
 }
 
