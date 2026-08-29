@@ -1,4 +1,4 @@
-import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
+import CodeBlock from "@tiptap/extension-code-block";
 import {
   NodeViewContent,
   NodeViewWrapper,
@@ -6,9 +6,19 @@ import {
   type NodeViewProps,
 } from "@tiptap/react";
 import { Check, Copy } from "lucide-react";
+import {
+  createHighlightPlugin,
+  type Parser,
+} from "prosemirror-highlight";
+import { createParser } from "prosemirror-highlight/shiki";
 import { useEffect, useId, useRef, useState } from "react";
 import { ActionSwapIcon } from "@/components/motion/action-swap";
-import { lowlight } from "@/lib/syntaxHighlighter";
+import {
+  isSyntaxLanguageLoaded,
+  loadSyntaxLanguage,
+  normalizeSyntaxLanguage,
+  SHIKI_THEMES,
+} from "@/lib/syntaxHighlighter";
 import { useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 
@@ -186,22 +196,32 @@ function CodeBlockView({ node }: NodeViewProps) {
   );
 }
 
-export const CodeBlockWithCopy = CodeBlockLowlight.extend({
-  // CodeBlockLowlight adds its plugin by calling its parent plugin factory.
-  // Extending it for a React NodeView makes that factory appear twice in the
-  // inherited chain, so retain a single lowlight decoration pass.
-  addProseMirrorPlugins() {
-    let hasLowlight = false;
-    return (this.parent?.() ?? []).filter((plugin) => {
-      const key = (plugin.spec.key as { key?: string } | undefined)?.key;
-      if (!key?.startsWith("lowlight$")) return true;
-      if (hasLowlight) return false;
-      hasLowlight = true;
-      return true;
+let shikiParser: Parser | undefined;
+
+const lazyShikiParser: Parser = (options) => {
+  const language = normalizeSyntaxLanguage(options.language);
+  if (!language || language === "plaintext") return [];
+  if (shikiParser && isSyntaxLanguageLoaded(language)) {
+    return shikiParser({ ...options, language });
+  }
+
+  return loadSyntaxLanguage(language).then((highlighter) => {
+    shikiParser ??= createParser(highlighter, {
+      themes: SHIKI_THEMES,
+      defaultColor: false,
     });
+  });
+};
+
+export const CodeBlockWithCopy = CodeBlock.extend({
+  addProseMirrorPlugins() {
+    return [
+      ...(this.parent?.() ?? []),
+      createHighlightPlugin({ parser: lazyShikiParser }),
+    ];
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(CodeBlockView);
   },
-}).configure({ lowlight });
+});

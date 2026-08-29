@@ -1,16 +1,23 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { createElement, memo, useMemo, type ReactNode } from "react";
+import {
+  Fragment,
+  memo,
+  useEffect,
+  useState,
+  type CSSProperties,
+} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { lowlight } from "@/lib/syntaxHighlighter";
+import { highlightCode } from "@/lib/syntaxHighlighter";
 
 interface AgentMarkdownProps {
   children: string;
 }
 
 const CODE_LANGUAGE_RE = /(?:^|\s)language-([^\s]+)/;
-type HighlightNode = ReturnType<typeof lowlight.highlight>["children"][number];
-type HighlightElement = Extract<HighlightNode, { type: "element" }>;
+type HighlightResult = NonNullable<
+  Awaited<ReturnType<typeof highlightCode>>
+>;
 
 export const AgentMarkdown = memo(function AgentMarkdown({
   children,
@@ -66,12 +73,21 @@ function HighlightedCode({
   language: string;
   children: string;
 }) {
-  const highlighted = useMemo(() => {
-    try {
-      return lowlight.highlight(language.toLowerCase(), children).children;
-    } catch {
-      return null;
-    }
+  const [highlighted, setHighlighted] = useState<HighlightResult | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHighlighted(null);
+    void highlightCode(children, language)
+      .then((result) => {
+        if (!cancelled) setHighlighted(result);
+      })
+      .catch(() => {
+        if (!cancelled) setHighlighted(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [children, language]);
 
   if (!highlighted) {
@@ -79,25 +95,21 @@ function HighlightedCode({
   }
 
   return (
-    <code className={`hljs language-${language}`}>
-      {highlighted.map(renderHighlightedNode)}
+    <code className={`language-${language}`}>
+      {highlighted.tokens.map((line, lineIndex) => (
+        <Fragment key={lineIndex}>
+          {line.map((token, tokenIndex) => (
+            <span
+              key={tokenIndex}
+              className="shiki"
+              style={token.htmlStyle as CSSProperties}
+            >
+              {token.content}
+            </span>
+          ))}
+          {lineIndex < highlighted.tokens.length - 1 ? "\n" : null}
+        </Fragment>
+      ))}
     </code>
   );
-}
-
-function renderHighlightedNode(node: HighlightNode, index: number): ReactNode {
-  if (node.type === "text") return node.value;
-  if (node.type !== "element") return null;
-
-  const className = classNameOf(node);
-  return createElement(
-    node.tagName,
-    { key: index, ...(className ? { className } : {}) },
-    node.children.map(renderHighlightedNode),
-  );
-}
-
-function classNameOf(node: HighlightElement) {
-  const value = node.properties.className;
-  return Array.isArray(value) ? value.join(" ") : undefined;
 }

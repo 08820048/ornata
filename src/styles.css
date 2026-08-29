@@ -87,17 +87,8 @@
     --danger: #b3261e;
     --success: #4d8660;
 
-    /* Syntax colors are deliberately scoped to code tokens. The surrounding
-       product UI remains monochrome. */
+    /* Plain-code fallback. Shiki supplies token colors as scoped variables. */
     --syntax-plain: #24292f;
-    --syntax-comment: #6e7781;
-    --syntax-keyword: #cf222e;
-    --syntax-string: #0a3069;
-    --syntax-number: #0550ae;
-    --syntax-type: #8250df;
-    --syntax-variable: #953800;
-    --syntax-meta: #116329;
-    --syntax-operator: #57606a;
 }
 
 .dark {
@@ -117,14 +108,6 @@
     --success: #72b588;
 
     --syntax-plain: #c9d1d9;
-    --syntax-comment: #8b949e;
-    --syntax-keyword: #ff7b72;
-    --syntax-string: #a5d6ff;
-    --syntax-number: #79c0ff;
-    --syntax-type: #d2a8ff;
-    --syntax-variable: #ffa657;
-    --syntax-meta: #7ee787;
-    --syntax-operator: #8b949e;
 }
 
 html,
@@ -512,77 +495,19 @@ body {
     font-size: 1em;
 }
 
-/* Lowlight syntax tokens. Color is confined to code so prose and product
-   chrome keep Ornata's monochrome identity. */
-:is(.prose-note, .agent-markdown) .hljs-comment,
-:is(.prose-note, .agent-markdown) .hljs-quote {
-    color: var(--syntax-comment);
-    font-style: italic;
+/* Shiki emits dual-theme values as token-scoped custom properties. */
+:is(.prose-note, .agent-markdown) .shiki {
+    color: var(--shiki-light, var(--syntax-plain));
+    font-style: var(--shiki-light-font-style, inherit);
+    font-weight: var(--shiki-light-font-weight, inherit);
+    text-decoration: var(--shiki-light-text-decoration, inherit);
 }
 
-:is(.prose-note, .agent-markdown) .hljs-keyword,
-:is(.prose-note, .agent-markdown) .hljs-selector-tag {
-    color: var(--syntax-keyword);
-    font-weight: 650;
-}
-
-:is(.prose-note, .agent-markdown) .hljs-section,
-:is(.prose-note, .agent-markdown) .hljs-title.function_,
-:is(.prose-note, .agent-markdown) .hljs-title.class_ {
-    color: var(--syntax-type);
-    font-weight: 650;
-}
-
-:is(.prose-note, .agent-markdown) .hljs-string,
-:is(.prose-note, .agent-markdown) .hljs-regexp,
-:is(.prose-note, .agent-markdown) .hljs-template-tag,
-:is(.prose-note, .agent-markdown) .hljs-template-variable {
-    color: var(--syntax-string);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-number,
-:is(.prose-note, .agent-markdown) .hljs-literal,
-:is(.prose-note, .agent-markdown) .hljs-symbol,
-:is(.prose-note, .agent-markdown) .hljs-bullet {
-    color: var(--syntax-number);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-variable,
-:is(.prose-note, .agent-markdown) .hljs-variable.constant_,
-:is(.prose-note, .agent-markdown) .hljs-attr,
-:is(.prose-note, .agent-markdown) .hljs-attribute {
-    color: var(--syntax-variable);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-built_in,
-:is(.prose-note, .agent-markdown) .hljs-type {
-    color: var(--syntax-type);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-meta,
-:is(.prose-note, .agent-markdown) .hljs-doctag {
-    color: var(--syntax-meta);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-operator,
-:is(.prose-note, .agent-markdown) .hljs-punctuation {
-    color: var(--syntax-operator);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-addition {
-    color: var(--syntax-meta);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-deletion {
-    color: var(--syntax-keyword);
-}
-
-:is(.prose-note, .agent-markdown) .hljs-emphasis {
-    font-style: italic;
-}
-
-:is(.prose-note, .agent-markdown) .hljs-strong {
-    font-weight: 700;
+.dark :is(.prose-note, .agent-markdown) .shiki {
+    color: var(--shiki-dark, var(--syntax-plain));
+    font-style: var(--shiki-dark-font-style, inherit);
+    font-weight: var(--shiki-dark-font-weight, inherit);
+    text-decoration: var(--shiki-dark-text-decoration, inherit);
 }
 
 .prose-note .code-block-copy {
