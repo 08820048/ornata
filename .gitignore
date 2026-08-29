@@ -44,6 +44,7 @@ AuthKey_*.p8
 *.mobileprovision
 
 .claude
+.mimosa/
 
 # Internal design/research notes — not shipped
 /docs/
