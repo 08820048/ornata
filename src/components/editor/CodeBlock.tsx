@@ -54,9 +54,9 @@ function MermaidPreview({ source }: { source: string }) {
         const color = (token: string) => styles.getPropertyValue(token).trim();
         const ink = color("--ink");
         const muted = color("--muted");
-        const panel = color("--panel");
-        const sunken = color("--sunken");
-        const background = color("--bg");
+        const codeSurface = color("--code-surface");
+        const diagramSurface = color("--diagram-surface");
+        const diagramNode = color("--diagram-node");
 
         mermaid.initialize({
           startOnLoad: false,
@@ -66,23 +66,23 @@ function MermaidPreview({ source }: { source: string }) {
           theme: "base",
           fontFamily: styles.getPropertyValue("--font-sans").trim(),
           themeVariables: {
-            background,
-            primaryColor: panel,
+            background: diagramSurface,
+            primaryColor: diagramNode,
             primaryTextColor: ink,
             primaryBorderColor: muted,
             lineColor: muted,
-            secondaryColor: sunken,
-            tertiaryColor: background,
+            secondaryColor: codeSurface,
+            tertiaryColor: diagramSurface,
             textColor: ink,
-            mainBkg: panel,
+            mainBkg: diagramNode,
             nodeBorder: muted,
-            clusterBkg: sunken,
+            clusterBkg: codeSurface,
             clusterBorder: color("--line"),
-            edgeLabelBackground: background,
-            noteBkgColor: sunken,
+            edgeLabelBackground: diagramSurface,
+            noteBkgColor: diagramNode,
             noteBorderColor: muted,
             noteTextColor: ink,
-            actorBkg: panel,
+            actorBkg: diagramNode,
             actorBorder: muted,
             actorTextColor: ink,
             signalColor: ink,
