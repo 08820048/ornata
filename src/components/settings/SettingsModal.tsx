@@ -57,9 +57,9 @@ export function SettingsModal() {
       open={open}
       onClose={() => setOpen(false)}
       ariaLabel={t("common.settings")}
-      className="w-[460px]"
+      className="w-[560px]"
     >
-      <header className="flex items-center gap-3 border-b border-line-soft px-5 py-4">
+      <header className="flex items-center gap-3 px-5 py-4">
         <Settings
           size={18}
           strokeWidth={1.8}
@@ -83,7 +83,7 @@ export function SettingsModal() {
         </button>
       </header>
 
-      <div className="page-scroll max-h-[min(620px,calc(100vh-96px))] px-5 pb-5">
+      <div className="page-scroll max-h-[calc(100vh-96px)] px-5 pb-5">
         <section className="flex min-h-10 items-center justify-between gap-4 pt-5">
           <div className="flex flex-col gap-1">
             <span className="flex items-center gap-0.5 text-[10.5px] text-faint">
