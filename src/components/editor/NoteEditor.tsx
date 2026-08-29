@@ -1,6 +1,13 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  type MotionValue,
+} from "motion/react";
+import {
   lazy,
   memo,
   Suspense,
@@ -10,9 +17,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
+import { SPRING_MOUSE } from "@/lib/ease";
 import {
   joinFrontmatter,
   parseFrontmatter,
@@ -681,7 +691,7 @@ export const NoteEditor = memo(function NoteEditor({
   };
 
   return (
-    <>
+    <CursorTrail enabled={active}>
       <div
         ref={scrollRef}
         className="page-scroll"
@@ -786,7 +796,7 @@ export const NoteEditor = memo(function NoteEditor({
           onSelect={selectOutlineItem}
         />
       )}
-    </>
+    </CursorTrail>
   );
 });
 
@@ -876,6 +886,80 @@ function TitleInput({
 function resizeTitle(element: HTMLTextAreaElement) {
   element.style.height = "0px";
   element.style.height = `${element.scrollHeight}px`;
+}
+
+function CursorTrail({
+  children,
+  enabled,
+  count = 6,
+}: {
+  children: ReactNode;
+  enabled: boolean;
+  count?: number;
+}) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const reduceMotion = useReducedMotion();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) setVisible(false);
+  }, [enabled]);
+
+  const move = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!enabled || reduceMotion || event.pointerType !== "mouse") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    x.set(event.clientX - rect.left);
+    y.set(event.clientY - rect.top);
+    setVisible(true);
+  };
+
+  return (
+    <div
+      className="relative size-full"
+      onPointerMove={move}
+      onPointerLeave={() => setVisible(false)}
+    >
+      {children}
+      {enabled && visible && (
+        <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden motion-reduce:hidden">
+          {Array.from({ length: count }, (_, index) => (
+            <TrailDot
+              key={index}
+              sourceX={x}
+              sourceY={y}
+              index={index}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TrailDot({
+  sourceX,
+  sourceY,
+  index,
+}: {
+  sourceX: MotionValue<number>;
+  sourceY: MotionValue<number>;
+  index: number;
+}) {
+  const spring = {
+    ...SPRING_MOUSE,
+    stiffness: SPRING_MOUSE.stiffness - index * 14,
+    damping: SPRING_MOUSE.damping + index * 0.8,
+  };
+  const x = useSpring(sourceX, spring);
+  const y = useSpring(sourceY, spring);
+
+  return (
+    <motion.span
+      className="absolute left-0 top-0 size-1.5 rounded-full bg-ink will-change-transform"
+      style={{ x, y, margin: -3, opacity: 0.55 - index * 0.07 }}
+    />
+  );
 }
 
 function sameOutline(current: OutlineItem[], next: OutlineItem[]) {
