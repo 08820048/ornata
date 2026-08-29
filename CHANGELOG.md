@@ -2,6 +2,18 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.3.0] - 2026-08-29
+
+### Added
+
+- Migrated fenced code blocks to Shiki with dual light/dark themes and syntax highlighting for 20 programming languages.
+
+### Changed
+
+- Refined code-block and Mermaid surfaces so they blend more naturally with the editor in both color modes.
+- Kept Agent status visible above the composer, added compact Thinking Orbs for ready/connecting/working states, and removed decorative gray icon circles.
+- Enlarged the settings dialog for more comfortable configuration.
+
 ## [0.2.0] - 2026-08-28
 
 ### Added
