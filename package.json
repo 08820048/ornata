@@ -16,6 +16,7 @@
     "pretauri:build": "bun run version:sync",
     "update:generate": "bun scripts/generate-latest-json.js",
     "update:test-server": "node scripts/test-update-server.cjs",
+    "test": "bun test",
     "icon:generate": "bash scripts/generate-icns.sh",
     "release:preflight": "bash scripts/check-release-signing.sh",
     "release:publish": "bun scripts/publish-r2.js",

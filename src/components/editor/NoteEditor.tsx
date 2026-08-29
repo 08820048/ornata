@@ -1,10 +1,12 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
+  AnimatePresence,
   motion,
   useMotionValue,
   useReducedMotion,
   useSpring,
+  useTransform,
   type MotionValue,
 } from "motion/react";
 import {
@@ -22,7 +24,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
-import { SPRING_MOUSE } from "@/lib/ease";
+import { EASE_OUT, SPRING_MOUSE } from "@/lib/ease";
 import {
   joinFrontmatter,
   parseFrontmatter,
@@ -52,6 +54,7 @@ import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { SlashMenu, type SlashMenuState } from "./SlashMenu";
+import { showTextEditTrail } from "./textTrail";
 
 const MarkdownSourceEditor = lazy(() =>
   import("./MarkdownSourceEditor").then((module) => ({
@@ -312,8 +315,9 @@ export const NoteEditor = memo(function NoteEditor({
         // the effect below) so the anchor's native navigation is stopped before
         // anything — including the webview — can act on it.
       },
-      onUpdate({ editor }) {
+      onUpdate({ editor, transaction }) {
         if (swapping.current) return;
+        showTextEditTrail(editor.view, transaction);
         const markdown = editor.getMarkdown();
         pending.current = markdown;
         setSaveState("saving");
@@ -888,19 +892,24 @@ function resizeTitle(element: HTMLTextAreaElement) {
   element.style.height = `${element.scrollHeight}px`;
 }
 
+const SPRING_TRAIL_TAIL = {
+  ...SPRING_MOUSE,
+  stiffness: 90,
+} as const;
+
 function CursorTrail({
   children,
   enabled,
-  count = 6,
 }: {
   children: ReactNode;
   enabled: boolean;
-  count?: number;
 }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const reduceMotion = useReducedMotion();
   const [visible, setVisible] = useState(false);
+  const tailX = useSpring(x, SPRING_TRAIL_TAIL);
+  const tailY = useSpring(y, SPRING_TRAIL_TAIL);
 
   useEffect(() => {
     if (!enabled) setVisible(false);
@@ -909,8 +918,16 @@ function CursorTrail({
   const move = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!enabled || reduceMotion || event.pointerType !== "mouse") return;
     const rect = event.currentTarget.getBoundingClientRect();
-    x.set(event.clientX - rect.left);
-    y.set(event.clientY - rect.top);
+    const px = event.clientX - rect.left;
+    const py = event.clientY - rect.top;
+    if (!visible) {
+      // Anchor the tail on re-entry, or the first segment would streak in
+      // from the layer's (0,0).
+      tailX.jump(px);
+      tailY.jump(py);
+    }
+    x.set(px);
+    y.set(py);
     setVisible(true);
   };
 
@@ -921,43 +938,56 @@ function CursorTrail({
       onPointerLeave={() => setVisible(false)}
     >
       {children}
-      {enabled && visible && (
-        <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden motion-reduce:hidden">
-          {Array.from({ length: count }, (_, index) => (
-            <TrailDot
-              key={index}
-              sourceX={x}
-              sourceY={y}
-              index={index}
-            />
-          ))}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {enabled && visible && (
+          <motion.div
+            key="cursor-trail"
+            className="pointer-events-none absolute inset-0 z-30 overflow-hidden motion-reduce:hidden"
+            initial={false}
+            exit={{ opacity: 0, transition: { duration: 0.16, ease: EASE_OUT } }}
+          >
+            <TrailLine headX={x} headY={y} tailX={tailX} tailY={tailY} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function TrailDot({
-  sourceX,
-  sourceY,
-  index,
+function TrailLine({
+  headX,
+  headY,
+  tailX,
+  tailY,
 }: {
-  sourceX: MotionValue<number>;
-  sourceY: MotionValue<number>;
-  index: number;
+  headX: MotionValue<number>;
+  headY: MotionValue<number>;
+  tailX: MotionValue<number>;
+  tailY: MotionValue<number>;
 }) {
-  const spring = {
-    ...SPRING_MOUSE,
-    stiffness: SPRING_MOUSE.stiffness - index * 14,
-    damping: SPRING_MOUSE.damping + index * 0.8,
-  };
-  const x = useSpring(sourceX, spring);
-  const y = useSpring(sourceY, spring);
+  const angle = useTransform(
+    [tailX, tailY, headX, headY],
+    ([tx, ty, hx, hy]: number[]) =>
+      (Math.atan2(hy - ty, hx - tx) * 180) / Math.PI,
+  );
+  const length = useTransform(
+    [tailX, tailY, headX, headY],
+    ([tx, ty, hx, hy]: number[]) => Math.hypot(hx - tx, hy - ty),
+  );
 
   return (
-    <motion.span
-      className="absolute left-0 top-0 size-1.5 rounded-full bg-ink will-change-transform"
-      style={{ x, y, margin: -3, opacity: 0.55 - index * 0.07 }}
+    <motion.div
+      className="absolute left-0 top-0 h-[3px] bg-ink/50 will-change-transform"
+      style={{
+        x: tailX,
+        y: tailY,
+        width: length,
+        rotate: angle,
+        originX: 0,
+        originY: 0.5,
+        marginTop: -1.5,
+        clipPath: "polygon(0% 50%, 100% 0%, 100% 100%)",
+      }}
     />
   );
 }
