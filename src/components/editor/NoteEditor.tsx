@@ -1,4 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
+import { Slice } from "@tiptap/pm/model";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   AnimatePresence,
@@ -50,6 +51,7 @@ import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
 import { insertImageFile } from "./insertImage";
+import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
@@ -121,6 +123,7 @@ export const NoteEditor = memo(function NoteEditor({
   const swapping = useRef(false);
   const outlineFrame = useRef<number | null>(null);
   const refreshWhenActive = useRef(false);
+  const editorRef = useRef<NonNullable<EditorInstance> | null>(null);
 
   const syncOutline = useCallback((instance: NonNullable<EditorInstance>) => {
     const next = outlineHeadingElements(instance).map((heading, index) => {
@@ -271,6 +274,16 @@ export const NoteEditor = memo(function NoteEditor({
           spellCheck: "false",
           "data-gramm": "false",
         },
+        clipboardTextParser(text) {
+          const currentEditor = editorRef.current;
+          if (!currentEditor?.markdown) return Slice.empty;
+          const notes = flattenNotes(useVault.getState().tree);
+          return parseMarkdownSlice(
+            currentEditor.schema,
+            currentEditor.markdown,
+            wikiToMarkdown(text, notes),
+          );
+        },
         handlePaste(view, event) {
           const image = Array.from(event.clipboardData?.files ?? []).find((f) =>
             f.type.startsWith("image/"),
@@ -337,6 +350,7 @@ export const NoteEditor = memo(function NoteEditor({
     },
     [extensions, syncOutline],
   );
+  editorRef.current = editor;
 
   useEffect(() => {
     if (!active || !editor) return;
