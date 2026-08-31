@@ -98,9 +98,11 @@ export function Hero() {
                   {...rise(0.13)}
                   className="text-pretty text-[16px] leading-7 text-muted-foreground sm:text-[17px]"
                 >
-                  Ornata keeps the editor fast, the interface quiet, and every
-                  note in a folder you own. No proprietary database. No system
-                  to maintain. Just a precise place to write.
+                  Ornata is a local-first Markdown notes app for macOS. It
+                  keeps the editor fast, the interface quiet, and every note
+                  as a plain .md file in a folder you own. No proprietary
+                  database. No account required. Just a precise place to
+                  write.
                 </motion.p>
                 <motion.div
                   {...rise(0.2)}

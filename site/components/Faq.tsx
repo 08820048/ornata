@@ -2,6 +2,10 @@ import { Plus } from "lucide-react";
 
 const FAQS: { q: string; a: string }[] = [
   {
+    q: "How much does Ornata cost?",
+    a: "Ornata is free to download and use — no account, no subscription. Production builds are signed with an Apple Developer ID certificate and notarized by Apple.",
+  },
+  {
     q: "Where are my notes stored?",
     a: "On your Mac, as plain Markdown files in a folder you choose. The core editor needs no account or proprietary database, and you can open the folder in Finder at any time.",
   },

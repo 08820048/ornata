@@ -84,9 +84,9 @@ function Story({
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
             {eyebrow}
           </p>
-          <h3 className="mt-5 text-balance font-serif text-[42px] leading-[0.98] tracking-[-0.035em] text-foreground sm:text-[56px]">
+          <h2 className="mt-5 text-balance font-serif text-[42px] leading-[0.98] tracking-[-0.035em] text-foreground sm:text-[56px]">
             {title}
-          </h3>
+          </h2>
           <p className="mt-6 max-w-md text-pretty text-[15px] leading-7 text-muted-foreground">
             {body}
           </p>
@@ -180,9 +180,9 @@ function FilesDemo() {
             <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-faint">
               {active === 2 ? "Product principles.md" : "Release notes.md"}
             </p>
-            <h4 className="mt-5 font-serif text-[26px] leading-tight text-foreground">
+            <h3 className="mt-5 font-serif text-[26px] leading-tight text-foreground">
               {active === 2 ? "Software should get out of the way." : "A quieter release."}
-            </h4>
+            </h3>
             <div className="mt-5 space-y-2">
               <span className="block h-1.5 w-full rounded-full bg-foreground/12" />
               <span className="block h-1.5 w-[88%] rounded-full bg-foreground/10" />
@@ -236,9 +236,9 @@ function WritingDemo() {
             <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-faint">
               Product principles
             </p>
-            <h4 className="mt-3 font-serif text-[30px] leading-tight text-foreground">
+            <h3 className="mt-3 font-serif text-[30px] leading-tight text-foreground">
               Write first. Organize only when it helps.
-            </h4>
+            </h3>
             <p className="mt-4 text-[12.5px] leading-6 text-muted-foreground">
               Every note stays readable outside Ornata. Connect ideas with{" "}
               <span className="inline-flex items-center gap-1 border-b border-foreground pb-px text-foreground">
