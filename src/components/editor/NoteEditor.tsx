@@ -884,7 +884,7 @@ function TitleInput({
       aria-label={t("editor.noteTitle")}
       defaultValue={title}
       placeholder={t("common.untitled")}
-      className="block w-full resize-none overflow-hidden bg-transparent text-[clamp(28px,2.4vw,34px)] font-[680] leading-[1.14] tracking-[-0.025em] text-ink [overflow-wrap:anywhere] [text-wrap:balance] outline-none placeholder:text-faint"
+      className="note-title block w-full resize-none overflow-hidden bg-transparent text-[clamp(28px,2.4vw,34px)] font-[680] leading-[1.14] tracking-[-0.025em] text-ink [overflow-wrap:anywhere] [text-wrap:balance] outline-none placeholder:text-faint"
       onInput={(event) => resizeTitle(event.currentTarget)}
       onBlur={submit}
       onKeyDown={(event) => {

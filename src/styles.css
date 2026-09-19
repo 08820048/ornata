@@ -2,6 +2,17 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
 
+/* Kai-style reading font, bundled for every install under the SIL OFL
+   (license alongside the file). Converted to woff2 from the upstream
+   LxgwWenKai-Screen release; delivered via the app webview only. */
+@font-face {
+    font-family: "LXGW WenKai Screen";
+    src: url("./assets/fonts/LXGWWenKaiScreen.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
@@ -28,6 +39,11 @@
     --font-mono:
         "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo,
         monospace;
+    /* Serif reading stack (Kami-style). Charter carries Latin; the bundled
+       LXGW WenKai Screen (OFL, see assets/fonts/LXGWWenKaiScreen-OFL.txt)
+       carries CJK; Songti SC is the system fallback. */
+    --font-serif:
+        Charter, Georgia, "LXGW WenKai Screen", "Songti SC", serif;
 
     --color-bg: var(--bg);
     --color-panel: var(--panel);
@@ -228,9 +244,14 @@ body {
 
 /* ---------- editor typography ---------- */
 
+.note-title {
+    font-family: var(--font-serif);
+}
+
 .prose-note {
     user-select: text;
     cursor: text;
+    font-family: var(--font-serif);
     font-size: 16px;
     line-height: 1.65;
     color: var(--ink);
