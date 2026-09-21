@@ -43,6 +43,7 @@ import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
+import { ImageSourcePopover } from "./ImageSourcePopover";
 import { SlashMenu, type SlashMenuState } from "./SlashMenu";
 
 const MarkdownSourceEditor = lazy(() =>
@@ -81,6 +82,14 @@ export const NoteEditor = memo(function NoteEditor({
   const t = useT();
 
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+  const [imageSource, setImageSource] = useState<{
+    pos: number;
+    src: string;
+    markdown: string;
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
   const [linkPicker, setLinkPicker] = useState<LinkPickerState | null>(null);
   const [words, setWords] = useState(0);
   const [missing, setMissing] = useState(false);
@@ -311,12 +320,43 @@ export const NoteEditor = memo(function NoteEditor({
           });
           return true;
         },
+        // Typora-style: clicking an image reveals its Markdown source in a
+        // bar right below it (alt pre-selected, editable).
+        handleClickOn(view, _pos, node, nodePos) {
+          if (node.type.name !== "image") {
+            setImageSource(null);
+            return false;
+          }
+          const el = view.nodeDOM(nodePos);
+          const scroll = scrollRef.current;
+          if (!(el instanceof HTMLElement) || !scroll) return false;
+          const imgRect = el.getBoundingClientRect();
+          const boxRect = scroll.getBoundingClientRect();
+          const attrs = node.attrs as {
+            alt?: string;
+            src?: string;
+            vaultSrc?: string | null;
+          };
+          const src = attrs.vaultSrc ?? attrs.src ?? "";
+          setImageSource({
+            pos: nodePos,
+            src,
+            markdown: `![${attrs.alt ?? ""}](${src})`,
+            top: imgRect.bottom - boxRect.top + scroll.scrollTop + 6,
+            left: imgRect.left - boxRect.left,
+            width: imgRect.width,
+          });
+          return false;
+        },
         // Link clicks are handled by a capture-phase listener on the pane (see
         // the effect below) so the anchor's native navigation is stopped before
         // anything — including the webview — can act on it.
       },
       onUpdate({ editor }) {
         if (swapping.current) return;
+        // A doc change can invalidate the popover's captured node position
+        // and src (e.g. a background upload swapping the URL) — close it.
+        setImageSource(null);
         const markdown = editor.getMarkdown();
         pending.current = markdown;
         setSaveState("saving");
@@ -337,6 +377,11 @@ export const NoteEditor = memo(function NoteEditor({
     [extensions, syncOutline],
   );
   editorRef.current = editor;
+
+  useEffect(() => {
+    // Note switched within the tab: any open image source bar is stale.
+    setImageSource(null);
+  }, [currentKey]);
 
   useEffect(() => {
     if (!active || !editor) return;
@@ -694,11 +739,33 @@ export const NoteEditor = memo(function NoteEditor({
     setLinkPicker(null);
   };
 
+  /** Write an edited image source (Typora bar) back onto the node. */
+  const applyImageSource = (
+    pos: number,
+    originalSrc: string,
+    alt: string,
+    src: string,
+  ) => {
+    setImageSource(null);
+    if (!editor) return;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== "image") return;
+    const attrs: Record<string, unknown> = { ...node.attrs, alt };
+    // Only touch src when it actually changed — a matching src keeps the
+    // vault-relative path (vaultSrc) as the Markdown source of truth.
+    if (src !== originalSrc) {
+      attrs.src = src;
+      attrs.vaultSrc = null;
+    }
+    editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, attrs));
+    editor.commands.focus();
+  };
+
   return (
     <>
     <div
       ref={scrollRef}
-      className="page-scroll"
+      className="page-scroll relative"
       onScroll={(event) => {
         savedScroll.current = event.currentTarget.scrollTop;
         updateActiveOutline();
@@ -791,6 +858,18 @@ export const NoteEditor = memo(function NoteEditor({
         >
           {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
         </div>
+      )}
+      {active && imageSource && !markdownSource && (
+        <ImageSourcePopover
+          top={imageSource.top}
+          left={imageSource.left}
+          width={imageSource.width}
+          markdown={imageSource.markdown}
+          onApply={(alt, src) => {
+            applyImageSource(imageSource.pos, imageSource.src, alt, src);
+          }}
+          onClose={() => setImageSource(null)}
+        />
       )}
     </div>
     {active && editor && !missing && !markdownSource && (

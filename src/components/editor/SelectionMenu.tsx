@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
+import { NodeSelection } from "@tiptap/pm/state";
 import {
   ArrowUp,
   Bold,
@@ -84,7 +85,17 @@ export function SelectionMenu({
     <BubbleMenu
       editor={editor}
       pluginKey="selection-menu"
-      shouldShow={({ state }) => !state.selection.empty}
+      shouldShow={({ state }) => {
+        if (state.selection.empty) return false;
+        // Selected images get the Typora-style source bar instead.
+        if (
+          state.selection instanceof NodeSelection &&
+          state.selection.node.type.name === "image"
+        ) {
+          return false;
+        }
+        return true;
+      }}
       options={{ placement: "top", offset: 8 }}
     >
       <div className="flex flex-col items-start gap-2">
