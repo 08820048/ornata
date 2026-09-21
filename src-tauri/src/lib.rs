@@ -13,6 +13,7 @@ mod notes;
 mod reveal;
 mod search;
 mod todos;
+mod upload;
 mod util;
 mod vault;
 mod watcher;
@@ -92,6 +93,9 @@ pub fn run() {
             commands::export_note,
             external_notes::export_external_note,
             commands::save_image_asset,
+            commands::get_image_upload,
+            commands::set_image_upload,
+            commands::upload_image,
             commands::set_theme,
             commands::set_outline_sound,
             commands::get_language,

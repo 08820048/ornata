@@ -1,6 +1,12 @@
 export type Theme = "system" | "light" | "dark";
 export type Language = "en" | "zh-CN";
 export type AgentPermission = "readOnly" | "readWrite" | "fullAccess";
+export type ImageUploadMode = "local" | "custom";
+
+export interface ImageUpload {
+  mode: ImageUploadMode;
+  command: string;
+}
 
 export type NodeKind = "folder" | "note";
 
@@ -19,6 +25,7 @@ export interface VaultSnapshot {
   tree: TreeNode[];
   theme: Theme;
   outlineSound: boolean;
+  imageUpload: ImageUpload;
 }
 
 export interface Todo {

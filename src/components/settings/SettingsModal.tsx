@@ -14,6 +14,7 @@ import type { Language, Theme } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { ImageUploadSettings } from "@/components/settings/ImageUploadSettings";
 import { UpdateControl } from "@/components/settings/UpdateControl";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
@@ -191,6 +192,13 @@ export function SettingsModal() {
               )}
             />
           </button>
+        </section>
+
+        <section className="mt-5">
+          <Label>{t("settings.imageUpload")}</Label>
+          <div className="mt-2">
+            <ImageUploadSettings />
+          </div>
         </section>
 
         <section className="mt-5">

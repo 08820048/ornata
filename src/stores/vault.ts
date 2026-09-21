@@ -9,6 +9,7 @@ import {
 } from "@/lib/noteRef";
 import type {
   ExternalNote,
+  ImageUpload,
   NoteRef,
   Theme,
   TreeNode,
@@ -28,6 +29,7 @@ interface VaultState {
   tree: TreeNode[];
   theme: Theme;
   outlineSound: boolean;
+  imageUpload: ImageUpload;
   view: View | null;
   expanded: Set<string>;
   /** note rels most recently opened, newest first (session MRU) */
@@ -54,6 +56,7 @@ interface VaultState {
 
   setTheme: (theme: Theme) => Promise<void>;
   setOutlineSound: (enabled: boolean) => Promise<void>;
+  setImageUpload: (upload: ImageUpload) => Promise<void>;
   cycleTheme: () => Promise<void>;
 }
 
@@ -89,6 +92,7 @@ function openVaultSnapshot(
     tree: snapshot.tree,
     theme: snapshot.theme,
     outlineSound: snapshot.outlineSound,
+    imageUpload: snapshot.imageUpload,
     view: null,
     expanded: new Set<string>(),
     recentNotes: seedRecents(snapshot.tree),
@@ -133,6 +137,7 @@ export const useVault = create<VaultState>((set, get) => ({
   tree: [],
   theme: "system",
   outlineSound: true,
+  imageUpload: { mode: "local", command: "" },
   view: null,
   expanded: new Set<string>(),
   recentNotes: [],
@@ -154,6 +159,7 @@ export const useVault = create<VaultState>((set, get) => ({
         tree: snapshot.tree,
         theme: snapshot.theme,
         outlineSound: snapshot.outlineSound,
+        imageUpload: snapshot.imageUpload,
         recentNotes: seedRecents(snapshot.tree),
       });
     } catch (err) {
@@ -398,6 +404,15 @@ export const useVault = create<VaultState>((set, get) => ({
     set({ outlineSound });
     try {
       await ipc.setOutlineSound(outlineSound);
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  setImageUpload: async (imageUpload) => {
+    set({ imageUpload });
+    try {
+      await ipc.setImageUpload(imageUpload);
     } catch (err) {
       oops(err);
     }

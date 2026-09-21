@@ -7,13 +7,13 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::bookmarks::{self, Bookmark};
-use crate::config::{self, Language, Theme};
+use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::search::SearchHit;
 use crate::todos::{self, Todo};
 use crate::vault::{self, TreeNode};
-use crate::{agent_docs, assets, link_meta, notes, search};
+use crate::{agent_docs, assets, link_meta, notes, search, upload};
 
 #[derive(Default)]
 pub struct AppState {
@@ -96,6 +96,7 @@ pub struct VaultSnapshot {
     pub tree: Vec<TreeNode>,
     pub theme: Theme,
     pub outline_sound: bool,
+    pub image_upload: ImageUpload,
 }
 
 fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
@@ -111,6 +112,7 @@ fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
         tree,
         theme: config.theme,
         outline_sound: config.outline_sound,
+        image_upload: config.image_upload,
     })
 }
 
@@ -456,6 +458,40 @@ pub fn save_image_asset(
 ) -> AppResult<String> {
     let path = assets::save_image(&state.root()?, &data, &extension)?;
     Ok(path.display().to_string())
+}
+
+/// The current image-upload service settings.
+#[tauri::command]
+pub fn get_image_upload(app: AppHandle) -> ImageUpload {
+    config::load(&app).image_upload
+}
+
+#[tauri::command]
+pub fn set_image_upload(app: AppHandle, upload: ImageUpload) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.image_upload.mode = upload.mode;
+    // Keep the command even when the mode is off so toggling back restores it.
+    cfg.image_upload.command = upload.command.trim().to_string();
+    config::save(&app, &cfg)
+}
+
+/// Run one image through the configured upload command and return the hosted
+/// URL. Used both by paste-upload and the settings "verify" button (which
+/// passes its own command to preview the result before saving).
+#[tauri::command]
+pub fn upload_image(
+    app: AppHandle,
+    data: String,
+    extension: String,
+    command: Option<String>,
+) -> AppResult<String> {
+    let configured = config::load(&app).image_upload;
+    let command = match command {
+        Some(explicit) => explicit,
+        None if configured.mode == ImageUploadMode::Custom => configured.command,
+        None => return Err(AppError::InvalidInput("upload service is off".into())),
+    };
+    upload::upload_image(&data, &extension, &command)
 }
 
 #[tauri::command]

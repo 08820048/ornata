@@ -3,6 +3,7 @@ import type {
   Bookmark,
   AgentPermission,
   ExternalNote,
+  ImageUpload,
   Language,
   AgentStatus,
   AgentConnection,
@@ -149,6 +150,11 @@ export const ipc = {
 
   saveImageAsset: (data: string, extension: string) =>
     call<string>("save_image_asset", { data, extension }),
+  getImageUpload: () => call<ImageUpload>("get_image_upload"),
+  setImageUpload: (upload: ImageUpload) =>
+    call<void>("set_image_upload", { upload }),
+  uploadImage: (data: string, extension: string, command?: string) =>
+    call<string>("upload_image", { data, extension, command }),
   setTheme: (theme: Theme) => call<void>("set_theme", { theme }),
   setOutlineSound: (enabled: boolean) =>
     call<void>("set_outline_sound", { enabled }),

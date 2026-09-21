@@ -56,11 +56,19 @@ fn save_image_in(dir: PathBuf, base64_data: &str, extension: &str) -> AppResult<
 fn decode_base64(data: &str) -> AppResult<Vec<u8>> {
     // Accept both raw base64 and data URLs.
     let raw = data.rsplit(',').next().unwrap_or(data);
-    base64_decode(raw).ok_or_else(|| AppError::InvalidInput("invalid base64 image".to_string()))
+    decode_base64_bytes(raw).ok_or_else(|| {
+        AppError::InvalidInput("invalid base64 image".to_string())
+    })
+}
+
+/// Decode raw base64 or a data URL into raw image bytes. Shared with the
+/// image-upload pipeline, which stages bytes as a temp file.
+pub fn decode_base64_image(data: &str) -> AppResult<Vec<u8>> {
+    decode_base64(data)
 }
 
 /// Minimal base64 decoder (standard alphabet, ignores whitespace/padding).
-fn base64_decode(input: &str) -> Option<Vec<u8>> {
+fn decode_base64_bytes(input: &str) -> Option<Vec<u8>> {
     fn value(c: u8) -> Option<u32> {
         match c {
             b'A'..=b'Z' => Some((c - b'A') as u32),
@@ -124,8 +132,8 @@ mod tests {
 
     #[test]
     fn base64_roundtrip() {
-        assert_eq!(base64_decode("aGVsbG8=").unwrap(), b"hello");
-        assert!(base64_decode("!!!").is_none());
+        assert_eq!(decode_base64_bytes("aGVsbG8=").unwrap(), b"hello");
+        assert!(decode_base64_bytes("!!!").is_none());
     }
 
     #[test]

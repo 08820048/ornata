@@ -19,11 +19,33 @@ pub struct AppConfig {
     #[serde(default = "default_outline_sound")]
     pub outline_sound: bool,
     #[serde(default)]
+    pub image_upload: ImageUpload,
+    #[serde(default)]
     pub agent_connections: Vec<AgentConnectionConfig>,
     #[serde(default)]
     pub active_agent_connection: Option<String>,
     #[serde(default, skip_serializing)]
     pub agent_connection: Option<AgentConnectionConfig>,
+}
+
+/// Where pasted images go. `Local` keeps them in the vault's asset folder;
+/// `Custom` runs the user's upload command (e.g. PicGo) and embeds the
+/// returned URL, falling back to local storage when the command fails.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImageUpload {
+    #[serde(default)]
+    pub mode: ImageUploadMode,
+    #[serde(default)]
+    pub command: String,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ImageUploadMode {
+    #[default]
+    Local,
+    Custom,
 }
 
 const fn default_outline_sound() -> bool {
@@ -37,6 +59,7 @@ impl Default for AppConfig {
             theme: Theme::default(),
             language: Language::default(),
             outline_sound: default_outline_sound(),
+            image_upload: ImageUpload::default(),
             agent_connections: Vec::new(),
             active_agent_connection: None,
             agent_connection: None,
@@ -130,5 +153,22 @@ mod tests {
         assert!(serde_json::to_string(&config)
             .unwrap()
             .contains(r#""outlineSound":false"#));
+    }
+
+    #[test]
+    fn image_upload_defaults_to_local() {
+        let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(config.image_upload.mode, super::ImageUploadMode::Local);
+        assert!(config.image_upload.command.is_empty());
+    }
+
+    #[test]
+    fn image_upload_roundtrips() {
+        let config: AppConfig = serde_json::from_str(
+            r#"{"imageUpload":{"mode":"custom","command":"picgo upload"}}"#,
+        )
+        .unwrap();
+        assert_eq!(config.image_upload.mode, super::ImageUploadMode::Custom);
+        assert_eq!(config.image_upload.command, "picgo upload");
     }
 }
