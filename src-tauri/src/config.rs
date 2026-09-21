@@ -18,6 +18,8 @@ pub struct AppConfig {
     pub language: Language,
     #[serde(default = "default_outline_sound")]
     pub outline_sound: bool,
+    #[serde(default = "default_cursor_animation")]
+    pub cursor_animation: bool,
     #[serde(default)]
     pub image_upload: ImageUpload,
     #[serde(default)]
@@ -52,6 +54,10 @@ const fn default_outline_sound() -> bool {
     true
 }
 
+const fn default_cursor_animation() -> bool {
+    true
+}
+
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
@@ -59,6 +65,7 @@ impl Default for AppConfig {
             theme: Theme::default(),
             language: Language::default(),
             outline_sound: default_outline_sound(),
+            cursor_animation: default_cursor_animation(),
             image_upload: ImageUpload::default(),
             agent_connections: Vec::new(),
             active_agent_connection: None,
@@ -137,6 +144,8 @@ mod tests {
         let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
         assert_eq!(config.language, Language::English);
         assert!(config.outline_sound);
+        assert!(config.cursor_animation);
+        assert!(serde_json::to_string(&config).unwrap().contains("cursorAnimation"));
     }
 
     #[test]

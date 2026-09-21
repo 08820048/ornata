@@ -261,6 +261,54 @@ body {
     overflow-wrap: break-word;
 }
 
+/* ---------- cursor motion (animated caret) ---------- */
+/* Hide the native caret while our animated one is drawn. */
+.prose-note.caret-hidden {
+    caret-color: transparent;
+}
+/* Empty container React never touches; CursorMotion appends an SVG into it. */
+.cursor-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+}
+.cursor-motion {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    visibility: hidden;
+}
+.cursor-motion[data-visible="true"] {
+    visibility: visible;
+}
+.cursor-motion polygon {
+    fill: var(--ink);
+    animation: ornata-caret-blink 1.06s steps(1, end) infinite;
+}
+/* Solid while moving so the caret doesn't fade mid-flight. */
+.cursor-motion[data-moving="true"] polygon {
+    animation: none;
+    opacity: 1;
+}
+@keyframes ornata-caret-blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cursor-motion polygon {
+        animation: none;
+    }
+}
+
 .prose-note p {
     margin: 0.45em 0;
     text-wrap: pretty;

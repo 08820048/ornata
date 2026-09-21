@@ -31,6 +31,7 @@ interface VaultState {
   tree: TreeNode[];
   theme: Theme;
   outlineSound: boolean;
+  cursorAnimation: boolean;
   imageUpload: ImageUpload;
   view: View | null;
   expanded: Set<string>;
@@ -42,6 +43,7 @@ interface VaultState {
   hydrateSettings: () => Promise<void>;
   applyRemoteTheme: (theme: Theme) => void;
   applyRemoteOutlineSound: (enabled: boolean) => void;
+  applyRemoteCursorAnimation: (enabled: boolean) => void;
   applyRemoteImageUpload: (upload: ImageUpload) => void;
   adoptVaultSnapshot: (snapshot: VaultSnapshot) => void;
   chooseVault: () => Promise<void>;
@@ -64,6 +66,7 @@ interface VaultState {
 
   setTheme: (theme: Theme) => Promise<void>;
   setOutlineSound: (enabled: boolean) => Promise<void>;
+  setCursorAnimation: (enabled: boolean) => Promise<void>;
   setImageUpload: (upload: ImageUpload) => Promise<void>;
   cycleTheme: () => Promise<void>;
 }
@@ -95,6 +98,7 @@ function openVaultSnapshot(
     theme: snapshot.theme,
     outlineSound: snapshot.outlineSound,
     imageUpload: snapshot.imageUpload,
+    cursorAnimation: snapshot.cursorAnimation,
     view: null,
     expanded: new Set<string>(),
     recentNotes: seedRecents(snapshot.tree),
@@ -139,6 +143,7 @@ export const useVault = create<VaultState>((set, get) => ({
   tree: [],
   theme: "system",
   outlineSound: true,
+  cursorAnimation: true,
   imageUpload: { mode: "local", command: "" },
   view: null,
   expanded: new Set<string>(),
@@ -162,6 +167,7 @@ export const useVault = create<VaultState>((set, get) => ({
         theme: snapshot.theme,
         outlineSound: snapshot.outlineSound,
         imageUpload: snapshot.imageUpload,
+        cursorAnimation: snapshot.cursorAnimation,
         recentNotes: seedRecents(snapshot.tree),
       });
     } catch (err) {
@@ -178,6 +184,7 @@ export const useVault = create<VaultState>((set, get) => ({
       set({
         theme: snapshot.theme,
         outlineSound: snapshot.outlineSound,
+        cursorAnimation: snapshot.cursorAnimation,
         imageUpload: snapshot.imageUpload,
         root: snapshot.vaultPath ?? "",
         name: snapshot.vaultName ?? "",
@@ -195,6 +202,10 @@ export const useVault = create<VaultState>((set, get) => ({
 
   applyRemoteOutlineSound: (outlineSound) => {
     set({ outlineSound });
+  },
+
+  applyRemoteCursorAnimation: (cursorAnimation) => {
+    set({ cursorAnimation });
   },
 
   applyRemoteImageUpload: (imageUpload) => {
@@ -447,6 +458,16 @@ export const useVault = create<VaultState>((set, get) => ({
     broadcastSettings({ outlineSound });
     try {
       await ipc.setOutlineSound(outlineSound);
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  setCursorAnimation: async (cursorAnimation) => {
+    set({ cursorAnimation });
+    broadcastSettings({ cursorAnimation });
+    try {
+      await ipc.setCursorAnimation(cursorAnimation);
     } catch (err) {
       oops(err);
     }

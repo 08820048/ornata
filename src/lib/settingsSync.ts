@@ -24,6 +24,7 @@ export interface SettingsPatch {
   theme?: Theme;
   language?: Language;
   outlineSound?: boolean;
+  cursorAnimation?: boolean;
   imageUpload?: ImageUpload;
   /** Present when the active vault changed; carries the full snapshot. */
   vault?: VaultSnapshot;

@@ -25,6 +25,7 @@ export interface VaultSnapshot {
   tree: TreeNode[];
   theme: Theme;
   outlineSound: boolean;
+  cursorAnimation: boolean;
   imageUpload: ImageUpload;
 }
 
@@ -33,6 +34,7 @@ export interface SettingsSnapshot {
   theme: Theme;
   language: Language;
   outlineSound: boolean;
+  cursorAnimation: boolean;
   imageUpload: ImageUpload;
   vaultPath: string | null;
   vaultName: string | null;

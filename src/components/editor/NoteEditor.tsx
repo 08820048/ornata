@@ -38,6 +38,7 @@ import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
+import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
 import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
@@ -78,6 +79,7 @@ export const NoteEditor = memo(function NoteEditor({
   const renameExternalNote = useVault((s) => s.renameExternalNote);
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
+  const cursorAnimation = useVault((s) => s.cursorAnimation);
   const language = useLocale((s) => s.language);
   const t = useT();
 
@@ -108,6 +110,9 @@ export const NoteEditor = memo(function NoteEditor({
   const languageRef = useRef(language);
   languageRef.current = language;
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Content box for the animated caret overlay (scrolls with the text).
+  const pageRef = useRef<HTMLDivElement>(null);
+  const motionRef = useRef<CursorMotion | null>(null);
   // Tracked continuously so each pane restores its own reading position when
   // it becomes active again.
   const savedScroll = useRef(0);
@@ -350,6 +355,11 @@ export const NoteEditor = memo(function NoteEditor({
         // the effect below) so the anchor's native navigation is stopped before
         // anything — including the webview — can act on it.
       },
+      onTransaction() {
+        // `sync(forceSnap)` — programmatic content swaps snap rather than
+        // animating the caret across two unrelated notes.
+        motionRef.current?.sync(swapping.current);
+      },
       onUpdate({ editor }) {
         if (swapping.current) return;
         // A doc change can invalidate the popover's captured node position
@@ -375,6 +385,27 @@ export const NoteEditor = memo(function NoteEditor({
     [extensions, syncOutline],
   );
   editorRef.current = editor;
+
+  // One animated caret per live editor, created only while it can actually be
+  // seen (active tab, rich-text mode) and when the setting is on. Recreating
+  // on toggle is cheap and keeps the disabled path allocation-free.
+  const motionEnabled =
+    cursorAnimation && active && !markdownSource && !missing;
+  useEffect(() => {
+    // `editor.isDestroyed` is true while the view is a throwing Tiptap Proxy
+    // (destroyed / not-yet-mounted instance), so guard before touching it.
+    if (!editor || editor.isDestroyed || !motionEnabled) return;
+    const container = pageRef.current;
+    if (!container) return;
+    const view = editor.view;
+    const motion = new CursorMotion(view, container, { enabled: true });
+    motionRef.current = motion;
+    motion.sync(true);
+    return () => {
+      motion.destroy();
+      motionRef.current = null;
+    };
+  }, [editor, motionEnabled]);
 
   useEffect(() => {
     // Note switched within the tab: any open image source bar is stale.
@@ -769,7 +800,7 @@ export const NoteEditor = memo(function NoteEditor({
         updateActiveOutline();
       }}
     >
-      <div className="note-page">
+      <div className="note-page relative">
         {missing ? (
           <p className="pt-16 text-center text-[14px] text-faint">
             {t("editor.missing")}
@@ -846,6 +877,8 @@ export const NoteEditor = memo(function NoteEditor({
             onClose={() => setLinkPicker(null)}
           />
         )}
+        {/* Owned by CursorMotion (appended imperatively), kept empty by React. */}
+        <div ref={pageRef} className="cursor-layer" aria-hidden="true" />
       </div>
       {active && (
         <div

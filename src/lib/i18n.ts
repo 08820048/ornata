@@ -76,6 +76,9 @@ const en = {
   "settings.language.zhCN": "简体中文",
   "settings.outlineSound": "Outline interaction sound",
   "settings.outlineSoundDetail": "Play a subtle tick while moving across sections",
+  "settings.cursorAnimation": "Animated cursor",
+  "settings.cursorAnimationDetail":
+    "Glide the caret smoothly as it moves. Adds a few redraws while moving.",
   "settings.imageUpload": "Image upload",
   "settings.imageUpload.off": "Off",
   "settings.imageUpload.custom": "Custom command",
@@ -394,6 +397,8 @@ const zhCN = {
   "settings.language.zhCN": "简体中文",
   "settings.outlineSound": "目录交互音效",
   "settings.outlineSoundDetail": "在章节刻度之间移动时播放轻微 Tick 音效",
+  "settings.cursorAnimation": "光标移动动画",
+  "settings.cursorAnimationDetail": "移动时光标平滑跟随，移动过程中会有少量额外重绘。",
   "settings.imageUpload": "图片上传",
   "settings.imageUpload.off": "关闭",
   "settings.imageUpload.custom": "自定义命令",

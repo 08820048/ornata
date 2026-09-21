@@ -22,6 +22,9 @@ export function useSettingsBridge() {
       if (patch.outlineSound !== undefined) {
         vault.applyRemoteOutlineSound(patch.outlineSound);
       }
+      if (patch.cursorAnimation !== undefined) {
+        vault.applyRemoteCursorAnimation(patch.cursorAnimation);
+      }
       if (patch.imageUpload) vault.applyRemoteImageUpload(patch.imageUpload);
       if (patch.vault) vault.adoptVaultSnapshot(patch.vault);
     })

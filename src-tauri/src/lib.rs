@@ -99,6 +99,7 @@ pub fn run() {
             commands::upload_image,
             commands::set_theme,
             commands::set_outline_sound,
+            commands::set_cursor_animation,
             commands::get_language,
             commands::set_language,
             settings_window::get_settings,

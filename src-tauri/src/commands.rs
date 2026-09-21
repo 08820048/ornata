@@ -96,6 +96,7 @@ pub struct VaultSnapshot {
     pub tree: Vec<TreeNode>,
     pub theme: Theme,
     pub outline_sound: bool,
+    pub cursor_animation: bool,
     pub image_upload: ImageUpload,
 }
 
@@ -112,6 +113,7 @@ fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
         tree,
         theme: config.theme,
         outline_sound: config.outline_sound,
+        cursor_animation: config.cursor_animation,
         image_upload: config.image_upload,
     })
 }
@@ -511,6 +513,13 @@ pub fn set_theme(app: AppHandle, theme: Theme) -> AppResult<()> {
 pub fn set_outline_sound(app: AppHandle, enabled: bool) -> AppResult<()> {
     let mut cfg = config::load(&app);
     cfg.outline_sound = enabled;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
+pub fn set_cursor_animation(app: AppHandle, enabled: bool) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.cursor_animation = enabled;
     config::save(&app, &cfg)
 }
 

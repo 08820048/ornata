@@ -159,6 +159,8 @@ export const ipc = {
   setTheme: (theme: Theme) => call<void>("set_theme", { theme }),
   setOutlineSound: (enabled: boolean) =>
     call<void>("set_outline_sound", { enabled }),
+  setCursorAnimation: (enabled: boolean) =>
+    call<void>("set_cursor_animation", { enabled }),
   getLanguage: () => call<Language>("get_language"),
   setLanguage: (language: Language) =>
     call<void>("set_language", { language }),

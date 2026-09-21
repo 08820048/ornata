@@ -108,9 +108,21 @@ export function EditorSection() {
   const t = useT();
   const outlineSound = useVault((s) => s.outlineSound);
   const setOutlineSound = useVault((s) => s.setOutlineSound);
+  const cursorAnimation = useVault((s) => s.cursorAnimation);
+  const setCursorAnimation = useVault((s) => s.setCursorAnimation);
 
   return (
     <SettingGroup title={t("settings.editor")}>
+      <SettingRow
+        label={t("settings.cursorAnimation")}
+        hint={t("settings.cursorAnimationDetail")}
+      >
+        <Toggle
+          checked={cursorAnimation}
+          onChange={(value) => void setCursorAnimation(value)}
+          label={t("settings.cursorAnimation")}
+        />
+      </SettingRow>
       <SettingRow
         label={t("settings.outlineSound")}
         hint={t("settings.outlineSoundDetail")}
