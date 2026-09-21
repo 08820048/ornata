@@ -24,7 +24,7 @@ function isRemoteSource(src: string) {
  * Image node that keeps a relative path in Markdown while rendering it from
  * the note's asset root (vault root or an external file's parent folder).
  */
-const LocalImage = (assetRoot: string) =>
+export const LocalImage = (assetRoot: string) =>
   Image.extend({
     addAttributes() {
       return {

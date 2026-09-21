@@ -41,21 +41,60 @@ export async function insertImageFile({
     const { imageUpload } = useVault.getState();
     const backgroundUpload =
       imageUpload.mode === "custom" && imageUpload.command.trim().length > 0;
+    // Insert with the universal attrs only. Never pass custom attrs through
+    // setImage/insertContent: Tiptap validates JSON attrs against the schema
+    // (Node.fromJSON → checkAttrs) and, on a mismatch, silently inserts
+    // nothing — which is exactly what happened against an editor whose schema
+    // predates the `uploading` attribute (HMR keeps the live editor instance).
     editor
       .chain()
       .focus()
       .deleteRange(clamped)
-      .setImage({
-        src: localSrc,
-        ...(backgroundUpload ? { uploading: true } : {}),
-      } as never)
+      .setImage({ src: localSrc } as never)
       .run();
     if (backgroundUpload) {
+      markUploading(editor, localSrc);
       void uploadInBackground(editor, localSrc, data, extension);
     }
   } catch (err) {
     toast.error(err instanceof Error ? err.message : t("toast.imageSaveFailed"));
   }
+}
+
+/**
+ * Flag the freshly inserted local image as "uploading". Uses setNodeMarkup
+ * (lenient attrs path) and only when the schema knows the attribute, so an
+ * editor running a schema without `uploading` still gets the image — just
+ * without the pulsing preview.
+ */
+function markUploading(editor: Editor, localSrc: string) {
+  const attrs = editor.schema.nodes.image.spec.attrs;
+  if (!attrs || !("uploading" in attrs)) return;
+  forEachImageWithSrc(editor, localSrc, (attrs) => ({ ...attrs, uploading: true }));
+}
+
+/**
+ * Apply an attrs transform to every image node whose vaultSrc/src matches
+ * `localSrc`, dispatching a single transaction when anything matched.
+ */
+function forEachImageWithSrc(
+  editor: Editor,
+  localSrc: string,
+  update: (attrs: Record<string, unknown>) => Record<string, unknown>,
+) {
+  const targets: Array<{ pos: number; attrs: Record<string, unknown> }> = [];
+  editor.state.doc.descendants((node, pos) => {
+    if (node.type.name !== "image") return;
+    if ((node.attrs.vaultSrc ?? node.attrs.src) !== localSrc) return;
+    targets.push({ pos, attrs: update(node.attrs) });
+  });
+  if (targets.length === 0) return false;
+  const tr = editor.state.tr;
+  for (const { pos, attrs } of targets) {
+    tr.setNodeMarkup(pos, undefined, attrs);
+  }
+  editor.view.dispatch(tr);
+  return true;
 }
 
 /**
@@ -77,25 +116,19 @@ async function uploadInBackground(
   }
   if (editor.isDestroyed) return;
   let replaced = false;
-  const touch = (
-    visit: (attrs: Record<string, unknown>) => Record<string, unknown>,
-  ) => {
-    const targets: Array<{ pos: number; attrs: Record<string, unknown> }> = [];
-    editor.state.doc.descendants((node, pos) => {
-      if (node.type.name !== "image") return;
-      if ((node.attrs.vaultSrc ?? node.attrs.src) !== localSrc) return;
-      targets.push({ pos, attrs: visit(node.attrs) });
-    });
-    for (const { pos, attrs } of targets) {
-      editor.view.dispatch(editor.view.state.tr.setNodeMarkup(pos, undefined, attrs));
-      replaced = true;
-    }
-  };
   if (url) {
     // Clear vaultSrc so renderMarkdown emits the hosted URL.
-    touch((attrs) => ({ ...attrs, src: url, vaultSrc: null, uploading: false }));
+    replaced = forEachImageWithSrc(editor, localSrc, (attrs) => ({
+      ...attrs,
+      src: url,
+      vaultSrc: null,
+      uploading: false,
+    }));
   } else {
-    touch((attrs) => ({ ...attrs, uploading: false }));
+    forEachImageWithSrc(editor, localSrc, (attrs) => ({
+      ...attrs,
+      uploading: false,
+    }));
     toast.error(
       `${t("toast.imageUploadFailed")}: ${
         failure instanceof Error ? failure.message : String(failure)
