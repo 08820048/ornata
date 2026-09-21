@@ -52,7 +52,9 @@ globalThis.localStorage = {
 
 const { Editor } = await import("@tiptap/core");
 const { createExtensions } = await import("../src/components/editor/extensions");
-const { insertImageFile } = await import("../src/components/editor/insertImage");
+const { insertImageFile, imageFileFromDataTransfer } = await import(
+  "../src/components/editor/insertImage",
+);
 const { ipc } = await import("../src/lib/ipc");
 const { useVault } = await import("../src/stores/vault");
 
@@ -136,5 +138,39 @@ describe("insertImageFile (headless, real editor)", () => {
     expect(editor.getMarkdown()).toContain(".ornata/assets/pasted-1.png");
     expect(uploads.called).toBe(0);
     editor.destroy();
+  });
+});
+
+/** Build a clipboard payload. `files` is deliberately left empty for the
+ *  WKWebView case, where Safari only exposes pasted images through `items`. */
+function clipboard(
+  files: File[],
+  items: Array<{ kind: string; type: string; getAsFile: () => File | null }>,
+): DataTransfer {
+  return { files, items } as unknown as DataTransfer;
+}
+
+describe("imageFileFromDataTransfer", () => {
+  test("WKWebView: image only in items, files empty", () => {
+    const file = fakeImageFile();
+    const data = clipboard([], [
+      { kind: "string", type: "text/html", getAsFile: () => null },
+      { kind: "file", type: "image/png", getAsFile: () => file },
+    ]);
+    expect(imageFileFromDataTransfer(data)).toBe(file);
+  });
+
+  test("Chromium: image in files", () => {
+    const file = fakeImageFile();
+    expect(imageFileFromDataTransfer(clipboard([file], []))).toBe(file);
+  });
+
+  test("ignores non-image payloads", () => {
+    const data = clipboard([], [
+      { kind: "file", type: "application/pdf", getAsFile: () => fakeImageFile() },
+      { kind: "string", type: "text/plain", getAsFile: () => null },
+    ]);
+    expect(imageFileFromDataTransfer(data)).toBe(null);
+    expect(imageFileFromDataTransfer(null)).toBe(null);
   });
 });

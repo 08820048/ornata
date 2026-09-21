@@ -7,6 +7,32 @@ import { useVault } from "@/stores/vault";
 import { t } from "@/stores/locale";
 
 /**
+ * Find the first image file in a clipboard / data-transfer payload.
+ *
+ * macOS Tauri renders in WKWebView (Safari's engine), which leaves
+ * `clipboardData.files` empty for pasted images: screenshots and images
+ * copied from a web page only show up in `clipboardData.items` as a
+ * `kind: "file"` entry. Chromium/Electron populate both. Reading only
+ * `.files` makes the paste handler bail out, after which ProseMirror's
+ * default paste finds no text/html to parse and inserts nothing — a silent
+ * no-op with no error. Check both sources so paste works everywhere.
+ */
+export function imageFileFromDataTransfer(
+  data: DataTransfer | null | undefined,
+): File | null {
+  if (!data) return null;
+  for (const file of Array.from(data.files ?? [])) {
+    if (file.type.startsWith("image/")) return file;
+  }
+  for (const item of Array.from(data.items ?? [])) {
+    if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
+    const file = item.getAsFile();
+    if (file) return file;
+  }
+  return null;
+}
+
+/**
  * Paste/drop entry, Typora-style: land the image as a local vault asset
  * immediately (the paste visibly lands at once), then — if a custom upload
  * command is configured — upload in the background and swap the local path

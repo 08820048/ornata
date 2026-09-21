@@ -38,7 +38,7 @@ import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
-import { insertImageFile } from "./insertImage";
+import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
 import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
@@ -281,13 +281,12 @@ export const NoteEditor = memo(function NoteEditor({
           );
         },
         handlePaste(view, event) {
-          const image = Array.from(event.clipboardData?.files ?? []).find((f) =>
-            f.type.startsWith("image/"),
-          );
-          if (image && editor) {
+          const image = imageFileFromDataTransfer(event.clipboardData);
+          const currentEditor = editorRef.current;
+          if (image && currentEditor) {
             event.preventDefault();
             insertImageFile({
-              editor,
+              editor: currentEditor,
               file: image,
               range: {
                 from: view.state.selection.from,
@@ -301,10 +300,9 @@ export const NoteEditor = memo(function NoteEditor({
           return false;
         },
         handleDrop(view, event) {
-          const image = Array.from(event.dataTransfer?.files ?? []).find((f) =>
-            f.type.startsWith("image/"),
-          );
-          if (!image || !editor) return false;
+          const image = imageFileFromDataTransfer(event.dataTransfer);
+          const currentEditor = editorRef.current;
+          if (!image || !currentEditor) return false;
           event.preventDefault();
           const coords = view.posAtCoords({
             left: event.clientX,
@@ -312,7 +310,7 @@ export const NoteEditor = memo(function NoteEditor({
           });
           const position = coords?.pos ?? view.state.selection.from;
           insertImageFile({
-            editor,
+            editor: currentEditor,
             file: image,
             range: { from: position, to: position },
             vaultRoot,
