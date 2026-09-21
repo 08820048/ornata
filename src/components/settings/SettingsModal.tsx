@@ -58,7 +58,7 @@ export function SettingsModal() {
       open={open}
       onClose={() => setOpen(false)}
       ariaLabel={t("common.settings")}
-      className="w-[560px]"
+      className="w-[640px]"
     >
       <header className="flex items-center gap-3 px-5 py-4">
         <Settings
