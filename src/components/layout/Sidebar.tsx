@@ -10,6 +10,7 @@ import {
 import { FileTree } from "@/components/tree/FileTree";
 import { SidebarCollections } from "@/components/layout/SidebarCollections";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { ipc } from "@/lib/ipc";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { activeDir, useVault } from "@/stores/vault";
@@ -19,7 +20,6 @@ export function Sidebar() {
   const name = useVault((s) => s.name);
   const createNote = useVault((s) => s.createNote);
   const createFolder = useVault((s) => s.createFolder);
-  const setSettingsOpen = useUi((s) => s.setSettingsOpen);
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
   const t = useT();
 
@@ -84,7 +84,7 @@ export function Sidebar() {
       <div className="border-t border-line-soft px-2 py-1.5">
         <button
           type="button"
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => void ipc.openSettingsWindow()}
           className="flex h-[30px] w-full items-center gap-2.5 rounded-md px-2 text-[13px] font-medium text-muted transition-colors duration-100 hover:bg-hover hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ink"
         >
           <Settings size={15} strokeWidth={1.75} />

@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Toaster } from "sonner";
 import { listen } from "@tauri-apps/api/event";
 import { closeTab } from "@/components/editor/TabBar";
+import { AppToaster } from "@/components/ui/AppToaster";
 import { Welcome } from "@/components/welcome/Welcome";
 import { initSessionSync, restoreSession } from "@/lib/session";
+import { useSettingsBridge } from "@/lib/useSettingsBridge";
 import { ipc } from "@/lib/ipc";
 import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
@@ -21,17 +22,14 @@ const CommandPalette = lazy(() =>
     default: module.CommandPalette,
   })),
 );
-const SettingsModal = lazy(() =>
-  import("@/components/settings/SettingsModal").then((module) => ({
-    default: module.SettingsModal,
-  })),
-);
 
 export default function App() {
   const status = useVault((s) => s.status);
   const root = useVault((s) => s.root);
   const startup = useVault((s) => s.startup);
   const refreshTree = useVault((s) => s.refreshTree);
+
+  useSettingsBridge();
 
   useEffect(() => {
     initSessionSync();
@@ -140,7 +138,7 @@ export default function App() {
         ui.toggleSidebar();
       } else if (event.key === ",") {
         event.preventDefault();
-        ui.setSettingsOpen(true);
+        void ipc.openSettingsWindow();
       } else if (event.key === "w" && vault.view?.type === "note") {
         event.preventDefault();
         closeTab(vault.view.note);
@@ -156,23 +154,8 @@ export default function App() {
       <Suspense fallback={null}>
         {status === "ready" && <AppShell />}
         <CommandPalette />
-        <SettingsModal />
       </Suspense>
-      <Toaster
-        position="top-right"
-        gap={8}
-        offset={16}
-        toastOptions={{
-          style: {
-            background: "var(--panel)",
-            color: "var(--ink)",
-            border: "1px solid var(--line)",
-            fontSize: "13px",
-            borderRadius: "10px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-          },
-        }}
-      />
+      <AppToaster />
     </>
   );
 }

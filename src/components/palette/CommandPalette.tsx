@@ -133,7 +133,7 @@ export function CommandPalette() {
         label: t("common.settings"),
         hint: "⌘,",
         icon: Settings,
-        run: () => useUi.getState().setSettingsOpen(true),
+        run: () => void ipc.openSettingsWindow(),
       },
     ].filter((a) => !q || a.label.toLowerCase().includes(q));
 

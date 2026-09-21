@@ -17,6 +17,8 @@ import type {
   View,
 } from "@/lib/types";
 import { parentDir } from "@/lib/utils";
+import { applyTheme } from "@/lib/theme";
+import { broadcastSettings } from "@/lib/settingsSync";
 import { useTabs } from "@/stores/tabs";
 import { t } from "@/stores/locale";
 
@@ -36,6 +38,12 @@ interface VaultState {
   recentNotes: string[];
 
   startup: () => Promise<void>;
+  /** Load scalar settings into a fresh (settings-window) store, no side effects. */
+  hydrateSettings: () => Promise<void>;
+  applyRemoteTheme: (theme: Theme) => void;
+  applyRemoteOutlineSound: (enabled: boolean) => void;
+  applyRemoteImageUpload: (upload: ImageUpload) => void;
+  adoptVaultSnapshot: (snapshot: VaultSnapshot) => void;
   chooseVault: () => Promise<void>;
   createVault: () => Promise<void>;
   chooseExternalNotes: () => Promise<void>;
@@ -58,12 +66,6 @@ interface VaultState {
   setOutlineSound: (enabled: boolean) => Promise<void>;
   setImageUpload: (upload: ImageUpload) => Promise<void>;
   cycleTheme: () => Promise<void>;
-}
-
-function applyTheme(theme: Theme) {
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  const dark = theme === "dark" || (theme === "system" && media.matches);
-  document.documentElement.classList.toggle("dark", dark);
 }
 
 let systemThemeListener: (() => void) | null = null;
@@ -168,9 +170,46 @@ export const useVault = create<VaultState>((set, get) => ({
     }
   },
 
+  hydrateSettings: async () => {
+    watchSystemTheme(get);
+    try {
+      const snapshot = await ipc.settingsSnapshot();
+      applyTheme(snapshot.theme);
+      set({
+        theme: snapshot.theme,
+        outlineSound: snapshot.outlineSound,
+        imageUpload: snapshot.imageUpload,
+        root: snapshot.vaultPath ?? "",
+        name: snapshot.vaultName ?? "",
+        status: snapshot.vaultPath ? "ready" : "welcome",
+      });
+    } catch {
+      // Keep defaults; the settings window still renders with system values.
+    }
+  },
+
+  applyRemoteTheme: (theme) => {
+    applyTheme(theme);
+    set({ theme });
+  },
+
+  applyRemoteOutlineSound: (outlineSound) => {
+    set({ outlineSound });
+  },
+
+  applyRemoteImageUpload: (imageUpload) => {
+    set({ imageUpload });
+  },
+
+  adoptVaultSnapshot: (snapshot) => {
+    openVaultSnapshot(set, snapshot);
+  },
+
   chooseVault: async () => {
     try {
-      openVaultSnapshot(set, await ipc.chooseVault());
+      const snapshot = await ipc.chooseVault();
+      openVaultSnapshot(set, snapshot);
+      if (snapshot) broadcastSettings({ vault: snapshot });
     } catch (err) {
       oops(err);
     }
@@ -178,7 +217,9 @@ export const useVault = create<VaultState>((set, get) => ({
 
   createVault: async () => {
     try {
-      openVaultSnapshot(set, await ipc.createVault());
+      const snapshot = await ipc.createVault();
+      openVaultSnapshot(set, snapshot);
+      if (snapshot) broadcastSettings({ vault: snapshot });
     } catch (err) {
       oops(err);
     }
@@ -393,6 +434,7 @@ export const useVault = create<VaultState>((set, get) => ({
   setTheme: async (theme) => {
     applyTheme(theme);
     set({ theme });
+    broadcastSettings({ theme });
     try {
       await ipc.setTheme(theme);
     } catch (err) {
@@ -402,6 +444,7 @@ export const useVault = create<VaultState>((set, get) => ({
 
   setOutlineSound: async (outlineSound) => {
     set({ outlineSound });
+    broadcastSettings({ outlineSound });
     try {
       await ipc.setOutlineSound(outlineSound);
     } catch (err) {
@@ -411,6 +454,7 @@ export const useVault = create<VaultState>((set, get) => ({
 
   setImageUpload: async (imageUpload) => {
     set({ imageUpload });
+    broadcastSettings({ imageUpload });
     try {
       await ipc.setImageUpload(imageUpload);
     } catch (err) {

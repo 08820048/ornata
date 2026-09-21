@@ -28,6 +28,16 @@ export interface VaultSnapshot {
   imageUpload: ImageUpload;
 }
 
+/** Scalar settings served to the standalone settings window. */
+export interface SettingsSnapshot {
+  theme: Theme;
+  language: Language;
+  outlineSound: boolean;
+  imageUpload: ImageUpload;
+  vaultPath: string | null;
+  vaultName: string | null;
+}
+
 export interface Todo {
   id: string;
   text: string;

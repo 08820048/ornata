@@ -12,6 +12,7 @@ import type {
   AgentModel,
   AgentProvider,
   SearchHit,
+  SettingsSnapshot,
   Theme,
   Todo,
   TreeNode,
@@ -161,4 +162,7 @@ export const ipc = {
   getLanguage: () => call<Language>("get_language"),
   setLanguage: (language: Language) =>
     call<void>("set_language", { language }),
+
+  settingsSnapshot: () => call<SettingsSnapshot>("get_settings"),
+  openSettingsWindow: () => call<void>("open_settings_window"),
 };

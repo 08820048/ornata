@@ -12,6 +12,7 @@ mod link_meta;
 mod notes;
 mod reveal;
 mod search;
+mod settings_window;
 mod todos;
 mod upload;
 mod util;
@@ -100,6 +101,8 @@ pub fn run() {
             commands::set_outline_sound,
             commands::get_language,
             commands::set_language,
+            settings_window::get_settings,
+            settings_window::open_settings_window,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

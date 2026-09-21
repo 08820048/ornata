@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { create } from "zustand";
 import { ipc } from "@/lib/ipc";
+import { broadcastSettings } from "@/lib/settingsSync";
 import {
   translate,
   type MessageKey,
@@ -24,6 +25,7 @@ interface LocaleState {
   language: Language;
   startup: () => Promise<void>;
   setLanguage: (language: Language) => Promise<void>;
+  applyRemoteLanguage: (language: Language) => void;
 }
 
 const initialLanguage = storedLanguage();
@@ -46,11 +48,17 @@ export const useLocale = create<LocaleState>((set) => ({
   setLanguage: async (language) => {
     applyLanguage(language);
     set({ language });
+    broadcastSettings({ language });
     try {
       await ipc.setLanguage(language);
     } catch {
       // Keep the local preference; the next successful change will persist it.
     }
+  },
+
+  applyRemoteLanguage: (language) => {
+    applyLanguage(language);
+    set({ language });
   },
 }));
 
