@@ -47,6 +47,6 @@ attach leaves the previous version live. To roll back:
 
 ## Versioning
 
-`site/package.json` version tracks the app release (currently `0.2.0`) and is
+`site/package.json` version tracks the app release (currently `0.5.0`) and is
 informational for the site; the app's own release pipeline
 (`scripts/release.sh` at the repo root) is separate.

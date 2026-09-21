@@ -14,6 +14,43 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.5.0",
+    date: "September 21, 2026",
+    dateTime: "2026-09-21",
+    summary: "An animated cursor, a standalone settings window, and image paste that hosts itself.",
+    changes: [
+      "Added a Zed-style animated cursor: the caret glides between positions with a damped spring and a subtle four-corner deformation. Toggle it in Settings → Editor.",
+      "Settings now open in a standalone, searchable window with a category rail — General, Appearance, Editor, Image, Vault, Shortcuts, and Updates.",
+      "Added custom image upload: a pasted image lands in your vault first, then your uploader (for example PicGo) swaps in the hosted URL, falling back to the local copy on failure.",
+      "Click an image to edit its Markdown alt text and URL inline, Typora-style, with a source bar beneath it.",
+      "Added a serif reading font for the note body.",
+      "Fixed image paste in the macOS webview by reading the clipboard's items instead of only its files.",
+      "Removed the pointer cursor trail that interfered with text selection.",
+    ],
+  },
+  {
+    version: "0.4.0",
+    date: "August 29, 2026",
+    dateTime: "2026-08-29",
+    summary: "Cursor motion with spring physics and playful trails for short edits.",
+    changes: [
+      "Added a smooth editor cursor trail that follows the pointer with spring physics, honoring reduced-motion settings.",
+      "Short insertions and deletions animate as they land, and the caret gains a tapered line look.",
+    ],
+  },
+  {
+    version: "0.3.0",
+    date: "August 29, 2026",
+    dateTime: "2026-08-29",
+    summary: "Code blocks move to Shiki, with dual light and dark highlighting.",
+    changes: [
+      "Migrated fenced code blocks to Shiki with dual light/dark themes and syntax highlighting for 20 programming languages.",
+      "Refined code-block and Mermaid surfaces so they blend more naturally with the editor in both color modes.",
+      "Kept AssistantPi status visible above the composer, added compact Thinking Orbs for ready, connecting, and working states, and removed decorative gray icon circles.",
+      "Enlarged the settings dialog for more comfortable configuration.",
+    ],
+  },
+  {
     version: "0.2.0",
     date: "August 28, 2026",
     dateTime: "2026-08-28",
