@@ -614,6 +614,19 @@ body {
     outline-offset: 2px;
 }
 
+/* Image pasted and uploading in the background (Typora-style): keep the
+   local preview visible but clearly "not settled yet" until the hosted
+   URL replaces the src. */
+.prose-note img[data-uploading] {
+    opacity: 0.45;
+    cursor: progress;
+    animation: image-uploading 1.2s ease-in-out infinite;
+}
+@keyframes image-uploading {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.7; }
+}
+
 .prose-note table {
     border-collapse: collapse;
     width: 100%;

@@ -6,7 +6,12 @@ import type { NoteRef } from "@/lib/types";
 import { useVault } from "@/stores/vault";
 import { t } from "@/stores/locale";
 
-/** Save a pasted/dropped image beside its note and insert a relative path. */
+/**
+ * Paste/drop entry, Typora-style: land the image as a local vault asset
+ * immediately (the paste visibly lands at once), then — if a custom upload
+ * command is configured — upload in the background and swap the local path
+ * for the hosted URL in place. On upload failure the local image stays.
+ */
 export async function insertImageFile({
   editor,
   file,
@@ -23,9 +28,8 @@ export async function insertImageFile({
   const extension = file.type.split("/")[1]?.split("+")[0] || "png";
   try {
     const data = await fileToDataUrl(file);
-    const src = await uploadOrSave(data, extension, vaultRoot, note);
-    // Upload/save is async and can outlive the editor (tab closed, note
-    // switched, remount). Chaining on a destroyed editor throws.
+    const localSrc = await saveLocally(data, extension, vaultRoot, note);
+    // Save is async and can outlive the editor (tab closed, remount).
     if (!editor || editor.isDestroyed) return;
     // The doc may have changed while we awaited — clamp the paste range so
     // deleteRange can't hit an out-of-bounds position.
@@ -34,41 +38,73 @@ export async function insertImageFile({
       from: Math.min(range.from, size),
       to: Math.min(range.to, size),
     };
+    const { imageUpload } = useVault.getState();
+    const backgroundUpload =
+      imageUpload.mode === "custom" && imageUpload.command.trim().length > 0;
     editor
       .chain()
       .focus()
       .deleteRange(clamped)
-      .setImage({ src } as never)
+      .setImage({
+        src: localSrc,
+        ...(backgroundUpload ? { uploading: true } : {}),
+      } as never)
       .run();
+    if (backgroundUpload) {
+      void uploadInBackground(editor, localSrc, data, extension);
+    }
   } catch (err) {
     toast.error(err instanceof Error ? err.message : t("toast.imageSaveFailed"));
   }
 }
 
 /**
- * Route an image through the configured upload service, or save it into the
- * vault when the service is off. A failing upload falls back to the local
- * copy so the paste still lands — the toast carries the upload error.
+ * Upload in the background, then replace the image node(s) pointing at
+ * `localSrc` with the hosted URL. Failure keeps the local image and toasts.
  */
-async function uploadOrSave(
+async function uploadInBackground(
+  editor: Editor,
+  localSrc: string,
   data: string,
   extension: string,
-  vaultRoot: string,
-  note: NoteRef,
-): Promise<string> {
-  const { imageUpload } = useVault.getState();
-  if (imageUpload.mode === "custom" && imageUpload.command) {
-    try {
-      return await ipc.uploadImage(data, extension);
-    } catch (err) {
-      toast.error(
-        `${t("toast.imageUploadFailed")}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
-    }
+) {
+  let url: string | null = null;
+  let failure: unknown = null;
+  try {
+    url = await ipc.uploadImage(data, extension);
+  } catch (err) {
+    failure = err;
   }
-  return saveLocally(data, extension, vaultRoot, note);
+  if (editor.isDestroyed) return;
+  let replaced = false;
+  const touch = (
+    visit: (attrs: Record<string, unknown>) => Record<string, unknown>,
+  ) => {
+    const targets: Array<{ pos: number; attrs: Record<string, unknown> }> = [];
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== "image") return;
+      if ((node.attrs.vaultSrc ?? node.attrs.src) !== localSrc) return;
+      targets.push({ pos, attrs: visit(node.attrs) });
+    });
+    for (const { pos, attrs } of targets) {
+      editor.view.dispatch(editor.view.state.tr.setNodeMarkup(pos, undefined, attrs));
+      replaced = true;
+    }
+  };
+  if (url) {
+    // Clear vaultSrc so renderMarkdown emits the hosted URL.
+    touch((attrs) => ({ ...attrs, src: url, vaultSrc: null, uploading: false }));
+  } else {
+    touch((attrs) => ({ ...attrs, uploading: false }));
+    toast.error(
+      `${t("toast.imageUploadFailed")}: ${
+        failure instanceof Error ? failure.message : String(failure)
+      }`,
+    );
+  }
+  if (url && replaced) {
+    toast.success(t("toast.imageUploaded"));
+  }
 }
 
 async function saveLocally(

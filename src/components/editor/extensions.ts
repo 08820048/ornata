@@ -37,6 +37,15 @@ const LocalImage = (assetRoot: string) =>
               ? { "data-vault-src": attributes.vaultSrc }
               : {},
         },
+        // Transient flag for background upload: the node shows its local
+        // src with an "uploading" style until the hosted URL replaces it.
+        // Never serialized into Markdown (renderMarkdown only uses alt/src).
+        uploading: {
+          default: false,
+          parseHTML: (element) => element.hasAttribute("data-uploading"),
+          renderHTML: (attributes) =>
+            attributes.uploading ? { "data-uploading": "true" } : {},
+        },
       };
     },
 

@@ -477,9 +477,11 @@ pub fn set_image_upload(app: AppHandle, upload: ImageUpload) -> AppResult<()> {
 
 /// Run one image through the configured upload command and return the hosted
 /// URL. Used both by paste-upload and the settings "verify" button (which
-/// passes its own command to preview the result before saving).
+/// passes its own command to preview the result before saving). Async so
+/// Tauri runs it off the main thread — the upload blocks up to 60s and must
+/// never stall the UI.
 #[tauri::command]
-pub fn upload_image(
+pub async fn upload_image(
     app: AppHandle,
     data: String,
     extension: String,
@@ -491,7 +493,11 @@ pub fn upload_image(
         None if configured.mode == ImageUploadMode::Custom => configured.command,
         None => return Err(AppError::InvalidInput("upload service is off".into())),
     };
-    upload::upload_image(&data, &extension, &command)
+    tauri::async_runtime::spawn_blocking(move || {
+        upload::upload_image(&data, &extension, &command)
+    })
+    .await
+    .map_err(|e| AppError::Network(format!("upload task failed: {e}")))?
 }
 
 #[tauri::command]
