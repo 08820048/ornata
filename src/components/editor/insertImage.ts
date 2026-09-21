@@ -24,10 +24,20 @@ export async function insertImageFile({
   try {
     const data = await fileToDataUrl(file);
     const src = await uploadOrSave(data, extension, vaultRoot, note);
+    // Upload/save is async and can outlive the editor (tab closed, note
+    // switched, remount). Chaining on a destroyed editor throws.
+    if (!editor || editor.isDestroyed) return;
+    // The doc may have changed while we awaited — clamp the paste range so
+    // deleteRange can't hit an out-of-bounds position.
+    const size = editor.state.doc.content.size;
+    const clamped = {
+      from: Math.min(range.from, size),
+      to: Math.min(range.to, size),
+    };
     editor
       .chain()
       .focus()
-      .deleteRange(range)
+      .deleteRange(clamped)
       .setImage({ src } as never)
       .run();
   } catch (err) {
