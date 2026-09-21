@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ContextMenu,
   type MenuItem,
@@ -29,10 +29,54 @@ export function TabBar() {
   const view = useVault((s) => s.view);
   const active = view?.type === "note" ? view.note : null;
   const t = useT();
+  const stripRef = useRef<HTMLDivElement>(null);
+  const activeKey = active ? noteKey(active) : null;
   const [menu, setMenu] = useState<{
     note: NoteRef;
     position: MenuPosition;
   } | null>(null);
+
+  // A plain mouse wheel reports vertical deltas; remap them to horizontal
+  // scrolling so a full tab strip can be panned without a trackpad. Native
+  // horizontal gestures (shift+wheel, trackpad) are left untouched.
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      if (strip.scrollWidth <= strip.clientWidth) return;
+      const unit =
+        event.deltaMode === 1
+          ? 16
+          : event.deltaMode === 2
+            ? strip.clientWidth
+            : 1;
+      event.preventDefault();
+      strip.scrollLeft += event.deltaY * unit;
+    };
+    strip.addEventListener("wheel", onWheel, { passive: false });
+    return () => strip.removeEventListener("wheel", onWheel);
+  }, [tabs.length]);
+
+  // Keyboard/click tab switches can land off-screen; nudge the strip just
+  // enough to reveal the newly active tab.
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip || !activeKey) return;
+    const el = strip.querySelector<HTMLElement>(
+      '[role="tab"][aria-selected="true"]',
+    );
+    if (!el) return;
+    const stripRect = strip.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const left = elRect.left - stripRect.left + strip.scrollLeft;
+    const right = left + elRect.width;
+    if (left < strip.scrollLeft) {
+      strip.scrollTo({ left, behavior: "smooth" });
+    } else if (right > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollTo({ left: right - strip.clientWidth, behavior: "smooth" });
+    }
+  }, [activeKey]);
 
   if (tabs.length === 0) return null;
 
@@ -41,9 +85,10 @@ export function TabBar() {
       {/* layoutRoot scopes the sliding active-tab fill to this strip so the
           horizontal scroll offset can't smear its projection. */}
       <motion.div
+        ref={stripRef}
         layoutRoot
         role="tablist"
-        className="flex min-w-0 flex-1 items-stretch overflow-x-auto [scrollbar-width:none]"
+        className="no-scrollbar flex min-w-0 flex-1 items-stretch overflow-x-auto overscroll-x-contain"
       >
         {tabs.map((note, index) => (
           <Tab
