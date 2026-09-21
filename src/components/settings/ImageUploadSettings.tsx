@@ -68,7 +68,7 @@ export function ImageUploadSettings() {
         <div
           role="group"
           aria-label={t("settings.imageUpload")}
-          className="grid h-8 w-[188px] shrink-0 grid-cols-2 rounded-lg bg-sunken p-0.5"
+          className="grid h-8 w-[224px] shrink-0 grid-cols-2 rounded-lg bg-sunken p-0.5"
         >
           {MODES.map(({ value, labelKey }) => (
             <button
