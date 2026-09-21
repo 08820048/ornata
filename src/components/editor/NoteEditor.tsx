@@ -2,15 +2,6 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { Slice } from "@tiptap/pm/model";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
-import {
   lazy,
   memo,
   Suspense,
@@ -20,12 +11,9 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
-import { EASE_OUT, SPRING_MOUSE } from "@/lib/ease";
 import {
   joinFrontmatter,
   parseFrontmatter,
@@ -56,7 +44,6 @@ import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { SlashMenu, type SlashMenuState } from "./SlashMenu";
-import { showTextEditTrail } from "./textTrail";
 
 const MarkdownSourceEditor = lazy(() =>
   import("./MarkdownSourceEditor").then((module) => ({
@@ -328,9 +315,8 @@ export const NoteEditor = memo(function NoteEditor({
         // the effect below) so the anchor's native navigation is stopped before
         // anything — including the webview — can act on it.
       },
-      onUpdate({ editor, transaction }) {
+      onUpdate({ editor }) {
         if (swapping.current) return;
-        showTextEditTrail(editor.view, transaction);
         const markdown = editor.getMarkdown();
         pending.current = markdown;
         setSaveState("saving");
@@ -709,112 +695,112 @@ export const NoteEditor = memo(function NoteEditor({
   };
 
   return (
-    <CursorTrail enabled={active}>
-      <div
-        ref={scrollRef}
-        className="page-scroll"
-        onScroll={(event) => {
-          savedScroll.current = event.currentTarget.scrollTop;
-          updateActiveOutline();
-        }}
-      >
-        <div className="note-page">
-          {missing ? (
-            <p className="pt-16 text-center text-[14px] text-faint">
-              {t("editor.missing")}
-            </p>
+    <>
+    <div
+      ref={scrollRef}
+      className="page-scroll"
+      onScroll={(event) => {
+        savedScroll.current = event.currentTarget.scrollTop;
+        updateActiveOutline();
+      }}
+    >
+      <div className="note-page">
+        {missing ? (
+          <p className="pt-16 text-center text-[14px] text-faint">
+            {t("editor.missing")}
+          </p>
+        ) : (
+          <TitleInput
+            key={currentKey}
+            title={noteTitle(note)}
+            active={active}
+            focusNonce={
+              titleFocusReq?.key === currentKey
+                ? titleFocusReq.nonce
+                : undefined
+            }
+            onRename={(name) =>
+              flushThen(() => {
+                if (note.kind === "vault") renameEntry(note.rel, name);
+                else renameExternalNote(note.path, name);
+              })
+            }
+          />
+        )}
+        <div className={cx(missing && "hidden")}>
+          {markdownSource ? (
+            <Suspense fallback={null}>
+              <MarkdownSourceEditor
+                value={rawText}
+                onSelectionChange={publishAgentSelection}
+                onChange={(text) => {
+                  setRawText(text);
+                  const { frontmatter: fm, body } = splitFrontmatter(text);
+                  frontmatter.current = fm;
+                  setProperties(parseFrontmatter(fm));
+                  pending.current = body;
+                  setSaveState("saving");
+                  debouncedPersist(body);
+                  setWords(countWords(body, language));
+                }}
+              />
+            </Suspense>
           ) : (
-            <TitleInput
-              key={currentKey}
-              title={noteTitle(note)}
-              active={active}
-              focusNonce={
-                titleFocusReq?.key === currentKey
-                  ? titleFocusReq.nonce
-                  : undefined
-              }
-              onRename={(name) =>
-                flushThen(() => {
-                  if (note.kind === "vault") renameEntry(note.rel, name);
-                  else renameExternalNote(note.path, name);
-                })
-              }
-            />
+            <>
+              <NoteProperties properties={properties} />
+              <EditorContent editor={editor} />
+            </>
           )}
-          <div className={cx(missing && "hidden")}>
-            {markdownSource ? (
-              <Suspense fallback={null}>
-                <MarkdownSourceEditor
-                  value={rawText}
-                  onSelectionChange={publishAgentSelection}
-                  onChange={(text) => {
-                    setRawText(text);
-                    const { frontmatter: fm, body } = splitFrontmatter(text);
-                    frontmatter.current = fm;
-                    setProperties(parseFrontmatter(fm));
-                    pending.current = body;
-                    setSaveState("saving");
-                    debouncedPersist(body);
-                    setWords(countWords(body, language));
-                  }}
-                />
-              </Suspense>
-            ) : (
-              <>
-                <NoteProperties properties={properties} />
-                <EditorContent editor={editor} />
-              </>
-            )}
           </div>
           {active && editor && !markdownSource && (
             <SelectionMenu editor={editor} onAskAI={askAIAboutSelection} />
           )}
-          {active && !markdownSource && (
-            <SlashMenu
-              editor={editor}
-              menu={slashMenu}
-              onClose={() => setSlashMenu(null)}
-              allowNoteLinks={note.kind === "vault"}
-              onLinkToNote={(range) => {
-                if (slashMenu && note.kind === "vault") {
-                  setLinkPicker({
-                    range,
-                    position: slashMenu.position,
-                    side: slashMenu.side,
-                  });
-                }
-                setSlashMenu(null);
-              }}
-            />
-          )}
-          {active && !markdownSource && linkPicker && note.kind === "vault" && (
-            <NoteLinkPicker
-              state={linkPicker}
-              currentRel={note.rel}
-              onPick={insertNoteLink}
-              onClose={() => setLinkPicker(null)}
-            />
-          )}
-        </div>
-        {active && (
-          <div
-            className={cx(
-              "pointer-events-none fixed bottom-3 right-4 text-[11px] tabular-nums text-faint transition-opacity duration-300",
-              (words === 0 || missing) && "opacity-0",
-            )}
-          >
-            {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
-          </div>
+        {active && !markdownSource && (
+          <SlashMenu
+            editor={editor}
+            menu={slashMenu}
+            onClose={() => setSlashMenu(null)}
+            allowNoteLinks={note.kind === "vault"}
+            onLinkToNote={(range) => {
+              if (slashMenu && note.kind === "vault") {
+                setLinkPicker({
+                  range,
+                  position: slashMenu.position,
+                  side: slashMenu.side,
+                });
+              }
+              setSlashMenu(null);
+            }}
+          />
+        )}
+        {active && !markdownSource && linkPicker && note.kind === "vault" && (
+          <NoteLinkPicker
+            state={linkPicker}
+            currentRel={note.rel}
+            onPick={insertNoteLink}
+            onClose={() => setLinkPicker(null)}
+          />
         )}
       </div>
-      {active && editor && !missing && !markdownSource && (
-        <ArticleOutline
-          items={outlineItems}
-          activeKey={activeOutlineKey}
-          onSelect={selectOutlineItem}
-        />
+      {active && (
+        <div
+          className={cx(
+            "pointer-events-none fixed bottom-3 right-4 text-[11px] tabular-nums text-faint transition-opacity duration-300",
+            (words === 0 || missing) && "opacity-0",
+          )}
+        >
+          {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
+        </div>
       )}
-    </CursorTrail>
+    </div>
+    {active && editor && !missing && !markdownSource && (
+      <ArticleOutline
+        items={outlineItems}
+        activeKey={activeOutlineKey}
+        onSelect={selectOutlineItem}
+      />
+    )}
+    </>
   );
 });
 
@@ -904,106 +890,6 @@ function TitleInput({
 function resizeTitle(element: HTMLTextAreaElement) {
   element.style.height = "0px";
   element.style.height = `${element.scrollHeight}px`;
-}
-
-const SPRING_TRAIL_TAIL = {
-  ...SPRING_MOUSE,
-  stiffness: 90,
-} as const;
-
-function CursorTrail({
-  children,
-  enabled,
-}: {
-  children: ReactNode;
-  enabled: boolean;
-}) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const reduceMotion = useReducedMotion();
-  const [visible, setVisible] = useState(false);
-  const tailX = useSpring(x, SPRING_TRAIL_TAIL);
-  const tailY = useSpring(y, SPRING_TRAIL_TAIL);
-
-  useEffect(() => {
-    if (!enabled) setVisible(false);
-  }, [enabled]);
-
-  const move = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!enabled || reduceMotion || event.pointerType !== "mouse") return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const px = event.clientX - rect.left;
-    const py = event.clientY - rect.top;
-    if (!visible) {
-      // Anchor the tail on re-entry, or the first segment would streak in
-      // from the layer's (0,0).
-      tailX.jump(px);
-      tailY.jump(py);
-    }
-    x.set(px);
-    y.set(py);
-    setVisible(true);
-  };
-
-  return (
-    <div
-      className="relative size-full"
-      onPointerMove={move}
-      onPointerLeave={() => setVisible(false)}
-    >
-      {children}
-      <AnimatePresence initial={false}>
-        {enabled && visible && (
-          <motion.div
-            key="cursor-trail"
-            className="pointer-events-none absolute inset-0 z-30 overflow-hidden motion-reduce:hidden"
-            initial={false}
-            exit={{ opacity: 0, transition: { duration: 0.16, ease: EASE_OUT } }}
-          >
-            <TrailLine headX={x} headY={y} tailX={tailX} tailY={tailY} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function TrailLine({
-  headX,
-  headY,
-  tailX,
-  tailY,
-}: {
-  headX: MotionValue<number>;
-  headY: MotionValue<number>;
-  tailX: MotionValue<number>;
-  tailY: MotionValue<number>;
-}) {
-  const angle = useTransform(
-    [tailX, tailY, headX, headY],
-    ([tx, ty, hx, hy]: number[]) =>
-      (Math.atan2(hy - ty, hx - tx) * 180) / Math.PI,
-  );
-  const length = useTransform(
-    [tailX, tailY, headX, headY],
-    ([tx, ty, hx, hy]: number[]) => Math.hypot(hx - tx, hy - ty),
-  );
-
-  return (
-    <motion.div
-      className="absolute left-0 top-0 h-[3px] bg-ink/50 will-change-transform"
-      style={{
-        x: tailX,
-        y: tailY,
-        width: length,
-        rotate: angle,
-        originX: 0,
-        originY: 0.5,
-        marginTop: -1.5,
-        clipPath: "polygon(0% 50%, 100% 0%, 100% 100%)",
-      }}
-    />
-  );
 }
 
 function sameOutline(current: OutlineItem[], next: OutlineItem[]) {
