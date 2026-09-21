@@ -2,6 +2,25 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.5.0] - 2026-09-21
+
+### Added
+
+- **Animated cursor**: the caret glides between positions with a damped spring and a subtle four-corner deformation, adapted from Zed. Toggle it in Settings → Editor; honors reduced motion.
+- **Standalone settings window**: a resizable, searchable two-pane window (General, Appearance, Editor, Image, Vault, Shortcuts, Updates) that replaces the old modal and stays in sync with the main window.
+- **Custom image upload**: run your own uploader (e.g. PicGo) so pasted images are hosted automatically. The image lands locally first, then the hosted URL replaces it in place; failures keep the local copy.
+- **Inline image source**: click an image to edit its Markdown `alt`/URL in a bar beneath it, Typora-style.
+- A serif reading font for the note body.
+
+### Fixed
+
+- Pasted images now work in the macOS webview by reading `clipboardData.items` (which WKWebView uses instead of `.files`).
+- Inserting a pasted image no longer silently drops it when the schema predates the transient upload attribute.
+
+### Changed
+
+- Removed the pointer cursor trail that interfered with text selection.
+
 ## [0.4.0] - 2026-08-29
 
 ### Added
