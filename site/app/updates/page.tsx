@@ -14,6 +14,17 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.5.1",
+    date: "September 21, 2026",
+    dateTime: "2026-09-21",
+    summary: "A new app icon, and a tab strip you can scroll with the wheel.",
+    changes: [
+      "A new app icon across the app, Dock, and website.",
+      "Mouse-wheel scrolling for the editor tab strip: a vertical wheel pans the open tabs left and right, so a full strip no longer hides tabs at the edges.",
+      "The active tab scrolls back into view when you switch tabs, and the strip's scrollbar is hidden.",
+    ],
+  },
+  {
     version: "0.5.0",
     date: "September 21, 2026",
     dateTime: "2026-09-21",
