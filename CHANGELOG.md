@@ -2,6 +2,16 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.5.1] - 2026-09-21
+
+### Added
+
+- Mouse-wheel scrolling for the editor tab strip: a vertical wheel pans the open tabs left and right, and the active tab scrolls back into view when you switch.
+
+### Changed
+
+- A new app icon across the app, Dock, and website.
+
 ## [0.5.0] - 2026-09-21
 
 ### Added
