@@ -10,6 +10,7 @@ mod error;
 mod external_notes;
 mod image_source;
 mod legacy;
+mod mentions;
 mod notes;
 mod reveal;
 mod search;
@@ -73,6 +74,8 @@ pub fn run() {
             reveal::reveal_entry,
             commands::search_notes,
             commands::note_backlinks,
+            commands::unlinked_mentions,
+            commands::link_mention,
             commands::open_tasks,
             commands::complete_task,
             commands::export_note,

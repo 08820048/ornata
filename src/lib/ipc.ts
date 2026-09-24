@@ -12,6 +12,7 @@ import type {
   AgentProvider,
   SearchHit,
   Backlink,
+  Mention,
   OpenTask,
   SettingsSnapshot,
   Theme,
@@ -118,6 +119,15 @@ export const ipc = {
     call<SearchHit[]>("search_notes", { query, limit }),
 
   noteBacklinks: (rel: string) => call<Backlink[]>("note_backlinks", { rel }),
+  unlinkedMentions: (rel: string) =>
+    call<Mention[]>("unlinked_mentions", { rel }),
+  linkMention: (
+    rel: string,
+    line: number,
+    text: string,
+    target: string,
+    href: string,
+  ) => call<void>("link_mention", { rel, line, text, target, href }),
 
   openTasks: () => call<OpenTask[]>("open_tasks"),
 

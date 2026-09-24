@@ -49,6 +49,16 @@ export interface Backlink {
   count: number;
 }
 
+/** A note mentioning another note's title in plain text, without a link. */
+export interface Mention {
+  rel: string;
+  title: string;
+  /** First few mentioning lines; `text` doubles as the link-mention guard. */
+  lines: { line: number; text: string }[];
+  /** Total number of mentioning lines in that note. */
+  count: number;
+}
+
 export interface OpenTask {
   rel: string;
   title: string;

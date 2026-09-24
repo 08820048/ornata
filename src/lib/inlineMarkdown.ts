@@ -7,7 +7,32 @@ import { hrefToRel } from "./noteLinks";
  */
 export type InlinePart =
   | { kind: "text"; text: string }
-  | { kind: "link"; text: string; self: boolean };
+  | { kind: "link"; text: string; self: boolean }
+  | { kind: "mark"; text: string };
+
+/** The line as plain text — what the editor shows for it. */
+export function plainText(parts: InlinePart[]) {
+  return parts.map((part) => part.text).join("");
+}
+
+/** Split plain-text parts so every case-insensitive `term` becomes a mark. */
+export function markTerm(parts: InlinePart[], term: string): InlinePart[] {
+  const needle = term.toLowerCase();
+  if (!needle) return parts;
+  return parts.flatMap((part) => {
+    if (part.kind !== "text") return [part];
+    const out: InlinePart[] = [];
+    const lower = part.text.toLowerCase();
+    let from = 0;
+    for (let at = lower.indexOf(needle); at !== -1; at = lower.indexOf(needle, from)) {
+      if (at > from) out.push({ kind: "text", text: part.text.slice(from, at) });
+      out.push({ kind: "mark", text: part.text.slice(at, at + needle.length) });
+      from = at + needle.length;
+    }
+    if (from < part.text.length) out.push({ kind: "text", text: part.text.slice(from) });
+    return out;
+  });
+}
 
 const LEADING_MARKERS = /^(?:[-*+]\s+|\d+[.)]\s+)?(?:\[[ xX]\]\s+)?/;
 const EMPHASIS = /\*\*|__|~~|`/g;

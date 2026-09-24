@@ -11,6 +11,7 @@ use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::image_source::{self, ImagePayload};
+use crate::mentions::{self, Mention};
 use crate::search::SearchHit;
 use crate::tasks::{self, OpenTask};
 use crate::vault::{self, TreeNode};
@@ -265,6 +266,24 @@ pub fn search_notes(
 #[tauri::command]
 pub fn note_backlinks(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Backlink>> {
     backlinks::backlinks(&state.root()?, &rel)
+}
+
+#[tauri::command]
+pub fn unlinked_mentions(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Mention>> {
+    mentions::unlinked_mentions(&state.root()?, &rel)
+}
+
+/// Link the plain mention of `target` on `line` of note `rel` to `href`.
+#[tauri::command]
+pub fn link_mention(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+    target: String,
+    href: String,
+) -> AppResult<()> {
+    mentions::link_mention(&state.root()?, &rel, line, &text, &target, &href)
 }
 
 #[tauri::command]

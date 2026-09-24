@@ -42,8 +42,10 @@ import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
 import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
-import { NoteBacklinks } from "./NoteBacklinks";
+import { BacklinksBadge, NoteBacklinks, useBacklinks } from "./NoteBacklinks";
 import { NoteProperties } from "./NoteProperties";
+import { revealText } from "./revealText";
+import { UnlinkedMentions } from "./UnlinkedMentions";
 import { SelectionMenu } from "./SelectionMenu";
 import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, imageTarget, type ImageTarget } from "./imageMenu";
@@ -117,6 +119,10 @@ export const NoteEditor = memo(function NoteEditor({
   const languageRef = useRef(language);
   languageRef.current = language;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const backlinksRef = useRef<HTMLElement>(null);
+  const [backlinksOpen, setBacklinksOpen] = useState(true);
+  /** Bumped after each note load, so reveal requests can wait for content. */
+  const [loadNonce, setLoadNonce] = useState(0);
   // Content box for the animated caret overlay (scrolls with the text).
   const pageRef = useRef<HTMLDivElement>(null);
   const motionRef = useRef<CursorMotion | null>(null);
@@ -186,6 +192,8 @@ export const NoteEditor = memo(function NoteEditor({
 
   const assetRoot = noteAssetRoot(vaultRoot, note);
   const extensions = useMemo(() => createExtensions(assetRoot), [assetRoot]);
+  const backlinkRel = note.kind === "vault" && !missing ? note.rel : null;
+  const backlinks = useBacklinks(backlinkRel, active);
 
   const updateSlashMenu = useCallback((editor: NonNullable<EditorInstance>) => {
     const { selection } = editor.state;
@@ -507,6 +515,7 @@ export const NoteEditor = memo(function NoteEditor({
         // A freshly loaded note starts at the top.
         savedScroll.current = 0;
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
+        setLoadNonce((n) => n + 1);
         const titleFocus = useTabs.getState().titleFocusReq;
         if (
           body.length === 0 &&
@@ -732,6 +741,23 @@ export const NoteEditor = memo(function NoteEditor({
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [scrollTopReq, currentKey]);
 
+  // Honor a reveal request (a backlink / mention snippet was clicked): once
+  // this pane is visible and its content loaded, scroll to and flash the
+  // matching block. Each request is consumed once; a miss leaves the note at
+  // wherever it opened.
+  const revealReq = useTabs((s) => s.revealReq);
+  const revealedNonce = useRef(0);
+  useEffect(() => {
+    if (!editor || !active || markdownSource || loadNonce === 0) return;
+    if (!revealReq || revealReq.key !== currentKey) return;
+    if (loadedKey.current !== currentKey) return;
+    if (revealedNonce.current === revealReq.nonce) return;
+    revealedNonce.current = revealReq.nonce;
+    if (revealText(editor, revealReq.text) && scrollRef.current) {
+      savedScroll.current = scrollRef.current.scrollTop;
+    }
+  }, [editor, active, markdownSource, loadNonce, revealReq, currentKey]);
+
   const flushThen = (action: () => void) => {
     debouncedPersist.cancel();
     const flush =
@@ -822,6 +848,14 @@ export const NoteEditor = memo(function NoteEditor({
     editor.commands.focus();
   };
 
+  const revealBacklinks = () => {
+    setBacklinksOpen(true);
+    // Wait a frame so an expanding list has mounted before scrolling to it.
+    requestAnimationFrame(() => {
+      backlinksRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   return (
     <>
     <div
@@ -855,6 +889,7 @@ export const NoteEditor = memo(function NoteEditor({
             }
           />
         )}
+        <BacklinksBadge count={backlinks.links.length} onClick={revealBacklinks} />
         <div className={cx(missing && "hidden")}>
           {markdownSource ? (
             <Suspense fallback={null}>
@@ -880,8 +915,17 @@ export const NoteEditor = memo(function NoteEditor({
             </>
           )}
           </div>
-          {note.kind === "vault" && !missing && (
-            <NoteBacklinks rel={note.rel} active={active} />
+          {backlinkRel && (
+            <footer className="mt-16 flex flex-col gap-4 border-t border-line pt-4">
+              <NoteBacklinks
+                rel={backlinkRel}
+                links={backlinks.links}
+                open={backlinksOpen}
+                onOpenChange={setBacklinksOpen}
+                sectionRef={backlinksRef}
+              />
+              <UnlinkedMentions rel={backlinkRel} onLinked={backlinks.refresh} />
+            </footer>
           )}
           {active && editor && !markdownSource && (
             <SelectionMenu editor={editor} onAskAI={askAIAboutSelection} />

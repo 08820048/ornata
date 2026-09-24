@@ -97,6 +97,29 @@ pub fn scan_tree(root: &Path) -> AppResult<Vec<TreeNode>> {
     scan_dir(root, &notes)
 }
 
+/// Every visible `.md` file under the notes root, as absolute paths.
+pub fn note_files(root: &Path) -> Vec<PathBuf> {
+    fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
+        let Ok(entries) = fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            if is_hidden(&entry.file_name().to_string_lossy()) {
+                continue;
+            }
+            let path = entry.path();
+            if path.is_dir() {
+                walk(&path, out);
+            } else if path.extension().is_some_and(|e| e == "md") {
+                out.push(path);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(&notes_root(root), &mut out);
+    out
+}
+
 fn scan_dir(root: &Path, dir: &Path) -> AppResult<Vec<TreeNode>> {
     let mut folders: Vec<TreeNode> = Vec::new();
     let mut notes: Vec<TreeNode> = Vec::new();
@@ -195,5 +218,23 @@ mod tests {
         fs::create_dir_all(notes.join(".hidden")).unwrap();
         fs::write(notes.join(".secret.md"), "x").unwrap();
         assert!(scan_tree(dir.path()).unwrap().is_empty());
+        assert!(note_files(dir.path()).is_empty());
+    }
+
+    #[test]
+    fn lists_note_files_recursively() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        let notes = notes_root(dir.path());
+        fs::create_dir_all(notes.join("a/b")).unwrap();
+        fs::write(notes.join("top.md"), "").unwrap();
+        fs::write(notes.join("a/b/deep.md"), "").unwrap();
+        fs::write(notes.join("a/skip.txt"), "").unwrap();
+        let mut rels: Vec<_> = note_files(dir.path())
+            .iter()
+            .map(|p| rel_of(dir.path(), p).unwrap())
+            .collect();
+        rels.sort();
+        assert_eq!(rels, ["a/b/deep.md", "top.md"]);
     }
 }

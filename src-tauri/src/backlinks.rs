@@ -183,7 +183,7 @@ fn percent_decode(input: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
-fn strip_md(rel: &str) -> &str {
+pub(crate) fn strip_md(rel: &str) -> &str {
     match rel.len().checked_sub(3) {
         Some(cut) if rel.is_char_boundary(cut) && rel[cut..].eq_ignore_ascii_case(".md") => {
             &rel[..cut]
@@ -192,7 +192,7 @@ fn strip_md(rel: &str) -> &str {
     }
 }
 
-fn snippet(line: &str) -> String {
+pub(crate) fn snippet(line: &str) -> String {
     let text = line
         .trim()
         .trim_start_matches(['#', '-', '*', '>', ' '])
