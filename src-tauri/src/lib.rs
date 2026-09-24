@@ -13,6 +13,7 @@ mod legacy;
 mod notes;
 mod reveal;
 mod search;
+mod tasks;
 mod settings_window;
 mod upload;
 mod util;
@@ -72,6 +73,8 @@ pub fn run() {
             reveal::reveal_entry,
             commands::search_notes,
             commands::note_backlinks,
+            commands::open_tasks,
+            commands::complete_task,
             commands::export_note,
             external_notes::export_external_note,
             commands::save_image_asset,

@@ -11,6 +11,7 @@ import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { useLocale } from "@/stores/locale";
+import { TasksDialog } from "@/components/tasks/TasksDialog";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -154,6 +155,7 @@ export default function App() {
       <Suspense fallback={null}>
         {status === "ready" && <AppShell />}
         <CommandPalette />
+        {status === "ready" && <TasksDialog />}
       </Suspense>
       <AppToaster />
     </>

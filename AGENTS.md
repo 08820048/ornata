@@ -33,6 +33,7 @@ One module per concern, each with unit tests; keep files under ~300 lines:
 - `notes.rs` — CRUD, rename/move with collision suffixing ("name 2")
 - `search.rs` — case-insensitive title+content search, title hits ranked first
 - `backlinks.rs` — notes linking to a given note (markdown + `[[wiki]]` links)
+- `tasks.rs` — vault-wide open `- [ ]` tasks; ticks a line only if it still matches
 - `legacy.rs` — one-time conversion of retired todo/bookmark stores into notes
 - `assets.rs` — save pasted images into `.ornata/assets/`
 - `commands.rs` — thin `#[tauri::command]` wrappers only; `lib.rs` — wiring only

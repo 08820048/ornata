@@ -2,6 +2,7 @@ import {
   ArrowDownToLine,
   FilePlus,
   FolderPlus,
+  ListChecks,
   Loader2,
   RefreshCw,
   Search,
@@ -20,6 +21,7 @@ export function Sidebar() {
   const createNote = useVault((s) => s.createNote);
   const createFolder = useVault((s) => s.createFolder);
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
+  const setTasksOpen = useUi((s) => s.setTasksOpen);
   const t = useT();
 
   return (
@@ -55,6 +57,9 @@ export function Sidebar() {
           {t("common.notes")}
         </span>
         <div className="flex items-center gap-0.5">
+          <IconAction label={t("tasks.title")} onClick={() => setTasksOpen(true)}>
+            <ListChecks size={14.5} strokeWidth={1.75} />
+          </IconAction>
           <IconAction
             label={t("common.newNote")}
             onClick={() => createNote(activeDir(useVault.getState()))}

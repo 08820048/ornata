@@ -6,6 +6,7 @@ All notable changes to Ornata are documented in this file.
 
 ### Added
 
+- Open tasks: one list of every unchecked `- [ ]` item across your notes, from the sidebar or ⌘K. Tick a task to mark it done in its note, or click it to open the note.
 - Linked mentions: the bottom of each note lists the notes that link to it (markdown or `[[wiki]]` links), with the linking line as context. Click one to open it.
 
 ### Removed
