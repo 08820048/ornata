@@ -8,6 +8,7 @@ mod commands;
 mod config;
 mod error;
 mod external_notes;
+mod image_source;
 mod link_meta;
 mod notes;
 mod reveal;
@@ -97,6 +98,9 @@ pub fn run() {
             commands::get_image_upload,
             commands::set_image_upload,
             commands::upload_image,
+            commands::read_image,
+            commands::save_image_as,
+            commands::open_local_image,
             commands::set_theme,
             commands::set_outline_sound,
             commands::set_cursor_animation,

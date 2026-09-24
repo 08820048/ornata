@@ -67,6 +67,27 @@ pub fn decode_base64_image(data: &str) -> AppResult<Vec<u8>> {
     decode_base64(data)
 }
 
+/// Minimal base64 encoder (standard alphabet, padded) — the inverse of
+/// `decode_base64_bytes`, used to hand image bytes back to the editor.
+pub fn encode_base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let n = (chunk[0] as u32) << 16
+            | (*chunk.get(1).unwrap_or(&0) as u32) << 8
+            | *chunk.get(2).unwrap_or(&0) as u32;
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
 /// Minimal base64 decoder (standard alphabet, ignores whitespace/padding).
 fn decode_base64_bytes(input: &str) -> Option<Vec<u8>> {
     fn value(c: u8) -> Option<u32> {
@@ -134,6 +155,10 @@ mod tests {
     fn base64_roundtrip() {
         assert_eq!(decode_base64_bytes("aGVsbG8=").unwrap(), b"hello");
         assert!(decode_base64_bytes("!!!").is_none());
+        for input in [&b""[..], b"h", b"he", b"hel", b"hello", &[0xFF, 0x00, 0xFE]] {
+            assert_eq!(decode_base64_bytes(&encode_base64(input)).unwrap(), input);
+        }
+        assert_eq!(encode_base64(b"hello"), "aGVsbG8=");
     }
 
     #[test]

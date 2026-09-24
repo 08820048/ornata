@@ -10,6 +10,7 @@ use crate::bookmarks::{self, Bookmark};
 use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
+use crate::image_source::{self, ImagePayload};
 use crate::search::SearchHit;
 use crate::todos::{self, Todo};
 use crate::vault::{self, TreeNode};
@@ -500,6 +501,46 @@ pub async fn upload_image(
     })
     .await
     .map_err(|e| AppError::Network(format!("upload task failed: {e}")))?
+}
+
+/// Load an image shown in the editor (absolute local path or http(s) URL) as
+/// a data URL — backs the image context menu's re-upload and copy actions.
+#[tauri::command]
+pub async fn read_image(source: String) -> AppResult<ImagePayload> {
+    Ok(image_source::load(&source).await?.into_payload())
+}
+
+/// "Save image as": prompt for a destination and write the image bytes.
+/// Async so the blocking save dialog runs off the main thread. Returns the
+/// written path, or None if the user cancelled.
+#[tauri::command]
+pub async fn save_image_as(app: AppHandle, source: String) -> AppResult<Option<String>> {
+    let image = image_source::load(&source).await?;
+    let picked = tauri::async_runtime::spawn_blocking({
+        let app = app.clone();
+        let file_name = image.file_name.clone();
+        move || app.dialog().file().set_file_name(file_name).blocking_save_file()
+    })
+    .await
+    .map_err(|e| AppError::Other(e.to_string()))?;
+
+    let Some(dest) = picked else {
+        return Ok(None);
+    };
+    let path = dest
+        .into_path()
+        .map_err(|e| AppError::InvalidPath(e.to_string()))?;
+    std::fs::write(&path, image.bytes)?;
+    Ok(Some(path.display().to_string()))
+}
+
+/// Open a local image file in the system's default viewer. Remote images are
+/// opened by the frontend through the opener plugin's URL scope.
+#[tauri::command]
+pub fn open_local_image(path: String) -> AppResult<()> {
+    let path = image_source::local_path(&path)?;
+    tauri_plugin_opener::open_path(path, None::<&str>)
+        .map_err(|error| AppError::Other(error.to_string()))
 }
 
 #[tauri::command]

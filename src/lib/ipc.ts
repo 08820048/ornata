@@ -156,6 +156,11 @@ export const ipc = {
     call<void>("set_image_upload", { upload }),
   uploadImage: (data: string, extension: string, command?: string) =>
     call<string>("upload_image", { data, extension, command }),
+  readImage: (source: string) =>
+    call<{ data: string; extension: string }>("read_image", { source }),
+  saveImageAs: (source: string) =>
+    call<string | null>("save_image_as", { source }),
+  openLocalImage: (path: string) => call<void>("open_local_image", { path }),
   setTheme: (theme: Theme) => call<void>("set_theme", { theme }),
   setOutlineSound: (enabled: boolean) =>
     call<void>("set_outline_sound", { enabled }),

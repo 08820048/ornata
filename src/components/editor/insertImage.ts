@@ -88,6 +88,46 @@ export async function insertImageFile({
 }
 
 /**
+ * Context-menu "Upload image": push an image that is already in the doc
+ * (local or previously hosted) through the upload command again and swap
+ * every node showing `src` for the new hosted URL.
+ */
+export async function reuploadImage(editor: Editor, src: string, source: string) {
+  const { imageUpload } = useVault.getState();
+  if (imageUpload.mode !== "custom" || !imageUpload.command.trim()) {
+    toast.error(t("toast.imageUploadOff"), {
+      action: {
+        label: t("common.settings"),
+        onClick: () => void ipc.openSettingsWindow(),
+      },
+    });
+    return;
+  }
+  markUploading(editor, src);
+  let image: { data: string; extension: string };
+  try {
+    image = await ipc.readImage(source);
+  } catch (err) {
+    if (!editor.isDestroyed) {
+      forEachImageWithSrc(editor, src, (attrs) => ({ ...attrs, uploading: false }));
+    }
+    toast.error(
+      `${t("toast.imageUploadRetryFailed")}: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+    return;
+  }
+  await uploadInBackground(
+    editor,
+    src,
+    image.data,
+    image.extension,
+    "toast.imageUploadRetryFailed",
+  );
+}
+
+/**
  * Flag the freshly inserted local image as "uploading". Uses setNodeMarkup
  * (lenient attrs path) and only when the schema knows the attribute, so an
  * editor running a schema without `uploading` still gets the image — just
@@ -132,6 +172,8 @@ async function uploadInBackground(
   localSrc: string,
   data: string,
   extension: string,
+  failureKey: "toast.imageUploadFailed" | "toast.imageUploadRetryFailed" =
+    "toast.imageUploadFailed",
 ) {
   let url: string | null = null;
   let failure: unknown = null;
@@ -156,7 +198,7 @@ async function uploadInBackground(
       uploading: false,
     }));
     toast.error(
-      `${t("toast.imageUploadFailed")}: ${
+      `${t(failureKey)}: ${
         failure instanceof Error ? failure.message : String(failure)
       }`,
     );

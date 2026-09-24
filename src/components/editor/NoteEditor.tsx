@@ -45,6 +45,8 @@ import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { ImageSourcePopover } from "./ImageSourcePopover";
+import { imageMenuItems, imageTarget, type ImageTarget } from "./imageMenu";
+import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 import { SlashMenu, type SlashMenuState } from "./SlashMenu";
 
 const MarkdownSourceEditor = lazy(() =>
@@ -91,6 +93,10 @@ export const NoteEditor = memo(function NoteEditor({
     top: number;
     left: number;
     width: number;
+  } | null>(null);
+  const [imageMenu, setImageMenu] = useState<{
+    position: MenuPosition;
+    target: ImageTarget;
   } | null>(null);
   const [linkPicker, setLinkPicker] = useState<LinkPickerState | null>(null);
   const [words, setWords] = useState(0);
@@ -350,6 +356,31 @@ export const NoteEditor = memo(function NoteEditor({
             width: imgRect.width,
           });
           return false;
+        },
+        handleDOMEvents: {
+          // Right-click on an image: upload / open / copy / save as.
+          contextmenu(view, event) {
+            const img = event.target;
+            if (!(img instanceof HTMLImageElement)) return false;
+            const pos = view.posAtDOM(img, 0);
+            const node = view.state.doc.nodeAt(pos);
+            if (node?.type.name !== "image") return false;
+            const target = imageTarget(
+              node.attrs,
+              noteAssetRoot(useVault.getState().root, noteRef.current),
+            );
+            if (!target) return false;
+            event.preventDefault();
+            // Keep the opening event from reaching ContextMenu's window-level
+            // dismiss listener, which would close the menu immediately.
+            event.stopPropagation();
+            setImageSource(null);
+            setImageMenu({
+              position: { x: event.clientX, y: event.clientY },
+              target,
+            });
+            return true;
+          },
         },
         // Link clicks are handled by a capture-phase listener on the pane (see
         // the effect below) so the anchor's native navigation is stopped before
@@ -900,6 +931,13 @@ export const NoteEditor = memo(function NoteEditor({
             applyImageSource(imageSource.pos, imageSource.src, alt, src);
           }}
           onClose={() => setImageSource(null)}
+        />
+      )}
+      {active && imageMenu && editor && !markdownSource && (
+        <ContextMenu
+          position={imageMenu.position}
+          items={imageMenuItems(editor, imageMenu.target)}
+          onClose={() => setImageMenu(null)}
         />
       )}
     </div>

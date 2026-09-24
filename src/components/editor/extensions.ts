@@ -16,8 +16,18 @@ import { WikiLink } from "./wikiLink";
 import { NonInclusiveLink } from "./link";
 import { t } from "@/stores/locale";
 
-function isRemoteSource(src: string) {
+export function isRemoteSource(src: string) {
   return /^(?:[a-z][a-z0-9+.-]*:|#|\/)/i.test(src);
+}
+
+/**
+ * Absolute filesystem path of a relative image src under `assetRoot`.
+ * Vaults created by Markd may still contain image links pointing at the
+ * legacy data directory; those resolve through Ornata's migrated one.
+ */
+export function resolveAssetPath(assetRoot: string, src: string) {
+  const resolved = src.replace(/^\.markd\//, ".ornata/");
+  return `${assetRoot.replace(/\/$/, "")}/${resolved}`;
 }
 
 /**
@@ -51,13 +61,10 @@ export const LocalImage = (assetRoot: string) =>
 
     renderHTML({ HTMLAttributes }) {
       const vaultSrc = HTMLAttributes.vaultSrc ?? HTMLAttributes.src;
-      // Vaults created by Markd may still contain image links pointing at the
-      // legacy data directory. Keep the Markdown untouched while resolving
-      // those links through Ornata's migrated asset directory at render time.
-      const resolvedVaultSrc = vaultSrc?.replace(/^\.markd\//, ".ornata/");
+      // Keep the Markdown untouched; resolve relative paths at render time.
       const src =
-        assetRoot && resolvedVaultSrc && !isRemoteSource(resolvedVaultSrc)
-          ? convertFileSrc(`${assetRoot.replace(/\/$/, "")}/${resolvedVaultSrc}`)
+        assetRoot && vaultSrc && !isRemoteSource(vaultSrc)
+          ? convertFileSrc(resolveAssetPath(assetRoot, vaultSrc))
           : HTMLAttributes.src;
       return ["img", { ...HTMLAttributes, src, "data-vault-src": vaultSrc }];
     },
