@@ -11,11 +11,18 @@ use crate::vault::{notes_root, rel_of};
 pub struct Backlink {
     pub rel: String,
     pub title: String,
-    /// The line containing the first link to the target.
-    pub snippet: String,
+    /// Raw markdown of the first few lines linking to the target. Rendered
+    /// (link labels, highlighting) by the frontend, so it is never cut
+    /// mid-link by a short length cap.
+    pub snippets: Vec<String>,
+    /// Total number of lines linking to the target.
+    pub count: usize,
 }
 
-const SNIPPET_MAX: usize = 180;
+/// Safety cap only — the UI clamps visually. Long enough that encoded CJK
+/// hrefs (9 chars per character) survive intact.
+const SNIPPET_MAX: usize = 1000;
+const SNIPPETS_PER_NOTE: usize = 3;
 
 /// Notes that link to `target` via a markdown link (`[x](target.md)`) or a
 /// `[[wiki]]` link, sorted by title.
@@ -55,12 +62,13 @@ fn walk(
             continue;
         }
         let content = fs::read_to_string(&path).unwrap_or_default();
-        let Some(line) = content
+        let lines: Vec<&str> = content
             .lines()
-            .find(|line| links_to(line, target, target_name))
-        else {
+            .filter(|line| links_to(line, target, target_name))
+            .collect();
+        if lines.is_empty() {
             continue;
-        };
+        }
         let title = path
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
@@ -68,7 +76,8 @@ fn walk(
         hits.push(Backlink {
             rel,
             title,
-            snippet: snippet(line),
+            snippets: lines.iter().take(SNIPPETS_PER_NOTE).map(|l| snippet(l)).collect(),
+            count: lines.len(),
         });
     }
     Ok(())
@@ -83,11 +92,41 @@ fn links_to(line: &str, target: &str, target_name: &str) -> bool {
 }
 
 /// Hrefs of inline markdown links: the text between `](` and the next `)`.
+/// Handles nested parentheses in link text by counting bracket depth.
 fn markdown_hrefs(line: &str) -> impl Iterator<Item = &str> {
-    line.match_indices("](").filter_map(move |(i, _)| {
-        let rest = &line[i + 2..];
-        rest.find(')').map(|end| rest[..end].trim())
-    })
+    let mut chars = line.char_indices().peekable();
+    let mut results = Vec::new();
+
+    while let Some((i, c)) = chars.next() {
+        if c == ']' {
+            // Check if next char is '('
+            if let Some((_, '(')) = chars.peek() {
+                chars.next(); // consume '('
+                let mut depth = 1;
+                let start = i + 2; // position after ']['
+                let mut end = None;
+
+                while let Some((j, c)) = chars.next() {
+                    if c == '(' {
+                        depth += 1;
+                    } else if c == ')' {
+                        depth -= 1;
+                        if depth == 0 {
+                            end = Some(j);
+                            break;
+                        }
+                    }
+                }
+
+                if let Some(end_pos) = end {
+                    let href = &line[start..end_pos];
+                    results.push(href.trim());
+                }
+            }
+        }
+    }
+
+    results.into_iter()
 }
 
 fn wiki_targets(line: &str) -> impl Iterator<Item = &str> {
@@ -195,7 +234,23 @@ mod tests {
         let hits = backlinks(root, &target).unwrap();
         let titles: Vec<_> = hits.iter().map(|h| h.title.as_str()).collect();
         assert_eq!(titles, ["Archive", "Journal"]);
-        assert_eq!(hits[1].snippet, "see [idea](projects/Big%20Idea.md) today");
+        assert_eq!(hits[1].snippets, ["see [idea](projects/Big%20Idea.md) today"]);
+        assert_eq!(hits[1].count, 1);
+    }
+
+    #[test]
+    fn collects_every_mention_up_to_the_cap() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let target = create_note(root, "", "Idea").unwrap();
+        let a = create_note(root, "", "Log").unwrap();
+        let body: Vec<String> = (1..=5).map(|i| format!("{i}. [[Idea]]")).collect();
+        write_note(root, &a, &body.join("\nfiller\n")).unwrap();
+
+        let hits = backlinks(root, &target).unwrap();
+        assert_eq!(hits[0].count, 5);
+        assert_eq!(hits[0].snippets.len(), SNIPPETS_PER_NOTE);
     }
 
     #[test]
@@ -206,5 +261,26 @@ mod tests {
         assert_eq!(href_to_rel("mailto:x@y.z"), None);
         assert_eq!(href_to_rel("#anchor"), None);
         assert_eq!(percent_decode("%E4%BD%A0%zz"), "你%zz");
+    }
+
+    #[test]
+    fn finds_chinese_encoded_links() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        create_folder(root, "", "40-职业").unwrap();
+        create_folder(root, "40-职业", "面试与笔试").unwrap();
+        let target = create_note(root, "40-职业/面试与笔试", "Lua 语法速查 (面试复习)").unwrap();
+        let a = create_note(root, "", "Journal").unwrap();
+        write_note(
+            root,
+            &a,
+            "参见 [Lua 语法速查(面试复习)](40-%E8%81%8C%E4%B8%9A/%E9%9D%A2%E8%AF%95%E4%B8%8E%E7%AC%94%E8%AF%95/Lua%20%E8%AF%AD%E6%B3%95%E9%80%9F%E6%9F%A5%20(%E9%9D%A2%E8%AF%95%E5%A4%8D%E4%B9%A0).md)",
+        )
+        .unwrap();
+
+        let hits = backlinks(root, &target).unwrap();
+        let titles: Vec<_> = hits.iter().map(|h| h.title.as_str()).collect();
+        assert_eq!(titles, ["Journal"]);
     }
 }

@@ -43,7 +43,10 @@ export interface SettingsSnapshot {
 export interface Backlink {
   rel: string;
   title: string;
-  snippet: string;
+  /** Raw markdown lines linking here (first few); render via `parseInline`. */
+  snippets: string[];
+  /** Total number of linking lines in that note. */
+  count: number;
 }
 
 export interface OpenTask {

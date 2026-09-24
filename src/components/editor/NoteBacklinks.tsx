@@ -1,7 +1,8 @@
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
+import { parseInline } from "@/lib/inlineMarkdown";
 import { ipc } from "@/lib/ipc";
 import { vaultNote } from "@/lib/noteRef";
 import type { Backlink } from "@/lib/types";
@@ -78,17 +79,27 @@ export function NoteBacklinks({ rel, active }: { rel: string; active: boolean })
                   onClick={() => openLink(link.rel)}
                   className="group flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors duration-100 hover:bg-hover"
                 >
-                  <span className="flex items-center gap-1 text-[13px] font-medium text-ink">
+                  <span className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium text-ink">
                     <span className="truncate">{link.title}</span>
+                    {folderOf(link.rel) && (
+                      <span className="truncate text-[11px] font-normal text-faint">
+                        {folderOf(link.rel)}
+                      </span>
+                    )}
+                    {link.count > 1 && (
+                      <span className="shrink-0 text-[11px] font-normal tabular-nums text-faint">
+                        ×{link.count}
+                      </span>
+                    )}
                     <ArrowUpRight
                       size={12}
                       strokeWidth={2}
                       className="shrink-0 text-faint opacity-0 transition-opacity duration-100 group-hover:opacity-100"
                     />
                   </span>
-                  <span className="line-clamp-2 text-[12px] leading-snug text-muted">
-                    {link.snippet}
-                  </span>
+                  {link.snippets.map((line, index) => (
+                    <Snippet key={index} line={line} selfRel={rel} />
+                  ))}
                 </button>
               </li>
             ))}
@@ -96,5 +107,41 @@ export function NoteBacklinks({ rel, active }: { rel: string; active: boolean })
         )}
       </AnimatePresence>
     </section>
+  );
+}
+
+/** Parent folder of a note rel, shown as dim context next to the title. */
+function folderOf(rel: string) {
+  const index = rel.lastIndexOf("/");
+  return index > 0 ? rel.slice(0, index) : "";
+}
+
+/**
+ * One linking line rendered as readers see it: link labels instead of
+ * encoded hrefs, with the mention of the current note highlighted.
+ */
+function Snippet({ line, selfRel }: { line: string; selfRel: string }) {
+  const parts = useMemo(() => parseInline(line, selfRel), [line, selfRel]);
+  if (parts.length === 0) return null;
+  return (
+    <span className="line-clamp-2 text-[12px] leading-snug text-muted">
+      {parts.map((part, index) =>
+        part.kind === "text" ? (
+          <span key={index}>{part.text}</span>
+        ) : (
+          <span
+            key={index}
+            className={cx(
+              "text-ink",
+              part.self
+                ? "rounded-[3px] bg-active px-0.5 font-medium"
+                : "underline decoration-line underline-offset-2",
+            )}
+          >
+            {part.text}
+          </span>
+        ),
+      )}
+    </span>
   );
 }
