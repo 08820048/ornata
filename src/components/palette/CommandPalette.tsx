@@ -1,6 +1,4 @@
 import {
-  Bookmark,
-  CheckSquare,
   FilePlus,
   FileText,
   FolderOpen,
@@ -107,18 +105,6 @@ export function CommandPalette() {
         hint: "⌘O",
         icon: FolderOpen,
         run: () => vault.chooseExternalNotes(),
-      },
-      {
-        id: "todos",
-        label: t("palette.openTodos"),
-        icon: CheckSquare,
-        run: () => vault.setView({ type: "todos" }),
-      },
-      {
-        id: "bookmarks",
-        label: t("palette.openBookmarks"),
-        icon: Bookmark,
-        run: () => vault.setView({ type: "bookmarks" }),
       },
       {
         id: "reveal-vault",

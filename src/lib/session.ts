@@ -3,21 +3,17 @@ import { externalNote, vaultNote } from "@/lib/noteRef";
 import { ipc } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
 import type { NoteRef, View } from "@/lib/types";
-import { useBookmarks } from "@/stores/bookmarks";
 import { useTabs } from "@/stores/tabs";
-import { useTodos } from "@/stores/todos";
 import { useVault } from "@/stores/vault";
 
 /**
- * Per-vault UI session (open tabs, active view, tag filters) persisted to
+ * Per-vault UI session (open tabs, active view) persisted to
  * localStorage — the Tauri webview keeps it across restarts. Scoped by vault
  * root so switching vaults restores that vault's own layout.
  */
 interface Session {
   tabs: NoteRef[];
   view: View | null;
-  todoFilter: string | null;
-  bookmarkFilter: string | null;
 }
 
 const storageKey = (root: string) => `ornata:session:${root}`;
@@ -29,8 +25,6 @@ function writeSession(root: string) {
   const data: Session = {
     tabs: useTabs.getState().tabs,
     view: vault.view,
-    todoFilter: useTodos.getState().tagFilter,
-    bookmarkFilter: useBookmarks.getState().tagFilter,
   };
   try {
     localStorage.setItem(storageKey(root), JSON.stringify(data));
@@ -62,9 +56,6 @@ function parseView(value: unknown): View | null {
     // Migrate pre-NoteRef sessions whose note view stored `rel` directly.
     const note = parseNoteRef(raw.note ?? raw.rel);
     return note ? { type: "note", note } : null;
-  }
-  if (raw.type === "todos" || raw.type === "bookmarks") {
-    return { type: raw.type };
   }
   return null;
 }
@@ -116,9 +107,6 @@ export async function restoreSession(root: string) {
   const tabs = parsedTabs.filter(valid);
   useTabs.setState({ tabs });
 
-  useTodos.setState({ tagFilter: data.todoFilter ?? null });
-  useBookmarks.setState({ tagFilter: data.bookmarkFilter ?? null });
-
   const view = parsedView;
   if (view?.type === "note") {
     if (valid(view.note)) {
@@ -145,12 +133,6 @@ export function initSessionSync() {
   });
   useVault.subscribe((s, p) => {
     if (s.view !== p.view) saveSession();
-  });
-  useTodos.subscribe((s, p) => {
-    if (s.tagFilter !== p.tagFilter) saveSession();
-  });
-  useBookmarks.subscribe((s, p) => {
-    if (s.tagFilter !== p.tagFilter) saveSession();
   });
   // Flush any pending debounced save before the window goes away.
   window.addEventListener("beforeunload", () => {

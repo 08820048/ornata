@@ -1,17 +1,14 @@
-import { Check, Code2, Copy, Download, FilePlus, MoreVertical, PanelLeft, Pilcrow, Search, Tag, Trash2, X } from "lucide-react";
-import { AnimatePresence, LayoutGroup, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { Code2, Copy, Download, FilePlus, MoreVertical, PanelLeft, Pilcrow, Search, Trash2 } from "lucide-react";
+import { LayoutGroup, motion } from "motion/react";
+import { useState } from "react";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
 import { NotesWorkspace } from "@/components/editor/NotesWorkspace";
 import { TabBar } from "@/components/editor/TabBar";
-import { BookmarksPage } from "@/components/bookmarks/BookmarksPage";
-import { TodosPage } from "@/components/todos/TodosPage";
-import { EASE_OUT, SPRING_LAYOUT, SPRING_PANEL } from "@/lib/ease";
+import { SPRING_LAYOUT, SPRING_PANEL } from "@/lib/ease";
 import { noteDisplayPath } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
 import {
   ActionSwapIcon,
-  ActionSwapText,
 } from "@/components/motion/action-swap";
 import {
   MorphPopover,
@@ -21,8 +18,6 @@ import {
 import { Sidebar } from "./Sidebar";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { useBookmarks } from "@/stores/bookmarks";
-import { useTodos } from "@/stores/todos";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
@@ -36,10 +31,7 @@ function viewPath(
   view: ReturnType<typeof useVault.getState>["view"],
 ): string | null {
   if (!root || !view) return null;
-  if (view.type === "note") return noteDisplayPath(root, view.note);
-  if (view.type === "todos") return `${root}/.ornata/todos.json`;
-  if (view.type === "bookmarks") return `${root}/.ornata/bookmarks.json`;
-  return null;
+  return noteDisplayPath(root, view.note);
 }
 
 export function AppShell() {
@@ -49,9 +41,6 @@ export function AppShell() {
   const markdownSource = useUi((s) => s.markdownSource);
   const toggleSidebar = useUi((s) => s.toggleSidebar);
   const toggleMarkdownSource = useUi((s) => s.toggleMarkdownSource);
-  const createBookmarkTag = useBookmarks((s) => s.createTag);
-  const exportBookmarks = useBookmarks((s) => s.exportAll);
-  const createTodoTag = useTodos((s) => s.createTag);
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
   const t = useT();
 
@@ -99,21 +88,7 @@ export function AppShell() {
 
         {/* Row 2 — current view title + right-side actions. */}
         <div className="flex h-10 bg-transparent shrink-0 items-center px-3">
-          {view?.type === "note" ? (
-            <NoteBreadcrumb note={view.note} />
-          ) : (
-            <ActionSwapText
-              value={view?.type ?? "none"}
-              animation="cascade"
-              className="text-[14px] font-semibold text-ink"
-            >
-              {view?.type === "todos"
-                ? t("common.todos")
-                : view?.type === "bookmarks"
-                  ? t("common.bookmarks")
-                  : ""}
-            </ActionSwapText>
-          )}
+          {view?.type === "note" && <NoteBreadcrumb note={view.note} />}
 
           <LayoutGroup>
             <div className="ml-auto flex items-center gap-2">
@@ -159,24 +134,6 @@ export function AppShell() {
                     copiedText={t("common.copied")}
                   />
                 </motion.div>
-              )}
-              {view?.type === "bookmarks" && (
-                <>
-                  <Tooltip label={t("bookmarks.exportMarkdown")} side="bottom">
-                    <button
-                      type="button"
-                      onClick={exportBookmarks}
-                      className="inline-flex h-7 select-none items-center gap-1.5 rounded-md border border-line bg-hover px-2.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-active"
-                    >
-                      <Download size={13} strokeWidth={2} />
-                      {t("bookmarks.export")}
-                    </button>
-                  </Tooltip>
-                  <NewTagButton onCreate={createBookmarkTag} />
-                </>
-              )}
-              {view?.type === "todos" && (
-                <NewTagButton onCreate={createTodoTag} />
               )}
               {view?.type === "note" && (
                 <MorphPopover
@@ -235,16 +192,6 @@ export function AppShell() {
           {/* Workspace stays mounted (hidden) across view switches — open
               tabs keep their live editors, so returning to notes is instant. */}
           <NotesWorkspace visible={view?.type === "note"} />
-          {view?.type === "todos" && (
-            <div className="absolute inset-0">
-              <TodosPage />
-            </div>
-          )}
-          {view?.type === "bookmarks" && (
-            <div className="absolute inset-0">
-              <BookmarksPage />
-            </div>
-          )}
           {!view && <EmptyState />}
           <AgentPanel />
         </div>
@@ -287,91 +234,6 @@ function NoteMenuButton({
       <Icon size={14} strokeWidth={1.75} />
       {label}
     </button>
-  );
-}
-
-function NewTagButton({ onCreate }: { onCreate: (name: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const t = useT();
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
-
-  const commit = () => {
-    const value = inputRef.current?.value.trim();
-    if (value) onCreate(value);
-    setOpen(false);
-  };
-
-  return (
-    <div>
-      {/* Single morphing pill: the container reshapes (layout spring) while its
-          contents cross-fade, so button → input feels like one object. */}
-      <motion.div
-        layout
-        transition={SPRING_LAYOUT}
-        className="flex h-7 items-center overflow-hidden rounded-md border border-line bg-hover"
-      >
-        <AnimatePresence mode="popLayout" initial={false}>
-          {open ? (
-            <motion.div
-              key="form"
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.12, ease: EASE_OUT }}
-              className="flex items-center pl-2 pr-1"
-            >
-              <input
-                ref={inputRef}
-                placeholder={t("editor.tagName")}
-                className="w-28 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-faint"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") commit();
-                  if (event.key === "Escape") setOpen(false);
-                }}
-              />
-              <Tooltip label={t("editor.saveEnter")} side="bottom">
-                <button
-                  type="button"
-                  onClick={commit}
-                  className="grid h-5 w-5 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
-                >
-                  <Check size={13} strokeWidth={2.25} />
-                </button>
-              </Tooltip>
-              <Tooltip label={t("editor.cancelEsc")} side="bottom">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="grid h-5 w-5 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
-                >
-                  <X size={13} strokeWidth={2.25} />
-                </button>
-              </Tooltip>
-            </motion.div>
-          ) : (
-            <motion.button
-              key="button"
-              layout
-              type="button"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.12, ease: EASE_OUT }}
-              onClick={() => setOpen(true)}
-              className="flex h-7 select-none items-center gap-1.5 px-2.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-hover"
-            >
-              <Tag size={13} strokeWidth={2} />
-              {t("common.newTag")}
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </div>
   );
 }
 

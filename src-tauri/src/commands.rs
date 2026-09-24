@@ -6,15 +6,13 @@ use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
-use crate::bookmarks::{self, Bookmark};
 use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::image_source::{self, ImagePayload};
 use crate::search::SearchHit;
-use crate::todos::{self, Todo};
 use crate::vault::{self, TreeNode};
-use crate::{agent_docs, assets, link_meta, notes, search, upload};
+use crate::{agent_docs, assets, legacy, notes, search, upload};
 
 #[derive(Default)]
 pub struct AppState {
@@ -124,6 +122,7 @@ fn activate_vault(app: &AppHandle, state: &AppState, root: PathBuf) -> AppResult
     // as new, so their notes are never seeded or overwritten during rebrand.
     let first_run = !vault::has_data_dir(&root);
     vault::ensure_layout(&root)?;
+    let _ = legacy::archive_collections(&root);
     // Drop in agent guide files so coding agents understand the vault.
     let _ = agent_docs::ensure(&root);
     // Seed a starter note only on a brand-new vault, so it isn't empty.
@@ -261,140 +260,6 @@ pub fn search_notes(
     search::search_notes(&state.root()?, &query, limit.unwrap_or(30))
 }
 
-// ---- todos ----
-
-#[tauri::command]
-pub fn todos_list(state: State<'_, AppState>) -> AppResult<Vec<Todo>> {
-    todos::list(&state.root()?)
-}
-
-#[tauri::command]
-pub fn todo_add(state: State<'_, AppState>, text: String) -> AppResult<Todo> {
-    todos::add(&state.root()?, &text)
-}
-
-#[tauri::command]
-pub fn todo_toggle(state: State<'_, AppState>, id: String) -> AppResult<Todo> {
-    todos::toggle(&state.root()?, &id)
-}
-
-#[tauri::command]
-pub fn todo_update(state: State<'_, AppState>, id: String, text: String) -> AppResult<Todo> {
-    todos::update_text(&state.root()?, &id, &text)
-}
-
-#[tauri::command]
-pub fn todo_set_tags(state: State<'_, AppState>, id: String, tags: Vec<String>) -> AppResult<Todo> {
-    todos::set_tags(&state.root()?, &id, tags)
-}
-
-#[tauri::command]
-pub fn todo_tags_list(state: State<'_, AppState>) -> AppResult<Vec<String>> {
-    todos::list_tags(&state.root()?)
-}
-
-#[tauri::command]
-pub fn todo_tag_create(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
-    todos::create_tag(&state.root()?, &name)
-}
-
-#[tauri::command]
-pub fn todo_tag_delete(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
-    todos::delete_tag(&state.root()?, &name)
-}
-
-#[tauri::command]
-pub fn todo_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    todos::delete(&state.root()?, &id)
-}
-
-#[tauri::command]
-pub fn todos_clear_completed(state: State<'_, AppState>) -> AppResult<Vec<Todo>> {
-    todos::clear_completed(&state.root()?)
-}
-
-// ---- bookmarks ----
-
-#[tauri::command]
-pub fn bookmarks_list(state: State<'_, AppState>) -> AppResult<Vec<Bookmark>> {
-    bookmarks::list(&state.root()?)
-}
-
-#[tauri::command]
-pub fn bookmark_add(state: State<'_, AppState>, url: String) -> AppResult<Bookmark> {
-    bookmarks::add(&state.root()?, &url)
-}
-
-#[tauri::command]
-pub fn bookmark_update_title(
-    state: State<'_, AppState>,
-    id: String,
-    title: String,
-) -> AppResult<Bookmark> {
-    bookmarks::update(&state.root()?, &id, Some(title), None, None, None)
-}
-
-#[tauri::command]
-pub fn bookmark_set_tags(
-    state: State<'_, AppState>,
-    id: String,
-    tags: Vec<String>,
-) -> AppResult<Bookmark> {
-    bookmarks::set_tags(&state.root()?, &id, tags)
-}
-
-#[tauri::command]
-pub fn bookmark_tags_list(state: State<'_, AppState>) -> AppResult<Vec<String>> {
-    bookmarks::list_tags(&state.root()?)
-}
-
-#[tauri::command]
-pub fn bookmark_tag_create(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
-    bookmarks::create_tag(&state.root()?, &name)
-}
-
-#[tauri::command]
-pub fn bookmark_tag_delete(state: State<'_, AppState>, name: String) -> AppResult<Vec<String>> {
-    bookmarks::delete_tag(&state.root()?, &name)
-}
-
-#[tauri::command]
-pub fn bookmark_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    bookmarks::delete(&state.root()?, &id)
-}
-
-/// Export all bookmarks to a markdown file the user picks. Async so the
-/// blocking save dialog runs off the main thread. Returns the written path,
-/// or None if the user cancelled.
-#[tauri::command]
-pub async fn export_bookmarks(
-    app: AppHandle,
-    state: State<'_, AppState>,
-) -> AppResult<Option<String>> {
-    let markdown = bookmarks::to_markdown(&bookmarks::list(&state.root()?)?);
-
-    let picked = tauri::async_runtime::spawn_blocking({
-        let app = app.clone();
-        move || {
-            app.dialog()
-                .file()
-                .set_file_name("bookmarks.md")
-                .blocking_save_file()
-        }
-    })
-    .await
-    .map_err(|e| AppError::Other(e.to_string()))?;
-
-    let Some(dest) = picked else {
-        return Ok(None);
-    };
-    let path = dest
-        .into_path()
-        .map_err(|e| AppError::InvalidPath(e.to_string()))?;
-    std::fs::write(&path, markdown)?;
-    Ok(Some(path.display().to_string()))
-}
-
 /// Export the current note contents to a markdown file chosen by the user.
 /// The frontend supplies its live editor contents so an in-flight autosave
 /// cannot make the exported copy stale.
@@ -432,23 +297,6 @@ pub async fn export_note(
         .map_err(|e| AppError::InvalidPath(e.to_string()))?;
     std::fs::write(&path, content)?;
     Ok(Some(path.display().to_string()))
-}
-
-/// Fetch title/preview-image/favicon for a bookmark and persist them.
-/// Marks the bookmark as fetched even on failure so the UI can offer retry
-/// without hammering the network on every load.
-#[tauri::command]
-pub async fn bookmark_fetch_meta(state: State<'_, AppState>, id: String) -> AppResult<Bookmark> {
-    let root = state.root()?;
-    let bookmark = bookmarks::list(&root)?
-        .into_iter()
-        .find(|b| b.id == id)
-        .ok_or_else(|| AppError::NotFound(id.clone()))?;
-
-    match link_meta::fetch(&bookmark.url).await {
-        Ok(meta) => bookmarks::update(&root, &id, meta.title, meta.image, meta.favicon, Some(true)),
-        Err(_) => bookmarks::update(&root, &id, None, None, None, Some(true)),
-    }
 }
 
 // ---- assets / misc ----

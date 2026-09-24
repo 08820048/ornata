@@ -19,7 +19,7 @@ Rust owns the filesystem; the frontend is UI + state only. All IO goes through t
 User picks any folder as a vault:
 
 - `<vault>/notes/` — plain `.md` files, filename = title, no IDs. Folders are real folders. Portable plain-markdown. The app never *authors* frontmatter, but preserves and renders any that external tools (e.g. web clippers) added — see below.
-- `<vault>/.ornata/` — app data: `todos.json`, `bookmarks.json`, `assets/` (pasted images).
+- `<vault>/.ornata/` — app data: `assets/` (pasted images). Legacy `todos.json`/`bookmarks.json` are converted once into `Todos.md`/`Bookmarks.md` notes and renamed `*.archived` (`legacy.rs`).
 - Vault path + theme persist in the app config dir (`config.json`).
 
 Notes are addressed by path relative to `notes/` (e.g. `projects/app.md`), never by ID. Deletes go to OS trash. External edits are picked up on window focus (dirty editor wins).
@@ -32,8 +32,7 @@ One module per concern, each with unit tests; keep files under ~300 lines:
 - `vault.rs` — layout, tree scan, rel-path resolution (rejects traversal)
 - `notes.rs` — CRUD, rename/move with collision suffixing ("name 2")
 - `search.rs` — case-insensitive title+content search, title hits ranked first
-- `todos.rs` / `bookmarks.rs` — JSON stores in `.ornata/`
-- `link_meta.rs` — fetch page title / og:image / favicon (reqwest + scraper)
+- `legacy.rs` — one-time conversion of retired todo/bookmark stores into notes
 - `assets.rs` — save pasted images into `.ornata/assets/`
 - `commands.rs` — thin `#[tauri::command]` wrappers only; `lib.rs` — wiring only
 
@@ -41,11 +40,11 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 
 ### Frontend (`src/`)
 
-- `stores/` — zustand: `vault` (tree, view, theme, recents), `tabs` (open note tabs; active = derived from `vault.view`), `todos`, `bookmarks`, `ui`
-- `components/` — by feature: `layout/`, `tree/`, `editor/`, `todos/`, `bookmarks/`, `palette/`, `settings/`, `welcome/`, `ui/`
+- `stores/` — zustand: `vault` (tree, view, theme, recents), `tabs` (open note tabs; active = derived from `vault.view`), `ui`, `agent`
+- `components/` — by feature: `layout/`, `tree/`, `editor/`, `palette/`, `settings/`, `welcome/`, `ui/`
 - Editor: Tiptap with `contentType: "markdown"`; autosave debounced 500ms, flush on unmount; images stored as vault-relative paths, rendered via asset protocol
 - Tabs: `NotesWorkspace` keeps one live editor per open tab, inactive panes hidden via `display:none` — tab switch is a CSS toggle, never a remount/re-parse. Keep it that way.
-- Session: `lib/session.ts` persists per-vault UI layout (open tabs, active view, todo/bookmark tag filters) to localStorage keyed by vault root, restoring it on launch. Tag filters live in the `todos`/`bookmarks` stores (not component state) so they're subscribable.
+- Session: `lib/session.ts` persists per-vault UI layout (open tabs, active view) to localStorage keyed by vault root, restoring it on launch.
 - Page links: internal note links are plain markdown links whose href is a vault-relative note path (`[Title](projects/app.md)`). `lib/noteLinks.ts` converts href↔rel and rewrites `[[wiki]]`/`[[target|alias]]` syntax (on type + on load) into those markdown links; clicking one opens the note; `/link` slash command + `NoteLinkPicker` also insert them.
 - Frontmatter: `lib/frontmatter.ts` splits a leading `---` YAML block off the body on load and re-attaches it verbatim on save (so metadata round-trips), and parses it for the read-only `NoteProperties` panel shown above the editor. The editor body never contains the raw YAML.
 
@@ -77,4 +76,4 @@ Our `Modal` (`components/ui/Modal.tsx`) is built on the same tokens; keep new di
 
 - Never add "Co-Authored-By" or any AI attribution to commits or PRs.
 - Commit messages: conventional commits, subject ≤50 chars where possible.
-- Don't reintroduce: sticky notes, note IDs, plugin-fs. Don't *author* frontmatter (external frontmatter is preserved/rendered, not written by us). `[[wiki]]` is accepted as input but stored as standard markdown `[title](path.md)` links.
+- Don't reintroduce: sticky notes, note IDs, plugin-fs, standalone todos/bookmarks. Don't *author* frontmatter (external frontmatter is preserved/rendered, not written by us). `[[wiki]]` is accepted as input but stored as standard markdown `[title](path.md)` links.

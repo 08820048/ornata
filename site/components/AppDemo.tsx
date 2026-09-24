@@ -1,32 +1,19 @@
 "use client";
 
 import {
-  Bookmark,
-  CheckSquare,
   ChevronRight,
-  Circle,
   Copy,
-  Download,
   FilePlus,
   FileText,
   Folder,
   FolderOpen,
   FolderPlus,
-  Globe,
   PanelLeft,
-  Plus,
-  Search,
   Settings,
-  Tag,
   X,
 } from "lucide-react";
-import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
-import { EASE_OUT } from "@/lib/ease";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
-
-type View = "note" | "todos" | "bookmarks";
-const VIEWS: View[] = ["note", "todos", "bookmarks"];
 
 /* ── Sidebar ─────────────────────────────────────────────────────────── */
 
@@ -40,9 +27,9 @@ const TREE: Node[] = [
   { label: "Release notes", depth: 0, kind: "file" },
 ];
 
-function TreeRow({ node, dimmed }: { node: Node; dimmed: boolean }) {
+function TreeRow({ node }: { node: Node }) {
   const Icon = node.kind === "folder" ? (node.open ? FolderOpen : Folder) : FileText;
-  const active = node.active && !dimmed;
+  const active = node.active;
   return (
     <div
       className={cn(
@@ -61,11 +48,7 @@ function TreeRow({ node, dimmed }: { node: Node; dimmed: boolean }) {
   );
 }
 
-function Sidebar({ view }: { view: View }) {
-  const pages: { icon: typeof CheckSquare; label: string; v: View }[] = [
-    { icon: CheckSquare, label: "Todos", v: "todos" },
-    { icon: Bookmark, label: "Bookmarks", v: "bookmarks" },
-  ];
+function Sidebar() {
   return (
     <aside className="hidden w-[220px] shrink-0 flex-col border-r border-line-soft bg-panel sm:flex">
       <div className="flex items-center px-4 pb-2 pt-4">
@@ -73,24 +56,6 @@ function Sidebar({ view }: { view: View }) {
           My Notes
         </span>
       </div>
-      <nav className="flex flex-col gap-0.5 px-2 pb-1">
-        {pages.map(({ icon: Icon, label, v }) => {
-          const active = view === v;
-          return (
-            <div
-              key={label}
-              className={cn(
-                "flex h-[30px] items-center gap-2.5 rounded-md px-2 text-[13px] transition-colors",
-                active ? "bg-active text-foreground" : "text-muted-foreground",
-              )}
-            >
-              <Icon size={15} strokeWidth={1.75} />
-              <span className="font-medium">{label}</span>
-            </div>
-          );
-        })}
-      </nav>
-      <div className="mx-4 my-2 border-t border-line-soft" />
       <div className="flex items-center justify-between pb-1 pl-4 pr-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">Notes</span>
         <div className="flex items-center gap-0.5 text-faint">
@@ -100,7 +65,7 @@ function Sidebar({ view }: { view: View }) {
       </div>
       <div className="flex-1 overflow-hidden px-2 pt-1">
         {TREE.map((n) => (
-          <TreeRow key={n.label} node={n} dimmed={view !== "note"} />
+          <TreeRow key={n.label} node={n} />
         ))}
       </div>
       <div className="flex items-center justify-between border-t border-line-soft px-3 py-2 text-faint">
@@ -151,26 +116,16 @@ function Pill({ icon: Icon, children }: { icon: typeof Copy; children: React.Rea
   );
 }
 
-function TopRow({ view }: { view: View }) {
+function TopRow() {
   return (
     <div className="flex h-10 shrink-0 items-center px-3">
       <div className="flex min-w-0 items-center gap-1.5 text-[13.5px]">
-        {view === "note" ? (
-          <>
-            <span className="shrink-0 truncate text-muted-foreground">Projects</span>
-            <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-faint" />
-            <span className="shrink-0 font-semibold text-foreground">Q3 Roadmap</span>
-          </>
-        ) : (
-          <span className="shrink-0 font-semibold text-foreground">
-            {view === "todos" ? "Todos" : "Bookmarks"}
-          </span>
-        )}
+        <span className="shrink-0 truncate text-muted-foreground">Projects</span>
+        <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-faint" />
+        <span className="shrink-0 font-semibold text-foreground">Q3 Roadmap</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
-        {view === "note" && <Pill icon={Copy}>Copy path</Pill>}
-        {view === "bookmarks" && <Pill icon={Download}>Export</Pill>}
-        {view !== "note" && <Pill icon={Tag}>New tag</Pill>}
+        <Pill icon={Copy}>Copy path</Pill>
       </div>
     </div>
   );
@@ -267,158 +222,13 @@ function NotePane({ still }: { still: boolean }) {
   );
 }
 
-/* Left filter rail — "Tags" with an active (filtered) pill. Monochrome, but
-   each tag gets its own ink shade so the dots read as distinct swatches. */
-const TAG_SHADES = ["bg-foreground/85", "bg-foreground/60", "bg-foreground/40", "bg-foreground/70", "bg-foreground/50"];
-
-function TagRail({ tags, active }: { tags: string[]; active: string | null }) {
-  const Row = ({ label, on, dot }: { label: string; on: boolean; dot?: string }) => (
-    <div
-      className={cn(
-        "relative flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
-        on ? "text-foreground" : "text-muted-foreground",
-      )}
-    >
-      {on && <span className="absolute inset-0 rounded-md bg-active" />}
-      <span
-        className={cn(
-          "relative z-10 size-2 shrink-0 rounded-full",
-          dot ?? "border border-faint",
-        )}
-      />
-      <span className="relative z-10 truncate">{label}</span>
-    </div>
-  );
-  return (
-    <aside className="hidden w-[148px] shrink-0 sm:block">
-      <p className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
-        Tags
-      </p>
-      <div className="flex flex-col gap-0.5">
-        <Row label="All" on={active === null} />
-        {tags.map((t, i) => (
-          <Row key={t} label={t} on={active === t} dot={TAG_SHADES[i % TAG_SHADES.length]} />
-        ))}
-      </div>
-    </aside>
-  );
-}
-
-const TODO_TAGS = ["work", "personal", "ornata"];
-const TODOS = [
-  { done: false, text: "Reply to design feedback", tag: "work" },
-  { done: false, text: "Book flights for the offsite", tag: "personal" },
-  { done: true, text: "Ship the signed update", tag: "ornata" },
-  { done: false, text: "Draft the Q3 roadmap", tag: "ornata" },
-  { done: false, text: "Test AssistantPi permissions", tag: "ornata" },
-];
-
-function TodosPane() {
-  const active = "ornata";
-  const rows = TODOS.filter((t) => t.tag === active);
-  const open = rows.filter((r) => !r.done).length;
-  return (
-    <div className="mx-auto flex w-full max-w-[760px] gap-8 px-8 pt-6 sm:px-10">
-      <TagRail tags={TODO_TAGS} active={active} />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] text-muted-foreground">
-          {open} open · {rows.length - open} done ·{" "}
-          <span className="text-foreground">#{active}</span>
-        </p>
-        <div className="mt-4 flex items-center gap-2.5 border-b border-border pb-3">
-          <Plus size={16} strokeWidth={2} className="shrink-0 text-faint" />
-          <span className="text-[14.5px] text-faint">Add a task…</span>
-        </div>
-        <div className="mt-3 flex flex-col">
-          {rows.map((t) => (
-            <div key={t.text} className="flex items-start gap-2.5 rounded-md px-1 py-[7px]">
-              <div className="flex h-6 shrink-0 items-center">
-                {t.done ? (
-                  <span className="grid size-[17px] place-items-center rounded-full bg-foreground text-background">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </span>
-                ) : (
-                  <Circle size={17} strokeWidth={1.75} className="text-border-strong" />
-                )}
-              </div>
-              <span className={cn("text-[14.5px] leading-6", t.done ? "text-muted-foreground line-through decoration-faint" : "text-foreground")}>
-                {t.text}
-              </span>
-              <span className="ml-auto shrink-0 rounded-full bg-hover px-2 py-0.5 text-[11px] leading-5 text-muted-foreground">
-                {t.tag}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const BOOKMARK_TAGS = ["reading", "dev", "agents"];
-const BOOKMARKS = [
-  { title: "Local-first software", host: "inkandswitch.com", tag: "reading" },
-  { title: "Designing calm software", host: "calmtech.com", tag: "reading" },
-  { title: "Tauri 2.0 — a new era", host: "tauri.app", tag: "dev" },
-  { title: "Pi documentation", host: "pi.dev", tag: "agents" },
-];
-
-function BookmarksPane() {
-  const active = "reading";
-  const rows = BOOKMARKS.filter((b) => b.tag === active);
-  return (
-    <div className="mx-auto flex w-full max-w-[760px] gap-8 px-8 pt-6 sm:px-10">
-      <TagRail tags={BOOKMARK_TAGS} active={active} />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] text-muted-foreground">
-          {rows.length} saved · <span className="text-foreground">#{active}</span>
-        </p>
-        <div className="mt-4 flex items-center gap-2.5 border-b border-border pb-3">
-          <Search size={15} strokeWidth={2} className="shrink-0 text-faint" />
-          <span className="text-[14.5px] text-faint">Add a link…</span>
-        </div>
-        <div className="mt-3 flex flex-col gap-0.5">
-          {rows.map((b) => (
-            <div key={b.title} className="flex items-start gap-3 rounded-lg px-2 py-2">
-              <div className="grid h-10 w-14 shrink-0 place-items-center overflow-hidden rounded-md border border-line-soft bg-hover text-faint">
-                <Globe size={16} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] font-medium text-foreground">{b.title}</p>
-                <p className="mt-0.5 truncate text-[11.5px] text-faint">{b.host}</p>
-                <span className="mt-1.5 inline-block rounded-full bg-hover px-2 py-0.5 text-[11px] leading-5 text-muted-foreground">
-                  {b.tag}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── Window ──────────────────────────────────────────────────────────── */
 
 export function AppDemo() {
   const reduce = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { margin: "-10% 0px" });
-  const [view, setView] = useState<View>("note");
-
-  useEffect(() => {
-    if (reduce || !inView) return;
-    const id = setInterval(() => {
-      setView((v) => VIEWS[(VIEWS.indexOf(v) + 1) % VIEWS.length]);
-    }, 3400);
-    return () => clearInterval(id);
-  }, [reduce, inView]);
 
   return (
     <div
-      ref={ref}
       className="overflow-hidden rounded-xl border border-border-strong bg-background shadow-workbench"
     >
       <div className="flex items-center gap-2 border-b border-border bg-sunken px-4 py-3">
@@ -427,25 +237,12 @@ export function AppDemo() {
         <span className="size-3 rounded-full bg-foreground/[0.08]" />
       </div>
       <div className="flex h-[500px] sm:aspect-[16/10] sm:h-auto">
-        <Sidebar view={view} />
+        <Sidebar />
         <main className="flex min-w-0 flex-1 flex-col">
           <Tabs />
-          <TopRow view={view} />
+          <TopRow />
           <div className="relative min-h-0 flex-1 overflow-hidden bg-background">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={view}
-                initial={reduce ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: EASE_OUT }}
-                className="h-full"
-              >
-                {view === "note" && <NotePane still={!!reduce} />}
-                {view === "todos" && <TodosPane />}
-                {view === "bookmarks" && <BookmarksPane />}
-              </motion.div>
-            </AnimatePresence>
+            <NotePane still={!!reduce} />
           </div>
         </main>
       </div>

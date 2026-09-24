@@ -2,6 +2,16 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [Unreleased]
+
+### Removed
+
+- The standalone Todos and Bookmarks pages, their sidebar previews, ⌘K entries, and AssistantPi tools. Ornata now focuses on notes; use Markdown task lists and links inside notes instead.
+
+### Changed
+
+- On first launch after upgrading, existing `.ornata/todos.json` and `.ornata/bookmarks.json` are converted into `Todos.md` and `Bookmarks.md` notes, and the old files are kept as `*.archived`.
+
 ## [0.5.1] - 2026-09-21
 
 ### Added

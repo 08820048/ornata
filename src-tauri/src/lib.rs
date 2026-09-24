@@ -3,18 +3,16 @@ mod agent_connection;
 mod agent_docs;
 mod agent_tools;
 mod assets;
-mod bookmarks;
 mod commands;
 mod config;
 mod error;
 mod external_notes;
 mod image_source;
-mod link_meta;
+mod legacy;
 mod notes;
 mod reveal;
 mod search;
 mod settings_window;
-mod todos;
 mod upload;
 mod util;
 mod vault;
@@ -72,26 +70,6 @@ pub fn run() {
             commands::delete_entry,
             reveal::reveal_entry,
             commands::search_notes,
-            commands::todos_list,
-            commands::todo_add,
-            commands::todo_toggle,
-            commands::todo_update,
-            commands::todo_set_tags,
-            commands::todo_tags_list,
-            commands::todo_tag_create,
-            commands::todo_tag_delete,
-            commands::todo_delete,
-            commands::todos_clear_completed,
-            commands::bookmarks_list,
-            commands::bookmark_add,
-            commands::bookmark_update_title,
-            commands::bookmark_set_tags,
-            commands::bookmark_tags_list,
-            commands::bookmark_tag_create,
-            commands::bookmark_tag_delete,
-            commands::bookmark_delete,
-            commands::bookmark_fetch_meta,
-            commands::export_bookmarks,
             commands::export_note,
             external_notes::export_external_note,
             commands::save_image_asset,

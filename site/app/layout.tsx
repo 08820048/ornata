@@ -92,7 +92,6 @@ const JSON_LD = {
         "Note-to-note links stored as standard Markdown links",
         "LaTeX math (KaTeX) and Mermaid diagrams",
         "Full-text search across titles and content",
-        "Todos and bookmarks with tags",
         "AssistantPi: local AI assistant with permission-gated tools",
         "Signed and notarized builds with an auto-update feed",
         "English and Simplified Chinese interface",

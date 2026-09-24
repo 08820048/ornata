@@ -9,9 +9,7 @@ import type {
   AgentPermission,
   AgentStatus,
 } from "@/lib/types";
-import { useBookmarks } from "@/stores/bookmarks";
 import { useTabs } from "@/stores/tabs";
-import { useTodos } from "@/stores/todos";
 import { useVault } from "@/stores/vault";
 
 export type AgentConnection =
@@ -147,7 +145,7 @@ function ensureListeners() {
     listen<Record<string, unknown>>("ornata-agent-event", ({ payload }) => {
       handleAgentEvent(payload);
     }),
-    listen<"notes" | "todos" | "bookmarks" | "all">(
+    listen<"notes" | "all">(
       "ornata-agent-mutated",
       ({ payload }) => {
         void refreshAfterMutation(payload);
@@ -158,7 +156,7 @@ function ensureListeners() {
 }
 
 async function refreshAfterMutation(
-  kind: "notes" | "todos" | "bookmarks" | "all",
+  kind: "notes" | "all",
 ) {
   if (kind === "notes" || kind === "all") {
     await useVault.getState().refreshTree();
@@ -180,10 +178,6 @@ async function refreshAfterMutation(
       useVault.getState().setView(next ? { type: "note", note: next } : null);
     }
     window.dispatchEvent(new Event("ornata-agent-notes-changed"));
-  }
-  if (kind === "todos" || kind === "all") await useTodos.getState().load();
-  if (kind === "bookmarks" || kind === "all") {
-    await useBookmarks.getState().load();
   }
 }
 

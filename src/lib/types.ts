@@ -40,26 +40,6 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
-export interface Todo {
-  id: string;
-  text: string;
-  done: boolean;
-  createdAt: number;
-  completedAt: number | null;
-  tags: string[];
-}
-
-export interface Bookmark {
-  id: string;
-  url: string;
-  title: string;
-  image: string | null;
-  favicon: string | null;
-  metaFetched: boolean;
-  tags: string[];
-  createdAt: number;
-}
-
 export interface SearchHit {
   rel: string;
   title: string;
@@ -132,7 +112,4 @@ export type NoteRef =
   | { kind: "vault"; rel: string }
   | { kind: "external"; path: string };
 
-export type View =
-  | { type: "note"; note: NoteRef }
-  | { type: "todos" }
-  | { type: "bookmarks" };
+export type View = { type: "note"; note: NoteRef };

@@ -24,9 +24,7 @@ Production downloads are signed with an Apple Developer ID certificate and notar
 
 - **WYSIWYG markdown editor** — write in a rich editor, saved as clean markdown on disk
 - **Folders & subfolders** — organize notes in real, Finder-visible folders
-- **Todos** — a standalone task list with tags and filtering
-- **Bookmarks** — save links with auto-fetched title, image, and favicon; tag and filter them too
-- **⌘K command palette** — jump to any note, folder, or page instantly
+- **⌘K command palette** — jump to any note or folder instantly
 - **Instant search** — title + content, ranked, in milliseconds
 - **Monochrome UI** — light, dark, or system theme; no color noise
 - **Portable vault** — plain files, no IDs, no frontmatter, no lock-in
@@ -40,7 +38,7 @@ Pick any folder on disk as your vault:
 ```
 <vault>/
 ├── notes/          plain .md files — filename is the title, folders are real folders
-└── .ornata/         app data: todos, bookmarks, tags, pasted images
+└── .ornata/         app data: pasted images
 ```
 
 Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes externally (vim, VS Code, whatever) — Ornata picks up changes on window focus.
@@ -109,7 +107,6 @@ See [AGENTS.md](./AGENTS.md) for architecture details, or [CONTRIBUTING.md](./CO
 - No analytics, tracking, accounts, or note-content uploads
 - Automatic updates use the signed release feed at
   `download.ornata.app/products/ornata-markd/channels/stable/latest.json`
-- Saving a bookmark fetches that page's title, preview image, and favicon
 - Export your notes anytime — they're already just files
 
 ---

@@ -402,7 +402,7 @@ export function FeaturesBento() {
             index="03 — 03"
             eyebrow="Fast by default"
             title="Everything important is one keystroke away."
-            body="Search titles and content, jump between notes, or run an action from ⌘K. Todos and bookmarks stay close without turning the editor into a project-management suite."
+            body="Search titles and content, jump between notes, or run an action from ⌘K. Nothing competes with the page you're writing."
           >
             <CommandDemo />
           </Story>

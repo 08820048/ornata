@@ -1211,9 +1211,6 @@ function orbStateForTool(name: string): OrbState {
   if (name === "edit" || name === "write" || name === "ornata_notes") {
     return "composing";
   }
-  if (name === "ornata_todos" || name === "ornata_bookmarks") {
-    return "weaving";
-  }
   if (name === "bash" || name === "ornata_bash") return "working";
   return "breathing";
 }
@@ -1241,8 +1238,6 @@ function toolLabel(name: string, t: ReturnType<typeof useT>) {
   if (name === "web_search") return t("agent.tool.webSearch");
   if (name === "web_fetch") return t("agent.tool.webFetch");
   if (name === "ornata_notes") return t("agent.tool.notes");
-  if (name === "ornata_todos") return t("agent.tool.todos");
-  if (name === "ornata_bookmarks") return t("agent.tool.bookmarks");
   return t("agent.tool.other", { tool: name });
 }
 

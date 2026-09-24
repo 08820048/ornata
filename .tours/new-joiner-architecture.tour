@@ -50,7 +50,7 @@
       "file": "src/components/editor/NotesWorkspace.tsx",
       "line": 7,
       "title": "标签切换为何足够快",
-      "description": "每个打开的标签对应一个持续挂载的 NoteEditor。非活动 pane 只通过 CSS visibility 和 inert 隐藏，切换标签不会重新创建 Tiptap、解析 Markdown 或重排全文；切去 Todo/Bookmark 页面时整个 workspace 也不卸载。不要把这里改成条件挂载。"
+      "description": "每个打开的标签对应一个持续挂载的 NoteEditor。非活动 pane 只通过 CSS visibility 和 inert 隐藏，切换标签不会重新创建 Tiptap、解析 Markdown 或重排全文；没有活动笔记时整个 workspace 也只隐藏不卸载。不要把这里改成条件挂载。"
     },
     {
       "file": "src/components/editor/NoteEditor.tsx",
@@ -74,7 +74,7 @@
       "file": "src-tauri/src/agent_tools.rs",
       "line": 65,
       "title": "权限在宿主侧二次执行",
-      "description": "Read Only、Read & Write、Full Access 不只是提示词：每个结构化 notes/todos/bookmarks 请求都在 Rust execute 中按 Read、Write、Destructive 再校验。写操作完成后桥接层发 mutation 事件，让目录树、编辑器和集合页刷新。继续开发 Agent 时，应优先复用现有领域函数而不是绕过它直接碰文件。"
+      "description": "Read Only、Read & Write、Full Access 不只是提示词：每个结构化 notes 请求都在 Rust execute 中按 Read、Write、Destructive 再校验。写操作完成后桥接层发 mutation 事件，让目录树和编辑器刷新。继续开发 Agent 时，应优先复用现有领域函数而不是绕过它直接碰文件。"
     },
     {
       "file": "site/app/page.tsx",

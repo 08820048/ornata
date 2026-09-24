@@ -8,8 +8,8 @@ import { useVault } from "@/stores/vault";
  * One live editor pane per open note. Inactive panes stay mounted and retain
  * layout behind visibility:hidden, so switching tabs is a paint-only class
  * toggle — no parse, remount, or full-document reflow. The whole workspace
- * likewise just hides (not unmounts) while todos/bookmarks are showing. The
- * tab strip itself lives in the top bar (see AppShell).
+ * likewise just hides (not unmounts) when no note is active. The tab strip
+ * itself lives in the top bar (see AppShell).
  */
 export function NotesWorkspace({ visible }: { visible: boolean }) {
   const tabs = useTabs((s) => s.tabs);

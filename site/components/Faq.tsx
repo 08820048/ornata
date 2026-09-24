@@ -27,7 +27,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How does AssistantPi work?",
-    a: "Install and configure Pi on your Mac, then Ornata connects to that local Pi process. You keep control of the model and provider in Pi, while Ornata supplies permission-controlled tools for notes, todos, and bookmarks. The open note is attached automatically, and selected note text can be included for precise context.",
+    a: "Install and configure Pi on your Mac, then Ornata connects to that local Pi process. You keep control of the model and provider in Pi, while Ornata supplies permission-controlled tools for your notes. The open note is attached automatically, and selected note text can be included for precise context.",
   },
   {
     q: "What can AssistantPi access?",

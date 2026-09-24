@@ -17,7 +17,7 @@ import { getOAuthProvider } from "@earendil-works/pi-ai/oauth";
 
 const PROTOCOL_VERSION = 1;
 const SYSTEM_PROMPT =
-  "You are AssistantPi, Ornata's notes assistant. Use the Ornata tools for every note, todo, and bookmark operation. The host validates permissions and all data access. Never claim a mutation succeeded before its tool returns successfully. Use the least-destructive action that satisfies the request. The built-in read, grep, find, and ls tools inspect the vault folder directly; bash runs on the host and is subject to the permission mode the user selected; web_search and web_fetch reach the internet for anything outside the vault. Be concise and preserve the user's language. Avoid decorative emoji unless explicitly requested.";
+  "You are AssistantPi, Ornata's notes assistant. Use the Ornata tools for every note operation. The host validates permissions and all data access. Never claim a mutation succeeded before its tool returns successfully. Use the least-destructive action that satisfies the request. The built-in read, grep, find, and ls tools inspect the vault folder directly; bash runs on the host and is subject to the permission mode the user selected; web_search and web_fetch reach the internet for anything outside the vault. Be concise and preserve the user's language. Avoid decorative emoji unless explicitly requested.";
 
 type EndpointApi = "openai-completions" | "anthropic-messages";
 
@@ -78,7 +78,7 @@ function fail(requestId: string | undefined, error: unknown) {
 }
 
 function proxyTool(
-  name: "ornata_notes" | "ornata_todos" | "ornata_bookmarks" | "ornata_bash",
+  name: "ornata_notes" | "ornata_bash",
   label: string,
   description: string,
   parameters: ToolDefinition["parameters"],
@@ -143,42 +143,6 @@ const notesTool = proxyTool(
     title: Type.Optional(Type.String()),
     name: Type.Optional(Type.String()),
     content: Type.Optional(Type.String()),
-  }),
-);
-
-const todosTool = proxyTool(
-  "ornata_todos",
-  "Ornata Todos",
-  "List and manage Ornata todos and todo tags through Ornata's permission-controlled API.",
-  Type.Object({
-    action: Type.Union([
-      Type.Literal("list"), Type.Literal("listTags"), Type.Literal("add"),
-      Type.Literal("update"), Type.Literal("toggle"), Type.Literal("setTags"),
-      Type.Literal("createTag"), Type.Literal("deleteTag"), Type.Literal("delete"),
-      Type.Literal("clearCompleted"),
-    ]),
-    id: Type.Optional(Type.String()),
-    text: Type.Optional(Type.String()),
-    tags: Type.Optional(Type.Array(Type.String())),
-    name: Type.Optional(Type.String()),
-  }),
-);
-
-const bookmarksTool = proxyTool(
-  "ornata_bookmarks",
-  "Ornata Bookmarks",
-  "List and manage Ornata bookmarks and bookmark tags through Ornata's permission-controlled API.",
-  Type.Object({
-    action: Type.Union([
-      Type.Literal("list"), Type.Literal("listTags"), Type.Literal("add"),
-      Type.Literal("updateTitle"), Type.Literal("setTags"), Type.Literal("createTag"),
-      Type.Literal("deleteTag"), Type.Literal("delete"),
-    ]),
-    id: Type.Optional(Type.String()),
-    url: Type.Optional(Type.String()),
-    title: Type.Optional(Type.String()),
-    tags: Type.Optional(Type.Array(Type.String())),
-    name: Type.Optional(Type.String()),
   }),
 );
 
@@ -447,10 +411,10 @@ async function initialize(message: InitMessage) {
     tools: [
       "read", "grep", "find", "ls",
       bashTool.name, webFetchTool.name, webSearchTool.name,
-      notesTool.name, todosTool.name, bookmarksTool.name,
+      notesTool.name,
     ],
     customTools: [
-      notesTool, todosTool, bookmarksTool,
+      notesTool,
       bashTool, webFetchTool, webSearchTool,
     ],
     resourceLoader,
