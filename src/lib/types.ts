@@ -40,6 +40,12 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+export interface Backlink {
+  rel: string;
+  title: string;
+  snippet: string;
+}
+
 export interface SearchHit {
   rel: string;
   title: string;

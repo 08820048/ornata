@@ -3,6 +3,7 @@ mod agent_connection;
 mod agent_docs;
 mod agent_tools;
 mod assets;
+mod backlinks;
 mod commands;
 mod config;
 mod error;
@@ -70,6 +71,7 @@ pub fn run() {
             commands::delete_entry,
             reveal::reveal_entry,
             commands::search_notes,
+            commands::note_backlinks,
             commands::export_note,
             external_notes::export_external_note,
             commands::save_image_asset,

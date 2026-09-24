@@ -6,6 +6,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
+use crate::backlinks::{self, Backlink};
 use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
@@ -258,6 +259,11 @@ pub fn search_notes(
     limit: Option<usize>,
 ) -> AppResult<Vec<SearchHit>> {
     search::search_notes(&state.root()?, &query, limit.unwrap_or(30))
+}
+
+#[tauri::command]
+pub fn note_backlinks(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Backlink>> {
+    backlinks::backlinks(&state.root()?, &rel)
 }
 
 /// Export the current note contents to a markdown file chosen by the user.

@@ -11,6 +11,7 @@ import type {
   AgentModel,
   AgentProvider,
   SearchHit,
+  Backlink,
   SettingsSnapshot,
   Theme,
   TreeNode,
@@ -114,6 +115,8 @@ export const ipc = {
   revealEntry: (rel: string) => call<void>("reveal_entry", { rel }),
   searchNotes: (query: string, limit?: number) =>
     call<SearchHit[]>("search_notes", { query, limit }),
+
+  noteBacklinks: (rel: string) => call<Backlink[]>("note_backlinks", { rel }),
 
   exportNote: (rel: string, content: string) =>
     call<string | null>("export_note", { rel, content }),

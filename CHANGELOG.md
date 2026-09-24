@@ -4,6 +4,10 @@ All notable changes to Ornata are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Linked mentions: the bottom of each note lists the notes that link to it (markdown or `[[wiki]]` links), with the linking line as context. Click one to open it.
+
 ### Removed
 
 - The standalone Todos and Bookmarks pages, their sidebar previews, ⌘K entries, and AssistantPi tools. Ornata now focuses on notes; use Markdown task lists and links inside notes instead.

@@ -42,6 +42,7 @@ import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
 import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
+import { NoteBacklinks } from "./NoteBacklinks";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { ImageSourcePopover } from "./ImageSourcePopover";
@@ -879,6 +880,9 @@ export const NoteEditor = memo(function NoteEditor({
             </>
           )}
           </div>
+          {note.kind === "vault" && !missing && (
+            <NoteBacklinks rel={note.rel} active={active} />
+          )}
           {active && editor && !markdownSource && (
             <SelectionMenu editor={editor} onAskAI={askAIAboutSelection} />
           )}
