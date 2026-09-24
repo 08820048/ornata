@@ -12,6 +12,7 @@ import type {
   AgentProvider,
   SearchHit,
   Backlink,
+  OpenTask,
   SettingsSnapshot,
   Theme,
   TreeNode,
@@ -117,6 +118,11 @@ export const ipc = {
     call<SearchHit[]>("search_notes", { query, limit }),
 
   noteBacklinks: (rel: string) => call<Backlink[]>("note_backlinks", { rel }),
+
+  openTasks: () => call<OpenTask[]>("open_tasks"),
+
+  completeTask: (rel: string, line: number, text: string) =>
+    call<void>("complete_task", { rel, line, text }),
 
   exportNote: (rel: string, content: string) =>
     call<string | null>("export_note", { rel, content }),

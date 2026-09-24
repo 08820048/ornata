@@ -12,6 +12,7 @@ use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::image_source::{self, ImagePayload};
 use crate::search::SearchHit;
+use crate::tasks::{self, OpenTask};
 use crate::vault::{self, TreeNode};
 use crate::{agent_docs, assets, legacy, notes, search, upload};
 
@@ -264,6 +265,21 @@ pub fn search_notes(
 #[tauri::command]
 pub fn note_backlinks(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Backlink>> {
     backlinks::backlinks(&state.root()?, &rel)
+}
+
+#[tauri::command]
+pub fn open_tasks(state: State<'_, AppState>) -> AppResult<Vec<OpenTask>> {
+    tasks::open_tasks(&state.root()?)
+}
+
+#[tauri::command]
+pub fn complete_task(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+) -> AppResult<()> {
+    tasks::complete_task(&state.root()?, &rel, line, &text)
 }
 
 /// Export the current note contents to a markdown file chosen by the user.

@@ -2,6 +2,7 @@ import {
   FilePlus,
   FileText,
   FolderOpen,
+  ListChecks,
   Search,
   Settings,
 } from "lucide-react";
@@ -105,6 +106,12 @@ export function CommandPalette() {
         hint: "⌘O",
         icon: FolderOpen,
         run: () => vault.chooseExternalNotes(),
+      },
+      {
+        id: "open-tasks",
+        label: t("tasks.title"),
+        icon: ListChecks,
+        run: () => useUi.getState().setTasksOpen(true),
       },
       {
         id: "reveal-vault",

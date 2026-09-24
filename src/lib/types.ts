@@ -46,6 +46,13 @@ export interface Backlink {
   snippet: string;
 }
 
+export interface OpenTask {
+  rel: string;
+  title: string;
+  line: number;
+  text: string;
+}
+
 export interface SearchHit {
   rel: string;
   title: string;
