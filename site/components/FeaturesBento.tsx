@@ -14,6 +14,8 @@ import { motion, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
+import { BacklinksDemo } from "@/components/BacklinksDemo";
+import { TasksDemo } from "@/components/TasksDemo";
 
 const FILES = [
   { name: "Projects", kind: "folder", depth: 0 },
@@ -374,6 +376,8 @@ export function FeaturesBento() {
               <span>01 / Own the files</span>
               <span>02 / Keep the interface quiet</span>
               <span>03 / Invite AI deliberately</span>
+              <span>04 / Connect ideas freely</span>
+              <span>05 / Track tasks globally</span>
             </div>
           </div>
         </div>
@@ -405,6 +409,25 @@ export function FeaturesBento() {
             body="Search titles and content, jump between notes, or run an action from ⌘K. Nothing competes with the page you're writing."
           >
             <CommandDemo />
+          </Story>
+
+          <Story
+            index="04 — 05"
+            eyebrow="Connected knowledge"
+            title="See who's linking to your notes."
+            body="Backlinks show every note that references the current one, with folder context and snippet previews. Unlinked mentions surface title-only references that should be links."
+            reverse
+          >
+            <BacklinksDemo />
+          </Story>
+
+          <Story
+            index="05 — 05"
+            eyebrow="Vault-wide task tracking"
+            title="Your open tasks, all in one place."
+            body="Scan every markdown checkbox across your vault from a single view. Jump to any note to complete tasks, with live counts and folder context."
+          >
+            <TasksDemo />
           </Story>
         </div>
       </div>
