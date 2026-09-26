@@ -42,6 +42,7 @@ pub fn ensure_layout(root: &Path) -> AppResult<()> {
     }
     fs::create_dir_all(root.join(NOTES_DIR))?;
     fs::create_dir_all(root.join(ASSETS_DIR))?;
+    fs::create_dir_all(root.join(DATA_DIR).join("templates"))?;
     Ok(())
 }
 

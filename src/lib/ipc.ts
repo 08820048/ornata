@@ -118,6 +118,9 @@ export const ipc = {
     call<void>("write_app_data", { name, content }),
   listTemplates: () => call<string[]>("list_templates"),
   readTemplate: (name: string) => call<string>("read_template", { name }),
+  writeTemplate: (name: string, content: string) =>
+    call<void>("write_template", { name, content }),
+  revealTemplates: () => call<void>("reveal_templates"),
   listTags: () => call<TagCount[]>("list_tags"),
   notesWithTag: (tag: string) => call<string[]>("notes_with_tag", { tag }),
   readHistorySnapshot: (rel: string, timestamp: number) =>

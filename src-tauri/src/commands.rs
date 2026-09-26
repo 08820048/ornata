@@ -260,6 +260,27 @@ pub fn read_template(state: State<'_, AppState>, name: String) -> AppResult<Stri
 }
 
 #[tauri::command]
+pub fn write_template(
+    state: State<'_, AppState>,
+    name: String,
+    content: String,
+) -> AppResult<()> {
+    templates::write_template(&state.root()?, &name, &content)
+}
+
+#[tauri::command]
+pub fn reveal_templates(app: AppHandle, state: State<'_, AppState>) -> AppResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let dir = state
+        .root()?
+        .join(crate::vault::DATA_DIR)
+        .join("templates");
+    app.opener()
+        .reveal_item_in_dir(dir)
+        .map_err(|e| AppError::Other(format!("reveal: {e}")))
+}
+
+#[tauri::command]
 pub fn list_tags(state: State<'_, AppState>) -> AppResult<Vec<tags::TagCount>> {
     tags::list_tags(&state.root()?)
 }

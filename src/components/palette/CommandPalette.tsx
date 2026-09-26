@@ -112,6 +112,22 @@ export function CommandPalette() {
         icon: FilePlus,
         run: () => vault.createNote(activeDir(vault)),
       },
+      ...(vault.view?.type === "note"
+        ? [
+            {
+              id: "save-template",
+              label: t("templates.save"),
+              icon: FilePlus2,
+              run: () => useUi.getState().setSaveTemplateOpen(true),
+            },
+          ]
+        : []),
+      {
+        id: "reveal-templates",
+        label: t("templates.reveal"),
+        icon: FolderOpen,
+        run: () => void ipc.revealTemplates(),
+      },
       {
         id: "daily-note",
         label: t("daily.new"),

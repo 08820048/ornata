@@ -48,6 +48,7 @@ import { brokenLinksKey } from "./brokenLinks";
 import { dispatchFind } from "./findReplace";
 import { FindReplaceBar } from "./FindReplaceBar";
 import { NoteHistory } from "./NoteHistory";
+import { SaveTemplateDialog } from "./SaveTemplateDialog";
 import { applyLinkRewritesToEditor } from "./linkRewrites";
 import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
@@ -796,6 +797,7 @@ export const NoteEditor = memo(function NoteEditor({
   const appliedRewrites = useRef(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
+  const saveTemplateOpen = useUi((s) => s.saveTemplateOpen);
   const [findWithReplace, setFindWithReplace] = useState(false);
   useEffect(() => {
     if (!linkRewritesReq || linkRewritesReq.nonce === appliedRewrites.current) return;
@@ -1075,6 +1077,18 @@ export const NoteEditor = memo(function NoteEditor({
             editor={editor}
             withReplace={findWithReplace}
             onClose={closeFind}
+          />
+        )}
+        {saveTemplateOpen && active && (
+          <SaveTemplateDialog
+            defaultName={noteTitle(note)}
+            getContent={async () => {
+              await flushCurrent();
+              return markdownSource
+                ? rawText
+                : joinFrontmatter(frontmatter.current, editor?.getMarkdown() ?? "");
+            }}
+            onClose={() => useUi.getState().setSaveTemplateOpen(false)}
           />
         )}
         {historyOpen && note.kind === "vault" && (

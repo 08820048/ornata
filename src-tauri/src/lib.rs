@@ -75,6 +75,8 @@ pub fn run() {
             commands::write_app_data,
             commands::list_templates,
             commands::read_template,
+            commands::write_template,
+            commands::reveal_templates,
             commands::list_tags,
             commands::notes_with_tag,
             commands::note_history,

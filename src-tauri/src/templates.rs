@@ -31,6 +31,19 @@ pub fn list_templates(root: &Path) -> Vec<String> {
     names
 }
 
+/// Create or overwrite a template (the "save note as template" path).
+pub fn write_template(root: &Path, name: &str, content: &str) -> AppResult<()> {
+    let file_name = sanitize_name(name);
+    let file_name = file_name.trim();
+    if file_name.is_empty() {
+        return Err(AppError::InvalidInput("empty template name".into()));
+    }
+    let dir = templates_dir(root);
+    fs::create_dir_all(&dir).map_err(|e| AppError::Other(format!("templates: {e}")))?;
+    fs::write(dir.join(format!("{file_name}.md")), content)?;
+    Ok(())
+}
+
 /// Content of one template, addressed by name.
 pub fn read_template(root: &Path, name: &str) -> AppResult<String> {
     let file_name = sanitize_name(name);
@@ -63,5 +76,15 @@ mod tests {
         assert_eq!(list_templates(dir.path()), vec!["daily", "meeting"]);
         assert_eq!(read_template(dir.path(), "daily").unwrap(), "# {{date}}");
         assert!(read_template(dir.path(), "missing").is_err());
+    }
+
+    #[test]
+    fn writes_templates_and_shows_them_in_the_list() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        write_template(dir.path(), "Standup", "# Standup notes").unwrap();
+        assert_eq!(read_template(dir.path(), "standup").unwrap(), "# Standup notes");
+        assert_eq!(list_templates(dir.path()), vec!["Standup"]);
+        assert!(write_template(dir.path(), "   ", "x").is_err());
     }
 }
