@@ -40,6 +40,14 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** One saved snapshot of a note (metadata only). */
+export interface SnapshotMeta {
+  /** Unix millis; also the snapshot's filename stem. */
+  timestamp: number;
+  /** Snapshot size in bytes. */
+  size: number;
+}
+
 /** One moved entry: `from`/`to` are vault rels (notes end in .md). */
 export interface LinkRewrite {
   from: string;

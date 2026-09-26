@@ -256,14 +256,14 @@ fn execute_notes(
                 required_string(args, "title")?,
             )?;
             if let Some(content) = args.get("content").and_then(Value::as_str) {
-                notes::write_note(root, &rel, content)?;
+                notes::write_note_forced_snapshot(root, &rel, content)?;
             }
             (json!({ "path": rel }), Some(MutationKind::Notes))
         }
         "update" => {
             require(permission, PermissionRequirement::Write, action)?;
             let path = required_string(args, "path")?;
-            notes::write_note(root, path, required_string(args, "content")?)?;
+            notes::write_note_forced_snapshot(root, path, required_string(args, "content")?)?;
             (json!({ "path": path }), Some(MutationKind::Notes))
         }
         "createFolder" => {

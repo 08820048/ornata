@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { History } from "lucide-react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
 import {
@@ -44,6 +45,7 @@ import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
 import { brokenLinksKey } from "./brokenLinks";
+import { NoteHistory } from "./NoteHistory";
 import { applyLinkRewritesToEditor } from "./linkRewrites";
 import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
@@ -611,6 +613,23 @@ export const NoteEditor = memo(function NoteEditor({
     }
   }, [editor, language, syncOutline]);
 
+  // Save unsaved edits now (used before a history restore so the pre-restore
+  // snapshot captures the pane's current state).
+  const flushCurrent = useCallback(async () => {
+    debouncedPersist.cancel();
+    if (pending.current !== null) {
+      const content = pending.current;
+      pending.current = null;
+      await persist(content, noteRef.current);
+    }
+  }, [debouncedPersist, persist]);
+
+  const handleRestored = useCallback(() => {
+    lastSaved.current = "";
+    pending.current = null;
+    void reloadIfChanged();
+  }, [reloadIfChanged]);
+
   const updateActiveOutline = useCallback(() => {
     if (outlineFrame.current !== null) return;
     outlineFrame.current = window.requestAnimationFrame(() => {
@@ -765,6 +784,7 @@ export const NoteEditor = memo(function NoteEditor({
   // (clean ones only — dirty panes keep their edits, per dirty-wins).
   const linkRewritesReq = useTabs((s) => s.linkRewritesReq);
   const appliedRewrites = useRef(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => {
     if (!linkRewritesReq || linkRewritesReq.nonce === appliedRewrites.current) return;
     appliedRewrites.current = linkRewritesReq.nonce;
@@ -1019,6 +1039,14 @@ export const NoteEditor = memo(function NoteEditor({
             }}
           />
         )}
+        {historyOpen && note.kind === "vault" && (
+          <NoteHistory
+            rel={note.rel}
+            onClose={() => setHistoryOpen(false)}
+            flushCurrent={flushCurrent}
+            onRestored={handleRestored}
+          />
+        )}
         {active && !markdownSource && linkPicker && note.kind === "vault" && (
           <NoteLinkPicker
             state={linkPicker}
@@ -1033,11 +1061,21 @@ export const NoteEditor = memo(function NoteEditor({
       {active && (
         <div
           className={cx(
-            "pointer-events-none fixed bottom-3 right-4 text-[11px] tabular-nums text-faint transition-opacity duration-300",
+            "pointer-events-none fixed bottom-3 right-4 flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
             (words === 0 || missing) && "opacity-0",
           )}
         >
-          {t(words === 1 ? "editor.word" : "editor.words", { count: words })}
+          {note.kind === "vault" && !missing && (
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              title={t("history.title")}
+              className="pointer-events-auto rounded p-1 transition-colors duration-100 hover:text-muted"
+            >
+              <History size={13} strokeWidth={2} />
+            </button>
+          )}
+          <span>{t(words === 1 ? "editor.word" : "editor.words", { count: words })}</span>
         </div>
       )}
       {active && imageSource && !markdownSource && (

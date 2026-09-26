@@ -10,6 +10,7 @@ use crate::backlinks::{self, Backlink};
 use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
+use crate::history;
 use crate::image_source::{self, ImagePayload};
 use crate::mentions::{self, Mention};
 use crate::search::SearchHit;
@@ -227,6 +228,29 @@ pub fn read_note(state: State<'_, AppState>, rel: String) -> AppResult<String> {
 #[tauri::command]
 pub fn write_note(state: State<'_, AppState>, rel: String, content: String) -> AppResult<()> {
     notes::write_note(&state.root()?, &rel, &content)
+}
+
+#[tauri::command]
+pub fn note_history(state: State<'_, AppState>, rel: String) -> AppResult<Vec<history::SnapshotMeta>> {
+    Ok(history::list_snapshots(&state.root()?, &rel))
+}
+
+#[tauri::command]
+pub fn read_history_snapshot(
+    state: State<'_, AppState>,
+    rel: String,
+    timestamp: i64,
+) -> AppResult<String> {
+    history::read_snapshot(&state.root()?, &rel, timestamp)
+}
+
+/// Force a snapshot of the note's current disk content (used before a restore).
+#[tauri::command]
+pub fn snapshot_note(state: State<'_, AppState>, rel: String) -> AppResult<()> {
+    let root = state.root()?;
+    let path = crate::vault::resolve_rel(&root, &rel)?;
+    let current = std::fs::read_to_string(path).unwrap_or_default();
+    history::snapshot_note(&root, &rel, &current, true)
 }
 
 #[tauri::command]

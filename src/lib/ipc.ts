@@ -14,6 +14,7 @@ import type {
   Backlink,
   Mention,
   RenameOutcome,
+  SnapshotMeta,
   OpenTask,
   SettingsSnapshot,
   Theme,
@@ -110,6 +111,10 @@ export const ipc = {
     call<string>("create_note", { dir, title }),
   createFolder: (dir: string, name: string) =>
     call<string>("create_folder", { dir, name }),
+  noteHistory: (rel: string) => call<SnapshotMeta[]>("note_history", { rel }),
+  readHistorySnapshot: (rel: string, timestamp: number) =>
+    call<string>("read_history_snapshot", { rel, timestamp }),
+  snapshotNote: (rel: string) => call<void>("snapshot_note", { rel }),
   renameEntry: (rel: string, name: string) =>
     call<RenameOutcome>("rename_entry", { rel, name }),
   moveEntry: (rel: string, dir: string) =>

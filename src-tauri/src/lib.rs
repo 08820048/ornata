@@ -8,6 +8,7 @@ mod commands;
 mod config;
 mod error;
 mod external_notes;
+mod history;
 mod link_rewrite;
 mod image_source;
 mod legacy;
@@ -67,6 +68,9 @@ pub fn run() {
             external_notes::open_external_link,
             commands::read_note,
             commands::write_note,
+            commands::note_history,
+            commands::read_history_snapshot,
+            commands::snapshot_note,
             commands::create_note,
             commands::create_folder,
             commands::rename_entry,

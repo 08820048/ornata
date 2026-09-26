@@ -49,10 +49,24 @@ pub fn read_note(root: &Path, rel: &str) -> AppResult<String> {
 }
 
 pub fn write_note(root: &Path, rel: &str, content: &str) -> AppResult<()> {
+    write_note_with_history(root, rel, content, false)
+}
+
+/// Same as [`write_note`], but always snapshots the content being replaced —
+/// used by agent writes and restores, where losing the previous state would
+/// be unrecoverable.
+pub fn write_note_forced_snapshot(root: &Path, rel: &str, content: &str) -> AppResult<()> {
+    write_note_with_history(root, rel, content, true)
+}
+
+fn write_note_with_history(root: &Path, rel: &str, content: &str, forced: bool) -> AppResult<()> {
     let path = resolve_rel(root, rel)?;
     if !path.is_file() {
         return Err(AppError::NotFound(rel.to_string()));
     }
+    // Snapshot what we are about to overwrite (windowed for ordinary saves).
+    let current = fs::read_to_string(&path).unwrap_or_default();
+    crate::history::snapshot_note(root, rel, &current, forced)?;
     fs::write(path, content)?;
     Ok(())
 }
@@ -171,6 +185,7 @@ pub struct RenameOutcome {
 
 fn finish_move(root: &Path, old_rel: &str, target: &Path) -> AppResult<RenameOutcome> {
     let next = rel_of(root, target)?;
+    crate::history::migrate(root, old_rel, &next);
     let outcome = crate::link_rewrite::rewrite_after_move(root, old_rel, &next)?;
     Ok(RenameOutcome {
         next,
