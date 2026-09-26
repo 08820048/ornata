@@ -45,6 +45,8 @@ import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
 import { brokenLinksKey } from "./brokenLinks";
+import { dispatchFind } from "./findReplace";
+import { FindReplaceBar } from "./FindReplaceBar";
 import { NoteHistory } from "./NoteHistory";
 import { applyLinkRewritesToEditor } from "./linkRewrites";
 import { CursorMotion } from "./cursorMotion";
@@ -624,6 +626,14 @@ export const NoteEditor = memo(function NoteEditor({
     }
   }, [debouncedPersist, persist]);
 
+  const closeFind = useCallback(() => {
+    setFindOpen(false);
+    if (editor && !editor.isDestroyed) {
+      dispatchFind(editor.view, { query: "" });
+      editor.commands.focus();
+    }
+  }, [editor]);
+
   const handleRestored = useCallback(() => {
     lastSaved.current = "";
     pending.current = null;
@@ -785,6 +795,8 @@ export const NoteEditor = memo(function NoteEditor({
   const linkRewritesReq = useTabs((s) => s.linkRewritesReq);
   const appliedRewrites = useRef(0);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [findWithReplace, setFindWithReplace] = useState(false);
   useEffect(() => {
     if (!linkRewritesReq || linkRewritesReq.nonce === appliedRewrites.current) return;
     appliedRewrites.current = linkRewritesReq.nonce;
@@ -810,6 +822,25 @@ export const NoteEditor = memo(function NoteEditor({
       applyLinkRewritesToEditor(editor, linkRewritesReq.rewrites);
     }
   }, [linkRewritesReq, rawText, editor, markdownSource]);
+
+  // ⌘F / ⌘⌥F open the find bar over the rendered editor; the markdown source
+  // pane uses CodeMirror's own search panel instead.
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (markdownSource) return;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setFindWithReplace(event.altKey);
+        setFindOpen(true);
+      } else if (event.key === "Escape" && findOpen) {
+        event.preventDefault();
+        closeFind();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [active, findOpen, markdownSource]);
 
   // Keep the brokenLinks plugin's known-rels set in sync with the tree.
   const tree = useVault((s) => s.tree);
@@ -1037,6 +1068,13 @@ export const NoteEditor = memo(function NoteEditor({
               }
               setSlashMenu(null);
             }}
+          />
+        )}
+        {active && !markdownSource && findOpen && editor && (
+          <FindReplaceBar
+            editor={editor}
+            withReplace={findWithReplace}
+            onClose={closeFind}
           />
         )}
         {historyOpen && note.kind === "vault" && (

@@ -1,4 +1,5 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { search, searchKeymap } from "@codemirror/search";
 import {
   HighlightStyle,
   syntaxHighlighting,
@@ -79,7 +80,8 @@ export function MarkdownSourceEditor({
           history(),
           drawSelection(),
           highlightActiveLine(),
-          keymap.of([...defaultKeymap, ...historyKeymap]),
+          keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+          search({ top: true }),
           markdown(),
           syntaxHighlighting(ornataHighlight),
           EditorView.lineWrapping,

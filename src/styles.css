@@ -358,6 +358,14 @@ body {
 .prose-note a.ornata-link:hover {
     text-decoration-color: var(--ink);
 }
+.find-match {
+    background: var(--hover);
+}
+.find-match-current {
+    background: var(--active);
+    box-shadow: 0 0 0 1px var(--line);
+}
+
 .diff-del {
     background: var(--hover);
     color: var(--muted);
