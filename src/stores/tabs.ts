@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { noteKey, sameNote, vaultNote } from "@/lib/noteRef";
-import type { NoteRef } from "@/lib/types";
+import type { LinkRewrite, NoteRef } from "@/lib/types";
 
 /**
  * Open note tabs, in strip order. Intentionally dumb: just the ordered list
@@ -15,6 +15,11 @@ interface TabsState {
   revealReq: { key: string; text: string; nonce: number } | null;
   /** Bumped to ask a newly created note to select its title. */
   titleFocusReq: { key: string; nonce: number } | null;
+  /**
+   * Bumped after the backend rewrote links on disk; every live pane re-points
+   * link marks matching these rel pairs so editor content follows the disk.
+   */
+  linkRewritesReq: { rewrites: LinkRewrite[]; nonce: number } | null;
   /** Add a tab for `rel` if not already open (no-op otherwise). */
   open: (note: NoteRef) => void;
   close: (note: NoteRef) => void;
@@ -31,6 +36,8 @@ interface TabsState {
   requestReveal: (note: NoteRef, text: string) => void;
   /** Request that `rel`'s title input receive focus and select its text. */
   requestTitleFocus: (note: NoteRef) => void;
+  /** Broadcast link rewrites (from a rename/move) to all live panes. */
+  applyLinkRewrites: (rewrites: LinkRewrite[]) => void;
   clear: () => void;
 }
 
@@ -39,6 +46,7 @@ export const useTabs = create<TabsState>((set, get) => ({
   scrollTopReq: null,
   revealReq: null,
   titleFocusReq: null,
+  linkRewritesReq: null,
 
   open: (note) => {
     if (!get().tabs.some((tab) => sameNote(tab, note))) {
@@ -104,8 +112,24 @@ export const useTabs = create<TabsState>((set, get) => ({
       },
     }),
 
+  applyLinkRewrites: (rewrites) => {
+    if (!rewrites.length) return;
+    set({
+      linkRewritesReq: {
+        rewrites,
+        nonce: (get().linkRewritesReq?.nonce ?? 0) + 1,
+      },
+    });
+  },
+
   clear: () =>
-    set({ tabs: [], scrollTopReq: null, revealReq: null, titleFocusReq: null }),
+    set({
+      tabs: [],
+      scrollTopReq: null,
+      revealReq: null,
+      titleFocusReq: null,
+      linkRewritesReq: null,
+    }),
 }));
 
 /** Tab to activate after closing `rel`: right neighbor, else left, else none. */

@@ -138,7 +138,7 @@ fn wiki_targets(line: &str) -> impl Iterator<Item = &str> {
 }
 
 /// Mirror of the frontend's `hrefToRel`: vault-relative, extension-less, lowercase.
-fn href_to_rel(href: &str) -> Option<String> {
+pub(crate) fn href_to_rel(href: &str) -> Option<String> {
     let href = href
         .split_whitespace()
         .next()?
@@ -164,7 +164,7 @@ fn has_scheme(href: &str) -> bool {
     })
 }
 
-fn percent_decode(input: &str) -> String {
+pub(crate) fn percent_decode(input: &str) -> String {
     let bytes = input.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;

@@ -12,6 +12,7 @@ import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { MathBlock, MathInline } from "./Mathematics";
+import { BrokenLinks } from "./brokenLinks";
 import { WikiLink } from "./wikiLink";
 import { NonInclusiveLink } from "./link";
 import { t } from "@/stores/locale";
@@ -109,5 +110,6 @@ export function createExtensions(assetRoot: string) {
     TableCell,
     Placeholder.configure({ placeholder: () => t("editor.placeholder") }),
     WikiLink,
+    BrokenLinks,
   ];
 }

@@ -20,7 +20,12 @@ import {
   splitFrontmatter,
   type Property,
 } from "@/lib/frontmatter";
-import { hrefToRel, relToHref, wikiToMarkdown } from "@/lib/noteLinks";
+import {
+  hrefToRel,
+  relToHref,
+  rewriteLinksInMarkdown,
+  wikiToMarkdown,
+} from "@/lib/noteLinks";
 import {
   noteAssetRoot,
   noteKey,
@@ -38,6 +43,8 @@ import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
+import { brokenLinksKey } from "./brokenLinks";
+import { applyLinkRewritesToEditor } from "./linkRewrites";
 import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
 import { parseMarkdownSlice } from "./markdownPaste";
@@ -720,8 +727,18 @@ export const NoteEditor = memo(function NoteEditor({
       const targetRel = hrefToRel(href);
       if (targetRel) {
         const vault = useVault.getState();
-        const target = vaultNote(targetRel);
-        vault.expandTo(targetRel);
+        const exists = flattenNotes(vault.tree).some(
+          (n) => n.rel.toLowerCase() === targetRel.toLowerCase(),
+        );
+        let openRel = targetRel;
+        if (!exists) {
+          // Broken link — clicking creates the note it points at.
+          const created = await vault.createNoteAtRel(targetRel);
+          if (!created) return;
+          openRel = created;
+        }
+        const target = vaultNote(openRel);
+        vault.expandTo(openRel);
         vault.setView({ type: "note", note: target });
         // Links point at the note as a whole — open it at the top, even if the
         // target tab was already scrolled down.
@@ -740,6 +757,60 @@ export const NoteEditor = memo(function NoteEditor({
     savedScroll.current = 0;
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [scrollTopReq, currentKey]);
+
+  // Follow link rewrites the backend wrote on disk (rename/move). The active
+  // pane is updated in memory — raw text in source mode, link marks in the
+  // rendered doc — so what the user sees matches the files. Hidden panes take
+  // the external-change channel instead: they reload from disk on activation
+  // (clean ones only — dirty panes keep their edits, per dirty-wins).
+  const linkRewritesReq = useTabs((s) => s.linkRewritesReq);
+  const appliedRewrites = useRef(0);
+  useEffect(() => {
+    if (!linkRewritesReq || linkRewritesReq.nonce === appliedRewrites.current) return;
+    appliedRewrites.current = linkRewritesReq.nonce;
+    if (!activeRef.current) {
+      refreshWhenActive.current = true;
+      return;
+    }
+    if (markdownSource) {
+      const next = rewriteLinksInMarkdown(
+        rawText,
+        linkRewritesReq.rewrites,
+        flattenNotes(useVault.getState().tree),
+      );
+      if (next !== rawText) {
+        setRawText(next);
+        const { frontmatter: fm, body } = splitFrontmatter(next);
+        frontmatter.current = fm;
+        pending.current = body;
+      }
+      return;
+    }
+    if (editor && !editor.isDestroyed) {
+      applyLinkRewritesToEditor(editor, linkRewritesReq.rewrites);
+    }
+  }, [linkRewritesReq, rawText, editor, markdownSource]);
+
+  // Keep the brokenLinks plugin's known-rels set in sync with the tree.
+  const tree = useVault((s) => s.tree);
+  useEffect(() => {
+    if (!editor) return;
+    const rels = new Set(flattenNotes(tree).map((n) => n.rel.toLowerCase()));
+    let cancelled = false;
+    const dispatch = (attempt = 0) => {
+      if (cancelled) return;
+      try {
+        editor.view.dispatch(editor.state.tr.setMeta(brokenLinksKey, rels));
+      } catch {
+        // The view can mount after this effect fires; retry briefly.
+        if (attempt < 20) setTimeout(() => dispatch(attempt + 1), 50);
+      }
+    };
+    dispatch();
+    return () => {
+      cancelled = true;
+    };
+  }, [editor, tree]);
 
   // Honor a reveal request (a backlink / mention snippet was clicked): once
   // this pane is visible and its content loaded, scroll to and flash the

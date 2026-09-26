@@ -94,8 +94,9 @@ pub fn create_folder(root: &Path, dir_rel: &str, name: &str) -> AppResult<String
     rel_of(root, &path)
 }
 
-/// Rename a note or folder in place. Returns the new rel path.
-pub fn rename_entry(root: &Path, rel: &str, new_name: &str) -> AppResult<String> {
+/// Rename a note or folder in place and repoint links that referenced it.
+/// Returns the new rel path plus the link rewrites that landed on disk.
+pub fn rename_entry(root: &Path, rel: &str, new_name: &str) -> AppResult<RenameOutcome> {
     let path = resolve_rel(root, rel)?;
     if !path.exists() {
         return Err(AppError::NotFound(rel.to_string()));
@@ -111,11 +112,12 @@ pub fn rename_entry(root: &Path, rel: &str, new_name: &str) -> AppResult<String>
         available_path(&dir, &name, Some("md"))
     };
     fs::rename(&path, &target)?;
-    rel_of(root, &target)
+    finish_move(root, rel, &target)
 }
 
-/// Move a note or folder into `target_dir_rel`. Returns the new rel path.
-pub fn move_entry(root: &Path, rel: &str, target_dir_rel: &str) -> AppResult<String> {
+/// Move a note or folder into `target_dir_rel` and repoint links that
+/// referenced it.
+pub fn move_entry(root: &Path, rel: &str, target_dir_rel: &str) -> AppResult<RenameOutcome> {
     let path = resolve_rel(root, rel)?;
     if !path.exists() {
         return Err(AppError::NotFound(rel.to_string()));
@@ -131,7 +133,11 @@ pub fn move_entry(root: &Path, rel: &str, target_dir_rel: &str) -> AppResult<Str
         ));
     }
     if target_dir == path.parent().unwrap_or(Path::new("")) {
-        return rel_of(root, &path);
+        return Ok(RenameOutcome {
+            next: rel_of(root, &path)?,
+            rewrites: Vec::new(),
+            files: Vec::new(),
+        });
     }
     let target = if path.is_dir() {
         let name = path
@@ -149,7 +155,28 @@ pub fn move_entry(root: &Path, rel: &str, target_dir_rel: &str) -> AppResult<Str
         available_path(&target_dir, &stem, Some("md"))
     };
     fs::rename(&path, &target)?;
-    rel_of(root, &target)
+    finish_move(root, rel, &target)
+}
+
+/// What a rename/move produced: the entry's new rel plus every link rewrite
+/// the backend applied across the vault (used by the frontend to retarget
+/// link marks in live editors and to report how many notes changed).
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenameOutcome {
+    pub next: String,
+    pub rewrites: Vec<crate::link_rewrite::LinkRewrite>,
+    pub files: Vec<String>,
+}
+
+fn finish_move(root: &Path, old_rel: &str, target: &Path) -> AppResult<RenameOutcome> {
+    let next = rel_of(root, target)?;
+    let outcome = crate::link_rewrite::rewrite_after_move(root, old_rel, &next)?;
+    Ok(RenameOutcome {
+        next,
+        rewrites: outcome.rewrites,
+        files: outcome.files,
+    })
 }
 
 /// Move a note or folder to the OS trash.
@@ -197,9 +224,9 @@ mod tests {
         let folder = create_folder(dir.path(), "", "projects").unwrap();
         let rel = create_note(dir.path(), "", "Idea").unwrap();
         let renamed = rename_entry(dir.path(), &rel, "Big Idea").unwrap();
-        assert_eq!(renamed, "Big Idea.md");
-        let moved = move_entry(dir.path(), &renamed, &folder).unwrap();
-        assert_eq!(moved, "projects/Big Idea.md");
+        assert_eq!(renamed.next, "Big Idea.md");
+        let moved = move_entry(dir.path(), &renamed.next, &folder).unwrap();
+        assert_eq!(moved.next, "projects/Big Idea.md");
     }
 
     #[test]

@@ -8,6 +8,7 @@ mod commands;
 mod config;
 mod error;
 mod external_notes;
+mod link_rewrite;
 mod image_source;
 mod legacy;
 mod mentions;

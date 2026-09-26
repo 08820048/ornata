@@ -40,6 +40,20 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** One moved entry: `from`/`to` are vault rels (notes end in .md). */
+export interface LinkRewrite {
+  from: string;
+  to: string;
+}
+
+/** Result of rename/move: the entry's new rel plus link rewrites on disk. */
+export interface RenameOutcome {
+  next: string;
+  rewrites: LinkRewrite[];
+  /** Rels of notes whose body was rewritten (for the "updated N notes" toast). */
+  files: string[];
+}
+
 export interface Backlink {
   rel: string;
   title: string;

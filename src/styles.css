@@ -358,6 +358,14 @@ body {
 .prose-note a.ornata-link:hover {
     text-decoration-color: var(--ink);
 }
+/* Broken internal link (target rel not in the tree): dashed, muted. The
+   brokenLinks plugin adds a .link-broken span inside the anchor, so :has()
+   restyles the anchor itself instead of stacking a second underline. */
+.prose-note a.ornata-link:has(.link-broken) {
+    color: var(--muted);
+    text-decoration-style: dashed;
+    text-decoration-color: var(--faint);
+}
 
 .prose-note strong {
     font-weight: 650;

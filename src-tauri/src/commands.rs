@@ -240,12 +240,20 @@ pub fn create_folder(state: State<'_, AppState>, dir: String, name: String) -> A
 }
 
 #[tauri::command]
-pub fn rename_entry(state: State<'_, AppState>, rel: String, name: String) -> AppResult<String> {
+pub fn rename_entry(
+    state: State<'_, AppState>,
+    rel: String,
+    name: String,
+) -> AppResult<notes::RenameOutcome> {
     notes::rename_entry(&state.root()?, &rel, &name)
 }
 
 #[tauri::command]
-pub fn move_entry(state: State<'_, AppState>, rel: String, dir: String) -> AppResult<String> {
+pub fn move_entry(
+    state: State<'_, AppState>,
+    rel: String,
+    dir: String,
+) -> AppResult<notes::RenameOutcome> {
     notes::move_entry(&state.root()?, &rel, &dir)
 }
 

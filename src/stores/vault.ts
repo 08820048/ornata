@@ -57,6 +57,9 @@ interface VaultState {
   expandTo: (rel: string) => void;
 
   createNote: (dir: string) => Promise<void>;
+  /** Create a note at an exact rel (folders as needed). Returns the created
+   *  rel, or null when a collision redirected the path. */
+  createNoteAtRel: (rel: string) => Promise<string | null>;
   createFolder: (dir: string, name: string) => Promise<string | null>;
   renameEntry: (rel: string, name: string) => Promise<void>;
   renameExternalNote: (path: string, name: string) => Promise<void>;
@@ -134,6 +137,25 @@ function remapRecents(
       r === rel ? next : r.startsWith(`${rel}/`) ? next + r.slice(rel.length) : r,
     ),
   });
+}
+
+/** True when the tree contains a folder at exactly `rel`. */
+function treeHasFolder(tree: TreeNode[], rel: string): boolean {
+  for (const node of tree) {
+    if (node.kind === "folder" && node.rel === rel) return true;
+    if (node.children && treeHasFolder(node.children, rel)) return true;
+  }
+  return false;
+}
+
+/** Toast the number of notes whose links the backend rewrote on a move. */
+function reportRewrites(outcome: { files: string[] }) {
+  if (!outcome.files.length) return;
+  toast(
+    outcome.files.length === 1
+      ? t("toast.linksRewritten.one", { count: 1 })
+      : t("toast.linksRewritten.other", { count: outcome.files.length }),
+  );
 }
 
 export const useVault = create<VaultState>((set, get) => ({
@@ -313,6 +335,29 @@ export const useVault = create<VaultState>((set, get) => ({
     }
   },
 
+  createNoteAtRel: async (rel) => {
+    try {
+      const name = (rel.split("/").pop() ?? rel).replace(/\.md$/i, "");
+      // Create missing folders top-down; the backend suffixes colliding
+      // creates, so verify each path matches what was asked for.
+      let acc = "";
+      for (const seg of parentDir(rel).split("/").filter(Boolean)) {
+        const expected = acc ? `${acc}/${seg}` : seg;
+        if (!treeHasFolder(get().tree, expected)) {
+          const created = await ipc.createFolder(acc, seg);
+          if (created !== expected) return null;
+        }
+        acc = expected;
+      }
+      const created = await ipc.createNote(acc, name);
+      await get().refreshTree();
+      return created;
+    } catch (err) {
+      oops(err);
+      return null;
+    }
+  },
+
   createFolder: async (dir, name) => {
     try {
       const rel = await ipc.createFolder(dir, name);
@@ -327,11 +372,14 @@ export const useVault = create<VaultState>((set, get) => ({
 
   renameEntry: async (rel, name) => {
     try {
-      const next = await ipc.renameEntry(rel, name);
+      const outcome = await ipc.renameEntry(rel, name);
+      const next = outcome.next;
       const { view } = get();
       await get().refreshTree();
       remapRecents(set, get, rel, next);
       useTabs.getState().remap(rel, next);
+      useTabs.getState().applyLinkRewrites(outcome.rewrites);
+      reportRewrites(outcome);
       if (view?.type === "note" && view.note.kind === "vault") {
         if (view.note.rel === rel) {
           set({ view: { type: "note", note: vaultNote(next) } });
@@ -366,12 +414,15 @@ export const useVault = create<VaultState>((set, get) => ({
 
   moveEntry: async (rel, dir) => {
     try {
-      const next = await ipc.moveEntry(rel, dir);
+      const outcome = await ipc.moveEntry(rel, dir);
+      const next = outcome.next;
       const { view } = get();
       await get().refreshTree();
       get().expandTo(next);
       remapRecents(set, get, rel, next);
       useTabs.getState().remap(rel, next);
+      useTabs.getState().applyLinkRewrites(outcome.rewrites);
+      reportRewrites(outcome);
       if (view?.type === "note" && view.note.kind === "vault") {
         if (view.note.rel === rel) {
           set({ view: { type: "note", note: vaultNote(next) } });

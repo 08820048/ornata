@@ -13,6 +13,7 @@ import type {
   SearchHit,
   Backlink,
   Mention,
+  RenameOutcome,
   OpenTask,
   SettingsSnapshot,
   Theme,
@@ -110,9 +111,9 @@ export const ipc = {
   createFolder: (dir: string, name: string) =>
     call<string>("create_folder", { dir, name }),
   renameEntry: (rel: string, name: string) =>
-    call<string>("rename_entry", { rel, name }),
+    call<RenameOutcome>("rename_entry", { rel, name }),
   moveEntry: (rel: string, dir: string) =>
-    call<string>("move_entry", { rel, dir }),
+    call<RenameOutcome>("move_entry", { rel, dir }),
   deleteEntry: (rel: string) => call<void>("delete_entry", { rel }),
   revealEntry: (rel: string) => call<void>("reveal_entry", { rel }),
   searchNotes: (query: string, limit?: number) =>
