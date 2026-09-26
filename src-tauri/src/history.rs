@@ -1,9 +1,11 @@
-//! Per-note snapshots under `.ornata/history/`.
+//! Per-note snapshots under `.ornata/history/<rel>` (the `.md` extension stays,
+//! so `guide.md` and notes inside a `guide/` folder never share a directory).
 //!
 //! Every vault write funnels through `notes::write_note`, which snapshots the
-//! content it is about to overwrite. Ordinary autosaves snapshot at most once
-//! per dedup window; agent writes and restores force a snapshot, so the state
-//! before any mutation that could lose work is always recoverable.
+//! content it is about to overwrite. Ordinary autosaves pin a checkpoint at
+//! most once per dedup window and fold later edits in that window into one
+//! rolling snapshot. Agent writes and restores force a pinned snapshot, so
+//! the state before those mutations stays recoverable.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -17,7 +19,8 @@ use crate::vault::DATA_DIR;
 
 /// Snapshots kept per note; older ones are pruned after each write.
 const MAX_PER_NOTE: usize = 30;
-/// Ordinary (non-forced) snapshots of the same note land at most this often.
+/// A new pinned checkpoint is written at most this often. Later edits inside
+/// the window update one rolling snapshot instead of adding a file.
 const DEDUP_WINDOW_MS: i64 = 2 * 60 * 1000;
 
 #[derive(Debug, Serialize)]
@@ -29,15 +32,54 @@ pub struct SnapshotMeta {
     pub size: i64,
 }
 
-fn history_dir(root: &Path, rel: &str) -> PathBuf {
-    root.join(DATA_DIR).join("history").join(strip_md(rel))
-}
-
 fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
         .unwrap_or(0)
+}
+
+fn history_dir(root: &Path, rel: &str) -> PathBuf {
+    let dir = root.join(DATA_DIR).join("history").join(rel);
+    // Snapshots written before the path included `.md`.
+    if strip_md(rel) != rel {
+        adopt_legacy(
+            &root.join(DATA_DIR).join("history").join(strip_md(rel)),
+            &dir,
+        );
+    }
+    dir
+}
+
+/// Move timestamp files from the extension-less layout into `dir`.
+/// Subdirectories stay put (they belong to notes nested under that prefix).
+/// Adopted snapshots are pinned so the next autosave cannot overwrite them.
+fn adopt_legacy(legacy: &Path, dir: &Path) {
+    if legacy == dir || !legacy.is_dir() {
+        return;
+    }
+    let stamps = list_timestamps(legacy);
+    if stamps.is_empty() {
+        return;
+    }
+    if let Some(parent) = dir.parent() {
+        if fs::create_dir_all(parent).is_err() {
+            return;
+        }
+    }
+    if fs::create_dir_all(dir).is_err() {
+        return;
+    }
+    for stamp in stamps {
+        let from = legacy.join(stamp.to_string());
+        let to = dir.join(stamp.to_string());
+        if to.exists() {
+            continue;
+        }
+        if fs::rename(&from, &to).is_ok() {
+            let _ = fs::write(dir.join(format!("{stamp}.keep")), "");
+        }
+    }
 }
 
 /// Newest snapshot timestamp in a note's history dir, if any.
@@ -57,34 +99,48 @@ fn list_timestamps(dir: &Path) -> Vec<i64> {
     stamps
 }
 
+/// A `.keep` file next to a snapshot marks a checkpoint that later autosaves
+/// must not overwrite (window anchor, forced snapshot, or adopted history).
+fn is_pinned(dir: &Path, stamp: i64) -> bool {
+    dir.join(format!("{stamp}.keep")).is_file()
+}
+
 /// Save `current` as a snapshot of `rel` (the content a write is about to
-/// replace). Forced snapshots bypass the dedup window but still skip when the
-/// newest snapshot is byte-identical.
+/// replace). Identical content is skipped. A forced write, or the first write
+/// after the dedup window, pins a new checkpoint. Further differing edits
+/// inside the window update one rolling snapshot so the text just overwritten
+/// stays recoverable without a file per autosave.
 pub fn snapshot_note(root: &Path, rel: &str, current: &str, forced: bool) -> AppResult<()> {
     if current.is_empty() {
         return Ok(());
     }
     let dir = history_dir(root, rel);
-    let newest = newest_snapshot(&dir);
-    if let Some(newest) = newest {
-        if forced {
-            let stamp = newest.to_string();
-            if fs::read_to_string(dir.join(&stamp)).is_ok_and(|saved| saved == current) {
-                return Ok(());
-            }
-        } else if now_ms() - newest < DEDUP_WINDOW_MS {
+    if let Some(newest) = newest_snapshot(&dir) {
+        let path = dir.join(newest.to_string());
+        if fs::read_to_string(&path).is_ok_and(|saved| saved == current) {
             return Ok(());
         }
+        let within = now_ms() - newest < DEDUP_WINDOW_MS;
+        if !forced && within && !is_pinned(&dir, newest) {
+            fs::write(path, current)?;
+            return Ok(());
+        }
+        return write_new_snapshot(&dir, current, forced || !within);
     }
+    write_new_snapshot(&dir, current, true)
+}
 
-    let dir = ensure_dir(&dir)?;
-    // Same-millisecond collisions (a forced snapshot right after a windowed
-    // one) step forward until the name is free.
+fn write_new_snapshot(dir: &Path, content: &str, pin: bool) -> AppResult<()> {
+    let dir = ensure_dir(dir)?;
+    // Same-millisecond collisions step forward until the name is free.
     let mut stamp = now_ms();
     while dir.join(stamp.to_string()).exists() {
         stamp += 1;
     }
-    fs::write(dir.join(stamp.to_string()), current)?;
+    fs::write(dir.join(stamp.to_string()), content)?;
+    if pin {
+        fs::write(dir.join(format!("{stamp}.keep")), "")?;
+    }
     prune(&dir, MAX_PER_NOTE);
     Ok(())
 }
@@ -99,6 +155,7 @@ fn prune(dir: &Path, keep: usize) {
     let cut = stamps.len().saturating_sub(keep);
     for stamp in stamps.into_iter().take(cut) {
         let _ = fs::remove_file(dir.join(stamp.to_string()));
+        let _ = fs::remove_file(dir.join(format!("{stamp}.keep")));
     }
 }
 
@@ -145,7 +202,7 @@ pub fn migrate(root: &Path, old_rel: &str, new_rel: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::notes::{create_note, write_note};
+    use crate::notes::{create_folder, create_note, write_note};
     use crate::vault::ensure_layout;
     use tempfile::tempdir;
 
@@ -167,26 +224,126 @@ mod tests {
         snapshot_note(&root, &rel, "v2", true).unwrap();
         let snapshots = list_snapshots(&root, &rel);
         assert_eq!(snapshots.len(), 2);
-        assert_eq!(read_snapshot(&root, &rel, snapshots[0].timestamp).unwrap(), "v2");
-        assert_eq!(read_snapshot(&root, &rel, snapshots[1].timestamp).unwrap(), "v1");
+        assert_eq!(
+            read_snapshot(&root, &rel, snapshots[0].timestamp).unwrap(),
+            "v2"
+        );
+        assert_eq!(
+            read_snapshot(&root, &rel, snapshots[1].timestamp).unwrap(),
+            "v1"
+        );
     }
 
     #[test]
-    fn windowed_snapshots_dedup_within_the_window() {
+    fn window_keeps_checkpoint_and_rolls_later_edits() {
         let (_dir, root, rel) = setup();
-        // write_note already snapshotted the (empty → "v1") transition's
-        // overwritten content; a windowed follow-up inside the window skips.
-        write_note(&root, &rel, "v1").unwrap();
         snapshot_note(&root, &rel, "v1", false).unwrap();
-        snapshot_note(&root, &rel, "v2", false).unwrap(); // inside window → skipped
-        assert_eq!(list_snapshots(&root, &rel).len(), 1);
-        // Simulate the window having elapsed for the newest snapshot.
-        let dir = history_dir(&root, &rel);
-        let newest = newest_snapshot(&dir).unwrap();
-        let old = now_ms() - DEDUP_WINDOW_MS - 1;
-        fs::rename(dir.join(newest.to_string()), dir.join(old.to_string())).unwrap();
+        let anchor = newest_snapshot(&history_dir(&root, &rel)).unwrap();
         snapshot_note(&root, &rel, "v2", false).unwrap();
-        assert_eq!(list_snapshots(&root, &rel).len(), 2);
+        let rolling = newest_snapshot(&history_dir(&root, &rel)).unwrap();
+        assert_ne!(anchor, rolling);
+        snapshot_note(&root, &rel, "v3", false).unwrap();
+        let snapshots = list_snapshots(&root, &rel);
+        assert_eq!(snapshots.len(), 2);
+        assert_eq!(snapshots[0].timestamp, rolling);
+        assert_eq!(read_snapshot(&root, &rel, rolling).unwrap(), "v3");
+        assert_eq!(read_snapshot(&root, &rel, anchor).unwrap(), "v1");
+    }
+
+    #[test]
+    fn elapsed_window_starts_a_new_checkpoint() {
+        let (_dir, root, rel) = setup();
+        snapshot_note(&root, &rel, "v1", false).unwrap();
+        let dir = history_dir(&root, &rel);
+        let stamp = newest_snapshot(&dir).unwrap();
+        let old = now_ms() - DEDUP_WINDOW_MS - 1;
+        fs::rename(dir.join(stamp.to_string()), dir.join(old.to_string())).unwrap();
+        fs::rename(
+            dir.join(format!("{stamp}.keep")),
+            dir.join(format!("{old}.keep")),
+        )
+        .unwrap();
+        snapshot_note(&root, &rel, "v2", false).unwrap();
+        let snapshots = list_snapshots(&root, &rel);
+        assert_eq!(snapshots.len(), 2);
+        assert_eq!(
+            read_snapshot(&root, &rel, snapshots[0].timestamp).unwrap(),
+            "v2"
+        );
+        assert_eq!(read_snapshot(&root, &rel, old).unwrap(), "v1");
+    }
+
+    #[test]
+    fn forced_snapshot_is_not_replaced_by_a_later_autosave() {
+        let (_dir, root, rel) = setup();
+        snapshot_note(&root, &rel, "v1", false).unwrap();
+        snapshot_note(&root, &rel, "v2", true).unwrap();
+        let forced = newest_snapshot(&history_dir(&root, &rel)).unwrap();
+        snapshot_note(&root, &rel, "v3", false).unwrap();
+        assert_eq!(read_snapshot(&root, &rel, forced).unwrap(), "v2");
+        assert_eq!(list_snapshots(&root, &rel).len(), 3);
+    }
+
+    #[test]
+    fn legacy_extensionless_history_is_adopted() {
+        let (_dir, root, rel) = setup();
+        let legacy = root.join(DATA_DIR).join("history").join(strip_md(&rel));
+        fs::create_dir_all(legacy.join("child")).unwrap();
+        fs::write(legacy.join("1000"), "old").unwrap();
+        fs::write(legacy.join("child").join("2000"), "child").unwrap();
+
+        let snapshots = list_snapshots(&root, &rel);
+        assert_eq!(snapshots.len(), 1);
+        assert_eq!(read_snapshot(&root, &rel, 1000).unwrap(), "old");
+        assert!(!legacy.join("1000").exists());
+        assert_eq!(
+            fs::read_to_string(legacy.join("child").join("2000")).unwrap(),
+            "child"
+        );
+    }
+
+    #[test]
+    fn note_and_same_named_folder_keep_separate_history() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let note = create_note(root, "", "guide").unwrap();
+        snapshot_note(root, &note, "note-v1", true).unwrap();
+        create_folder(root, "", "guide").unwrap();
+        let child = create_note(root, "guide", "intro").unwrap();
+        snapshot_note(root, &child, "child-v1", true).unwrap();
+
+        let renamed = crate::notes::rename_entry(root, &note, "archive").unwrap();
+        let note_snaps = list_snapshots(root, &renamed.next);
+        assert_eq!(
+            read_snapshot(root, &renamed.next, note_snaps[0].timestamp).unwrap(),
+            "note-v1"
+        );
+        assert_eq!(
+            read_snapshot(root, &child, list_snapshots(root, &child)[0].timestamp).unwrap(),
+            "child-v1"
+        );
+
+        let folder = crate::notes::rename_entry(root, "guide", "handbook").unwrap();
+        let child_next = format!("{}/intro.md", folder.next);
+        assert_eq!(
+            read_snapshot(
+                root,
+                &child_next,
+                list_snapshots(root, &child_next)[0].timestamp
+            )
+            .unwrap(),
+            "child-v1"
+        );
+        assert_eq!(
+            read_snapshot(
+                root,
+                &renamed.next,
+                list_snapshots(root, &renamed.next)[0].timestamp
+            )
+            .unwrap(),
+            "note-v1"
+        );
     }
 
     #[test]

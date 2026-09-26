@@ -30,6 +30,22 @@ export function noteAssetRoot(root: string, note: NoteRef): string {
   return separator > 0 ? note.path.slice(0, separator) : "";
 }
 
+/** True when `path` is `rel` or a note inside that folder. */
+export function relIsUnder(path: string, rel: string): boolean {
+  return path === rel || path.startsWith(`${rel}/`);
+}
+
+/** Rewrite vault rels after `rel` was renamed or moved to `next`. */
+export function remapRelList(paths: string[], rel: string, next: string): string[] {
+  const out: string[] = [];
+  for (const path of paths) {
+    const mapped =
+      path === rel ? next : path.startsWith(`${rel}/`) ? next + path.slice(rel.length) : path;
+    if (!out.includes(mapped)) out.push(mapped);
+  }
+  return out;
+}
+
 /** Map an absolute path under the active notes directory back to a vault ref. */
 export function noteRefForPath(root: string, path: string): NoteRef {
   const notesPrefix = `${root.replace(/[\\/]$/, "")}/notes/`;

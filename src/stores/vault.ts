@@ -4,6 +4,8 @@ import { ipc } from "@/lib/ipc";
 import {
   externalNote,
   noteRefForPath,
+  relIsUnder,
+  remapRelList,
   sameNote,
   vaultNote,
 } from "@/lib/noteRef";
@@ -139,11 +141,33 @@ function remapRecents(
   rel: string,
   next: string,
 ) {
-  set({
-    recentNotes: get().recentNotes.map((r) =>
-      r === rel ? next : r.startsWith(`${rel}/`) ? next + r.slice(rel.length) : r,
-    ),
-  });
+  set({ recentNotes: remapRelList(get().recentNotes, rel, next) });
+}
+
+/** Same path rewrite for pins, persisted so a restart does not drop them. */
+function remapPinned(
+  set: (partial: Partial<VaultState>) => void,
+  get: () => VaultState,
+  rel: string,
+  next: string,
+) {
+  const pinned = remapRelList(get().pinned, rel, next);
+  const prev = get().pinned;
+  if (pinned.length === prev.length && pinned.every((path, i) => path === prev[i])) return;
+  set({ pinned });
+  void ipc.writeAppData("pinned", JSON.stringify(pinned)).catch(oops);
+}
+
+function dropPinned(
+  set: (partial: Partial<VaultState>) => void,
+  get: () => VaultState,
+  rel: string,
+) {
+  const prev = get().pinned;
+  const pinned = prev.filter((path) => !relIsUnder(path, rel));
+  if (pinned.length === prev.length) return;
+  set({ pinned });
+  void ipc.writeAppData("pinned", JSON.stringify(pinned)).catch(oops);
 }
 
 /** True when the tree contains a folder at exactly `rel`. */
@@ -372,7 +396,8 @@ export const useVault = create<VaultState>((set, get) => ({
       const parsed: unknown = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(parsed)) return;
       const known = new Set(flattenNotes(get().tree).map((n) => n.rel));
-      // Keep only pins that still resolve; renames already migrated them.
+      // Drop pins that no longer resolve (deleted, or moved while the app
+      // was closed). Rename/move/delete update the file while it is open.
       const valid = parsed
         .filter((rel): rel is string => typeof rel === "string" && known.has(rel));
       set({ pinned: valid });
@@ -455,6 +480,7 @@ export const useVault = create<VaultState>((set, get) => ({
       const { view } = get();
       await get().refreshTree();
       remapRecents(set, get, rel, next);
+      remapPinned(set, get, rel, next);
       useTabs.getState().remap(rel, next);
       useTabs.getState().applyLinkRewrites(outcome.rewrites);
       reportRewrites(outcome);
@@ -498,6 +524,7 @@ export const useVault = create<VaultState>((set, get) => ({
       await get().refreshTree();
       get().expandTo(next);
       remapRecents(set, get, rel, next);
+      remapPinned(set, get, rel, next);
       useTabs.getState().remap(rel, next);
       useTabs.getState().applyLinkRewrites(outcome.rewrites);
       reportRewrites(outcome);
@@ -523,10 +550,11 @@ export const useVault = create<VaultState>((set, get) => ({
       await ipc.deleteEntry(rel);
       const { view } = get();
       await get().refreshTree();
-      const gone = (r: string) => r === rel || r.startsWith(`${rel}/`);
+      const gone = (r: string) => relIsUnder(r, rel);
       const goneTab = (note: NoteRef) =>
         note.kind === "vault" && gone(note.rel);
       set({ recentNotes: get().recentNotes.filter((r) => !gone(r)) });
+      dropPinned(set, get, rel);
 
       // Drop affected tabs; if the active note went with them, activate the
       // nearest surviving tab to its right (else the last one standing).

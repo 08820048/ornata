@@ -122,18 +122,51 @@ fn walk(root: &Path, dir: &Path, terms: &[String], hits: &mut Vec<SearchHit>) ->
 }
 
 fn snippet(content: &str, needle: &str) -> String {
-    match content.to_lowercase().find(needle) {
-        Some(pos) => snippet_at(content, pos, needle.len()),
+    match find_ignore_case(content, needle) {
+        Some((start, end)) => snippet_at(content, start, end),
         None => content.chars().take(SNIPPET_RADIUS * 2).collect(),
     }
 }
 
-fn snippet_at(content: &str, byte_pos: usize, match_len: usize) -> String {
+/// Byte range of `needle` in `content`, compared case-insensitively.
+/// The range stays on original char boundaries: lowercasing that changes
+/// width (`İ`, `ﬁ`) must not be used as an index into `content`.
+fn find_ignore_case(content: &str, needle: &str) -> Option<(usize, usize)> {
+    if needle.is_empty() {
+        return None;
+    }
+    let needle = needle.to_lowercase();
+    let start = content.to_lowercase().find(&needle)?;
+    map_lower_span(content, start, needle.len())
+}
+
+/// Map a byte span in `content.to_lowercase()` back onto `content`.
+fn map_lower_span(content: &str, lower_start: usize, lower_len: usize) -> Option<(usize, usize)> {
+    let lower_end = lower_start + lower_len;
+    let mut orig = 0usize;
+    let mut lower_at = 0usize;
+    let mut start_orig = None;
+    for ch in content.chars() {
+        let next_orig = orig + ch.len_utf8();
+        let next_lower = lower_at + ch.to_lowercase().to_string().len();
+        if start_orig.is_none() && next_lower > lower_start {
+            start_orig = Some(orig);
+        }
+        if next_lower >= lower_end {
+            return Some((start_orig.unwrap_or(orig), next_orig));
+        }
+        orig = next_orig;
+        lower_at = next_lower;
+    }
+    None
+}
+
+fn snippet_at(content: &str, byte_start: usize, byte_end: usize) -> String {
     let chars: Vec<char> = content.chars().collect();
-    // Convert byte position to char position.
-    let char_pos = content[..byte_pos].chars().count();
+    let char_pos = content[..byte_start].chars().count();
+    let match_chars = content[byte_start..byte_end].chars().count();
     let start = char_pos.saturating_sub(SNIPPET_RADIUS);
-    let end = (char_pos + match_len + SNIPPET_RADIUS).min(chars.len());
+    let end = (char_pos + match_chars + SNIPPET_RADIUS).min(chars.len());
     let mut out: String = chars[start..end].iter().collect();
     out = out.replace('\n', " ").trim().to_string();
     if start > 0 {
@@ -228,5 +261,35 @@ mod tests {
         write_note(dir.path(), &a, "🎉🎉🎉 find ünïcode here 🎉🎉🎉").unwrap();
         let hits = search_notes(dir.path(), "ünïcode", 10).unwrap();
         assert_eq!(hits.len(), 1);
+    }
+
+    #[test]
+    fn casefold_that_changes_width_does_not_panic() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        let a = create_note(dir.path(), "", "letters").unwrap();
+        // İ lowercases to two chars; ﬁ lowercases to a shorter "fi".
+        let body = format!("{}找到了 ﬁnd needle", "İ".repeat(10));
+        write_note(dir.path(), &a, &body).unwrap();
+        let hits = search_notes(dir.path(), "找到了", 10).unwrap();
+        assert_eq!(hits.len(), 1);
+        assert!(hits[0].snippet.contains("找到了"));
+        let hits = search_notes(dir.path(), "needle", 10).unwrap();
+        assert_eq!(hits.len(), 1);
+        assert!(hits[0].snippet.contains("needle"));
+    }
+
+    #[test]
+    fn cjk_snippet_window_counts_chars() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        let a = create_note(dir.path(), "", "长").unwrap();
+        let word = "编".repeat(20);
+        let body = format!("{}{word}{}MARKER", "啊".repeat(10), "呀".repeat(70));
+        write_note(dir.path(), &a, &body).unwrap();
+        let hits = search_notes(dir.path(), &word, 10).unwrap();
+        assert_eq!(hits.len(), 1);
+        assert!(hits[0].snippet.contains('编'));
+        assert!(!hits[0].snippet.contains("MARKER"));
     }
 }
