@@ -1,5 +1,7 @@
 import {
+  CalendarDays,
   FilePlus,
+  FilePlus2,
   FileText,
   FolderOpen,
   ListChecks,
@@ -48,6 +50,7 @@ export function CommandPalette() {
 
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [templates, setTemplates] = useState<string[]>([]);
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -78,6 +81,14 @@ export function CommandPalette() {
     return () => clearTimeout(timer);
   }, [query, open, status]);
 
+  useEffect(() => {
+    if (!open) return;
+    ipc
+      .listTemplates()
+      .then(setTemplates)
+      .catch(() => setTemplates([]));
+  }, [open]);
+
   const close = () => setOpen(false);
 
   // Defer the action past the next paint so the close animation is actually
@@ -101,6 +112,21 @@ export function CommandPalette() {
         icon: FilePlus,
         run: () => vault.createNote(activeDir(vault)),
       },
+      {
+        id: "daily-note",
+        label: t("daily.new"),
+        hint: "⌘J",
+        icon: CalendarDays,
+        run: () => void vault.openDailyNote(),
+      },
+      ...templates.map(
+        (name): PaletteItem => ({
+          id: `template-${name}`,
+          label: t("templates.newFrom", { name }),
+          icon: FilePlus2,
+          run: () => void vault.createNoteFromTemplate(name),
+        }),
+      ),
       {
         id: "open-markdown",
         label: t("palette.openMarkdown"),

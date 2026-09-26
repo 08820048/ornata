@@ -15,6 +15,7 @@ import type {
   Mention,
   RenameOutcome,
   SnapshotMeta,
+  TagCount,
   OpenTask,
   SettingsSnapshot,
   Theme,
@@ -112,6 +113,13 @@ export const ipc = {
   createFolder: (dir: string, name: string) =>
     call<string>("create_folder", { dir, name }),
   noteHistory: (rel: string) => call<SnapshotMeta[]>("note_history", { rel }),
+  readAppData: (name: string) => call<string | null>("read_app_data", { name }),
+  writeAppData: (name: string, content: string) =>
+    call<void>("write_app_data", { name, content }),
+  listTemplates: () => call<string[]>("list_templates"),
+  readTemplate: (name: string) => call<string>("read_template", { name }),
+  listTags: () => call<TagCount[]>("list_tags"),
+  notesWithTag: (tag: string) => call<string[]>("notes_with_tag", { tag }),
   readHistorySnapshot: (rel: string, timestamp: number) =>
     call<string>("read_history_snapshot", { rel, timestamp }),
   snapshotNote: (rel: string) => call<void>("snapshot_note", { rel }),

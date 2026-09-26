@@ -1,4 +1,5 @@
 mod agent;
+mod app_data;
 mod agent_connection;
 mod agent_docs;
 mod agent_tools;
@@ -16,6 +17,8 @@ mod mentions;
 mod notes;
 mod reveal;
 mod search;
+mod tags;
+mod templates;
 mod tasks;
 mod settings_window;
 mod upload;
@@ -68,6 +71,12 @@ pub fn run() {
             external_notes::open_external_link,
             commands::read_note,
             commands::write_note,
+            commands::read_app_data,
+            commands::write_app_data,
+            commands::list_templates,
+            commands::read_template,
+            commands::list_tags,
+            commands::notes_with_tag,
             commands::note_history,
             commands::read_history_snapshot,
             commands::snapshot_note,

@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
+  Pin,
   FilePlus,
   FileText,
   Folder,
@@ -142,6 +143,13 @@ export function FileTree() {
   function menuItems(node: TreeNode): MenuItem[] {
     const vault = useVault.getState();
     const items: MenuItem[] = [];
+    if (node.kind === "note") {
+      items.push({
+        label: vault.pinned.includes(node.rel) ? t("pinned.remove") : t("pinned.add"),
+        icon: Pin,
+        onSelect: () => void vault.togglePin(node.rel),
+      });
+    }
     if (node.kind === "folder") {
       items.push(
         {

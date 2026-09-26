@@ -11,6 +11,8 @@ use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::history;
+use crate::tags;
+use crate::templates;
 use crate::image_source::{self, ImagePayload};
 use crate::mentions::{self, Mention};
 use crate::search::SearchHit;
@@ -228,6 +230,43 @@ pub fn read_note(state: State<'_, AppState>, rel: String) -> AppResult<String> {
 #[tauri::command]
 pub fn write_note(state: State<'_, AppState>, rel: String, content: String) -> AppResult<()> {
     notes::write_note(&state.root()?, &rel, &content)
+}
+
+#[tauri::command]
+pub fn read_app_data(state: State<'_, AppState>, name: String) -> AppResult<Option<String>> {
+    crate::app_data::read_data_file(&state.root()?, &name)
+}
+
+#[tauri::command]
+pub fn write_app_data(
+    state: State<'_, AppState>,
+    name: String,
+    content: String,
+) -> AppResult<()> {
+    crate::app_data::write_data_file(&state.root()?, &name, &content)
+}
+
+#[tauri::command]
+pub fn list_templates(state: State<'_, AppState>) -> Vec<String> {
+    match state.root() {
+        Ok(root) => templates::list_templates(&root),
+        Err(_) => Vec::new(),
+    }
+}
+
+#[tauri::command]
+pub fn read_template(state: State<'_, AppState>, name: String) -> AppResult<String> {
+    templates::read_template(&state.root()?, &name)
+}
+
+#[tauri::command]
+pub fn list_tags(state: State<'_, AppState>) -> AppResult<Vec<tags::TagCount>> {
+    tags::list_tags(&state.root()?)
+}
+
+#[tauri::command]
+pub fn notes_with_tag(state: State<'_, AppState>, tag: String) -> AppResult<Vec<String>> {
+    tags::notes_with_tag(&state.root()?, &tag)
 }
 
 #[tauri::command]

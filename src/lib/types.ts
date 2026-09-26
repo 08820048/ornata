@@ -40,6 +40,12 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** A tag and how many notes carry it. */
+export interface TagCount {
+  tag: string;
+  count: number;
+}
+
 /** One saved snapshot of a note (metadata only). */
 export interface SnapshotMeta {
   /** Unix millis; also the snapshot's filename stem. */

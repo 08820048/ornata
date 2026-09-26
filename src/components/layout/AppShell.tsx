@@ -1,4 +1,5 @@
-import { Code2, Copy, Download, FilePlus, MoreVertical, PanelLeft, Pilcrow, Search, Trash2 } from "lucide-react";
+import {
+  CalendarDays, Code2, Copy, Download, FilePlus, MoreVertical, PanelLeft, Pilcrow, Search, Trash2 } from "lucide-react";
 import { LayoutGroup, motion } from "motion/react";
 import { useState } from "react";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
@@ -304,6 +305,12 @@ function EmptyState() {
           label={t("common.newNote")}
           keys="⌘N"
           onClick={() => createNote("")}
+        />
+        <EmptyAction
+          icon={<CalendarDays size={14} strokeWidth={2} />}
+          label={t("daily.new")}
+          keys="⌘J"
+          onClick={() => void useVault.getState().openDailyNote()}
         />
       </div>
     </div>

@@ -16,6 +16,7 @@ import type {
   VaultSnapshot,
   View,
 } from "@/lib/types";
+import { flattenNotes } from "@/lib/tree";
 import { parentDir } from "@/lib/utils";
 import { applyTheme } from "@/lib/theme";
 import { broadcastSettings } from "@/lib/settingsSync";
@@ -60,6 +61,12 @@ interface VaultState {
   /** Create a note at an exact rel (folders as needed). Returns the created
    *  rel, or null when a collision redirected the path. */
   createNoteAtRel: (rel: string) => Promise<string | null>;
+  /** Rels pinned in .ornata/pinned.json (vault-scoped, cross-machine). */
+  pinned: string[];
+  loadPinned: () => Promise<void>;
+  togglePin: (rel: string) => Promise<void>;
+  openDailyNote: () => Promise<void>;
+  createNoteFromTemplate: (template: string) => Promise<void>;
   createFolder: (dir: string, name: string) => Promise<string | null>;
   renameEntry: (rel: string, name: string) => Promise<void>;
   renameExternalNote: (path: string, name: string) => Promise<void>;
@@ -160,6 +167,7 @@ function reportRewrites(outcome: { files: string[] }) {
 
 export const useVault = create<VaultState>((set, get) => ({
   status: "loading",
+  pinned: [],
   root: "",
   name: "",
   tree: [],
@@ -355,6 +363,76 @@ export const useVault = create<VaultState>((set, get) => ({
     } catch (err) {
       oops(err);
       return null;
+    }
+  },
+
+  loadPinned: async () => {
+    try {
+      const raw = await ipc.readAppData("pinned");
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return;
+      const known = new Set(flattenNotes(get().tree).map((n) => n.rel));
+      // Keep only pins that still resolve; renames already migrated them.
+      const valid = parsed
+        .filter((rel): rel is string => typeof rel === "string" && known.has(rel));
+      set({ pinned: valid });
+    } catch {
+      set({ pinned: [] });
+    }
+  },
+
+  togglePin: async (rel) => {
+    const next = get().pinned.includes(rel)
+      ? get().pinned.filter((r) => r !== rel)
+      : [...get().pinned, rel];
+    set({ pinned: next });
+    try {
+      await ipc.writeAppData("pinned", JSON.stringify(next));
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  openDailyNote: async () => {
+    try {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const rel = `journal/${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.md`;
+      const exists = flattenNotes(get().tree).some(
+        (n) => n.rel.toLowerCase() === rel.toLowerCase(),
+      );
+      if (!exists) {
+        // Optional daily template: .ornata/templates/daily.md
+        let template = "";
+        try {
+          template = await ipc.readTemplate("daily");
+        } catch {
+          // No daily template — start empty.
+        }
+        const created = await get().createNoteAtRel(rel);
+        if (!created) return;
+        if (template) await ipc.writeNote(created, template);
+      }
+      const note = vaultNote(rel);
+      get().expandTo(rel);
+      get().setView({ type: "note", note });
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  createNoteFromTemplate: async (template) => {
+    try {
+      const content = await ipc.readTemplate(template);
+      const dir = activeDir(get());
+      const created = await ipc.createNote(dir, t("common.untitled"));
+      if (content) await ipc.writeNote(created, content);
+      await get().refreshTree();
+      const note = vaultNote(created);
+      get().setView({ type: "note", note });
+      useTabs.getState().requestTitleFocus(note);
+    } catch (err) {
+      oops(err);
     }
   },
 

@@ -2,26 +2,35 @@ import {
   ArrowDownToLine,
   FilePlus,
   FolderPlus,
+  Hash,
   ListChecks,
   Loader2,
+  Pin,
   RefreshCw,
   Search,
   Settings,
+  X,
 } from "lucide-react";
+import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { ipc } from "@/lib/ipc";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
+import { vaultNote } from "@/lib/noteRef";
 import { activeDir, useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
 
 export function Sidebar() {
   const name = useVault((s) => s.name);
+  const tree = useVault((s) => s.tree);
+  const pinned = useVault((s) => s.pinned);
+  const togglePin = useVault((s) => s.togglePin);
   const createNote = useVault((s) => s.createNote);
   const createFolder = useVault((s) => s.createFolder);
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
   const setTasksOpen = useUi((s) => s.setTasksOpen);
+  const setTagsOpen = useUi((s) => s.setTagsOpen);
   const t = useT();
 
   return (
@@ -52,6 +61,53 @@ export function Sidebar() {
         </span>
       </div>
 
+      {pinned.length > 0 && (
+        <div className="px-2 pb-2">
+          <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
+            {t("pinned.title")}
+          </div>
+          {pinned.map((rel) => {
+            const node = flattenNotes(tree).find((n) => n.rel === rel);
+            return (
+              <div
+                key={rel}
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  const vault = useVault.getState();
+                  vault.expandTo(rel);
+                  vault.setView({ type: "note", note: vaultNote(rel) });
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    const vault = useVault.getState();
+                    vault.expandTo(rel);
+                    vault.setView({ type: "note", note: vaultNote(rel) });
+                  }
+                }}
+                className="group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
+              >
+                <Pin size={12} strokeWidth={2} className="shrink-0 text-faint" />
+                <span className="min-w-0 flex-1 truncate">
+                  {node?.name ?? rel.replace(/\.md$/i, "")}
+                </span>
+                <button
+                  type="button"
+                  aria-label={t("pinned.remove")}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void togglePin(rel);
+                  }}
+                  className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity duration-100 hover:text-ink group-hover:opacity-100"
+                >
+                  <X size={12} strokeWidth={2} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex items-center justify-between pl-4 pr-2 pb-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
           {t("common.notes")}
@@ -59,6 +115,9 @@ export function Sidebar() {
         <div className="flex items-center gap-0.5">
           <IconAction label={t("tasks.title")} onClick={() => setTasksOpen(true)}>
             <ListChecks size={14.5} strokeWidth={1.75} />
+          </IconAction>
+          <IconAction label={t("tags.title")} onClick={() => setTagsOpen(true)}>
+            <Hash size={14.5} strokeWidth={1.75} />
           </IconAction>
           <IconAction
             label={t("common.newNote")}

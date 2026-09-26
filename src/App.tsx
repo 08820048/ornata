@@ -12,6 +12,7 @@ import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { useLocale } from "@/stores/locale";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
+import { TagsDialog } from "@/components/tasks/TagsDialog";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -73,6 +74,7 @@ export default function App() {
         return;
       }
       await restoreSession(root);
+      await useVault.getState().loadPinned();
       const opened = await ipc.takeOpenedExternalNotes().catch(() => []);
       restored = true;
       if (!cancelled) {
@@ -131,6 +133,9 @@ export default function App() {
       } else if (event.key === "n" && vault.status === "ready") {
         event.preventDefault();
         vault.createNote(activeDir(vault));
+      } else if (event.key === "j" && vault.status === "ready") {
+        event.preventDefault();
+        void vault.openDailyNote();
       } else if (event.key === "o" && vault.status === "ready") {
         event.preventDefault();
         vault.chooseExternalNotes();
@@ -156,6 +161,7 @@ export default function App() {
         {status === "ready" && <AppShell />}
         <CommandPalette />
         {status === "ready" && <TasksDialog />}
+      {status === "ready" && <TagsDialog />}
       </Suspense>
       <AppToaster />
     </>
