@@ -17,6 +17,7 @@ import { flattenNotes } from "@/lib/tree";
 import type { SearchHit, TreeNode } from "@/lib/types";
 import { cx, parentDir } from "@/lib/utils";
 import { Modal } from "@/components/ui/Modal";
+import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { activeDir, useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
@@ -140,6 +141,10 @@ export function CommandPalette() {
           run: () => {
             vault.expandTo(hit.rel);
             vault.setView({ type: "note", note: vaultNote(hit.rel) });
+            // Content matches jump straight to the matched term.
+            if (!hit.titleMatch && hit.term) {
+              useTabs.getState().requestReveal(vaultNote(hit.rel), hit.term);
+            }
           },
         }))
       : (() => {

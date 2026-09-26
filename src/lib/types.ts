@@ -93,6 +93,8 @@ export interface SearchHit {
   title: string;
   snippet: string;
   titleMatch: boolean;
+  /** First matched term (used to reveal the hit inside the note). */
+  term: string;
 }
 
 export interface ExternalNote {
