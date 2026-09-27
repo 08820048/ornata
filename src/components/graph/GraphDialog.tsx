@@ -22,8 +22,8 @@ interface SimNode {
 }
 
 interface SimEdge {
-  from: string;
-  to: string;
+  source: string;
+  target: string;
 }
 
 /**
@@ -136,7 +136,7 @@ export function GraphDialog() {
     const byRel = new Map(nodes.map((n) => [n.rel, n]));
     const edges: SimEdge[] = graph.edges
       .filter((e) => byRel.has(e.from) && byRel.has(e.to))
-      .map((e) => ({ from: e.from, to: e.to }));
+      .map((e) => ({ source: e.from, target: e.to }));
 
     const sim = forceSimulation(nodes as never[])
       .force(
@@ -187,8 +187,8 @@ export function GraphDialog() {
     const neighbors = new Set<string>();
     if (hover) {
       for (const edge of sim.edges) {
-        if (edge.from === hover) neighbors.add(edge.to);
-        if (edge.to === hover) neighbors.add(edge.from);
+        if (edge.source === hover) neighbors.add(edge.target);
+        if (edge.target === hover) neighbors.add(edge.source);
       }
     }
     const byRel = new Map(sim.nodes.map((n) => [n.rel, n]));
@@ -197,11 +197,11 @@ export function GraphDialog() {
 
     ctx.lineWidth = 1;
     for (const edge of sim.edges) {
-      const a = byRel.get(edge.from);
-      const b = byRel.get(edge.to);
+      const a = byRel.get(edge.source);
+      const b = byRel.get(edge.target);
       if (!a || !b || !visible(a) || !visible(b)) continue;
       const highlighted =
-        hover !== null && (edge.from === hover || edge.to === hover);
+        hover !== null && (edge.source === hover || edge.target === hover);
       ctx.strokeStyle = highlighted ? muted : line;
       ctx.beginPath();
       ctx.moveTo(a.x * k + vx, a.y * k + vy);
