@@ -1,5 +1,7 @@
 import {
+  ArrowDownAZ,
   ArrowDownToLine,
+  Clock,
   FilePlus,
   FolderPlus,
   Hash,
@@ -11,6 +13,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
+import { ActionSwapButton } from "@/components/motion/action-swap";
 import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -18,6 +21,7 @@ import { ipc } from "@/lib/ipc";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { vaultNote } from "@/lib/noteRef";
+import type { TreeSort } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
 
@@ -31,6 +35,8 @@ export function Sidebar() {
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
   const setTasksOpen = useUi((s) => s.setTasksOpen);
   const setTagsOpen = useUi((s) => s.setTagsOpen);
+  const treeSort = useVault((s) => s.treeSort);
+  const setTreeSort = useVault((s) => s.setTreeSort);
   const t = useT();
 
   return (
@@ -113,6 +119,17 @@ export function Sidebar() {
           {t("common.notes")}
         </span>
         <div className="flex items-center gap-0.5">
+          <ActionSwapButton
+            items={[
+              { id: "name", label: t("tree.sortName"), icon: <ArrowDownAZ size={14.5} strokeWidth={1.75} />, ariaLabel: t("tree.sortName") },
+              { id: "modified", label: t("tree.sortModified"), icon: <Clock size={14.5} strokeWidth={1.75} />, ariaLabel: t("tree.sortModified") },
+            ]}
+            value={treeSort}
+            onValueChange={(value) => setTreeSort(value as TreeSort)}
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-md text-faint hover:text-muted"
+          />
           <IconAction label={t("tasks.title")} onClick={() => setTasksOpen(true)}>
             <ListChecks size={14.5} strokeWidth={1.75} />
           </IconAction>

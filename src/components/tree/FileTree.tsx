@@ -31,7 +31,8 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
-import type { TreeNode } from "@/lib/types";
+import { sortChildren } from "@/lib/tree";
+import type { TreeNode, TreeSort } from "@/lib/types";
 import { EASE_OUT } from "@/lib/ease";
 import { vaultNote } from "@/lib/noteRef";
 import { cx, parentDir } from "@/lib/utils";
@@ -61,6 +62,7 @@ interface TreeApi {
   setFocusRel: (rel: string) => void;
   dragging: string | null;
   openMenu: (position: MenuPosition, node: TreeNode) => void;
+  treeSort: TreeSort;
 }
 
 const TreeContext = createContext<TreeApi | null>(null);
@@ -68,6 +70,7 @@ const TreeContext = createContext<TreeApi | null>(null);
 export function FileTree() {
   const t = useT();
   const tree = useVault((s) => s.tree);
+  const treeSort = useVault((s) => s.treeSort);
   const moveEntry = useVault((s) => s.moveEntry);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [focusRel, setFocusRel] = useState<string | null>(null);
@@ -123,6 +126,7 @@ export function FileTree() {
           setFocusRel,
           dragging,
           openMenu,
+          treeSort,
         }}
       >
         <TreeList tree={tree} dragging={dragging} />
@@ -229,6 +233,8 @@ function TreeList({
   dragging: string | null;
 }) {
   const t = useT();
+  const treeSort = useVault((s) => s.treeSort);
+  const sorted = sortChildren(tree, treeSort);
   const eligible = Boolean(dragging && parentDir(dragging) !== "");
   const { setNodeRef } = useDroppable({
     id: ROOT_DROP_ID,
@@ -243,7 +249,7 @@ function TreeList({
       aria-label={t("tree.aria")}
       className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto px-2 pb-6 pt-1"
     >
-      {tree.map((node) => (
+      {sorted.map((node) => (
         <Row key={node.rel} node={node} depth={0} />
       ))}
       {tree.length === 0 && (
@@ -419,7 +425,7 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
             transition={{ duration: 0.18, ease: EASE_OUT }}
             className="overflow-hidden"
           >
-            {node.children?.map((child) => (
+            {sortChildren(node.children ?? [], api?.treeSort ?? "name").map((child) => (
               <Row key={child.rel} node={child} depth={depth + 1} />
             ))}
             {node.children?.length === 0 && (

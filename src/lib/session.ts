@@ -2,7 +2,7 @@ import { debounce } from "@/lib/utils";
 import { externalNote, vaultNote } from "@/lib/noteRef";
 import { ipc } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
-import type { NoteRef, View } from "@/lib/types";
+import type { NoteRef, TreeSort, View } from "@/lib/types";
 import { useTabs } from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
 
@@ -14,6 +14,7 @@ import { useVault } from "@/stores/vault";
 interface Session {
   tabs: NoteRef[];
   view: View | null;
+  treeSort?: TreeSort;
 }
 
 const storageKey = (root: string) => `ornata:session:${root}`;
@@ -25,6 +26,7 @@ function writeSession(root: string) {
   const data: Session = {
     tabs: useTabs.getState().tabs,
     view: vault.view,
+    treeSort: vault.treeSort,
   };
   try {
     localStorage.setItem(storageKey(root), JSON.stringify(data));
@@ -121,6 +123,7 @@ export async function restoreSession(root: string) {
   } else if (tabs[0]) {
     vault.setView({ type: "note", note: tabs[0] });
   }
+  if (data.treeSort) useVault.setState({ treeSort: data.treeSort });
 }
 
 let started = false;
@@ -132,7 +135,7 @@ export function initSessionSync() {
     if (s.tabs !== p.tabs) saveSession();
   });
   useVault.subscribe((s, p) => {
-    if (s.view !== p.view) saveSession();
+    if (s.view !== p.view || s.treeSort !== p.treeSort) saveSession();
   });
   // Flush any pending debounced save before the window goes away.
   window.addEventListener("beforeunload", () => {

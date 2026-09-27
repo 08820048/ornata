@@ -40,6 +40,9 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** File tree ordering: backend name order, or notes by last modification. */
+export type TreeSort = "name" | "modified";
+
 /** A tag and how many notes carry it. */
 export interface TagCount {
   tag: string;

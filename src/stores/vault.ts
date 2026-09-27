@@ -11,6 +11,7 @@ import {
 } from "@/lib/noteRef";
 import type {
   ExternalNote,
+  TreeSort,
   ImageUpload,
   NoteRef,
   Theme,
@@ -63,6 +64,9 @@ interface VaultState {
   /** Create a note at an exact rel (folders as needed). Returns the created
    *  rel, or null when a collision redirected the path. */
   createNoteAtRel: (rel: string) => Promise<string | null>;
+  /** File tree ordering (per-vault, persisted in the UI session). */
+  treeSort: TreeSort;
+  setTreeSort: (sort: TreeSort) => void;
   /** Rels pinned in .ornata/pinned.json (vault-scoped, cross-machine). */
   pinned: string[];
   loadPinned: () => Promise<void>;
@@ -191,6 +195,7 @@ function reportRewrites(outcome: { files: string[] }) {
 
 export const useVault = create<VaultState>((set, get) => ({
   status: "loading",
+  treeSort: "name",
   pinned: [],
   root: "",
   name: "",
@@ -389,6 +394,8 @@ export const useVault = create<VaultState>((set, get) => ({
       return null;
     }
   },
+
+  setTreeSort: (sort) => set({ treeSort: sort }),
 
   loadPinned: async () => {
     try {
