@@ -55,6 +55,40 @@ export function resolveWiki(
   return { rel, title };
 }
 
+/** Visible text + href for a link to a note (optionally one of its headings).
+ *  The single source of the `title › heading` convention — wiki input rules,
+ *  wikiToMarkdown and the note picker all build links through here. */
+export function noteLinkParts(
+  rel: string,
+  title: string,
+  heading?: string | null,
+): { text: string; href: string } {
+  const clean = heading?.trim();
+  const href = clean
+    ? `${relToHref(rel)}#${encodeURIComponent(clean)}`
+    : relToHref(rel);
+  const text = clean ? `${title} › ${clean}` : title;
+  return { text, href };
+}
+
+/**
+ * Plain text of a markdown heading line: emphasis and inline-code markers
+ * stripped the way CommonMark renders them, ATX closing hashes removed, but
+ * identifier underscores kept (`hello_world` stays whole — intra-word
+ * underscores don't emphasize). The result must match the heading's DOM
+ * `textContent`, which is what heading jumps compare against.
+ */
+export function headingPlainText(raw: string): string {
+  return raw
+    .replace(/\s+#+\s*$/, "")
+    .replace(/`+/g, "")
+    .replace(/\*\*\*|\*\*|~~/g, "")
+    .replace(/(^|[^\w])_([^_]+)_(?=[^\w]|$)/g, "$1$2")
+    .replace(/\*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Split a wiki payload like `笔记#标题` into note target and optional heading. */
 export function splitWikiTarget(target: string): { target: string; heading: string | null } {
   const hash = target.indexOf("#");
@@ -77,12 +111,8 @@ export function wikiToMarkdown(
       // `笔记#标题` links a specific heading; the fragment rides the href.
       const { target: noteTarget, heading } = splitWikiTarget(rawTarget);
       const { rel, title } = resolveWiki(noteTarget, notes);
-      const cleanHeading = heading?.trim();
-      const href = cleanHeading
-        ? `${relToHref(rel)}#${encodeURIComponent(cleanHeading)}`
-        : relToHref(rel);
-      const text = (alias ?? (cleanHeading ? `${title} › ${cleanHeading}` : title)).trim();
-      return `[${text}](${href})`;
+      const { text, href } = noteLinkParts(rel, title, heading);
+      return `[${(alias ?? text).trim()}](${href})`;
     },
   );
 }
@@ -233,20 +263,26 @@ export function rewriteLinksInMarkdown(
   );
 
   for (const span of scanWikiTargets(body)) {
-    const clean = stripMd(span.target.trim());
+    const trimmed = span.target.trim();
+    if (!trimmed) continue;
+    // `[[笔记#标题]]` — match the note part, carry the fragment along.
+    const hash = trimmed.indexOf("#");
+    const notePart = hash === -1 ? trimmed : trimmed.slice(0, hash);
+    const fragment = hash === -1 ? "" : trimmed.slice(hash);
+    const clean = stripMd(notePart);
     if (!clean) continue;
     const lowered = clean.toLowerCase();
-    let newTarget: string | null = null;
+    let newNotePart: string | null = null;
     for (const { from, to } of rewrites) {
       if (/\.md$/i.test(from)) {
         if (lowered === stripMd(from).toLowerCase()) {
-          newTarget = stripMd(to);
+          newNotePart = stripMd(to);
           break;
         }
       } else {
         const dirKey = from.replace(/\/+$/, "").toLowerCase();
         if (lowered.startsWith(`${dirKey}/`)) {
-          newTarget = to + span.target.slice(dirKey.length);
+          newNotePart = to + notePart.slice(dirKey.length);
           break;
         }
       }
@@ -254,7 +290,7 @@ export function rewriteLinksInMarkdown(
     // A bare `[[name]]` shorthand keeps working through the rename only when
     // no surviving note still claims the old basename.
     if (
-      newTarget === null &&
+      newNotePart === null &&
       notes &&
       oldBasenames.has(lowered) &&
       !takenBasenames.has(lowered)
@@ -262,8 +298,9 @@ export function rewriteLinksInMarkdown(
       const owner = rewrites.find(
         ({ from }) => basename(from).toLowerCase() === lowered,
       );
-      if (owner) newTarget = basename(owner.to);
+      if (owner) newNotePart = basename(owner.to);
     }
+    const newTarget = newNotePart === null ? null : newNotePart + fragment;
     if (newTarget === null || newTarget === span.target) continue;
     edits.push({
       start: span.targetStart,

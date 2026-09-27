@@ -118,6 +118,9 @@ function openVaultSnapshot(
     view: null,
     expanded: new Set<string>(),
     recentNotes: seedRecents(snapshot.tree),
+    // Every vault starts at name order; the session restore re-applies this
+    // vault's own saved preference right after.
+    treeSort: "name",
   });
   useTabs.getState().clear();
 }

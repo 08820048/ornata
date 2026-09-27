@@ -1,5 +1,5 @@
 import { Extension, InputRule } from "@tiptap/core";
-import { relToHref, resolveWiki } from "@/lib/noteLinks";
+import { noteLinkParts, resolveWiki, splitWikiTarget } from "@/lib/noteLinks";
 import { flattenNotes } from "@/lib/tree";
 import { useVault } from "@/stores/vault";
 
@@ -20,15 +20,18 @@ export const WikiLink = Extension.create({
           const linkType = state.schema.marks.link;
           if (!linkType) return;
           const notes = flattenNotes(useVault.getState().tree);
-          const { rel, title } = resolveWiki(match[1], notes);
-          const text = (match[2] ?? title).trim();
+          // `[[笔记#标题]]` links a heading: split the fragment off before
+          // resolving, then encode it back onto the href.
+          const { target: noteTarget, heading } = splitWikiTarget(match[1]);
+          const { rel, title } = resolveWiki(noteTarget, notes);
+          const { text, href } = noteLinkParts(rel, title, heading);
           chain()
             .deleteRange(range)
             .insertContent([
               {
                 type: "text",
-                text,
-                marks: [{ type: "link", attrs: { href: relToHref(rel) } }],
+                text: (match[2] ?? text).trim(),
+                marks: [{ type: "link", attrs: { href } }],
               },
               { type: "text", text: " " },
             ])

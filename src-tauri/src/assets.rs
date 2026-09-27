@@ -7,7 +7,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::vault::ASSETS_DIR;
+use crate::vault::{ASSETS_DIR, DATA_DIR};
 
 const ALLOWED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "svg"];
 
@@ -30,10 +30,17 @@ pub struct UnusedAsset {
 /// `.markd/assets/...` references both count as live). Fresh files inside
 /// the grace window are never listed.
 pub fn unreferenced_assets(root: &Path) -> AppResult<Vec<UnusedAsset>> {
+    unreferenced_assets_before(root, SystemTime::now())
+}
+
+fn unreferenced_assets_before(root: &Path, now: SystemTime) -> AppResult<Vec<UnusedAsset>> {
     let mut referenced: HashSet<String> = HashSet::new();
     collect_references(root, &crate::vault::notes_root(root), &mut referenced)?;
+    // History snapshots and templates can reference assets too — restoring a
+    // snapshot or spawning from a template after a cleanup must not break.
+    collect_references(root, &root.join(DATA_DIR).join("history"), &mut referenced)?;
+    collect_references(root, &root.join(DATA_DIR).join("templates"), &mut referenced)?;
     let mut out: Vec<UnusedAsset> = Vec::new();
-    let now = SystemTime::now();
     for entry in fs::read_dir(root.join(ASSETS_DIR)).into_iter().flatten().flatten() {
         let path = entry.path();
         if !path.is_file() {
@@ -46,12 +53,14 @@ pub fn unreferenced_assets(root: &Path) -> AppResult<Vec<UnusedAsset>> {
         let Ok(metadata) = entry.metadata() else {
             continue;
         };
-        if metadata
-            .modified()
+        // Birthtime covers files copied in with a preserved mtime.
+        let fresh = metadata
+            .created()
+            .or_else(|_| metadata.modified())
             .ok()
-            .and_then(|modified| now.duration_since(modified).ok())
-            .is_some_and(|age| age.as_millis() < GRACE_MS)
-        {
+            .and_then(|time| now.duration_since(time).ok())
+            .is_some_and(|age| age.as_millis() < GRACE_MS);
+        if fresh {
             continue;
         }
         out.push(UnusedAsset {
@@ -64,10 +73,27 @@ pub fn unreferenced_assets(root: &Path) -> AppResult<Vec<UnusedAsset>> {
 }
 
 /// Move the named vault assets to the OS trash. Bare file names only —
-/// anything with a separator is ignored. Returns how many were trashed.
+/// anything with a separator is ignored. The reference set is re-derived at
+/// this moment, so a stale dialog list can never trash a now-referenced
+/// image. Returns how many were trashed.
 pub fn trash_assets(root: &Path, names: &[String]) -> AppResult<usize> {
+    trash_assets_before(root, names, SystemTime::now())
+}
+
+fn trash_assets_before(
+    root: &Path,
+    names: &[String],
+    now: SystemTime,
+) -> AppResult<usize> {
+    let still_unused: HashSet<String> = unreferenced_assets_before(root, now)?
+        .into_iter()
+        .map(|asset| asset.name)
+        .collect();
     let mut trashed = 0;
     for name in names {
+        if !still_unused.contains(name) {
+            continue;
+        }
         if name.starts_with('.') || name.contains('/') || name.contains('\\') {
             continue;
         }
@@ -99,7 +125,9 @@ fn collect_references(root: &Path, dir: &Path, referenced: &mut HashSet<String>)
         if path.extension().is_none_or(|e| e != "md") {
             continue;
         }
-        let content = fs::read_to_string(&path).unwrap_or_default();
+        // A failed read (iCloud placeholder, permissions) must fail the whole
+        // scan — treating the note as empty would orphan its images.
+        let content = fs::read_to_string(&path)?;
         let mut rest = content.as_str();
         while let Some(pos) = rest.find("assets/") {
             let tail = &rest[pos + "assets/".len()..];
@@ -223,6 +251,104 @@ fn decode_base64_bytes(input: &str) -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::notes::{create_note, write_note};
+    use std::os::unix::fs::PermissionsExt;
+
+    /// Files are written "just now"; scanning from an hour later ages them
+    /// past the grace window.
+    fn hour_later() -> SystemTime {
+        SystemTime::now() + std::time::Duration::from_secs(3600)
+    }
+
+    fn asset(root: &std::path::Path, name: &str) -> std::path::PathBuf {
+        let path = root.join(ASSETS_DIR).join(name);
+        std::fs::write(&path, "bytes").unwrap();
+        path
+    }
+
+    #[test]
+    fn unreferenced_counts_both_prefixes_and_history_templates() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let a = create_note(root, "", "One").unwrap();
+        write_note(root, &a, "![x](.ornata/assets/one.png)").unwrap();
+        let b = create_note(root, "", "Two").unwrap();
+        write_note(root, &b, "![y](.markd/assets/two.png)").unwrap();
+        // History snapshot + template referencing three.png / four.png.
+        let snap = root.join(DATA_DIR).join("history/One.md/1700000000000.md");
+        std::fs::create_dir_all(snap.parent().unwrap()).unwrap();
+        std::fs::write(&snap, "![z](.ornata/assets/three.png)").unwrap();
+        let tpl = root.join(DATA_DIR).join("templates/t.md");
+        std::fs::write(&tpl, "![t](.ornata/assets/four.png)").unwrap();
+        // The referenced pair plus one true orphan.
+        for name in ["one.png", "two.png", "three.png", "four.png", "five.png"] {
+            asset(root, name);
+        }
+
+        let names: Vec<String> = unreferenced_assets_before(root, hour_later())
+            .unwrap()
+            .into_iter()
+            .map(|asset| asset.name)
+            .collect();
+        assert_eq!(names, vec!["five.png"]);
+    }
+
+    #[test]
+    fn read_failure_fails_the_scan() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let a = create_note(root, "", "One").unwrap();
+        write_note(root, &a, "![x](.ornata/assets/one.png)").unwrap();
+        asset(root, "one.png");
+        let unreadable = root.join("notes").join("Locked.md");
+        std::fs::write(&unreadable, "![y](.ornata/assets/two.png)").unwrap();
+        let mut perms = std::fs::metadata(&unreadable).unwrap().permissions();
+        perms.set_mode(0o000);
+        std::fs::set_permissions(&unreadable, perms).unwrap();
+
+        // The unreadable note's references are unknown — refuse to list
+        // anything rather than orphaning two.png.
+        assert!(unreferenced_assets_before(root, hour_later()).is_err());
+    }
+
+    #[test]
+    fn fresh_assets_are_not_listed() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        asset(root, "just-pasted.png");
+        // Scanning from *now* (not an hour later) keeps the fresh file hidden.
+        assert!(unreferenced_assets(root).unwrap().is_empty());
+    }
+
+    #[test]
+    fn trash_skips_separators_and_now_referenced_names() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let a = create_note(root, "", "One").unwrap();
+        write_note(root, &a, "![x](.ornata/assets/one.png)").unwrap();
+        asset(root, "one.png");
+        asset(root, "two.png");
+        // "one.png" is referenced and "../escape" carries a separator —
+        // neither may be trashed; "two.png" is a genuine orphan.
+        let trashed = trash_assets_before(
+            root,
+            &[
+                "one.png".to_string(),
+                "two.png".to_string(),
+                "../escape".to_string(),
+            ],
+            hour_later(),
+        )
+        .unwrap();
+        assert_eq!(trashed, 1);
+        assert!(root.join(ASSETS_DIR).join("one.png").is_file());
+        assert!(!root.join(ASSETS_DIR).join("two.png").exists());
+    }
     use super::*;
     use crate::vault::ensure_layout;
     use tempfile::tempdir;

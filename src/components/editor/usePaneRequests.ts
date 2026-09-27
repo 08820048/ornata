@@ -141,6 +141,11 @@ export function usePaneRequests(input: {
     revealedHeadingNonce.current = headingRevealReq.nonce;
     if (revealHeading(editor, headingRevealReq.heading) && scrollRef.current) {
       savedScroll.current = scrollRef.current.scrollTop;
+    } else {
+      // Fragment matched no heading — land at the top so the miss is visible
+      // instead of the pane silently staying wherever it was.
+      savedScroll.current = 0;
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
     }
   }, [editor, active, markdownSource, loadNonce, headingRevealReq, currentKey, loadedKey, savedScroll, scrollRef]);
 }

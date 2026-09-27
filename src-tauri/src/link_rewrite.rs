@@ -376,25 +376,39 @@ fn rewrite_href(href: &str, ctx: &MatchCtx) -> Option<String> {
 
 /// Repoint one `[[wiki]]` target (the part before `|alias`).
 fn rewrite_wiki(target: &str, ctx: &MatchCtx) -> Option<String> {
-    let clean = strip_md(target.trim());
+    let trimmed = target.trim();
+    // `[[笔记#标题]]` — match the note part, carry the fragment along.
+    let (note_part, fragment) = match trimmed.find('#') {
+        Some(i) => (&trimmed[..i], Some(&trimmed[i..])),
+        None => (trimmed, None),
+    };
+    let clean = strip_md(note_part);
     let lowered = clean.to_lowercase();
-    if let Some(key) = &ctx.note_key {
-        if lowered == *key {
-            return Some(strip_md(&ctx.note_new).to_string());
-        }
-    }
-    if let Some(key) = &ctx.dir_key {
+    let mut rewritten: Option<String> = if let Some(key) = &ctx.note_key {
+        (lowered == *key).then(|| strip_md(&ctx.note_new).to_string())
+    } else if let Some(key) = &ctx.dir_key {
         if lowered.starts_with(&format!("{key}/")) {
             let suffix: String = clean.chars().skip(key.chars().count() + 1).collect();
-            return Some(format!("{}/{}", strip_md(&ctx.dir_new), suffix));
+            Some(format!("{}/{}", strip_md(&ctx.dir_new), suffix))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    // The bare-name shorthand is checked independently — it applies to note
+    // renames even when the note_key branch above didn't match.
+    if rewritten.is_none() {
+        if let Some((old_base, new_base)) = &ctx.bare_rename {
+            if lowered == *old_base {
+                rewritten = Some(new_base.clone());
+            }
         }
     }
-    if let Some((old_base, new_base)) = &ctx.bare_rename {
-        if lowered == *old_base {
-            return Some(new_base.clone());
-        }
-    }
-    None
+    rewritten.map(|note| match fragment {
+        Some(fragment) => format!("{note}{fragment}"),
+        None => note,
+    })
 }
 
 /// Vault rel → href, mirroring the frontend's `relToHref`
@@ -540,6 +554,21 @@ mod tests {
     }
 
     #[test]
+    fn wiki_fragments_survive_renames() {
+        let root = setup();
+        create_folder(&root, "", "projects").unwrap();
+        let target = create_note(&root, "projects", "app").unwrap();
+        let a = create_note(&root, "", "Journal").unwrap();
+        write_note(&root, &a, "[[projects/app#概要]] [[projects/app#概要|别名]] [[app#概要]]").unwrap();
+
+        crate::notes::rename_entry(&root, &target, "renamed").unwrap();
+        assert_eq!(
+            content_of(&root, &a),
+            "[[projects/renamed#概要]] [[projects/renamed#概要|别名]] [[renamed#概要]]"
+        );
+    }
+
+    #[test]
     fn ambiguous_bare_wiki_names_are_left_alone() {
         let root = setup();
         create_folder(&root, "", "projects").unwrap();
@@ -642,3 +671,4 @@ mod tests {
         );
     }
 }
+

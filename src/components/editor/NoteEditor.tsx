@@ -21,7 +21,7 @@ import {
   type Property,
 } from "@/lib/frontmatter";
 import {
-  relToHref,
+  noteLinkParts,
   rewriteLinksInMarkdown,
   wikiToMarkdown,
 } from "@/lib/noteLinks";
@@ -867,10 +867,7 @@ export const NoteEditor = memo(function NoteEditor({
   // href is the note path (serializes to `[title](rel)` markdown on save).
   const insertNoteLink = (rel: string, title: string, heading?: string) => {
     if (!editor || !linkPicker) return;
-    const clean = heading?.trim();
-    const href = clean
-      ? `${relToHref(rel)}#${encodeURIComponent(clean)}`
-      : relToHref(rel);
+    const { text: label, href } = noteLinkParts(rel, title, heading);
     editor
       .chain()
       .focus()
@@ -878,7 +875,7 @@ export const NoteEditor = memo(function NoteEditor({
       .insertContent([
         {
           type: "text",
-          text: clean ? `${title} › ${clean}` : title,
+          text: label,
           marks: [{ type: "link", attrs: { href } }],
         },
         { type: "text", text: " " },

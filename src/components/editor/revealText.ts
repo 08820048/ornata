@@ -13,10 +13,10 @@ function normalize(text: string) {
  * Returns false when nothing matched.
  */
 /**
- * Scroll to the heading whose visible text matches `heading` (normalized,
- * exact match with a starts-with fallback for stray trailing punctuation in
- * the fragment) and flash it — the anchor-jump flavor of `revealText`.
- * Returns false when no heading matched.
+ * Scroll to the heading whose visible text matches `heading` (whitespace-
+ * collapsed, case-insensitive exact match) and flash it — the anchor-jump
+ * flavor of `revealText`. Returns false when no heading matched, which the
+ * caller turns into a scroll to the top.
  */
 export function revealHeading(editor: Editor, heading: string): boolean {
   const target = normalize(heading);
@@ -24,9 +24,9 @@ export function revealHeading(editor: Editor, heading: string): boolean {
   const headings = Array.from(
     editor.view.dom.querySelectorAll<HTMLElement>("h1, h2, h3"),
   );
-  const el =
-    headings.find((el) => normalize(el.textContent ?? "") === target) ??
-    headings.find((el) => normalize(el.textContent ?? "").startsWith(target));
+  // Exact normalized match only: a prefix fallback would jump to an
+  // unrelated longer heading when the fragment is a prefix of it.
+  const el = headings.find((el) => normalize(el.textContent ?? "") === target);
   if (!el) return false;
   el.scrollIntoView({ block: "start" });
   el.classList.remove("reveal-flash");

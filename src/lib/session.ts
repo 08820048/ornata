@@ -123,7 +123,9 @@ export async function restoreSession(root: string) {
   } else if (tabs[0]) {
     vault.setView({ type: "note", note: tabs[0] });
   }
-  if (data.treeSort) useVault.setState({ treeSort: data.treeSort });
+  if (data.treeSort === "name" || data.treeSort === "modified") {
+    useVault.setState({ treeSort: data.treeSort });
+  }
 }
 
 let started = false;

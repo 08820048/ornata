@@ -2,6 +2,7 @@ import { FileText, Hash } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flattenNotes } from "@/lib/tree";
+import { headingPlainText } from "@/lib/noteLinks";
 import { ipc } from "@/lib/ipc";
 import { cx, noteTitle, parentDir } from "@/lib/utils";
 import { useVault } from "@/stores/vault";
@@ -31,14 +32,9 @@ function extractHeadings(markdown: string): string[] {
     }
     if (inFence) continue;
     const match = /^#{1,3}\s+(.*)$/.exec(trimmed);
-    if (match) {
-      headings.push(
-        match[1]
-          .replace(/[*_~`]/g, "")
-          .replace(/\s+/g, " ")
-          .trim(),
-      );
-    }
+    // Shared with revealHeading: the label must equal the DOM textContent,
+    // emphasis markers stripped per CommonMark, identifier underscores kept.
+    if (match) headings.push(headingPlainText(match[1]));
   }
   return headings.filter(Boolean);
 }

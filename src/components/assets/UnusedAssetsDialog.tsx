@@ -1,5 +1,5 @@
 import { ImageOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
 import { ipc } from "@/lib/ipc";
@@ -17,13 +17,15 @@ export function UnusedAssetsDialog() {
   const open = useUi((s) => s.unusedAssetsOpen);
   const setOpen = useUi((s) => s.setUnusedAssetsOpen);
   const [assets, setAssets] = useState<UnusedAsset[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const t = useT();
 
-  useEffect(() => {
-    if (!open) return;
+  const load = useCallback(() => {
     setConfirming(false);
+    setLoadError(false);
+    setAssets(null);
     let cancelled = false;
     ipc
       .listUnusedAssets()
@@ -31,12 +33,24 @@ export function UnusedAssetsDialog() {
         if (!cancelled) setAssets(list);
       })
       .catch(() => {
-        if (!cancelled) setAssets([]);
+        // A scan failure must not read as "nothing to clean up" — that
+        // wording would invite a cleanup based on missing information.
+        if (!cancelled) {
+          setLoadError(true);
+          setAssets([]);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const cleanup = load();
+    return () => cleanup?.();
+  }, [open, load]);
 
   const totalBytes = (assets ?? []).reduce((sum, asset) => sum + asset.size, 0);
   const totalKb = (totalBytes / 1024).toFixed(1);
@@ -73,7 +87,18 @@ export function UnusedAssetsDialog() {
         )}
       </div>
       <div className="max-h-[46vh] overflow-y-auto p-2">
-        {assets === null ? null : assets.length === 0 ? (
+        {loadError ? (
+          <div className="flex flex-col items-center gap-2 px-3 py-8 text-center">
+            <p className="text-[13px] leading-relaxed text-faint">{t("assets.loadFailed")}</p>
+            <button
+              type="button"
+              onClick={load}
+              className="rounded-md border border-line px-3 py-1 text-[12px] text-muted transition-colors duration-100 hover:bg-hover"
+            >
+              {t("error.reload")}
+            </button>
+          </div>
+        ) : assets === null ? null : assets.length === 0 ? (
           <p className="px-3 py-8 text-center text-[13px] leading-relaxed text-faint">
             {t("assets.empty")}
           </p>

@@ -118,6 +118,18 @@ test("rewriteLinksInMarkdown rewrites a bare wiki name only when unambiguous", (
   ).toBe(md);
 });
 
+test("wiki fragments survive renames and folder moves", () => {
+  const md = "[[projects/app#标题]] [[projects/app#标题|t]]";
+  expect(
+    rewriteLinksInMarkdown(md, [{ from: "projects/app.md", to: "work/renamed.md" }]),
+  ).toBe("[[work/renamed#标题]] [[work/renamed#标题|t]]");
+  expect(
+    rewriteLinksInMarkdown(md, [{ from: "projects", to: "work" }], [
+      { rel: "work/app.md" },
+    ]),
+  ).toBe("[[work/app#标题]] [[work/app#标题|t]]");
+});
+
 test("rewriteLinksInMarkdown skips frontmatter", () => {
   const md = "---\ntitle: [x](projects/app.md)\n---\n[link](projects/app.md)";
   expect(
