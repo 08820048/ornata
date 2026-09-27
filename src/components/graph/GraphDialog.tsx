@@ -70,6 +70,12 @@ export function GraphDialog() {
     };
   }, [open]);
 
+  // On a capped graph the unlinked notes are not in the largest component, so
+  // they have no coordinates until this is on. Smaller graphs already lay
+  // every note out; there the same toggle only changes drawing.
+  const layoutIsolates =
+    (graph?.nodes.length ?? 0) > 2000 && !showAll && showIsolated;
+
   useEffect(() => {
     if (!graph) return;
     const canvas = canvasRef.current;
@@ -83,10 +89,8 @@ export function GraphDialog() {
       degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1);
     }
 
-    // Large vaults: keep only the biggest connected component by default —
-    // the synchronous layout would otherwise freeze the window. "Show all"
-    // reveals the rest (the simulation always contains every node, so the
-    // toggle only changes what is drawn).
+    // Large vaults: lay out only the biggest connected component by default.
+    // The synchronous pass would otherwise freeze the window.
     const capped = graph.nodes.length > 2000;
     let inMajor: Set<string> | null = null;
     if (capped) {
@@ -120,10 +124,14 @@ export function GraphDialog() {
       inMajor = new Set(graph.nodes.filter((n) => find(n.rel) === best).map((n) => n.rel));
     }
 
-    // The simulated node set changes only here (cap toggle) — re-layout and
-    // viewport reset are inherent to growing the graph. The isolated-notes
-    // toggle below is draw-only and never rebuilds this.
-    const simmed = inMajor === null || showAll ? graph.nodes : graph.nodes.filter((n) => inMajor.has(n.rel));
+    // Growing this set re-lays out and resets the view. "Show all" adds every
+    // other component. "Show unlinked" on a capped graph adds the degree-0
+    // notes, which otherwise have nowhere to be drawn.
+    const simmed = graph.nodes.filter((node) => {
+      if (inMajor === null || showAll) return true;
+      if (inMajor.has(node.rel)) return true;
+      return layoutIsolates && (degree.get(node.rel) ?? 0) === 0;
+    });
     const nodes: SimNode[] = simmed.map((node, index) => {
       const d = degree.get(node.rel) ?? 0;
       const angle = (index / simmed.length) * Math.PI * 2;
@@ -162,7 +170,7 @@ export function GraphDialog() {
     viewRef.current = { x: 0, y: 0, k: 1 };
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, showAll]);
+  }, [graph, showAll, layoutIsolates]);
 
   const cssVar = (name: string, fallback: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
