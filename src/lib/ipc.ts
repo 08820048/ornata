@@ -131,9 +131,11 @@ export const ipc = {
       defaultName: input.defaultName,
       kind: input.kind,
     }),
+  hidePrintWindow: () => call<void>("hide_print_window"),
   printViewReady: (input: { bodyHtml: string; pageCss: string }) =>
     call<void>("print_view_ready", input),
   dismissQuickCapture: () => call<void>("dismiss_quick_capture"),
+  toggleQuickCapture: () => call<void>("toggle_quick_capture"),
   trashAssets: (names: string[]) => call<number>("trash_assets", { names }),
   readAppData: (name: string) => call<string | null>("read_app_data", { name }),
   writeAppData: (name: string, content: string) =>

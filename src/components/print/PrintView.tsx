@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EditorContent } from "@tiptap/react";
 import { createExtensions } from "@/components/editor/extensions";
+import { applyTheme } from "@/lib/theme";
 import { ipc } from "@/lib/ipc";
 
 interface PrintPayload {
@@ -19,6 +20,10 @@ interface PrintPayload {
 export function PrintView() {
   const [markdown, setMarkdown] = useState<string | null>(null);
   const [vaultRoot, setVaultRoot] = useState("");
+  // Prints must always be light — a dark-theme page prints white-on-white.
+  useEffect(() => {
+    applyTheme("light");
+  }, []);
 
   const assetRoot = useMemo(() => vaultRoot, [vaultRoot]);
   const extensions = useMemo(() => createExtensions(assetRoot), [assetRoot]);
@@ -58,6 +63,10 @@ export function PrintView() {
     if (markdown === null || !editor || editor.isDestroyed) return;
     let cancelled = false;
     editor.commands.setContent(markdown, { contentType: "markdown" });
+    // Hand control back to the backend once the print sheet closes.
+    const onAfterPrint = () => void ipc.hidePrintWindow();
+    window.addEventListener("afterprint", onAfterPrint);
+
     void (async () => {
       // Images load through the asset protocol asynchronously; wait until
       // every <img> has settled (bounded), then hand over the DOM.
@@ -67,6 +76,15 @@ export function PrintView() {
         await new Promise((resolve) => setTimeout(resolve, 125));
       }
       await document.fonts.ready.catch(() => undefined);
+      // Mermaid diagrams render asynchronously in a node view; wait (bounded)
+      // until no block is still showing its rendering placeholder.
+      for (let attempt = 0; attempt < 16; attempt += 1) {
+        const rendering = editor.view.dom.querySelectorAll(
+          ".mermaid-preview .mermaid-rendering",
+        );
+        if (rendering.length === 0) break;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
       const bodyHtml = editor.view.dom.outerHTML;
       const css: string[] = [];
       for (const sheet of Array.from(document.styleSheets)) {
@@ -82,6 +100,8 @@ export function PrintView() {
         await ipc.printViewReady({ bodyHtml, pageCss: css.join("\n") });
       }
     })();
+
+    return () => window.removeEventListener("afterprint", onAfterPrint);
   }, [markdown, editor]);
 
   return (

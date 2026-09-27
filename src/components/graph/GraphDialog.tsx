@@ -18,6 +18,7 @@ interface SimNode {
   r: number;
   degree: number;
   isolated: boolean;
+  hidden: boolean;
 }
 
 interface SimEdge {
@@ -37,6 +38,7 @@ export function GraphDialog() {
   const [graph, setGraph] = useState<LinkGraph | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [showIsolated, setShowIsolated] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simRef = useRef<{ nodes: SimNode[]; edges: SimEdge[] } | null>(null);
@@ -78,6 +80,43 @@ export function GraphDialog() {
       degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1);
     }
 
+    // Large vaults: keep only the biggest connected component by default —
+    // the synchronous layout would otherwise freeze the window. "Show all"
+    // reveals the rest (the simulation always contains every node, so the
+    // toggle only changes what is drawn).
+    const capped = graph.nodes.length > 2000;
+    let inMajor: Set<string> | null = null;
+    if (capped) {
+      const parent = new Map<string, string>();
+      const find = (rel: string): string => {
+        const p = parent.get(rel) ?? rel;
+        if (p === rel) return rel;
+        const root = find(p);
+        parent.set(rel, root);
+        return root;
+      };
+      const union = (a: string, b: string) => {
+        const ra = find(a);
+        const rb = find(b);
+        if (ra !== rb) parent.set(ra, rb);
+      };
+      for (const edge of graph.edges) union(edge.from, edge.to);
+      const sizes = new Map<string, number>();
+      for (const node of graph.nodes) {
+        const rootRel = find(node.rel);
+        sizes.set(rootRel, (sizes.get(rootRel) ?? 0) + 1);
+      }
+      let best = "";
+      let bestSize = 0;
+      for (const [rootRel, size] of sizes) {
+        if (size > bestSize) {
+          best = rootRel;
+          bestSize = size;
+        }
+      }
+      inMajor = new Set(graph.nodes.filter((n) => find(n.rel) === best).map((n) => n.rel));
+    }
+
     const nodes: SimNode[] = graph.nodes.map((node, index) => {
       const d = degree.get(node.rel) ?? 0;
       const angle = (index / graph.nodes.length) * Math.PI * 2;
@@ -89,6 +128,9 @@ export function GraphDialog() {
         r: Math.min(4 + d * 1.2, 13),
         degree: d,
         isolated: d === 0,
+        hidden: Boolean(
+          (d === 0 && !showIsolated) || (inMajor !== null && !inMajor.has(node.rel) && !showAll),
+        ),
       };
     });
     const byRel = new Map(nodes.map((n) => [n.rel, n]));
@@ -116,7 +158,7 @@ export function GraphDialog() {
     viewRef.current = { x: 0, y: 0, k: 1 };
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, showIsolated]);
+  }, [graph]);
 
   const cssVar = (name: string, fallback: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -150,7 +192,7 @@ export function GraphDialog() {
       }
     }
     const byRel = new Map(sim.nodes.map((n) => [n.rel, n]));
-    const visible = (n: SimNode) => showIsolated || !n.isolated;
+    const visible = (n: SimNode) => !n.hidden;
     const { x: vx, y: vy, k } = viewRef.current;
 
     ctx.lineWidth = 1;
@@ -181,7 +223,7 @@ export function GraphDialog() {
         ? ink
         : dimmed
           ? faint
-          : node.isolated
+          : node.isolated || node.hidden
             ? faint
             : muted;
       ctx.globalAlpha = dimmed ? 0.45 : 1;
@@ -196,7 +238,7 @@ export function GraphDialog() {
 
   useEffect(() => {
     draw();
-  }, [hovered, showIsolated, draw]);
+  }, [hovered, showIsolated, showAll, draw]);
 
   const nodeAt = (clientX: number, clientY: number): SimNode | null => {
     const canvas = canvasRef.current;
@@ -209,7 +251,7 @@ export function GraphDialog() {
     let best: SimNode | null = null;
     let bestDist = Infinity;
     for (const node of sim.nodes) {
-      if (!showIsolated && node.isolated) continue;
+      if (node.hidden) continue;
       const dx = px - (node.x * k + vx);
       const dy = py - (node.y * k + vy);
       const dist = Math.hypot(dx, dy);
@@ -321,6 +363,20 @@ export function GraphDialog() {
               )}
             >
               {t("graph.showIsolated")}
+            </button>
+          )}
+          {graph && graph.nodes.length > 2000 && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className={cx(
+                "absolute left-3 top-12 rounded-md border px-2.5 py-1 text-[11.5px] transition-colors duration-100",
+                showAll
+                  ? "border-line bg-active text-ink"
+                  : "border-line-soft bg-panel text-faint hover:text-muted",
+              )}
+            >
+              {t("graph.showAll")}
             </button>
           )}
         </div>

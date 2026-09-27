@@ -9,6 +9,7 @@ import {
   Share2,
   Search,
   Settings,
+  Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { openPath } from "@tauri-apps/plugin-opener";
@@ -129,6 +130,12 @@ export function CommandPalette() {
         label: t("templates.reveal"),
         icon: FolderOpen,
         run: () => void ipc.revealTemplates(),
+      },
+      {
+        id: "quick-capture",
+        label: t("daily.quickCapture"),
+        icon: Zap,
+        run: () => void ipc.toggleQuickCapture(),
       },
       {
         id: "link-graph",

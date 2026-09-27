@@ -16,6 +16,14 @@ export function QuickCapture() {
     inputRef.current?.focus();
   }, []);
 
+  // The plan calls for hide-on-blur (not destroy) — the window stays alive
+  // for the next capture.
+  useEffect(() => {
+    const onBlur = () => void ipc.dismissQuickCapture();
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, []);
+
   const dismiss = () => {
     setText("");
     void ipc.dismissQuickCapture();

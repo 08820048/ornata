@@ -545,8 +545,13 @@ export function useNoteContentEffects({
   // is open in this pane — append to the pane's own content and save through
   // its normal pipeline (single-writer rule).
   const appendReq = useTabs((s) => s.appendReq);
+  const appliedAppendNonce = useRef(0);
   useEffect(() => {
     if (!appendReq || appendReq.key !== currentKey) return;
+    // Consume once — rawText is in the deps below (source mode reads it), and
+    // re-running on those changes would append the same line repeatedly.
+    if (appendReq.nonce === appliedAppendNonce.current) return;
+    appliedAppendNonce.current = appendReq.nonce;
     const line = appendReq.line;
     if (markdownSource) {
       const base = rawText.replace(/\n*$/, "");

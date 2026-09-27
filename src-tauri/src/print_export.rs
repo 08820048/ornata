@@ -159,11 +159,10 @@ pub async fn print_view_ready(
     let job = take_job(&app)?;
     match job.kind {
         ExportKind::Pdf => {
-            // The system print sheet; the user chooses "Save as PDF".
+            // The system print sheet; the user chooses "Save as PDF". The
+            // sheet may outlive this call, so the window hides itself via
+            // the page's `afterprint` event (hide_print_window).
             window.print().map_err(|e| AppError::Other(e.to_string()))?;
-            if let Some(window) = app.get_webview_window(LABEL) {
-                let _ = window.hide();
-            }
         }
         ExportKind::Html => {
             let Some(path) = job.path else {
@@ -243,12 +242,17 @@ fn inline_asset_images(html: &str, vault_root: &str) -> String {
             "svg" => "image/svg+xml",
             _ => "application/octet-stream",
         };
-        match std::fs::read(&path) {
-            Ok(bytes) => {
-                out.push_str(&format!("data:{mime};base64,{}", crate::assets::encode_base64(&bytes)));
-            }
-            Err(_) => out.push_str(&format!("file://{encoded}")),
-        }
+        // 20 MB per image (same cap as pasting); read failures and oversized
+        // files get a transparent placeholder instead of a machine-local
+        // path that would break on any other device.
+        let bytes = std::fs::read(&path).ok();
+        let inlined = bytes
+            .filter(|bytes| bytes.len() <= MAX_INLINE_BYTES)
+            .map(|bytes| {
+                format!("data:{mime};base64,{}", crate::assets::encode_base64(&bytes))
+            })
+            .unwrap_or_else(|| TRANSPARENT_PIXEL.to_string());
+        out.push_str(&inlined);
         rest = &rest[end..];
     }
     out.push_str(rest);
@@ -274,8 +278,26 @@ fn percent_decode(input: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// 1×1 transparent GIF — placeholder for images we can't inline.
+const TRANSPARENT_PIXEL: &str =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/// Per-image inline cap, matching the paste limit.
+const MAX_INLINE_BYTES: usize = 20 * 1024 * 1024;
+
 #[derive(Clone, Serialize)]
 struct RichTextPayload {
     html: String,
     plain: String,
+}
+
+
+/// Hide the print window — called from its `afterprint` event, since the
+/// system print sheet can outlive the `print()` call.
+#[tauri::command]
+pub fn hide_print_window(app: AppHandle) -> AppResult<()> {
+    if let Some(window) = app.get_webview_window(LABEL) {
+        let _ = window.hide();
+    }
+    Ok(())
 }
