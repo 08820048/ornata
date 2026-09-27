@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { closeTab } from "@/components/editor/TabBar";
 import { AppToaster } from "@/components/ui/AppToaster";
+import { toast } from "sonner";
 import { Welcome } from "@/components/welcome/Welcome";
 import { initSessionSync, restoreSession } from "@/lib/session";
 import { useSettingsBridge } from "@/lib/useSettingsBridge";
@@ -10,7 +11,8 @@ import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
-import { useLocale } from "@/stores/locale";
+import { useLocale, useT } from "@/stores/locale";
+import { writeRich } from "@/lib/clipboard";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
@@ -32,6 +34,7 @@ export default function App() {
   const root = useVault((s) => s.root);
   const startup = useVault((s) => s.startup);
   const refreshTree = useVault((s) => s.refreshTree);
+  const t = useT();
 
   useSettingsBridge();
 
@@ -89,6 +92,45 @@ export default function App() {
       stopListening?.();
     };
   }, [status, root]);
+
+  // Rich-text copy round-trips through the print window (which owns the
+  // rendered HTML); the main window holds clipboard focus, so the write
+  // happens here.
+  useEffect(() => {
+    if (status !== "ready") return;
+    let stopRich: (() => void) | undefined;
+    let stopDone: (() => void) | undefined;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const unRich = await listen<{ html: string; plain: string }>(
+          "ornata-rich-text",
+          ({ payload }) => {
+            void writeRich(payload.html, payload.plain).then(() =>
+              toast(t("toast.richCopied")),
+            );
+          },
+        );
+        const unDone = await listen<string>("ornata-export-done", (event) => {
+          toast(t("toast.noteExported"), { description: event.payload });
+        });
+        if (cancelled) {
+          unRich();
+          unDone();
+          return;
+        }
+        stopRich = unRich;
+        stopDone = unDone;
+      } catch {
+        // Event listeners unavailable — export still works, minus toasts.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      stopRich?.();
+      stopDone?.();
+    };
+  }, [status, t]);
 
   // Quick capture (⌘⌥J) hands its text to this window — the single writer
   // of the vault — which appends it to Inbox.md.

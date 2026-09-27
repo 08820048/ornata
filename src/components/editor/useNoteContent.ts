@@ -10,7 +10,7 @@ import {
 } from "@/lib/frontmatter";
 import { rewriteLinksInMarkdown, wikiToMarkdown } from "@/lib/noteLinks";
 import { applyLinkRewritesToEditor } from "./linkRewrites";
-import { noteKey, sameNote } from "@/lib/noteRef";
+import { noteKey, noteTitle, sameNote } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { NoteRef } from "@/lib/types";
 import { debounce } from "@/lib/utils";
@@ -590,6 +590,27 @@ export function useNoteContentEffects({
               ? await ipc.exportNote(current.rel, markdown)
               : await ipc.exportExternalNote(current.path, markdown);
           if (path) toast(t("toast.noteExported"), { description: path });
+        } else if (action === "print-pdf") {
+          await ipc.startPrintExport({
+            markdown,
+            vaultRoot: useVault.getState().root,
+            defaultName: noteTitle(noteRef.current),
+            kind: "pdf",
+          });
+        } else if (action === "export-html") {
+          await ipc.startPrintExport({
+            markdown,
+            vaultRoot: useVault.getState().root,
+            defaultName: noteTitle(noteRef.current),
+            kind: "html",
+          });
+        } else if (action === "copy-rich") {
+          await ipc.startPrintExport({
+            markdown,
+            vaultRoot: useVault.getState().root,
+            defaultName: noteTitle(noteRef.current),
+            kind: "clipboard",
+          });
         } else if (action === "delete") {
           const current = noteRef.current;
           debouncedPersist.cancel();

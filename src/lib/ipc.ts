@@ -119,6 +119,20 @@ export const ipc = {
   linkGraph: () => call<LinkGraph>("link_graph"),
   submitQuickCapture: (text: string) =>
     call<void>("submit_quick_capture", { text }),
+  startPrintExport: (input: {
+    markdown: string;
+    vaultRoot: string;
+    defaultName: string;
+    kind: "pdf" | "html" | "clipboard";
+  }) =>
+    call<void>("start_print_export", {
+      markdown: input.markdown,
+      vaultRoot: input.vaultRoot,
+      defaultName: input.defaultName,
+      kind: input.kind,
+    }),
+  printViewReady: (input: { bodyHtml: string; pageCss: string }) =>
+    call<void>("print_view_ready", input),
   dismissQuickCapture: () => call<void>("dismiss_quick_capture"),
   trashAssets: (names: string[]) => call<number>("trash_assets", { names }),
   readAppData: (name: string) => call<string | null>("read_app_data", { name }),

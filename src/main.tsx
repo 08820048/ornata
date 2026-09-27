@@ -4,6 +4,7 @@ import "katex/dist/katex.min.css";
 import App from "./App";
 import { SettingsWindow } from "@/components/settings/SettingsWindow";
 import { QuickCapture } from "@/components/quick/QuickCapture";
+import { PrintView } from "@/components/print/PrintView";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { applyTheme, cachedTheme } from "@/lib/theme";
 import { currentWindowKind } from "@/lib/settingsSync";
@@ -33,6 +34,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <SettingsWindow />
       ) : windowKind === "quick-capture" ? (
         <QuickCapture />
+      ) : windowKind === "print" ? (
+        <PrintView />
       ) : (
         <App />
       )}

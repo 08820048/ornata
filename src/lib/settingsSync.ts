@@ -8,12 +8,15 @@ import type {
 } from "@/lib/types";
 
 /** Which of the two windows this JS context is running in. */
-export type WindowKind = "main" | "settings" | "quick-capture";
+export type WindowKind = "main" | "settings" | "quick-capture" | "print";
 
 export function currentWindowKind(): WindowKind {
   try {
     const label = getCurrentWindow().label;
-    return label === "settings" ? "settings" : label === "quick-capture" ? "quick-capture" : "main";
+    if (label === "settings") return "settings";
+    if (label === "quick-capture") return "quick-capture";
+    if (label === "print") return "print";
+    return "main";
   } catch {
     // Browser preview / tests have no Tauri window metadata — behave as main.
     return "main";

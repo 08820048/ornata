@@ -16,6 +16,7 @@ mod image_source;
 mod legacy;
 mod mentions;
 mod notes;
+mod print_export;
 mod quick_capture;
 mod reveal;
 mod search;
@@ -48,6 +49,7 @@ pub fn run() {
         }).build())
         .manage(AppState::default())
         .manage(agent::AgentState::default())
+        .manage(print_export::PrintState::default())
         .invoke_handler(tauri::generate_handler![
             agent::agent_status,
             agent::agent_start,
@@ -95,6 +97,8 @@ pub fn run() {
             quick_capture::toggle_quick_capture,
             quick_capture::submit_quick_capture,
             quick_capture::dismiss_quick_capture,
+            print_export::start_print_export,
+            print_export::print_view_ready,
             commands::trash_assets,
             commands::read_history_snapshot,
             commands::snapshot_note,

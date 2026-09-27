@@ -1,5 +1,5 @@
 import {
-  CalendarDays, Code2, Copy, Download, FilePlus, MoreVertical, PanelLeft, Pilcrow, Search, Trash2 } from "lucide-react";
+  CalendarDays, ClipboardType, Code2, Copy, Download, FileCode, FilePlus, MoreVertical, PanelLeft, Pilcrow, Printer, Search, Trash2 } from "lucide-react";
 import { LayoutGroup, motion } from "motion/react";
 import { useState } from "react";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
@@ -165,6 +165,30 @@ export function AppShell() {
                       }}
                     />
                     <NoteMenuButton
+                      icon={Printer}
+                      label={t("editor.exportPdf")}
+                      onClick={() => {
+                        setNoteMenuOpen(false);
+                        dispatchNoteAction("print-pdf");
+                      }}
+                    />
+                    <NoteMenuButton
+                      icon={FileCode}
+                      label={t("editor.exportHtml")}
+                      onClick={() => {
+                        setNoteMenuOpen(false);
+                        dispatchNoteAction("export-html");
+                      }}
+                    />
+                    <NoteMenuButton
+                      icon={ClipboardType}
+                      label={t("editor.copyRich")}
+                      onClick={() => {
+                        setNoteMenuOpen(false);
+                        dispatchNoteAction("copy-rich");
+                      }}
+                    />
+                    <NoteMenuButton
                       icon={Copy}
                       label={t("editor.copyMarkdown")}
                       onClick={() => {
@@ -201,7 +225,7 @@ export function AppShell() {
   );
 }
 
-type NoteAction = "export" | "copy" | "delete";
+type NoteAction = "export" | "copy" | "delete" | "print-pdf" | "export-html" | "copy-rich";
 
 function dispatchNoteAction(action: NoteAction) {
   window.dispatchEvent(
