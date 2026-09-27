@@ -1,65 +1,48 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Slice } from "@tiptap/pm/model";
-import {
-  lazy,
-  memo,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
 import { History } from "lucide-react";
-import { toast } from "sonner";
-import { ipc } from "@/lib/ipc";
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   joinFrontmatter,
   parseFrontmatter,
   splitFrontmatter,
-  type Property,
 } from "@/lib/frontmatter";
-import {
-  noteLinkParts,
-  rewriteLinksInMarkdown,
-  wikiToMarkdown,
-} from "@/lib/noteLinks";
-import {
-  noteAssetRoot,
-  noteKey,
-  noteTitle,
-  sameNote,
-} from "@/lib/noteRef";
+import { noteLinkParts, wikiToMarkdown } from "@/lib/noteLinks";
+import { noteAssetRoot, noteTitle } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { NoteRef } from "@/lib/types";
-import { cx, debounce } from "@/lib/utils";
+import { cx } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
-import { useAgent } from "@/stores/agent";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
-import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
+import { ArticleOutline } from "./ArticleOutline";
 import { brokenLinksKey } from "./brokenLinks";
-import { usePaneLinkClicks, usePaneRequests } from "./usePaneRequests";
 import { dispatchFind } from "./findReplace";
 import { FindReplaceBar } from "./FindReplaceBar";
 import { NoteHistory } from "./NoteHistory";
 import { SaveTemplateDialog } from "./SaveTemplateDialog";
-import { applyLinkRewritesToEditor } from "./linkRewrites";
 import { CursorMotion } from "./cursorMotion";
 import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
 import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
-import { BacklinksBadge, NoteBacklinks, useBacklinks } from "./NoteBacklinks";
 import { NoteProperties } from "./NoteProperties";
-import { UnlinkedMentions } from "./UnlinkedMentions";
 import { SelectionMenu } from "./SelectionMenu";
+import { SlashMenu } from "./SlashMenu";
+import { usePaneLinkClicks, usePaneRequests } from "./usePaneRequests";
+import { useAgentBridge, useAgentSelectionSync } from "./useAgentBridge";
+import {
+  countWords,
+  useNoteContentEffects,
+  useNoteContentState,
+} from "./useNoteContent";
+import { TitleInput } from "./TitleInput";
+import { BacklinksBadge, NoteBacklinks, useBacklinks } from "./NoteBacklinks";
+import { UnlinkedMentions } from "./UnlinkedMentions";
 import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, imageTarget, type ImageTarget } from "./imageMenu";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
-import { SlashMenu, type SlashMenuState } from "./SlashMenu";
 
 const MarkdownSourceEditor = lazy(() =>
   import("./MarkdownSourceEditor").then((module) => ({
@@ -69,17 +52,12 @@ const MarkdownSourceEditor = lazy(() =>
 
 /**
  * One live Tiptap instance per mounted editor. Tab panes keep an instance per
- * open note (hidden with visibility when inactive) so switching tabs is a
- * paint-only CSS toggle — no parse, remount, or layout rebuild. The
- * per-mount work (schema build, plugin setup, view creation) is paid once per
- * tab open, never on switch.
+ * open note (hidden when inactive) so switching tabs is a paint-only CSS
+ * toggle — no parse, remount, or layout rebuild.
  *
- * `note` can also change on a mounted instance (content is swapped via
- * setContent), so every note-dependent bit of logic reads from `noteRef` rather
- * than a closure captured at editor creation.
- *
- * `active` gates the singleton concerns (fixed word counter, focus-reload,
- * overlay menus) so hidden panes stay completely inert.
+ * This component is a composition shell: the content pipeline lives in
+ * useNoteContent, the agent bridge in useAgentBridge, navigation side
+ * effects in usePaneRequests, and dialogs in their own components.
  */
 export const NoteEditor = memo(function NoteEditor({
   note,
@@ -97,7 +75,24 @@ export const NoteEditor = memo(function NoteEditor({
   const language = useLocale((s) => s.language);
   const t = useT();
 
-  const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+  const content = useNoteContentState({ note, active, language });
+  const {
+    slashMenu,
+    setSlashMenu,
+    setWords,
+    noteRef,
+    currentKey,
+    activeRef,
+    languageRef,
+    frontmatter,
+    pending,
+    swapping,
+    syncOutline,
+    debouncedPersist,
+    updateSlashMenu,
+    flushThen,
+  } = content;
+
   const [imageSource, setImageSource] = useState<{
     pos: number;
     src: string;
@@ -111,180 +106,24 @@ export const NoteEditor = memo(function NoteEditor({
     target: ImageTarget;
   } | null>(null);
   const [linkPicker, setLinkPicker] = useState<LinkPickerState | null>(null);
-  const [words, setWords] = useState(0);
-  const [missing, setMissing] = useState(false);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [rawText, setRawText] = useState("");
-  const [outlineItems, setOutlineItems] = useState<OutlineItem[]>([]);
-  const [activeOutlineKey, setActiveOutlineKey] = useState<string | null>(null);
-
-  const noteRef = useRef(note);
-  const currentKey = noteKey(note);
-  // Frontmatter of the loaded note, kept out of the editor and re-attached on
-  // save so the file's metadata survives round-trips.
-  const frontmatter = useRef("");
-  const activeRef = useRef(active);
-  activeRef.current = active;
-  const languageRef = useRef(language);
-  languageRef.current = language;
   const scrollRef = useRef<HTMLDivElement>(null);
   const backlinksRef = useRef<HTMLElement>(null);
   const [backlinksOpen, setBacklinksOpen] = useState(true);
-  /** Bumped after each note load, so reveal requests can wait for content. */
-  const [loadNonce, setLoadNonce] = useState(0);
   // Content box for the animated caret overlay (scrolls with the text).
   const pageRef = useRef<HTMLDivElement>(null);
   const motionRef = useRef<CursorMotion | null>(null);
-  // Tracked continuously so each pane restores its own reading position when
-  // it becomes active again.
-  const savedScroll = useRef(0);
-  const lastSaved = useRef("");
-  const pending = useRef<string | null>(null);
-  const loadedKey = useRef<string | null>(null);
-  // True only while we're programmatically replacing the document, so the
-  // resulting onUpdate doesn't mark the fresh content as an unsaved edit.
-  const swapping = useRef(false);
-  const outlineFrame = useRef<number | null>(null);
-  const refreshWhenActive = useRef(false);
   const editorRef = useRef<NonNullable<EditorInstance> | null>(null);
-
-  const syncOutline = useCallback((instance: NonNullable<EditorInstance>) => {
-    const next = outlineHeadingElements(instance).map((heading, index) => {
-      const level = Number(heading.tagName.slice(1)) as OutlineItem["level"];
-      const text = heading.textContent?.trim() ?? "";
-      return { key: `${index}:${level}:${text}`, text, level };
-    });
-    setOutlineItems((current) =>
-      sameOutline(current, next) ? current : next,
-    );
-    setActiveOutlineKey((current) =>
-      current && next.some((item) => item.key === current)
-        ? current
-        : (next[0]?.key ?? null),
-    );
-  }, []);
-
-  const persist = useCallback(
-    async (markdown: string, target: NoteRef) => {
-      const targetKey = noteKey(target);
-      if (sameNote(noteRef.current, target)) pending.current = null;
-      // Re-attach the note's frontmatter (captured now, before any await, so a
-      // concurrent note switch can't swap it out mid-save).
-      const fullText = joinFrontmatter(frontmatter.current, markdown);
-      try {
-        if (target.kind === "vault") {
-          await ipc.writeNote(target.rel, fullText);
-        } else {
-          await ipc.writeExternalNote(target.path, fullText);
-        }
-        if (sameNote(noteRef.current, target)) {
-          lastSaved.current = fullText;
-          setSaveState("idle");
-        }
-        toast.dismiss(`save-${targetKey}`);
-      } catch (err) {
-        setSaveState("error");
-        toast.error(t("toast.noteSaveFailed"), {
-          id: `save-${targetKey}`,
-          description: err instanceof Error ? err.message : String(err),
-          duration: Infinity,
-        });
-      }
-    },
-    [setSaveState, t],
-  );
-
-  const debouncedPersist = useMemo(
-    () => debounce((markdown: string) => persist(markdown, noteRef.current), 500),
-    [persist],
-  );
 
   const assetRoot = noteAssetRoot(vaultRoot, note);
   const extensions = useMemo(() => createExtensions(assetRoot), [assetRoot]);
-  const backlinkRel = note.kind === "vault" && !missing ? note.rel : null;
+  const backlinkRel = note.kind === "vault" && !content.missing ? note.rel : null;
   const backlinks = useBacklinks(backlinkRel, active);
 
-  const updateSlashMenu = useCallback((editor: NonNullable<EditorInstance>) => {
-    const { selection } = editor.state;
-    if (!selection.empty) {
-      setSlashMenu(null);
-      return;
-    }
-    const position = selection.from;
-    const resolved = editor.state.doc.resolve(position);
-    const textBefore = resolved.parent.textBetween(
-      0,
-      resolved.parentOffset,
-      undefined,
-      "￼",
-    );
-    const match = /(?:^|\s)\/([\p{L}\p{N} ]*)$/iu.exec(textBefore);
-    if (!match) {
-      setSlashMenu(null);
-      return;
-    }
-    const slashIndex = textBefore.lastIndexOf("/");
-    const from = position - (textBefore.length - slashIndex);
-    const coords = editor.view.coordsAtPos(position);
-    const menuHeight = 272;
-    const below = window.innerHeight - coords.bottom > menuHeight + 16;
-    setSlashMenu({
-      query: match[1] ?? "",
-      range: { from, to: position },
-      position: {
-        left: Math.max(12, Math.min(coords.left, window.innerWidth - 220)),
-        top: below
-          ? coords.bottom + 6
-          : Math.max(12, coords.top - menuHeight - 6),
-      },
-      side: below ? "bottom" : "top",
-    });
-  }, []);
-
-  const publishAgentSelection = useCallback((text: string) => {
-    if (!activeRef.current) return;
-    const agent = useAgent.getState();
-    if (!text.trim()) {
-      agent.setSelection(null);
-      return;
-    }
-    const current = noteRef.current;
-    agent.setSelection({
-      sourceKey: noteKey(current),
-      source: current.kind === "vault" ? `notes/${current.rel}` : current.path,
-      title: noteTitle(current),
-      text,
-    });
-  }, []);
-
-  const askAIAboutSelection = useCallback(
-    (request: string, selectedText: string) => {
-      const current = noteRef.current;
-      const selection = {
-        sourceKey: noteKey(current),
-        source: current.kind === "vault" ? `notes/${current.rel}` : current.path,
-        title: noteTitle(current),
-        text: selectedText,
-      };
-      const noteReference = {
-        sourceKey: selection.sourceKey,
-        source: selection.source,
-        title: selection.title,
-      };
-      const agent = useAgent.getState();
-      agent.setSelection(selection);
-      useUi.getState().setAgentOpen(true);
-      void (async () => {
-        if (vaultRoot && agent.vaultRoot !== vaultRoot) {
-          await agent.initialize(vaultRoot).catch(() => undefined);
-        }
-        const readyAgent = useAgent.getState();
-        readyAgent.setSelection(selection);
-        await readyAgent.send(request, noteReference);
-      })();
-    },
-    [vaultRoot],
-  );
+  const { publishAgentSelection, askAIAboutSelection } = useAgentBridge({
+    noteRef,
+    activeRef,
+    vaultRoot,
+  });
 
   const editor = useEditor(
     {
@@ -310,12 +149,13 @@ export const NoteEditor = memo(function NoteEditor({
           );
         },
         handlePaste(view, event) {
-          const image = imageFileFromDataTransfer(event.clipboardData);
-          const currentEditor = editorRef.current;
-          if (image && currentEditor) {
+          const image = Array.from(event.clipboardData?.files ?? []).find((f) =>
+            f.type.startsWith("image/"),
+          );
+          if (image && editor) {
             event.preventDefault();
             insertImageFile({
-              editor: currentEditor,
+              editor,
               file: image,
               range: {
                 from: view.state.selection.from,
@@ -330,16 +170,12 @@ export const NoteEditor = memo(function NoteEditor({
         },
         handleDrop(view, event) {
           const image = imageFileFromDataTransfer(event.dataTransfer);
-          const currentEditor = editorRef.current;
-          if (!image || !currentEditor) return false;
+          if (!image) return false;
           event.preventDefault();
-          const coords = view.posAtCoords({
-            left: event.clientX,
-            top: event.clientY,
-          });
+          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
           const position = coords?.pos ?? view.state.selection.from;
           insertImageFile({
-            editor: currentEditor,
+            editor,
             file: image,
             range: { from: position, to: position },
             vaultRoot,
@@ -401,8 +237,8 @@ export const NoteEditor = memo(function NoteEditor({
           },
         },
         // Link clicks are handled by a capture-phase listener on the pane (see
-        // the effect below) so the anchor's native navigation is stopped before
-        // anything — including the webview — can act on it.
+        // usePaneLinkClicks) so the anchor's native navigation is stopped
+        // before anything — including the webview — can act on it.
       },
       onTransaction() {
         // `sync(forceSnap)` — programmatic content swaps snap rather than
@@ -435,11 +271,24 @@ export const NoteEditor = memo(function NoteEditor({
   );
   editorRef.current = editor;
 
+  const { reloadIfChanged, updateActiveOutline, selectOutlineItem } = useNoteContentEffects({
+    editor,
+    note,
+    active,
+    language,
+    markdownSource,
+    scrollRef,
+    content,
+  });
+
+  const { askAI: _askAI } = { askAI: undefined };
+  void _askAI;
+
   // One animated caret per live editor, created only while it can actually be
   // seen (active tab, rich-text mode) and when the setting is on. Recreating
   // on toggle is cheap and keeps the disabled path allocation-free.
   const motionEnabled =
-    cursorAnimation && active && !markdownSource && !missing;
+    cursorAnimation && active && !markdownSource && !content.missing;
   useEffect(() => {
     // `editor.isDestroyed` is true while the view is a throwing Tiptap Proxy
     // (destroyed / not-yet-mounted instance), so guard before touching it.
@@ -461,268 +310,13 @@ export const NoteEditor = memo(function NoteEditor({
     setImageSource(null);
   }, [currentKey]);
 
-  useEffect(() => {
-    if (!active || !editor) return;
-    if (markdownSource) {
-      const agent = useAgent.getState();
-      if (agent.selection?.sourceKey === currentKey) agent.setSelection(null);
-      return;
-    }
-    const { from, to, empty } = editor.state.selection;
-    publishAgentSelection(
-      empty ? "" : editor.state.doc.textBetween(from, to, "\n", "\n"),
-    );
-    return () => {
-      const agent = useAgent.getState();
-      if (agent.selection?.sourceKey === currentKey) agent.setSelection(null);
-    };
-  }, [active, currentKey, editor, markdownSource, publishAgentSelection]);
-
-  // Load the note (and swap in its content) whenever `note` changes. The old
-  // note's pending edit is flushed to *its* path first, before we switch.
-  useEffect(() => {
-    if (!editor) return;
-    let cancelled = false;
-
-    const prevKey = loadedKey.current;
-    const previousNote = noteRef.current;
-    debouncedPersist.cancel();
-    if (prevKey && prevKey !== currentKey && pending.current !== null) {
-      persist(pending.current, previousNote);
-    }
-    pending.current = null;
-    noteRef.current = note;
-    setMissing(false);
-    setSlashMenu(null);
-    setOutlineItems([]);
-    setActiveOutlineKey(null);
-
-    const load =
-      note.kind === "vault"
-        ? ipc.readNote(note.rel)
-        : ipc.readExternalNote(note.path);
-    load
-      .then((text) => {
-        if (cancelled) return;
-        lastSaved.current = text;
-        loadedKey.current = currentKey;
-        // Split off frontmatter (kept for save), then render any `[[wiki]]`
-        // links in the body as real page links. lastSaved keeps the raw disk
-        // text; rewrites only reach the file if the user edits the note.
-        const { frontmatter: fm, body } = splitFrontmatter(text);
-        frontmatter.current = fm;
-        setRawText(text);
-        setProperties(parseFrontmatter(fm));
-        const notes = flattenNotes(useVault.getState().tree);
-        swapping.current = true;
-        editor.commands.setContent(wikiToMarkdown(body, notes), {
-          contentType: "markdown",
-        });
-        swapping.current = false;
-        syncOutline(editor);
-        setWords(countWords(body, language));
-        // A freshly loaded note starts at the top.
-        savedScroll.current = 0;
-        if (scrollRef.current) scrollRef.current.scrollTop = 0;
-        setLoadNonce((n) => n + 1);
-        const titleFocus = useTabs.getState().titleFocusReq;
-        if (
-          body.length === 0 &&
-          activeRef.current &&
-          titleFocus?.key !== currentKey
-        ) {
-          editor.commands.focus("start");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setMissing(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
+  useAgentSelectionSync({
     editor,
     note,
-    currentKey,
-    persist,
-    debouncedPersist,
-    language,
-    syncOutline,
-  ]);
-
-  const previousSource = useRef(markdownSource);
-  useEffect(() => {
-    if (!editor || previousSource.current === markdownSource) return;
-    previousSource.current = markdownSource;
-
-    if (markdownSource) {
-      setRawText(joinFrontmatter(frontmatter.current, editor.getMarkdown()));
-      return;
-    }
-
-    const { frontmatter: fm, body } = splitFrontmatter(rawText);
-    frontmatter.current = fm;
-    setProperties(parseFrontmatter(fm));
-    const notes = flattenNotes(useVault.getState().tree);
-    swapping.current = true;
-    editor.commands.setContent(wikiToMarkdown(body, notes), {
-      contentType: "markdown",
-    });
-    swapping.current = false;
-    syncOutline(editor);
-  }, [editor, markdownSource, rawText, syncOutline]);
-
-  // Flush any unsaved edit when the editor unmounts (tab closed / view gone).
-  useEffect(() => {
-    return () => {
-      debouncedPersist.cancel();
-      if (pending.current !== null) persist(pending.current, noteRef.current);
-    };
-  }, [debouncedPersist, persist]);
-
-  // If the file changed on disk while we were away and the editor is clean,
-  // reload it silently. Dirty editor wins. Only the active pane checks —
-  // hidden tabs catch up in the activation effect below.
-  const reloadIfChanged = useCallback(async () => {
-    if (!editor || pending.current !== null) return;
-    const cur = noteRef.current;
-    try {
-      const disk =
-        cur.kind === "vault"
-          ? await ipc.readNote(cur.rel)
-          : await ipc.readExternalNote(cur.path);
-      if (!sameNote(cur, noteRef.current) || pending.current !== null) return;
-      if (disk !== lastSaved.current) {
-        lastSaved.current = disk;
-        setRawText(disk);
-        const { frontmatter: fm, body } = splitFrontmatter(disk);
-        frontmatter.current = fm;
-        setProperties(parseFrontmatter(fm));
-        const notes = flattenNotes(useVault.getState().tree);
-        swapping.current = true;
-        editor.commands.setContent(wikiToMarkdown(body, notes), {
-          contentType: "markdown",
-        });
-        swapping.current = false;
-        syncOutline(editor);
-        setWords(countWords(body, language));
-      }
-    } catch {
-      // note may have been deleted externally; tree refresh handles it
-    }
-  }, [editor, language, syncOutline]);
-
-  // Save unsaved edits now (used before a history restore so the pre-restore
-  // snapshot captures the pane's current state).
-  const flushCurrent = useCallback(async () => {
-    debouncedPersist.cancel();
-    if (pending.current !== null) {
-      const content = pending.current;
-      pending.current = null;
-      await persist(content, noteRef.current);
-    }
-  }, [debouncedPersist, persist]);
-
-  const closeFind = useCallback(() => {
-    setFindOpen(false);
-    if (editor && !editor.isDestroyed) {
-      dispatchFind(editor.view, { query: "" });
-      editor.commands.focus();
-    }
-  }, [editor]);
-
-  const handleRestored = useCallback(() => {
-    lastSaved.current = "";
-    pending.current = null;
-    void reloadIfChanged();
-  }, [reloadIfChanged]);
-
-  const updateActiveOutline = useCallback(() => {
-    if (outlineFrame.current !== null) return;
-    outlineFrame.current = window.requestAnimationFrame(() => {
-      outlineFrame.current = null;
-      const root = scrollRef.current;
-      if (!root || !editor || outlineItems.length === 0) return;
-      const headings = outlineHeadingElements(editor);
-      if (headings.length === 0) return;
-      const readingLine = root.getBoundingClientRect().top + 120;
-      let nextIndex = 0;
-      for (let index = 0; index < headings.length; index += 1) {
-        if (headings[index].getBoundingClientRect().top <= readingLine) {
-          nextIndex = index;
-        } else {
-          break;
-        }
-      }
-      setActiveOutlineKey(outlineItems[nextIndex]?.key ?? null);
-    });
-  }, [editor, outlineItems]);
-
-  useEffect(() => {
-    if (active && !markdownSource) updateActiveOutline();
-    return () => {
-      if (outlineFrame.current !== null) {
-        window.cancelAnimationFrame(outlineFrame.current);
-        outlineFrame.current = null;
-      }
-    };
-  }, [active, markdownSource, outlineItems, updateActiveOutline]);
-
-  const selectOutlineItem = useCallback(
-    (index: number) => {
-      if (!editor) return;
-      const heading = outlineHeadingElements(editor)[index];
-      if (!heading) return;
-      const reduceMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
-      heading.scrollIntoView({
-        behavior: reduceMotion ? "auto" : "smooth",
-        block: "start",
-      });
-      setActiveOutlineKey(outlineItems[index]?.key ?? null);
-    },
-    [editor, outlineItems],
-  );
-
-  useEffect(() => {
-    if (!editor) return;
-    editor.view.dispatch(editor.state.tr);
-    const body = markdownSource
-      ? splitFrontmatter(rawText).body
-      : editor.getMarkdown();
-    setWords(countWords(body, language));
-  }, [editor, language, markdownSource, rawText]);
-
-  useEffect(() => {
-    const refreshOrDefer = () => {
-      if (activeRef.current) {
-        refreshWhenActive.current = false;
-        void reloadIfChanged();
-      } else {
-        refreshWhenActive.current = true;
-      }
-    };
-    window.addEventListener("focus", refreshOrDefer);
-    window.addEventListener("ornata-agent-notes-changed", refreshOrDefer);
-    return () => {
-      window.removeEventListener("focus", refreshOrDefer);
-      window.removeEventListener("ornata-agent-notes-changed", refreshOrDefer);
-    };
-  }, [reloadIfChanged]);
-
-  // On tab activation, restore the pane's scroll offset. A disk read is only
-  // needed when a window-focus or agent-change event occurred while hidden;
-  // ordinary in-app tab switches stay entirely in memory.
-  useEffect(() => {
-    if (!active) return;
-    if (scrollRef.current) scrollRef.current.scrollTop = savedScroll.current;
-    if (refreshWhenActive.current) {
-      refreshWhenActive.current = false;
-      void reloadIfChanged();
-    }
-  }, [active, reloadIfChanged]);
+    active,
+    markdownSource,
+    publishAgentSelection,
+  });
 
   const titleFocusReq = useTabs((s) => s.titleFocusReq);
   // Link clicks + scroll/reveal requests (see usePaneRequests).
@@ -731,49 +325,25 @@ export const NoteEditor = memo(function NoteEditor({
     editor,
     active,
     markdownSource,
-    loadNonce,
+    loadNonce: content.loadNonce,
     currentKey,
     scrollRef,
-    savedScroll,
-    loadedKey,
+    savedScroll: content.savedScroll,
+    loadedKey: content.loadedKey,
   });
 
-  // Follow link rewrites the backend wrote on disk (rename/move). The active
-  // pane is updated in memory — raw text in source mode, link marks in the
-  // rendered doc — so what the user sees matches the files. Hidden panes take
-  // the external-change channel instead: they reload from disk on activation
-  // (clean ones only — dirty panes keep their edits, per dirty-wins).
-  const linkRewritesReq = useTabs((s) => s.linkRewritesReq);
-  const appliedRewrites = useRef(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
   const saveTemplateOpen = useUi((s) => s.saveTemplateOpen);
   const [findWithReplace, setFindWithReplace] = useState(false);
-  useEffect(() => {
-    if (!linkRewritesReq || linkRewritesReq.nonce === appliedRewrites.current) return;
-    appliedRewrites.current = linkRewritesReq.nonce;
-    if (!activeRef.current) {
-      refreshWhenActive.current = true;
-      return;
-    }
-    if (markdownSource) {
-      const next = rewriteLinksInMarkdown(
-        rawText,
-        linkRewritesReq.rewrites,
-        flattenNotes(useVault.getState().tree),
-      );
-      if (next !== rawText) {
-        setRawText(next);
-        const { frontmatter: fm, body } = splitFrontmatter(next);
-        frontmatter.current = fm;
-        pending.current = body;
-      }
-      return;
-    }
+
+  const closeFind = useCallback(() => {
+    setFindOpen(false);
     if (editor && !editor.isDestroyed) {
-      applyLinkRewritesToEditor(editor, linkRewritesReq.rewrites);
+      dispatchFind(editor.view, { query: "" });
+      editor.commands.focus();
     }
-  }, [linkRewritesReq, rawText, editor, markdownSource]);
+  }, [editor]);
 
   // ⌘F / ⌘⌥F open the find bar over the rendered editor; the markdown source
   // pane uses CodeMirror's own search panel instead.
@@ -792,7 +362,13 @@ export const NoteEditor = memo(function NoteEditor({
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [active, findOpen, markdownSource]);
+  }, [active, findOpen, markdownSource, closeFind]);
+
+  const handleRestored = useCallback(() => {
+    content.lastSaved.current = "";
+    content.pending.current = null;
+    void reloadIfChanged();
+  }, [content, reloadIfChanged]);
 
   // Keep the brokenLinks plugin's known-rels set in sync with the tree.
   const tree = useVault((s) => s.tree);
@@ -814,54 +390,6 @@ export const NoteEditor = memo(function NoteEditor({
       cancelled = true;
     };
   }, [editor, tree]);
-
-  const flushThen = (action: () => void) => {
-    debouncedPersist.cancel();
-    const flush =
-      pending.current !== null
-        ? persist(pending.current, noteRef.current)
-        : Promise.resolve();
-    flush.then(action);
-  };
-
-  useEffect(() => {
-    if (!active || !editor) return;
-    const handle = async (event: Event) => {
-      try {
-        const action = (event as CustomEvent<{ action?: string }>).detail?.action;
-        const markdown = markdownSource
-          ? rawText
-          : joinFrontmatter(frontmatter.current, editor.getMarkdown());
-
-        if (action === "copy") {
-          await navigator.clipboard.writeText(markdown);
-          toast(t("toast.markdownCopied"));
-        } else if (action === "export") {
-          const current = noteRef.current;
-          const path =
-            current.kind === "vault"
-              ? await ipc.exportNote(current.rel, markdown)
-              : await ipc.exportExternalNote(current.path, markdown);
-          if (path) toast(t("toast.noteExported"), { description: path });
-        } else if (action === "delete") {
-          const current = noteRef.current;
-          debouncedPersist.cancel();
-          if (pending.current !== null) {
-            await persist(pending.current, current);
-          }
-          if (current.kind === "vault") {
-            await useVault.getState().deleteEntry(current.rel);
-          } else {
-            await useVault.getState().deleteExternalNote(current.path);
-          }
-        }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : String(err));
-      }
-    };
-    window.addEventListener("ornata:note-action", handle);
-    return () => window.removeEventListener("ornata:note-action", handle);
-  }, [active, debouncedPersist, editor, markdownSource, persist, rawText, t]);
 
   // Insert a page link to `rel` over the slash range, as a link mark whose
   // href is the note path (serializes to `[title](rel)` markdown on save).
@@ -920,12 +448,12 @@ export const NoteEditor = memo(function NoteEditor({
       ref={scrollRef}
       className="page-scroll relative"
       onScroll={(event) => {
-        savedScroll.current = event.currentTarget.scrollTop;
+        content.savedScroll.current = event.currentTarget.scrollTop;
         updateActiveOutline();
       }}
     >
       <div className="note-page relative">
-        {missing ? (
+        {content.missing ? (
           <p className="pt-16 text-center text-[14px] text-faint">
             {t("editor.missing")}
           </p>
@@ -948,27 +476,27 @@ export const NoteEditor = memo(function NoteEditor({
           />
         )}
         <BacklinksBadge count={backlinks.links.length} onClick={revealBacklinks} />
-        <div className={cx(missing && "hidden")}>
+        <div className={cx(content.missing && "hidden")}>
           {markdownSource ? (
             <Suspense fallback={null}>
               <MarkdownSourceEditor
-                value={rawText}
+                value={content.rawText}
                 onSelectionChange={publishAgentSelection}
                 onChange={(text) => {
-                  setRawText(text);
+                  content.setRawText(text);
                   const { frontmatter: fm, body } = splitFrontmatter(text);
                   frontmatter.current = fm;
-                  setProperties(parseFrontmatter(fm));
+                  content.setProperties(parseFrontmatter(fm));
                   pending.current = body;
                   setSaveState("saving");
                   debouncedPersist(body);
-                  setWords(countWords(body, language));
+                  setWords(countWords(body, languageRef.current));
                 }}
               />
             </Suspense>
           ) : (
             <>
-              <NoteProperties properties={properties} />
+              <NoteProperties properties={content.properties} />
               <EditorContent editor={editor} />
             </>
           )}
@@ -1017,9 +545,9 @@ export const NoteEditor = memo(function NoteEditor({
           <SaveTemplateDialog
             defaultName={noteTitle(note)}
             getContent={async () => {
-              await flushCurrent();
+              await content.flushCurrent();
               return markdownSource
-                ? rawText
+                ? content.rawText
                 : joinFrontmatter(frontmatter.current, editor?.getMarkdown() ?? "");
             }}
             onClose={() => useUi.getState().setSaveTemplateOpen(false)}
@@ -1029,7 +557,7 @@ export const NoteEditor = memo(function NoteEditor({
           <NoteHistory
             rel={note.rel}
             onClose={() => setHistoryOpen(false)}
-            flushCurrent={flushCurrent}
+            flushCurrent={content.flushCurrent}
             onRestored={handleRestored}
           />
         )}
@@ -1048,10 +576,10 @@ export const NoteEditor = memo(function NoteEditor({
         <div
           className={cx(
             "pointer-events-none fixed bottom-3 right-4 flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
-            (words === 0 || missing) && "opacity-0",
+            (content.words === 0 || content.missing) && "opacity-0",
           )}
         >
-          {note.kind === "vault" && !missing && (
+          {note.kind === "vault" && !content.missing && (
             <button
               type="button"
               onClick={() => setHistoryOpen(true)}
@@ -1061,7 +589,7 @@ export const NoteEditor = memo(function NoteEditor({
               <History size={13} strokeWidth={2} />
             </button>
           )}
-          <span>{t(words === 1 ? "editor.word" : "editor.words", { count: words })}</span>
+          <span>{t(content.words === 1 ? "editor.word" : "editor.words", { count: content.words })}</span>
         </div>
       )}
       {active && imageSource && !markdownSource && (
@@ -1084,10 +612,10 @@ export const NoteEditor = memo(function NoteEditor({
         />
       )}
     </div>
-    {active && editor && !missing && !markdownSource && (
+    {active && editor && !content.missing && !markdownSource && (
       <ArticleOutline
-        items={outlineItems}
-        activeKey={activeOutlineKey}
+        items={content.outlineItems}
+        activeKey={content.activeOutlineKey}
         onSelect={selectOutlineItem}
       />
     )}
@@ -1097,118 +625,3 @@ export const NoteEditor = memo(function NoteEditor({
 
 type EditorInstance = ReturnType<typeof useEditor>;
 
-function TitleInput({
-  title,
-  active,
-  focusNonce,
-  onRename,
-}: {
-  title: string;
-  active: boolean;
-  focusNonce?: number;
-  onRename: (name: string) => void;
-}) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const t = useT();
-
-  useLayoutEffect(() => {
-    if (!active) return;
-    const element = ref.current;
-    const container = element?.parentElement;
-    if (!element || !container) return;
-    let frame: number | null = null;
-    let observedWidth = container.getBoundingClientRect().width;
-    const resize = () => {
-      if (frame !== null) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = null;
-        resizeTitle(element);
-      });
-    };
-    resizeTitle(element);
-    const observer = new ResizeObserver(([entry]) => {
-      const width = entry?.contentRect.width ?? 0;
-      if (width <= 0 || Math.abs(width - observedWidth) < 0.5) return;
-      observedWidth = width;
-      resize();
-    });
-    observer.observe(container);
-    return () => {
-      observer.disconnect();
-      if (frame !== null) window.cancelAnimationFrame(frame);
-    };
-  }, [active, title]);
-
-  useEffect(() => {
-    if (focusNonce === undefined) return;
-    ref.current?.focus();
-    ref.current?.select();
-  }, [focusNonce]);
-
-  const submit = () => {
-    const value = ref.current?.value.trim();
-    if (value && value !== title) onRename(value);
-    else if (ref.current) {
-      ref.current.value = title;
-      resizeTitle(ref.current);
-    }
-  };
-
-  return (
-    <textarea
-      ref={ref}
-      rows={1}
-      aria-label={t("editor.noteTitle")}
-      defaultValue={title}
-      placeholder={t("common.untitled")}
-      className="note-title block w-full resize-none overflow-hidden bg-transparent text-[clamp(28px,2.4vw,34px)] font-[680] leading-[1.14] tracking-[-0.025em] text-ink [overflow-wrap:anywhere] [text-wrap:balance] outline-none placeholder:text-faint"
-      onInput={(event) => resizeTitle(event.currentTarget)}
-      onBlur={submit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === "Escape") {
-          event.preventDefault();
-          if (event.key === "Escape" && ref.current) {
-            ref.current.value = title;
-            resizeTitle(ref.current);
-          }
-          event.currentTarget.blur();
-        }
-      }}
-    />
-  );
-}
-
-function resizeTitle(element: HTMLTextAreaElement) {
-  element.style.height = "0px";
-  element.style.height = `${element.scrollHeight}px`;
-}
-
-function sameOutline(current: OutlineItem[], next: OutlineItem[]) {
-  return (
-    current.length === next.length &&
-    current.every(
-      (item, index) =>
-        item.key === next[index]?.key &&
-        item.text === next[index]?.text &&
-        item.level === next[index]?.level,
-    )
-  );
-}
-
-function outlineHeadingElements(instance: NonNullable<EditorInstance>) {
-  return Array.from(
-    instance.view.dom.querySelectorAll<HTMLElement>("h1, h2, h3"),
-  ).filter((heading) => heading.textContent?.trim());
-}
-
-function countWords(markdown: string, language: "en" | "zh-CN") {
-  const text = markdown.trim();
-  if (!text) return 0;
-  if (language === "zh-CN") {
-    return (
-      text.match(/[\p{Script=Han}]|[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/gu)
-        ?.length ?? 0
-    );
-  }
-  return text.split(/\s+/).filter(Boolean).length;
-}
