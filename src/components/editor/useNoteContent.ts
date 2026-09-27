@@ -106,11 +106,7 @@ export function useNoteContentState({
     const next = outlineHeadingElements(instance).map((heading, index) => {
       const level = Number(heading.tagName.slice(1)) as OutlineItem["level"];
       const text = heading.textContent?.trim() ?? "";
-      return {
-        key: `${text}:${index}`,
-        text,
-        level,
-      };
+      return { key: `${index}:${level}:${text}`, text, level };
     });
     setOutlineItems((current) => (sameOutline(current, next) ? current : next));
     setActiveOutlineKey((current) =>
@@ -247,7 +243,7 @@ export function useNoteContentState({
   };
 }
 
-type NoteContent = ReturnType<typeof useNoteContentState>;
+export type NoteContent = ReturnType<typeof useNoteContentState>;
 
 /**
  * Editor-dependent half of the content pipeline: loading and swapping note

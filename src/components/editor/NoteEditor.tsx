@@ -1,32 +1,23 @@
-import { EditorContent, useEditor } from "@tiptap/react";
-import { Slice } from "@tiptap/pm/model";
+import { EditorContent } from "@tiptap/react";
 import { History } from "lucide-react";
-import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useRef, useState } from "react";
 import {
   joinFrontmatter,
   parseFrontmatter,
   splitFrontmatter,
 } from "@/lib/frontmatter";
-import { noteLinkParts, wikiToMarkdown } from "@/lib/noteLinks";
-import { noteAssetRoot, noteTitle } from "@/lib/noteRef";
-import { flattenNotes } from "@/lib/tree";
+import { noteTitle } from "@/lib/noteRef";
 import type { NoteRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
-import { createExtensions } from "./extensions";
 import { ArticleOutline } from "./ArticleOutline";
-import { brokenLinksKey } from "./brokenLinks";
-import { dispatchFind } from "./findReplace";
 import { FindReplaceBar } from "./FindReplaceBar";
 import { NoteHistory } from "./NoteHistory";
 import { SaveTemplateDialog } from "./SaveTemplateDialog";
-import { CursorMotion } from "./cursorMotion";
-import { insertImageFile, imageFileFromDataTransfer } from "./insertImage";
-import { parseMarkdownSlice } from "./markdownPaste";
-import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
+import { NoteLinkPicker } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { SlashMenu } from "./SlashMenu";
@@ -37,11 +28,13 @@ import {
   useNoteContentEffects,
   useNoteContentState,
 } from "./useNoteContent";
+import { useNoteEditor, type ImageSourceOverlay } from "./useNoteEditor";
+import { usePaneDialogs } from "./usePaneDialogs";
 import { TitleInput } from "./TitleInput";
 import { BacklinksBadge, NoteBacklinks, useBacklinks } from "./NoteBacklinks";
 import { UnlinkedMentions } from "./UnlinkedMentions";
 import { ImageSourcePopover } from "./ImageSourcePopover";
-import { imageMenuItems, imageTarget, type ImageTarget } from "./imageMenu";
+import { imageMenuItems, type ImageTarget } from "./imageMenu";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 
 const MarkdownSourceEditor = lazy(() =>
@@ -86,190 +79,44 @@ export const NoteEditor = memo(function NoteEditor({
     languageRef,
     frontmatter,
     pending,
-    swapping,
-    syncOutline,
     debouncedPersist,
-    updateSlashMenu,
     flushThen,
   } = content;
 
-  const [imageSource, setImageSource] = useState<{
-    pos: number;
-    src: string;
-    markdown: string;
-    top: number;
-    left: number;
-    width: number;
-  } | null>(null);
+  const [imageSource, setImageSource] = useState<ImageSourceOverlay | null>(null);
   const [imageMenu, setImageMenu] = useState<{
     position: MenuPosition;
     target: ImageTarget;
   } | null>(null);
-  const [linkPicker, setLinkPicker] = useState<LinkPickerState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const backlinksRef = useRef<HTMLElement>(null);
   const [backlinksOpen, setBacklinksOpen] = useState(true);
   // Content box for the animated caret overlay (scrolls with the text).
   const pageRef = useRef<HTMLDivElement>(null);
-  const motionRef = useRef<CursorMotion | null>(null);
-  const editorRef = useRef<NonNullable<EditorInstance> | null>(null);
 
-  const assetRoot = noteAssetRoot(vaultRoot, note);
-  const extensions = useMemo(() => createExtensions(assetRoot), [assetRoot]);
   const backlinkRel = note.kind === "vault" && !content.missing ? note.rel : null;
   const backlinks = useBacklinks(backlinkRel, active);
+
 
   const { publishAgentSelection, askAIAboutSelection } = useAgentBridge({
     noteRef,
     activeRef,
     vaultRoot,
   });
-
-  const editor = useEditor(
-    {
-      content: "",
-      contentType: "markdown",
-      extensions,
-      editorProps: {
-        attributes: {
-          class: "prose-note",
-          autoCapitalize: "off",
-          autoCorrect: "off",
-          spellCheck: "false",
-          "data-gramm": "false",
-        },
-        clipboardTextParser(text) {
-          const currentEditor = editorRef.current;
-          if (!currentEditor?.markdown) return Slice.empty;
-          const notes = flattenNotes(useVault.getState().tree);
-          return parseMarkdownSlice(
-            currentEditor.schema,
-            currentEditor.markdown,
-            wikiToMarkdown(text, notes),
-          );
-        },
-        handlePaste(view, event) {
-          const image = Array.from(event.clipboardData?.files ?? []).find((f) =>
-            f.type.startsWith("image/"),
-          );
-          if (image && editor) {
-            event.preventDefault();
-            insertImageFile({
-              editor,
-              file: image,
-              range: {
-                from: view.state.selection.from,
-                to: view.state.selection.to,
-              },
-              vaultRoot,
-              note: noteRef.current,
-            });
-            return true;
-          }
-          return false;
-        },
-        handleDrop(view, event) {
-          const image = imageFileFromDataTransfer(event.dataTransfer);
-          if (!image) return false;
-          event.preventDefault();
-          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
-          const position = coords?.pos ?? view.state.selection.from;
-          insertImageFile({
-            editor,
-            file: image,
-            range: { from: position, to: position },
-            vaultRoot,
-            note: noteRef.current,
-          });
-          return true;
-        },
-        // Typora-style: clicking an image reveals its Markdown source in a
-        // bar right below it (alt pre-selected, editable).
-        handleClickOn(view, _pos, node, nodePos) {
-          if (node.type.name !== "image") {
-            setImageSource(null);
-            return false;
-          }
-          const el = view.nodeDOM(nodePos);
-          const scroll = scrollRef.current;
-          if (!(el instanceof HTMLElement) || !scroll) return false;
-          const imgRect = el.getBoundingClientRect();
-          const boxRect = scroll.getBoundingClientRect();
-          const attrs = node.attrs as {
-            alt?: string;
-            src?: string;
-            vaultSrc?: string | null;
-          };
-          const src = attrs.vaultSrc ?? attrs.src ?? "";
-          setImageSource({
-            pos: nodePos,
-            src,
-            markdown: `![${attrs.alt ?? ""}](${src})`,
-            top: imgRect.bottom - boxRect.top + scroll.scrollTop + 6,
-            left: imgRect.left - boxRect.left,
-            width: imgRect.width,
-          });
-          return false;
-        },
-        handleDOMEvents: {
-          // Right-click on an image: upload / open / copy / save as.
-          contextmenu(view, event) {
-            const img = event.target;
-            if (!(img instanceof HTMLImageElement)) return false;
-            const pos = view.posAtDOM(img, 0);
-            const node = view.state.doc.nodeAt(pos);
-            if (node?.type.name !== "image") return false;
-            const target = imageTarget(
-              node.attrs,
-              noteAssetRoot(useVault.getState().root, noteRef.current),
-            );
-            if (!target) return false;
-            event.preventDefault();
-            // Keep the opening event from reaching ContextMenu's window-level
-            // dismiss listener, which would close the menu immediately.
-            event.stopPropagation();
-            setImageSource(null);
-            setImageMenu({
-              position: { x: event.clientX, y: event.clientY },
-              target,
-            });
-            return true;
-          },
-        },
-        // Link clicks are handled by a capture-phase listener on the pane (see
-        // usePaneLinkClicks) so the anchor's native navigation is stopped
-        // before anything — including the webview — can act on it.
-      },
-      onTransaction() {
-        // `sync(forceSnap)` — programmatic content swaps snap rather than
-        // animating the caret across two unrelated notes.
-        motionRef.current?.sync(swapping.current);
-      },
-      onUpdate({ editor }) {
-        if (swapping.current) return;
-        // A doc change can invalidate the popover's captured node position
-        // and src (e.g. a background upload swapping the URL) — close it.
-        setImageSource(null);
-        const markdown = editor.getMarkdown();
-        pending.current = markdown;
-        setSaveState("saving");
-        debouncedPersist(markdown);
-        setWords(countWords(markdown, languageRef.current));
-        syncOutline(editor);
-        updateSlashMenu(editor);
-      },
-      onSelectionUpdate({ editor }) {
-        updateSlashMenu(editor);
-        if (!activeRef.current) return;
-        const { from, to, empty } = editor.state.selection;
-        publishAgentSelection(
-          empty ? "" : editor.state.doc.textBetween(from, to, "\n", "\n"),
-        );
-      },
-    },
-    [extensions, syncOutline],
-  );
-  editorRef.current = editor;
+  const { editor } = useNoteEditor({
+    note,
+    active,
+    markdownSource,
+    missing: content.missing,
+    cursorAnimation,
+    content,
+    publishAgentSelection,
+    vaultRoot,
+    scrollRef,
+    pageRef,
+    setImageSource,
+    setImageMenu,
+  });
 
   const { reloadIfChanged, updateActiveOutline, selectOutlineItem } = useNoteContentEffects({
     editor,
@@ -280,35 +127,6 @@ export const NoteEditor = memo(function NoteEditor({
     scrollRef,
     content,
   });
-
-  const { askAI: _askAI } = { askAI: undefined };
-  void _askAI;
-
-  // One animated caret per live editor, created only while it can actually be
-  // seen (active tab, rich-text mode) and when the setting is on. Recreating
-  // on toggle is cheap and keeps the disabled path allocation-free.
-  const motionEnabled =
-    cursorAnimation && active && !markdownSource && !content.missing;
-  useEffect(() => {
-    // `editor.isDestroyed` is true while the view is a throwing Tiptap Proxy
-    // (destroyed / not-yet-mounted instance), so guard before touching it.
-    if (!editor || editor.isDestroyed || !motionEnabled) return;
-    const container = pageRef.current;
-    if (!container) return;
-    const view = editor.view;
-    const motion = new CursorMotion(view, container, { enabled: true });
-    motionRef.current = motion;
-    motion.sync(true);
-    return () => {
-      motion.destroy();
-      motionRef.current = null;
-    };
-  }, [editor, motionEnabled]);
-
-  useEffect(() => {
-    // Note switched within the tab: any open image source bar is stale.
-    setImageSource(null);
-  }, [currentKey]);
 
   useAgentSelectionSync({
     editor,
@@ -331,86 +149,25 @@ export const NoteEditor = memo(function NoteEditor({
     savedScroll: content.savedScroll,
     loadedKey: content.loadedKey,
   });
+  const {
+    findOpen,
+    findWithReplace,
+    historyOpen,
+    setHistoryOpen,
+    closeFind,
+    handleRestored,
+    linkPicker,
+    setLinkPicker,
+    insertNoteLink,
+  } = usePaneDialogs({
+      editor,
+      active,
+      markdownSource,
+      content,
+      reloadIfChanged,
+    });
 
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [findOpen, setFindOpen] = useState(false);
   const saveTemplateOpen = useUi((s) => s.saveTemplateOpen);
-  const [findWithReplace, setFindWithReplace] = useState(false);
-
-  const closeFind = useCallback(() => {
-    setFindOpen(false);
-    if (editor && !editor.isDestroyed) {
-      dispatchFind(editor.view, { query: "" });
-      editor.commands.focus();
-    }
-  }, [editor]);
-
-  // ⌘F / ⌘⌥F open the find bar over the rendered editor; the markdown source
-  // pane uses CodeMirror's own search panel instead.
-  useEffect(() => {
-    if (!active) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (markdownSource) return;
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
-        event.preventDefault();
-        setFindWithReplace(event.altKey);
-        setFindOpen(true);
-      } else if (event.key === "Escape" && findOpen) {
-        event.preventDefault();
-        closeFind();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [active, findOpen, markdownSource, closeFind]);
-
-  const handleRestored = useCallback(() => {
-    content.lastSaved.current = "";
-    content.pending.current = null;
-    void reloadIfChanged();
-  }, [content, reloadIfChanged]);
-
-  // Keep the brokenLinks plugin's known-rels set in sync with the tree.
-  const tree = useVault((s) => s.tree);
-  useEffect(() => {
-    if (!editor) return;
-    const rels = new Set(flattenNotes(tree).map((n) => n.rel.toLowerCase()));
-    let cancelled = false;
-    const dispatch = (attempt = 0) => {
-      if (cancelled) return;
-      try {
-        editor.view.dispatch(editor.state.tr.setMeta(brokenLinksKey, rels));
-      } catch {
-        // The view can mount after this effect fires; retry briefly.
-        if (attempt < 20) setTimeout(() => dispatch(attempt + 1), 50);
-      }
-    };
-    dispatch();
-    return () => {
-      cancelled = true;
-    };
-  }, [editor, tree]);
-
-  // Insert a page link to `rel` over the slash range, as a link mark whose
-  // href is the note path (serializes to `[title](rel)` markdown on save).
-  const insertNoteLink = (rel: string, title: string, heading?: string) => {
-    if (!editor || !linkPicker) return;
-    const { text: label, href } = noteLinkParts(rel, title, heading);
-    editor
-      .chain()
-      .focus()
-      .deleteRange(linkPicker.range)
-      .insertContent([
-        {
-          type: "text",
-          text: label,
-          marks: [{ type: "link", attrs: { href } }],
-        },
-        { type: "text", text: " " },
-      ])
-      .run();
-    setLinkPicker(null);
-  };
 
   /** Write an edited image source (Typora bar) back onto the node. */
   const applyImageSource = (
@@ -623,5 +380,4 @@ export const NoteEditor = memo(function NoteEditor({
   );
 });
 
-type EditorInstance = ReturnType<typeof useEditor>;
 
