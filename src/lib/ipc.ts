@@ -132,6 +132,10 @@ export const ipc = {
       kind: input.kind,
     }),
   hidePrintWindow: () => call<void>("hide_print_window"),
+  currentPrintJob: () =>
+    call<{ id: number; markdown: string; vaultRoot: string } | null>(
+      "current_print_job",
+    ),
   printViewReady: (input: { bodyHtml: string; pageCss: string }) =>
     call<void>("print_view_ready", input),
   dismissQuickCapture: () => call<void>("dismiss_quick_capture"),

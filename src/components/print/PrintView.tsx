@@ -7,6 +7,7 @@ import { renderTheme } from "@/lib/theme";
 import { ipc } from "@/lib/ipc";
 
 interface PrintPayload {
+  id: number;
   markdown: string;
   vaultRoot: string;
 }
@@ -18,7 +19,7 @@ interface PrintPayload {
  * standalone HTML file / clipboard payload.
  */
 export function PrintView() {
-  const [markdown, setMarkdown] = useState<string | null>(null);
+  const [job, setJob] = useState<PrintPayload | null>(null);
   const [vaultRoot, setVaultRoot] = useState("");
   // Prints must always be light — a dark-theme page prints white-on-white.
   // Render-only: the shared theme cache must keep the user's real choice.
@@ -44,11 +45,15 @@ export function PrintView() {
   useEffect(() => {
     let stop: (() => void) | undefined;
     let cancelled = false;
-    listen<PrintPayload>("ornata-print", ({ payload }) => {
-      if (cancelled) return;
+    const apply = (payload: PrintPayload | null) => {
+      if (cancelled || !payload || typeof payload.markdown !== "string") return;
       setVaultRoot(payload.vaultRoot);
-      setMarkdown(payload.markdown);
-    })
+      setJob(payload);
+    };
+    // The create-and-emit races the page: the event often fires before this
+    // listener exists. Reading the staged job covers that first export.
+    void ipc.currentPrintJob().then(apply).catch(() => undefined);
+    listen<PrintPayload>("ornata-print", ({ payload }) => apply(payload))
       .then((unlisten) => {
         if (cancelled) unlisten();
         else stop = unlisten;
@@ -61,9 +66,9 @@ export function PrintView() {
   }, []);
 
   useEffect(() => {
-    if (markdown === null || !editor || editor.isDestroyed) return;
+    if (!job || !editor || editor.isDestroyed) return;
     let cancelled = false;
-    editor.commands.setContent(markdown, { contentType: "markdown" });
+    editor.commands.setContent(job.markdown, { contentType: "markdown" });
     // Hand control back to the backend once the print sheet closes.
     const onAfterPrint = () => void ipc.hidePrintWindow();
     window.addEventListener("afterprint", onAfterPrint);
@@ -103,11 +108,41 @@ export function PrintView() {
     })();
 
     return () => window.removeEventListener("afterprint", onAfterPrint);
-  }, [markdown, editor]);
+  }, [job, editor]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="bg-white">
+      {/* The app shell locks html/body/#root to the window and hides overflow.
+          Left in place, print and the saved HTML keep only the visible slice. */}
+      <style>{PRINT_UNCLIP}</style>
       <EditorContent editor={editor} />
     </div>
   );
 }
+
+const PRINT_UNCLIP = `
+  html, body, #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  /* Inset lives on the document itself. WKWebView's print sheet often
+     ignores @page margin, which left the note flush with the page edge. */
+  .prose-note {
+    box-sizing: border-box !important;
+    padding: 12mm 16mm 16mm !important;
+  }
+  @page {
+    margin: 12mm 14mm;
+  }
+  @media print {
+    html, body, #root {
+      height: auto !important;
+      overflow: visible !important;
+      background: #fff !important;
+    }
+  }
+`;

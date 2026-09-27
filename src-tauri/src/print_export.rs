@@ -27,6 +27,7 @@ pub enum ExportKind {
 
 #[derive(Debug)]
 pub struct PrintJob {
+    pub id: u64,
     pub kind: ExportKind,
     pub markdown: String,
     pub vault_root: String,
@@ -35,9 +36,20 @@ pub struct PrintJob {
     pub path: Option<PathBuf>,
 }
 
+/// What the print window renders. `id` changes on every export so a second
+/// export of the same note still retriggers the page.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrintSource {
+    pub id: u64,
+    pub markdown: String,
+    pub vault_root: String,
+}
+
 #[derive(Default)]
 pub struct PrintState {
     job: Mutex<Option<PrintJob>>,
+    next_id: Mutex<u64>,
 }
 
 fn ensure_window(app: &AppHandle, visible: bool) -> AppResult<()> {
@@ -45,6 +57,8 @@ fn ensure_window(app: &AppHandle, visible: bool) -> AppResult<()> {
         if visible {
             let _ = window.show();
             let _ = window.set_focus();
+        } else {
+            let _ = window.hide();
         }
         return Ok(());
     }
@@ -72,17 +86,44 @@ fn store_job(
     vault_root: String,
     default_name: String,
     path: Option<PathBuf>,
-) -> AppResult<()> {
+) -> AppResult<PrintSource> {
     let state = app.state::<PrintState>();
+    let mut next_id = state
+        .next_id
+        .lock()
+        .map_err(|e| AppError::Other(e.to_string()))?;
+    *next_id += 1;
+    let id = *next_id;
+    drop(next_id);
+    let source = PrintSource {
+        id,
+        markdown: markdown.clone(),
+        vault_root: vault_root.clone(),
+    };
     let mut job = state.job.lock().map_err(|e| AppError::Other(e.to_string()))?;
     *job = Some(PrintJob {
+        id,
         kind,
         markdown,
         vault_root,
         default_name,
         path,
     });
-    Ok(())
+    Ok(source)
+}
+
+/// The print window pulls this on load. The emit that follows can arrive
+/// before the page has subscribed, so the pull is what actually delivers the
+/// first job.
+#[tauri::command]
+pub fn current_print_job(app: AppHandle) -> AppResult<Option<PrintSource>> {
+    let state = app.state::<PrintState>();
+    let job = state.job.lock().map_err(|e| AppError::Other(e.to_string()))?;
+    Ok(job.as_ref().map(|job| PrintSource {
+        id: job.id,
+        markdown: job.markdown.clone(),
+        vault_root: job.vault_root.clone(),
+    }))
 }
 
 fn emit_to_window<T: serde::Serialize + Clone>(
@@ -136,14 +177,12 @@ pub async fn start_print_export(
         return Ok(());
     }
 
-    store_job(&app, kind, markdown, vault_root, default_name, path)?;
-    let visible = {
-        let state = app.state::<PrintState>();
-        let job = state.job.lock().map_err(|e| AppError::Other(e.to_string()))?;
-        matches!(job.as_ref().map(|j| &j.kind), Some(ExportKind::Pdf))
-    };
-    ensure_window(&app, visible)?;
-    emit_to_window(&app, LABEL, "ornata-print", ())?;
+    // PDF has to be on screen so the system print sheet snapshots a painted
+    // page. HTML and clipboard stay hidden and only write the serialized DOM.
+    let show = kind == ExportKind::Pdf;
+    let source = store_job(&app, kind, markdown, vault_root, default_name, path)?;
+    ensure_window(&app, show)?;
+    emit_to_window(&app, LABEL, "ornata-print", source)?;
     Ok(())
 }
 
@@ -159,9 +198,11 @@ pub async fn print_view_ready(
     let job = take_job(&app)?;
     match job.kind {
         ExportKind::Pdf => {
-            // The system print sheet; the user chooses "Save as PDF". The
-            // sheet may outlive this call, so the window hides itself via
-            // the page's `afterprint` event (hide_print_window).
+            // Show only once the note is in the DOM, then open the system
+            // print sheet (the user chooses "Save as PDF"). The sheet may
+            // outlive this call, so the window hides itself via `afterprint`.
+            let _ = window.show();
+            let _ = window.set_focus();
             window.print().map_err(|e| AppError::Other(e.to_string()))?;
         }
         ExportKind::Html => {
@@ -199,7 +240,7 @@ fn assemble_html(body: &str, css: &str, vault_root: &str) -> String {
     // file is standalone.
     let inlined = inline_asset_images(body, vault_root);
     format!(
-        "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<style>\n{css}\nbody {{ margin: 0; }}\n.prose-note {{ max-width: 760px; margin: 0 auto; padding: 48px 32px; }}\n@media print {{ .prose-note {{ padding: 0; }} }}\n</style>\n</head>\n<body class=\"light\">\n<div class=\"prose-note\">{inlined}</div>\n</body>\n</html>"
+        "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<style>\n{css}\n@page {{ margin: 12mm 14mm; }}\nhtml, body, #root {{ height: auto !important; overflow: visible !important; background: #fff !important; }}\nbody {{ margin: 0; background: #fff !important; }}\n.prose-note {{ box-sizing: border-box !important; max-width: 760px; height: auto !important; overflow: visible !important; margin: 0 auto; padding: 12mm 16mm 16mm !important; }}\n</style>\n</head>\n<body class=\"light\">\n<div class=\"prose-note\">{inlined}</div>\n</body>\n</html>"
     )
 }
 

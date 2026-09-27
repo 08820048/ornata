@@ -98,6 +98,7 @@ pub fn run() {
             quick_capture::submit_quick_capture,
             quick_capture::dismiss_quick_capture,
             print_export::start_print_export,
+            print_export::current_print_job,
             print_export::print_view_ready,
             print_export::hide_print_window,
             commands::trash_assets,
