@@ -40,6 +40,22 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** The vault's link graph (notes as nodes, internal links as edges). */
+export interface GraphNode {
+  rel: string;
+  title: string;
+}
+
+export interface GraphEdge {
+  from: string;
+  to: string;
+}
+
+export interface LinkGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 /** A vault image asset no note references (cleanup candidate). */
 export interface UnusedAsset {
   name: string;

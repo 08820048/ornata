@@ -93,7 +93,7 @@ fn links_to(line: &str, target: &str, target_name: &str) -> bool {
 
 /// Hrefs of inline markdown links: the text between `](` and the next `)`.
 /// Handles nested parentheses in link text by counting bracket depth.
-fn markdown_hrefs(line: &str) -> impl Iterator<Item = &str> {
+pub(crate) fn markdown_hrefs(line: &str) -> impl Iterator<Item = &str> {
     let mut chars = line.char_indices().peekable();
     let mut results = Vec::new();
 
@@ -129,7 +129,7 @@ fn markdown_hrefs(line: &str) -> impl Iterator<Item = &str> {
     results.into_iter()
 }
 
-fn wiki_targets(line: &str) -> impl Iterator<Item = &str> {
+pub(crate) fn wiki_targets(line: &str) -> impl Iterator<Item = &str> {
     line.match_indices("[[").filter_map(move |(i, _)| {
         let rest = &line[i + 2..];
         let inner = &rest[..rest.find("]]")?];

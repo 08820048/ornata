@@ -15,6 +15,7 @@ import type {
   Mention,
   RenameOutcome,
   SnapshotMeta,
+  LinkGraph,
   TagCount,
   UnusedAsset,
   OpenTask,
@@ -115,6 +116,7 @@ export const ipc = {
     call<string>("create_folder", { dir, name }),
   noteHistory: (rel: string) => call<SnapshotMeta[]>("note_history", { rel }),
   listUnusedAssets: () => call<UnusedAsset[]>("list_unused_assets"),
+  linkGraph: () => call<LinkGraph>("link_graph"),
   trashAssets: (names: string[]) => call<number>("trash_assets", { names }),
   readAppData: (name: string) => call<string | null>("read_app_data", { name }),
   writeAppData: (name: string, content: string) =>

@@ -9,6 +9,7 @@ mod commands;
 mod config;
 mod error;
 mod external_notes;
+mod graph;
 mod history;
 mod link_rewrite;
 mod image_source;
@@ -81,6 +82,7 @@ pub fn run() {
             commands::notes_with_tag,
             commands::note_history,
             commands::list_unused_assets,
+            commands::link_graph,
             commands::trash_assets,
             commands::read_history_snapshot,
             commands::snapshot_note,

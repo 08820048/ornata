@@ -14,6 +14,7 @@ import { useLocale } from "@/stores/locale";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
+import { GraphDialog } from "@/components/graph/GraphDialog";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -164,6 +165,7 @@ export default function App() {
         {status === "ready" && <TasksDialog />}
       {status === "ready" && <TagsDialog />}
       {status === "ready" && <UnusedAssetsDialog />}
+      {status === "ready" && <GraphDialog />}
       </Suspense>
       <AppToaster />
     </>

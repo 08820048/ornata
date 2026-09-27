@@ -6,6 +6,7 @@ import {
   FolderOpen,
   ImageOff,
   ListChecks,
+  Share2,
   Search,
   Settings,
 } from "lucide-react";
@@ -128,6 +129,12 @@ export function CommandPalette() {
         label: t("templates.reveal"),
         icon: FolderOpen,
         run: () => void ipc.revealTemplates(),
+      },
+      {
+        id: "link-graph",
+        label: t("graph.title"),
+        icon: Share2,
+        run: () => useUi.getState().setGraphOpen(true),
       },
       {
         id: "cleanup-assets",

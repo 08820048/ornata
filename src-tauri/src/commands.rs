@@ -10,6 +10,7 @@ use crate::backlinks::{self, Backlink};
 use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
+use crate::graph;
 use crate::history;
 use crate::tags;
 use crate::templates;
@@ -298,6 +299,11 @@ pub fn list_unused_assets(state: State<'_, AppState>) -> AppResult<Vec<assets::U
 #[tauri::command]
 pub fn trash_assets(state: State<'_, AppState>, names: Vec<String>) -> AppResult<usize> {
     assets::trash_assets(&state.root()?, &names)
+}
+
+#[tauri::command]
+pub fn link_graph(state: State<'_, AppState>) -> AppResult<graph::LinkGraph> {
+    graph::link_graph(&state.root()?)
 }
 
 #[tauri::command]
