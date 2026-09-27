@@ -18,6 +18,15 @@ export function applyTheme(theme: Theme) {
   }
 }
 
+/** Apply a theme to the document root WITHOUT mirroring it to localStorage —
+ *  for auxiliary windows (print) whose temporary theme must not leak into the
+ *  main window's next first paint. */
+export function renderTheme(theme: Theme) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const dark = theme === "dark" || (theme === "system" && media.matches);
+  document.documentElement.classList.toggle("dark", dark);
+}
+
 /** Last applied theme, for a flash-free first paint. */
 export function cachedTheme(): Theme {
   try {

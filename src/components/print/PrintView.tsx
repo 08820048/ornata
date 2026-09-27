@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EditorContent } from "@tiptap/react";
 import { createExtensions } from "@/components/editor/extensions";
-import { applyTheme } from "@/lib/theme";
+import { renderTheme } from "@/lib/theme";
 import { ipc } from "@/lib/ipc";
 
 interface PrintPayload {
@@ -21,8 +21,9 @@ export function PrintView() {
   const [markdown, setMarkdown] = useState<string | null>(null);
   const [vaultRoot, setVaultRoot] = useState("");
   // Prints must always be light — a dark-theme page prints white-on-white.
+  // Render-only: the shared theme cache must keep the user's real choice.
   useEffect(() => {
-    applyTheme("light");
+    renderTheme("light");
   }, []);
 
   const assetRoot = useMemo(() => vaultRoot, [vaultRoot]);

@@ -18,12 +18,15 @@ interface SimNode {
   r: number;
   degree: number;
   isolated: boolean;
-  hidden: boolean;
 }
 
+/** `from`/`to` keep the rel strings for drawing and hover; d3-force rewrites
+ *  its own source/target fields into node objects as the simulation runs. */
 interface SimEdge {
-  source: string;
-  target: string;
+  from: string;
+  to: string;
+  source: unknown;
+  target: unknown;
 }
 
 /**
@@ -117,9 +120,13 @@ export function GraphDialog() {
       inMajor = new Set(graph.nodes.filter((n) => find(n.rel) === best).map((n) => n.rel));
     }
 
-    const nodes: SimNode[] = graph.nodes.map((node, index) => {
+    // The simulated node set changes only here (cap toggle) — re-layout and
+    // viewport reset are inherent to growing the graph. The isolated-notes
+    // toggle below is draw-only and never rebuilds this.
+    const simmed = inMajor === null || showAll ? graph.nodes : graph.nodes.filter((n) => inMajor.has(n.rel));
+    const nodes: SimNode[] = simmed.map((node, index) => {
       const d = degree.get(node.rel) ?? 0;
-      const angle = (index / graph.nodes.length) * Math.PI * 2;
+      const angle = (index / simmed.length) * Math.PI * 2;
       return {
         rel: node.rel,
         title: node.title,
@@ -128,15 +135,12 @@ export function GraphDialog() {
         r: Math.min(4 + d * 1.2, 13),
         degree: d,
         isolated: d === 0,
-        hidden: Boolean(
-          (d === 0 && !showIsolated) || (inMajor !== null && !inMajor.has(node.rel) && !showAll),
-        ),
       };
     });
     const byRel = new Map(nodes.map((n) => [n.rel, n]));
     const edges: SimEdge[] = graph.edges
       .filter((e) => byRel.has(e.from) && byRel.has(e.to))
-      .map((e) => ({ source: e.from, target: e.to }));
+      .map((e) => ({ from: e.from, to: e.to, source: e.from, target: e.to }));
 
     const sim = forceSimulation(nodes as never[])
       .force(
@@ -158,7 +162,7 @@ export function GraphDialog() {
     viewRef.current = { x: 0, y: 0, k: 1 };
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph]);
+  }, [graph, showAll]);
 
   const cssVar = (name: string, fallback: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -187,21 +191,21 @@ export function GraphDialog() {
     const neighbors = new Set<string>();
     if (hover) {
       for (const edge of sim.edges) {
-        if (edge.source === hover) neighbors.add(edge.target);
-        if (edge.target === hover) neighbors.add(edge.source);
+        if (edge.from === hover) neighbors.add(edge.to);
+        if (edge.to === hover) neighbors.add(edge.from);
       }
     }
     const byRel = new Map(sim.nodes.map((n) => [n.rel, n]));
-    const visible = (n: SimNode) => !n.hidden;
+    const visible = (n: SimNode) => showIsolated || !n.isolated;
     const { x: vx, y: vy, k } = viewRef.current;
 
     ctx.lineWidth = 1;
     for (const edge of sim.edges) {
-      const a = byRel.get(edge.source);
-      const b = byRel.get(edge.target);
+      const a = byRel.get(edge.from);
+      const b = byRel.get(edge.to);
       if (!a || !b || !visible(a) || !visible(b)) continue;
       const highlighted =
-        hover !== null && (edge.source === hover || edge.target === hover);
+        hover !== null && (edge.from === hover || edge.to === hover);
       ctx.strokeStyle = highlighted ? muted : line;
       ctx.beginPath();
       ctx.moveTo(a.x * k + vx, a.y * k + vy);
@@ -223,7 +227,7 @@ export function GraphDialog() {
         ? ink
         : dimmed
           ? faint
-          : node.isolated || node.hidden
+          : node.isolated
             ? faint
             : muted;
       ctx.globalAlpha = dimmed ? 0.45 : 1;
@@ -234,7 +238,7 @@ export function GraphDialog() {
         ctx.fillText(node.title, x + node.r + 3, y + 3.5);
       }
     }
-  }, [showIsolated]);
+  }, [showIsolated, showAll]);
 
   useEffect(() => {
     draw();
@@ -251,7 +255,7 @@ export function GraphDialog() {
     let best: SimNode | null = null;
     let bestDist = Infinity;
     for (const node of sim.nodes) {
-      if (node.hidden) continue;
+      if (node.isolated && !showIsolated) continue;
       const dx = px - (node.x * k + vx);
       const dy = py - (node.y * k + vy);
       const dist = Math.hypot(dx, dy);
