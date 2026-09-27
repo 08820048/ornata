@@ -1,4 +1,4 @@
-import type { TreeNode } from "@/lib/types";
+import type { TreeNode, TreeSort } from "@/lib/types";
 
 /**
  * Modified-time ordering for one tree layer: notes by mtime descending,
