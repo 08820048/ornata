@@ -4,6 +4,7 @@ import {
   FilePlus2,
   FileText,
   FolderOpen,
+  ImageOff,
   ListChecks,
   Search,
   Settings,
@@ -127,6 +128,12 @@ export function CommandPalette() {
         label: t("templates.reveal"),
         icon: FolderOpen,
         run: () => void ipc.revealTemplates(),
+      },
+      {
+        id: "cleanup-assets",
+        label: t("assets.cleanup"),
+        icon: ImageOff,
+        run: () => useUi.getState().setUnusedAssetsOpen(true),
       },
       {
         id: "daily-note",

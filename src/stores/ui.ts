@@ -7,6 +7,7 @@ interface UiState {
   tasksOpen: boolean;
   tagsOpen: boolean;
   saveTemplateOpen: boolean;
+  unusedAssetsOpen: boolean;
   agentOpen: boolean;
   sidebarHidden: boolean;
   markdownSource: boolean;
@@ -15,6 +16,7 @@ interface UiState {
   setTasksOpen: (open: boolean) => void;
   setTagsOpen: (open: boolean) => void;
   setSaveTemplateOpen: (open: boolean) => void;
+  setUnusedAssetsOpen: (open: boolean) => void;
   setAgentOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   toggleMarkdownSource: () => void;
@@ -26,6 +28,7 @@ export const useUi = create<UiState>((set, get) => ({
   tasksOpen: false,
   tagsOpen: false,
   saveTemplateOpen: false,
+  unusedAssetsOpen: false,
   agentOpen: false,
   sidebarHidden: false,
   markdownSource: false,
@@ -34,6 +37,7 @@ export const useUi = create<UiState>((set, get) => ({
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),
   setTagsOpen: (tagsOpen) => set({ tagsOpen }),
   setSaveTemplateOpen: (saveTemplateOpen) => set({ saveTemplateOpen }),
+  setUnusedAssetsOpen: (unusedAssetsOpen) => set({ unusedAssetsOpen }),
   setAgentOpen: (agentOpen) => set({ agentOpen }),
   toggleSidebar: () => set({ sidebarHidden: !get().sidebarHidden }),
   toggleMarkdownSource: () =>

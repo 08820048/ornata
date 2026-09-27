@@ -80,6 +80,8 @@ pub fn run() {
             commands::list_tags,
             commands::notes_with_tag,
             commands::note_history,
+            commands::list_unused_assets,
+            commands::trash_assets,
             commands::read_history_snapshot,
             commands::snapshot_note,
             commands::create_note,

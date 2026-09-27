@@ -13,6 +13,7 @@ import { useUpdater } from "@/stores/updater";
 import { useLocale } from "@/stores/locale";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
+import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -162,6 +163,7 @@ export default function App() {
         <CommandPalette />
         {status === "ready" && <TasksDialog />}
       {status === "ready" && <TagsDialog />}
+      {status === "ready" && <UnusedAssetsDialog />}
       </Suspense>
       <AppToaster />
     </>

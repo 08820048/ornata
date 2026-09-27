@@ -40,6 +40,13 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** A vault image asset no note references (cleanup candidate). */
+export interface UnusedAsset {
+  name: string;
+  /** Bytes. */
+  size: number;
+}
+
 /** File tree ordering: backend name order, or notes by last modification. */
 export type TreeSort = "name" | "modified";
 

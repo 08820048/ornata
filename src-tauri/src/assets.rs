@@ -1,6 +1,9 @@
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::Serialize;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
@@ -11,6 +14,107 @@ const ALLOWED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "svg"
 /// Reject images beyond 20 MB decoded — pasted screenshots are far below
 /// this, and the cap keeps a stray huge paste from ballooning memory.
 const MAX_IMAGE_BYTES: usize = 20 * 1024 * 1024;
+
+/// A fresh paste lands on disk before its reference is written into the
+/// note — give that window a wide berth before calling an asset orphaned.
+const GRACE_MS: u128 = 10 * 60 * 1000;
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnusedAsset {
+    pub name: String,
+    pub size: i64,
+}
+
+/// Vault assets no note references (`.ornata/assets/...` and legacy
+/// `.markd/assets/...` references both count as live). Fresh files inside
+/// the grace window are never listed.
+pub fn unreferenced_assets(root: &Path) -> AppResult<Vec<UnusedAsset>> {
+    let mut referenced: HashSet<String> = HashSet::new();
+    collect_references(root, &crate::vault::notes_root(root), &mut referenced)?;
+    let mut out: Vec<UnusedAsset> = Vec::new();
+    let now = SystemTime::now();
+    for entry in fs::read_dir(root.join(ASSETS_DIR)).into_iter().flatten().flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') || referenced.contains(&name) {
+            continue;
+        }
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        if metadata
+            .modified()
+            .ok()
+            .and_then(|modified| now.duration_since(modified).ok())
+            .is_some_and(|age| age.as_millis() < GRACE_MS)
+        {
+            continue;
+        }
+        out.push(UnusedAsset {
+            name,
+            size: metadata.len() as i64,
+        });
+    }
+    out.sort_by(|a, b| b.size.cmp(&a.size));
+    Ok(out)
+}
+
+/// Move the named vault assets to the OS trash. Bare file names only —
+/// anything with a separator is ignored. Returns how many were trashed.
+pub fn trash_assets(root: &Path, names: &[String]) -> AppResult<usize> {
+    let mut trashed = 0;
+    for name in names {
+        if name.starts_with('.') || name.contains('/') || name.contains('\\') {
+            continue;
+        }
+        let path = root.join(ASSETS_DIR).join(name);
+        if path.is_file() && trash::delete(&path).is_ok() {
+            trashed += 1;
+        }
+    }
+    Ok(trashed)
+}
+
+/// Filenames referenced by any note: every `assets/<name>` token in the raw
+/// markdown (uuid names carry no spaces, so the token ends at whitespace,
+/// `)`, `>` or a quote). `.ornata/` and legacy `.markd/` both appear as
+/// prefixes; only the filename matters here.
+fn collect_references(root: &Path, dir: &Path, referenced: &mut HashSet<String>) -> AppResult<()> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if entry.file_name().to_string_lossy().starts_with('.') {
+            continue;
+        }
+        if path.is_dir() {
+            collect_references(root, &path, referenced)?;
+            continue;
+        }
+        if path.extension().is_none_or(|e| e != "md") {
+            continue;
+        }
+        let content = fs::read_to_string(&path).unwrap_or_default();
+        let mut rest = content.as_str();
+        while let Some(pos) = rest.find("assets/") {
+            let tail = &rest[pos + "assets/".len()..];
+            let name: String = tail
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+                .collect();
+            if name.contains('.') {
+                referenced.insert(name);
+            }
+            rest = tail;
+        }
+    }
+    Ok(())
+}
 
 /// Save image bytes (sent from the editor as base64) into the vault's
 /// asset folder. Returns the absolute path for use with the asset protocol.

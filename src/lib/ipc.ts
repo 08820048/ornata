@@ -16,6 +16,7 @@ import type {
   RenameOutcome,
   SnapshotMeta,
   TagCount,
+  UnusedAsset,
   OpenTask,
   SettingsSnapshot,
   Theme,
@@ -113,6 +114,8 @@ export const ipc = {
   createFolder: (dir: string, name: string) =>
     call<string>("create_folder", { dir, name }),
   noteHistory: (rel: string) => call<SnapshotMeta[]>("note_history", { rel }),
+  listUnusedAssets: () => call<UnusedAsset[]>("list_unused_assets"),
+  trashAssets: (names: string[]) => call<number>("trash_assets", { names }),
   readAppData: (name: string) => call<string | null>("read_app_data", { name }),
   writeAppData: (name: string, content: string) =>
     call<void>("write_app_data", { name, content }),

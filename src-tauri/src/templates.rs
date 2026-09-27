@@ -33,6 +33,11 @@ pub fn list_templates(root: &Path) -> Vec<String> {
 
 /// Create or overwrite a template (the "save note as template" path).
 pub fn write_template(root: &Path, name: &str, content: &str) -> AppResult<()> {
+    // Reject blank names up front — sanitize_name would silently fall back
+    // to "Untitled", which is the right default for notes but not here.
+    if name.trim().is_empty() {
+        return Err(AppError::InvalidInput("empty template name".into()));
+    }
     let file_name = sanitize_name(name);
     let file_name = file_name.trim();
     if file_name.is_empty() {

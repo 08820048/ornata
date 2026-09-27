@@ -291,6 +291,16 @@ pub fn notes_with_tag(state: State<'_, AppState>, tag: String) -> AppResult<Vec<
 }
 
 #[tauri::command]
+pub fn list_unused_assets(state: State<'_, AppState>) -> AppResult<Vec<assets::UnusedAsset>> {
+    assets::unreferenced_assets(&state.root()?)
+}
+
+#[tauri::command]
+pub fn trash_assets(state: State<'_, AppState>, names: Vec<String>) -> AppResult<usize> {
+    assets::trash_assets(&state.root()?, &names)
+}
+
+#[tauri::command]
 pub fn note_history(state: State<'_, AppState>, rel: String) -> AppResult<Vec<history::SnapshotMeta>> {
     Ok(history::list_snapshots(&state.root()?, &rel))
 }
