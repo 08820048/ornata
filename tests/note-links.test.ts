@@ -20,6 +20,11 @@ test("hrefToRel resolves vault-relative paths", () => {
   expect(hrefToRel("app.md?x=1")).toBe("app.md");
 });
 
+test("hrefToRel tolerates malformed percent-escapes", () => {
+  expect(hrefToRel("50%.md")).toBe("50%.md");
+  expect(hrefToRel("note.md#100%")).toBe("note.md");
+});
+
 test("hrefToRel rejects external and empty hrefs", () => {
   expect(hrefToRel("https://example.com")).toBeNull();
   expect(hrefToRel("mailto:a@b.c")).toBeNull();

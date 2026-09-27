@@ -295,9 +295,19 @@ export function GraphDialog() {
 
   const onWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
     event.preventDefault();
-    const { k } = viewRef.current;
-    const next = Math.min(4, Math.max(0.2, k * (event.deltaY < 0 ? 1.12 : 0.9)));
-    viewRef.current.k = next;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = event.clientX - rect.left;
+    const my = event.clientY - rect.top;
+    const { x: vx, y: vy, k } = viewRef.current;
+    const next = Math.min(4, Math.max(0.2, k * (event.deltaY < 0 ? 1.08 : 0.93)));
+    // Keep the point under the cursor stable while zooming.
+    viewRef.current = {
+      k: next,
+      x: mx - ((mx - vx) / k) * next,
+      y: my - ((my - vy) / k) * next,
+    };
     draw();
   };
 

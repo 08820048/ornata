@@ -139,15 +139,44 @@ fn collect_asset_names(content: &str, referenced: &mut HashSet<String>) {
     let mut rest = content;
     while let Some(pos) = rest.find("assets/") {
         let tail = &rest[pos + "assets/".len()..];
+        // Pasted assets are uuid names, but clipped notes may keep spaces,
+        // percent-encoding, or non-ASCII filenames. Stop at markdown / URL
+        // delimiters so those references still count as live.
         let name: String = tail
             .chars()
-            .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+            .take_while(|c| {
+                !c.is_control()
+                    && !matches!(
+                        c,
+                        ')' | ']' | '"' | ''' | '<' | '>' | '#' | '?' | '&' | ' ' | '	'
+                    )
+            })
             .collect();
-        if name.contains('.') {
+        let name = percent_decode_name(&name);
+        if name.contains('.') && !name.contains('/') && !name.contains('\') {
             referenced.insert(name);
         }
         rest = tail;
     }
+}
+
+fn percent_decode_name(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("");
+            if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                out.push(byte);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
 
 /// Same scan as [`collect_references`] but over the history directory, whose

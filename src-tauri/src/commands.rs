@@ -302,13 +302,19 @@ pub fn trash_assets(state: State<'_, AppState>, names: Vec<String>) -> AppResult
 }
 
 #[tauri::command]
-pub fn link_graph(state: State<'_, AppState>) -> AppResult<graph::LinkGraph> {
-    graph::link_graph(&state.root()?)
+pub async fn link_graph(state: State<'_, AppState>) -> AppResult<graph::LinkGraph> {
+    let root = state.root()?;
+    tauri::async_runtime::spawn_blocking(move || graph::link_graph(&root))
+        .await
+        .map_err(|e| AppError::Other(e.to_string()))?
 }
 
 #[tauri::command]
 pub fn note_history(state: State<'_, AppState>, rel: String) -> AppResult<Vec<history::SnapshotMeta>> {
-    Ok(history::list_snapshots(&state.root()?, &rel))
+    let root = state.root()?;
+    // Reject traversal before history_dir joins rel under `.ornata/history/`.
+    crate::vault::resolve_rel(&root, &rel)?;
+    Ok(history::list_snapshots(&root, &rel))
 }
 
 #[tauri::command]
@@ -317,7 +323,9 @@ pub fn read_history_snapshot(
     rel: String,
     timestamp: i64,
 ) -> AppResult<String> {
-    history::read_snapshot(&state.root()?, &rel, timestamp)
+    let root = state.root()?;
+    crate::vault::resolve_rel(&root, &rel)?;
+    history::read_snapshot(&root, &rel, timestamp)
 }
 
 /// Force a snapshot of the note's current disk content (used before a restore).

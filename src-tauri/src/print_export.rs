@@ -136,10 +136,16 @@ fn emit_to_window<T: serde::Serialize + Clone>(
         .map_err(|e| AppError::Other(format!("{event}: {e}")))
 }
 
-fn take_job(app: &AppHandle) -> AppResult<PrintJob> {
+fn take_job_if(app: &AppHandle, id: u64) -> AppResult<PrintJob> {
     let state = app.state::<PrintState>();
     let mut job = state.job.lock().map_err(|e| AppError::Other(e.to_string()))?;
-    job.take().ok_or_else(|| AppError::Other("no print job".into()))
+    match job.as_ref() {
+        Some(current) if current.id == id => job
+            .take()
+            .ok_or_else(|| AppError::Other("no print job".into())),
+        Some(_) => Err(AppError::Other("stale print job".into())),
+        None => Err(AppError::Other("no print job".into())),
+    }
 }
 
 /// Kick off an export: stage the job, create the print window (hidden for
@@ -192,10 +198,11 @@ pub async fn start_print_export(
 pub async fn print_view_ready(
     app: AppHandle,
     window: tauri::WebviewWindow,
+    id: u64,
     body_html: String,
     page_css: String,
 ) -> AppResult<()> {
-    let job = take_job(&app)?;
+    let job = take_job_if(&app, id)?;
     match job.kind {
         ExportKind::Pdf => {
             // Show only once the note is in the DOM, then open the system
@@ -245,6 +252,7 @@ fn assemble_html(body: &str, css: &str, vault_root: &str) -> String {
 }
 
 fn inline_asset_images(html: &str, vault_root: &str) -> String {
+    let vault = PathBuf::from(vault_root);
     let mut out = String::with_capacity(html.len());
     let mut rest = html;
     let markers = ["asset://localhost/", "http://asset.localhost/"];
@@ -254,22 +262,49 @@ fn inline_asset_images(html: &str, vault_root: &str) -> String {
             .filter_map(|m| rest.find(m).map(|pos| (pos, *m)))
             .min_by_key(|(pos, _)| *pos);
         let Some((pos, marker)) = hit else { break };
-        out.push_str(&rest[..pos]);
+        // Only rewrite image sources — bare mentions of asset:// in text must
+        // not trigger a filesystem read.
+        let prefix = &rest[..pos];
+        let src_ok = prefix
+            .rfind('<')
+            .map(|start| {
+                let tag = &prefix[start..];
+                tag.to_ascii_lowercase().starts_with("<img")
+                    && tag.rfind("src=").is_some_and(|s| !tag[s + 4..].contains('<'))
+            })
+            .unwrap_or(false);
+        out.push_str(prefix);
         rest = &rest[pos + marker.len()..];
-        // The path runs until a quote, paren or whitespace; it is
-        // percent-encoded by convertFileSrc.
         let end = rest
             .find(|c: char| c == '"' || c == '\'' || c == ')' || c.is_whitespace())
             .unwrap_or(rest.len());
         let encoded = &rest[..end];
+        rest = &rest[end..];
+        if !src_ok {
+            out.push_str(marker);
+            out.push_str(encoded);
+            continue;
+        }
         let decoded = percent_decode(encoded);
-        let abs = PathBuf::from(decoded);
+        let abs = PathBuf::from(&decoded);
         let path = if abs.is_absolute() {
             abs
         } else {
-            PathBuf::from(vault_root).join(abs)
+            vault.join(&abs)
         };
-        let mime = match path
+        let Ok(canonical) = path.canonicalize() else {
+            out.push_str(TRANSPARENT_PIXEL);
+            continue;
+        };
+        let Ok(vault_canon) = vault.canonicalize() else {
+            out.push_str(TRANSPARENT_PIXEL);
+            continue;
+        };
+        if !canonical.starts_with(&vault_canon) {
+            out.push_str(TRANSPARENT_PIXEL);
+            continue;
+        }
+        let mime = match canonical
             .extension()
             .and_then(|e| e.to_str())
             .unwrap_or("")
@@ -283,10 +318,7 @@ fn inline_asset_images(html: &str, vault_root: &str) -> String {
             "svg" => "image/svg+xml",
             _ => "application/octet-stream",
         };
-        // 20 MB per image (same cap as pasting); read failures and oversized
-        // files get a transparent placeholder instead of a machine-local
-        // path that would break on any other device.
-        let bytes = std::fs::read(&path).ok();
+        let bytes = std::fs::read(&canonical).ok();
         let inlined = bytes
             .filter(|bytes| bytes.len() <= MAX_INLINE_BYTES)
             .map(|bytes| {
@@ -294,7 +326,6 @@ fn inline_asset_images(html: &str, vault_root: &str) -> String {
             })
             .unwrap_or_else(|| TRANSPARENT_PIXEL.to_string());
         out.push_str(&inlined);
-        rest = &rest[end..];
     }
     out.push_str(rest);
     out

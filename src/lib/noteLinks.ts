@@ -18,7 +18,15 @@ export function hrefToRel(href: string | null | undefined): string | null {
   if (!href) return null;
   const trimmed = href.trim();
   if (!trimmed || isExternal(trimmed)) return null;
-  let rel = decodeURI(trimmed).split(/[?#]/)[0].replace(/^\.?\//, "");
+  let decoded = trimmed;
+  try {
+    decoded = decodeURI(trimmed);
+  } catch {
+    // Malformed percent-escapes (e.g. `50%.md`) must not throw out of
+    // parseHTML / click handlers and take down the whole note.
+    decoded = trimmed;
+  }
+  let rel = decoded.split(/[?#]/)[0].replace(/^\.?\//, "");
   if (!rel) return null;
   if (!/\.md$/i.test(rel)) rel += ".md";
   return rel;

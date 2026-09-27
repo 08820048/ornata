@@ -68,6 +68,7 @@ export function PrintView() {
   useEffect(() => {
     if (!job || !editor || editor.isDestroyed) return;
     let cancelled = false;
+    const jobId = job.id;
     editor.commands.setContent(job.markdown, { contentType: "markdown" });
     // Hand control back to the backend once the print sheet closes.
     const onAfterPrint = () => void ipc.hidePrintWindow();
@@ -77,6 +78,7 @@ export function PrintView() {
       // Images load through the asset protocol asynchronously; wait until
       // every <img> has settled (bounded), then hand over the DOM.
       for (let attempt = 0; attempt < 40; attempt += 1) {
+        if (cancelled) return;
         const images = Array.from(editor.view.dom.querySelectorAll("img"));
         if (images.every((img) => img.complete)) break;
         await new Promise((resolve) => setTimeout(resolve, 125));
@@ -85,12 +87,14 @@ export function PrintView() {
       // Mermaid diagrams render asynchronously in a node view; wait (bounded)
       // until no block is still showing its rendering placeholder.
       for (let attempt = 0; attempt < 16; attempt += 1) {
+        if (cancelled) return;
         const rendering = editor.view.dom.querySelectorAll(
           ".mermaid-preview .mermaid-rendering",
         );
         if (rendering.length === 0) break;
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
+      if (cancelled) return;
       const bodyHtml = editor.view.dom.outerHTML;
       const css: string[] = [];
       for (const sheet of Array.from(document.styleSheets)) {
@@ -103,11 +107,18 @@ export function PrintView() {
         }
       }
       if (!cancelled) {
-        await ipc.printViewReady({ bodyHtml, pageCss: css.join("\n") });
+        await ipc.printViewReady({
+          id: jobId,
+          bodyHtml,
+          pageCss: css.join("\n"),
+        });
       }
     })();
 
-    return () => window.removeEventListener("afterprint", onAfterPrint);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("afterprint", onAfterPrint);
+    };
   }, [job, editor]);
 
   return (

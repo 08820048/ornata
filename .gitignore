@@ -48,3 +48,4 @@ AuthKey_*.p8
 
 # Internal design/research notes — not shipped
 /docs/
+!docs/review-*.md

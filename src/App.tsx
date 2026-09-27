@@ -106,9 +106,11 @@ export default function App() {
         const unRich = await listen<{ html: string; plain: string }>(
           "ornata-rich-text",
           ({ payload }) => {
-            void writeRich(payload.html, payload.plain).then(() =>
-              toast(t("toast.richCopied")),
-            );
+            void writeRich(payload.html, payload.plain)
+              .then(() => toast(t("toast.richCopied")))
+              .catch((err) =>
+                toast.error(err instanceof Error ? err.message : String(err)),
+              );
           },
         );
         const unDone = await listen<string>("ornata-export-done", (event) => {
@@ -138,8 +140,9 @@ export default function App() {
     if (status !== "ready") return;
     let stop: (() => void) | undefined;
     let cancelled = false;
-    listen<{ text: string }>("ornata-quick-capture", ({ payload }) => {
-      void useVault.getState().appendQuickCapture(payload.text);
+    listen<string>("ornata-quick-capture", ({ payload }) => {
+      // Rust emits a bare string (see quick_capture::submit_quick_capture).
+      void useVault.getState().appendQuickCapture(payload);
     })
       .then((unlisten) => {
         if (cancelled) unlisten();

@@ -10,7 +10,7 @@ import {
 } from "@/lib/frontmatter";
 import { rewriteLinksInMarkdown, wikiToMarkdown } from "@/lib/noteLinks";
 import { applyLinkRewritesToEditor } from "./linkRewrites";
-import { noteKey, noteTitle, sameNote } from "@/lib/noteRef";
+import { noteAssetRoot, noteKey, noteTitle, sameNote } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { NoteRef } from "@/lib/types";
 import { debounce } from "@/lib/utils";
@@ -291,6 +291,7 @@ export function useNoteContentEffects({
     setProperties,
     setWords,
     outlineItems,
+    loadNonce,
   } = content;
   const t = useT();
   const outlineFrame = useRef<number | null>(null);
@@ -551,8 +552,18 @@ export function useNoteContentEffects({
     // Consume once — rawText is in the deps below (source mode reads it), and
     // re-running on those changes would append the same line repeatedly.
     if (appendReq.nonce === appliedAppendNonce.current) return;
+    // Wait until this pane has loaded its note; appending into an empty
+    // pre-load document would autosave over Inbox.md and wipe prior lines.
+    // Also skip burning the nonce when the editor is not ready yet.
+    if (loadedKey.current !== currentKey) return;
+    if (!markdownSource && (!editor || editor.isDestroyed)) return;
+
     appliedAppendNonce.current = appendReq.nonce;
     const line = appendReq.line;
+    // Clear the store request so a remounted pane cannot replay it.
+    if (useTabs.getState().appendReq?.nonce === appendReq.nonce) {
+      useTabs.setState({ appendReq: null });
+    }
     if (markdownSource) {
       const base = rawText.replace(/\n*$/, "");
       const next = base ? `${base}\n${line}\n` : `${line}\n`;
@@ -563,16 +574,17 @@ export function useNoteContentEffects({
       debouncedPersist(body);
       return;
     }
-    if (!editor || editor.isDestroyed) return;
-    const end = editor.state.doc.content.size;
-    editor
+    // Narrowed above: editor is present when not in source mode.
+    const instance = editor!;
+    const end = instance.state.doc.content.size;
+    instance
       .chain()
       .insertContentAt(end, {
         type: "paragraph",
         content: [{ type: "text", text: line }],
       })
       .run();
-  }, [appendReq, currentKey, markdownSource, rawText, editor, setRawText, frontmatter, pending, debouncedPersist]);
+  }, [appendReq, currentKey, markdownSource, rawText, editor, setRawText, frontmatter, pending, debouncedPersist, loadNonce]);
 
   // Palette/menu "copy markdown / export / delete" actions routed through a
   // window event, so menus that outlive this pane can still target it.
@@ -595,26 +607,25 @@ export function useNoteContentEffects({
               ? await ipc.exportNote(current.rel, markdown)
               : await ipc.exportExternalNote(current.path, markdown);
           if (path) toast(t("toast.noteExported"), { description: path });
-        } else if (action === "print-pdf") {
+        } else if (
+          action === "print-pdf" ||
+          action === "export-html" ||
+          action === "copy-rich"
+        ) {
+          // Print/export should match the editor: body only (no YAML block)
+          // and the note's own asset root (external notes live outside the vault).
+          const body = splitFrontmatter(markdown).body;
+          const kind =
+            action === "print-pdf"
+              ? "pdf"
+              : action === "export-html"
+                ? "html"
+                : "clipboard";
           await ipc.startPrintExport({
-            markdown,
-            vaultRoot: useVault.getState().root,
+            markdown: body,
+            vaultRoot: noteAssetRoot(useVault.getState().root, noteRef.current),
             defaultName: noteTitle(noteRef.current),
-            kind: "pdf",
-          });
-        } else if (action === "export-html") {
-          await ipc.startPrintExport({
-            markdown,
-            vaultRoot: useVault.getState().root,
-            defaultName: noteTitle(noteRef.current),
-            kind: "html",
-          });
-        } else if (action === "copy-rich") {
-          await ipc.startPrintExport({
-            markdown,
-            vaultRoot: useVault.getState().root,
-            defaultName: noteTitle(noteRef.current),
-            kind: "clipboard",
+            kind,
           });
         } else if (action === "delete") {
           const current = noteRef.current;
