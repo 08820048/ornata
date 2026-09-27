@@ -1,6 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Slice } from "@tiptap/pm/model";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   lazy,
   memo,
@@ -22,7 +21,6 @@ import {
   type Property,
 } from "@/lib/frontmatter";
 import {
-  hrefToRel,
   relToHref,
   rewriteLinksInMarkdown,
   wikiToMarkdown,
@@ -32,7 +30,6 @@ import {
   noteKey,
   noteTitle,
   sameNote,
-  vaultNote,
 } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { NoteRef } from "@/lib/types";
@@ -45,6 +42,7 @@ import { useLocale, useT } from "@/stores/locale";
 import { createExtensions } from "./extensions";
 import { ArticleOutline, type OutlineItem } from "./ArticleOutline";
 import { brokenLinksKey } from "./brokenLinks";
+import { usePaneLinkClicks, usePaneRequests } from "./usePaneRequests";
 import { dispatchFind } from "./findReplace";
 import { FindReplaceBar } from "./FindReplaceBar";
 import { NoteHistory } from "./NoteHistory";
@@ -56,7 +54,6 @@ import { parseMarkdownSlice } from "./markdownPaste";
 import { NoteLinkPicker, type LinkPickerState } from "./NoteLinkPicker";
 import { BacklinksBadge, NoteBacklinks, useBacklinks } from "./NoteBacklinks";
 import { NoteProperties } from "./NoteProperties";
-import { revealText } from "./revealText";
 import { UnlinkedMentions } from "./UnlinkedMentions";
 import { SelectionMenu } from "./SelectionMenu";
 import { ImageSourcePopover } from "./ImageSourcePopover";
@@ -727,66 +724,19 @@ export const NoteEditor = memo(function NoteEditor({
     }
   }, [active, reloadIfChanged]);
 
-  // Handle link clicks in the capture phase, before the anchor's native
-  // navigation (which the webview would otherwise turn into a browser open).
-  // Scoped to this pane's DOM, so exactly one handler runs per click.
-  useEffect(() => {
-    const root = scrollRef.current;
-    if (!root) return;
-    const onClick = async (event: MouseEvent) => {
-      const anchor = (event.target as HTMLElement | null)?.closest("a[href]");
-      if (!anchor) return;
-      const href = anchor.getAttribute("href");
-      if (!href) return;
-      event.preventDefault();
-      event.stopPropagation();
-      if (/^(?:https?:\/\/|mailto:)/i.test(href)) {
-        openUrl(href);
-        return;
-      }
-      const current = noteRef.current;
-      if (current.kind === "external") {
-        try {
-          const opened = await ipc.openExternalLink(current.path, href);
-          if (opened) useVault.getState().openExternalNotes([opened]);
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : String(err));
-        }
-        return;
-      }
-      const targetRel = hrefToRel(href);
-      if (targetRel) {
-        const vault = useVault.getState();
-        const exists = flattenNotes(vault.tree).some(
-          (n) => n.rel.toLowerCase() === targetRel.toLowerCase(),
-        );
-        let openRel = targetRel;
-        if (!exists) {
-          // Broken link — clicking creates the note it points at.
-          const created = await vault.createNoteAtRel(targetRel);
-          if (!created) return;
-          openRel = created;
-        }
-        const target = vaultNote(openRel);
-        vault.expandTo(openRel);
-        vault.setView({ type: "note", note: target });
-        // Links point at the note as a whole — open it at the top, even if the
-        // target tab was already scrolled down.
-        useTabs.getState().requestScrollTop(target);
-      }
-    };
-    root.addEventListener("click", onClick, true);
-    return () => root.removeEventListener("click", onClick, true);
-  }, []);
-
-  // Honor a scroll-to-top request for this note (fired when opened via a link).
-  const scrollTopReq = useTabs((s) => s.scrollTopReq);
   const titleFocusReq = useTabs((s) => s.titleFocusReq);
-  useEffect(() => {
-    if (!scrollTopReq || scrollTopReq.key !== currentKey) return;
-    savedScroll.current = 0;
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [scrollTopReq, currentKey]);
+  // Link clicks + scroll/reveal requests (see usePaneRequests).
+  usePaneLinkClicks({ scrollRef, noteRef });
+  usePaneRequests({
+    editor,
+    active,
+    markdownSource,
+    loadNonce,
+    currentKey,
+    scrollRef,
+    savedScroll,
+    loadedKey,
+  });
 
   // Follow link rewrites the backend wrote on disk (rename/move). The active
   // pane is updated in memory — raw text in source mode, link marks in the
@@ -865,23 +815,6 @@ export const NoteEditor = memo(function NoteEditor({
     };
   }, [editor, tree]);
 
-  // Honor a reveal request (a backlink / mention snippet was clicked): once
-  // this pane is visible and its content loaded, scroll to and flash the
-  // matching block. Each request is consumed once; a miss leaves the note at
-  // wherever it opened.
-  const revealReq = useTabs((s) => s.revealReq);
-  const revealedNonce = useRef(0);
-  useEffect(() => {
-    if (!editor || !active || markdownSource || loadNonce === 0) return;
-    if (!revealReq || revealReq.key !== currentKey) return;
-    if (loadedKey.current !== currentKey) return;
-    if (revealedNonce.current === revealReq.nonce) return;
-    revealedNonce.current = revealReq.nonce;
-    if (revealText(editor, revealReq.text) && scrollRef.current) {
-      savedScroll.current = scrollRef.current.scrollTop;
-    }
-  }, [editor, active, markdownSource, loadNonce, revealReq, currentKey]);
-
   const flushThen = (action: () => void) => {
     debouncedPersist.cancel();
     const flush =
@@ -932,8 +865,12 @@ export const NoteEditor = memo(function NoteEditor({
 
   // Insert a page link to `rel` over the slash range, as a link mark whose
   // href is the note path (serializes to `[title](rel)` markdown on save).
-  const insertNoteLink = (rel: string, title: string) => {
+  const insertNoteLink = (rel: string, title: string, heading?: string) => {
     if (!editor || !linkPicker) return;
+    const clean = heading?.trim();
+    const href = clean
+      ? `${relToHref(rel)}#${encodeURIComponent(clean)}`
+      : relToHref(rel);
     editor
       .chain()
       .focus()
@@ -941,8 +878,8 @@ export const NoteEditor = memo(function NoteEditor({
       .insertContent([
         {
           type: "text",
-          text: title,
-          marks: [{ type: "link", attrs: { href: relToHref(rel) } }],
+          text: clean ? `${title} › ${clean}` : title,
+          marks: [{ type: "link", attrs: { href } }],
         },
         { type: "text", text: " " },
       ])

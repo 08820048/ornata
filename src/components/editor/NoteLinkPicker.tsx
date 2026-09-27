@@ -1,7 +1,8 @@
-import { FileText } from "lucide-react";
+import { FileText, Hash } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flattenNotes } from "@/lib/tree";
+import { ipc } from "@/lib/ipc";
 import { cx, noteTitle, parentDir } from "@/lib/utils";
 import { useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
@@ -18,7 +19,31 @@ function folderRoute(rel: string) {
   return dir ? dir.split("/").join(" / ") : undefined;
 }
 
-/** Floating search list to pick a note to link to. Inserts on select. */
+/** Strip markdown emphasis so a picker heading matches the DOM textContent. */
+function extractHeadings(markdown: string): string[] {
+  const headings: string[] = [];
+  let inFence = false;
+  for (const line of markdown.split("\n")) {
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    const match = /^#{1,3}\s+(.*)$/.exec(trimmed);
+    if (match) {
+      headings.push(
+        match[1]
+          .replace(/[*_~`]/g, "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      );
+    }
+  }
+  return headings.filter(Boolean);
+}
+
+/** Floating search list to pick a note (and optionally a heading) to link to. */
 export function NoteLinkPicker({
   state,
   currentRel,
@@ -27,13 +52,14 @@ export function NoteLinkPicker({
 }: {
   state: LinkPickerState;
   currentRel: string;
-  onPick: (rel: string, title: string) => void;
+  onPick: (rel: string, title: string, heading?: string) => void;
   onClose: () => void;
 }) {
   const tree = useVault((s) => s.tree);
   const recentNotes = useVault((s) => s.recentNotes);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
+  const [headings, setHeadings] = useState<{ rel: string; title: string; headings: string[] } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const t = useT();
 
@@ -64,11 +90,30 @@ export function NoteLinkPicker({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-  useEffect(() => setSelected(0), [query]);
+  useEffect(() => setSelected(0), [query, headings]);
 
-  const choose = (index: number) => {
+  const choose = async (index: number) => {
+    if (headings) {
+      // Second step: index 0 is the whole note, the rest are its headings.
+      if (index === 0) onPick(headings.rel, headings.title);
+      else onPick(headings.rel, headings.title, headings.headings[index - 1]);
+      return;
+    }
     const note = filtered[index];
-    if (note) onPick(note.rel, noteTitle(note.rel));
+    if (!note) return;
+    try {
+      const content = await ipc.readNote(note.rel);
+      const noteHeadings = extractHeadings(content);
+      if (noteHeadings.length > 0) {
+        setHeadings({ rel: note.rel, title: noteTitle(note.rel), headings: noteHeadings });
+        setSelected(0);
+        setQuery("");
+        return;
+      }
+    } catch {
+      // Unreadable target — fall through to a plain note link.
+    }
+    onPick(note.rel, noteTitle(note.rel));
   };
 
   return (
@@ -88,51 +133,78 @@ export function NoteLinkPicker({
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
-            onClose();
+            if (headings) setHeadings(null);
+            else onClose();
           } else if (event.key === "ArrowDown") {
             event.preventDefault();
-            setSelected((i) => (i + 1) % Math.max(filtered.length, 1));
+            const total = headings ? headings.headings.length + 1 : filtered.length;
+            setSelected((i) => (i + 1) % Math.max(total, 1));
           } else if (event.key === "ArrowUp") {
             event.preventDefault();
-            setSelected(
-              (i) => (i - 1 + filtered.length) % Math.max(filtered.length, 1),
-            );
+            const total = headings ? headings.headings.length + 1 : filtered.length;
+            setSelected((i) => (i - 1 + total) % Math.max(total, 1));
           } else if (event.key === "Enter") {
             event.preventDefault();
-            choose(selected);
+            void choose(selected);
           }
         }}
         onBlur={onClose}
       />
       <div className="max-h-[240px] overflow-y-auto">
-        {filtered.map((note, index) => {
-          const route = folderRoute(note.rel);
-          return (
-            <button
-              key={note.rel}
-              type="button"
-              className={cx(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
-                index === selected ? "bg-hover text-ink" : "text-muted",
-              )}
-              // mousedown (not click) so it fires before the input's blur closes us
-              onMouseDown={(event) => {
-                event.preventDefault();
-                choose(index);
-              }}
-              onMouseEnter={() => setSelected(index)}
-            >
-              <FileText size={14} strokeWidth={1.75} className="shrink-0" />
-              <span className="truncate">{noteTitle(note.rel)}</span>
-              {route && (
-                <span className="ml-auto shrink-0 truncate pl-2 text-[11px] text-faint">
-                  {route}
-                </span>
-              )}
-            </button>
-          );
-        })}
-        {filtered.length === 0 && (
+        {headings
+          ? [
+              { key: "whole", icon: <FileText size={14} strokeWidth={1.75} className="shrink-0" />, label: t("editor.wholeNote") },
+              ...headings.headings.map((heading, i) => ({
+                key: `h-${i}`,
+                icon: <Hash size={14} strokeWidth={1.75} className="shrink-0" />,
+                label: heading,
+              })),
+            ].map((item, index) => (
+              <button
+                key={item.key}
+                type="button"
+                className={cx(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
+                  index === selected ? "bg-hover text-ink" : "text-muted",
+                )}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  void choose(index);
+                }}
+                onMouseEnter={() => setSelected(index)}
+              >
+                {item.icon}
+                <span className="truncate">{item.label}</span>
+              </button>
+            ))
+          : filtered.map((note, index) => {
+              const route = folderRoute(note.rel);
+              return (
+                <button
+                  key={note.rel}
+                  type="button"
+                  className={cx(
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
+                    index === selected ? "bg-hover text-ink" : "text-muted",
+                  )}
+                  // mousedown (not click) so it fires before the input's blur closes us
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    void choose(index);
+                  }}
+                  onMouseEnter={() => setSelected(index)}
+                >
+                  <FileText size={14} strokeWidth={1.75} className="shrink-0" />
+                  <span className="truncate">{noteTitle(note.rel)}</span>
+                  {route && (
+                    <span className="ml-auto shrink-0 truncate pl-2 text-[11px] text-faint">
+                      {route}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+        {!headings && filtered.length === 0 && (
           <p className="px-2 py-4 text-center text-[12.5px] text-faint">
             {t("editor.noNotesMatch", { query: query.trim() })}
           </p>

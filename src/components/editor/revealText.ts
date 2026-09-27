@@ -12,6 +12,30 @@ function normalize(text: string) {
  * its tail, since images/escapes can make the editor text differ slightly.
  * Returns false when nothing matched.
  */
+/**
+ * Scroll to the heading whose visible text matches `heading` (normalized,
+ * exact match with a starts-with fallback for stray trailing punctuation in
+ * the fragment) and flash it — the anchor-jump flavor of `revealText`.
+ * Returns false when no heading matched.
+ */
+export function revealHeading(editor: Editor, heading: string): boolean {
+  const target = normalize(heading);
+  if (!target) return false;
+  const headings = Array.from(
+    editor.view.dom.querySelectorAll<HTMLElement>("h1, h2, h3"),
+  );
+  const el =
+    headings.find((el) => normalize(el.textContent ?? "") === target) ??
+    headings.find((el) => normalize(el.textContent ?? "").startsWith(target));
+  if (!el) return false;
+  el.scrollIntoView({ block: "start" });
+  el.classList.remove("reveal-flash");
+  void el.offsetWidth;
+  el.classList.add("reveal-flash");
+  window.setTimeout(() => el.classList.remove("reveal-flash"), FLASH_MS);
+  return true;
+}
+
 export function revealText(editor: Editor, text: string): boolean {
   const full = normalize(text);
   if (!full) return false;

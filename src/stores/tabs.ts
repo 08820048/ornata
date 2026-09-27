@@ -13,6 +13,8 @@ interface TabsState {
   scrollTopReq: { key: string; nonce: number } | null;
   /** Bumped to ask a note's pane to scroll to and flash the block containing `text`. */
   revealReq: { key: string; text: string; nonce: number } | null;
+  /** Bumped to ask a note's pane to scroll to and flash the heading `heading`. */
+  headingRevealReq: { key: string; heading: string; nonce: number } | null;
   /** Bumped to ask a newly created note to select its title. */
   titleFocusReq: { key: string; nonce: number } | null;
   /**
@@ -34,6 +36,8 @@ interface TabsState {
   requestScrollTop: (note: NoteRef) => void;
   /** Request that `note`'s pane scroll to the first block containing `text`. */
   requestReveal: (note: NoteRef, text: string) => void;
+  /** Request that `note`'s pane scroll to and flash the heading `heading`. */
+  requestHeadingReveal: (note: NoteRef, heading: string) => void;
   /** Request that `rel`'s title input receive focus and select its text. */
   requestTitleFocus: (note: NoteRef) => void;
   /** Broadcast link rewrites (from a rename/move) to all live panes. */
@@ -45,6 +49,7 @@ export const useTabs = create<TabsState>((set, get) => ({
   tabs: [],
   scrollTopReq: null,
   revealReq: null,
+  headingRevealReq: null,
   titleFocusReq: null,
   linkRewritesReq: null,
 
@@ -112,6 +117,15 @@ export const useTabs = create<TabsState>((set, get) => ({
       },
     }),
 
+  requestHeadingReveal: (note, heading) =>
+    set({
+      headingRevealReq: {
+        key: noteKey(note),
+        heading,
+        nonce: (get().headingRevealReq?.nonce ?? 0) + 1,
+      },
+    }),
+
   applyLinkRewrites: (rewrites) => {
     if (!rewrites.length) return;
     set({
@@ -127,6 +141,7 @@ export const useTabs = create<TabsState>((set, get) => ({
       tabs: [],
       scrollTopReq: null,
       revealReq: null,
+      headingRevealReq: null,
       titleFocusReq: null,
       linkRewritesReq: null,
     }),

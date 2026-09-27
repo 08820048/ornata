@@ -55,6 +55,13 @@ export function resolveWiki(
   return { rel, title };
 }
 
+/** Split a wiki payload like `笔记#标题` into note target and optional heading. */
+export function splitWikiTarget(target: string): { target: string; heading: string | null } {
+  const hash = target.indexOf("#");
+  if (hash === -1) return { target, heading: null };
+  return { target: target.slice(0, hash), heading: target.slice(hash + 1) };
+}
+
 /**
  * Rewrite `[[target]]` / `[[target|alias]]` wiki links in a markdown string
  * into standard markdown links, resolving targets against `notes`. Keeps files
@@ -66,10 +73,16 @@ export function wikiToMarkdown(
 ): string {
   return markdown.replace(
     /\[\[([^[\]|]+)(?:\|([^[\]]+))?\]\]/g,
-    (_, target: string, alias?: string) => {
-      const { rel, title } = resolveWiki(target, notes);
-      const text = (alias ?? title).trim();
-      return `[${text}](${relToHref(rel)})`;
+    (_, rawTarget: string, alias?: string) => {
+      // `笔记#标题` links a specific heading; the fragment rides the href.
+      const { target: noteTarget, heading } = splitWikiTarget(rawTarget);
+      const { rel, title } = resolveWiki(noteTarget, notes);
+      const cleanHeading = heading?.trim();
+      const href = cleanHeading
+        ? `${relToHref(rel)}#${encodeURIComponent(cleanHeading)}`
+        : relToHref(rel);
+      const text = (alias ?? (cleanHeading ? `${title} › ${cleanHeading}` : title)).trim();
+      return `[${text}](${href})`;
     },
   );
 }

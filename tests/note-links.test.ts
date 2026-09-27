@@ -4,6 +4,7 @@ import {
   relToHref,
   resolveWiki,
   rewriteLinksInMarkdown,
+  splitWikiTarget,
   wikiToMarkdown,
 } from "../src/lib/noteLinks";
 
@@ -53,6 +54,19 @@ test("wikiToMarkdown converts wiki syntax and keeps the rest verbatim", () => {
   const md = "a [[Journal]] b [[projects/app|the app]] c [x](y.md)";
   expect(wikiToMarkdown(md, notes)).toBe(
     "a [Journal](Journal.md) b [the app](projects/app.md) c [x](y.md)",
+  );
+});
+
+test("splitWikiTarget splits note target and heading", () => {
+  expect(splitWikiTarget("笔记")).toEqual({ target: "笔记", heading: null });
+  expect(splitWikiTarget("笔记#标题")).toEqual({ target: "笔记", heading: "标题" });
+  expect(splitWikiTarget("a#b#c")).toEqual({ target: "a", heading: "b#c" });
+});
+
+test("wikiToMarkdown emits heading fragments with encoded hrefs", () => {
+  const md = "a [[Journal# Late Ideas]] b [[projects/app#TODO|todo]]";
+  expect(wikiToMarkdown(md, notes)).toBe(
+    "a [Journal › Late Ideas](Journal.md#Late%20Ideas) b [todo](projects/app.md#TODO)",
   );
 });
 
