@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "katex/dist/katex.min.css";
 import App from "./App";
 import { SettingsWindow } from "@/components/settings/SettingsWindow";
+import { QuickCapture } from "@/components/quick/QuickCapture";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { applyTheme, cachedTheme } from "@/lib/theme";
 import { currentWindowKind } from "@/lib/settingsSync";
@@ -23,12 +24,18 @@ document.addEventListener("focusin", (event) => {
   }
 });
 
-const isSettingsWindow = currentWindowKind() === "settings";
+const windowKind = currentWindowKind();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary>
-      {isSettingsWindow ? <SettingsWindow /> : <App />}
+      {windowKind === "settings" ? (
+        <SettingsWindow />
+      ) : windowKind === "quick-capture" ? (
+        <QuickCapture />
+      ) : (
+        <App />
+      )}
     </ErrorBoundary>
   </React.StrictMode>,
 );

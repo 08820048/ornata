@@ -16,6 +16,7 @@ mod image_source;
 mod legacy;
 mod mentions;
 mod notes;
+mod quick_capture;
 mod reveal;
 mod search;
 mod tags;
@@ -37,6 +38,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(|app, _shortcut, event| {
+            // Only react to the press, not the release.
+            if event.state() == tauri_plugin_global_shortcut::ShortcutState::Pressed {
+                if let Err(err) = quick_capture::toggle(app) {
+                    eprintln!("quick capture: {err}");
+                }
+            }
+        }).build())
         .manage(AppState::default())
         .manage(agent::AgentState::default())
         .invoke_handler(tauri::generate_handler![
@@ -83,6 +92,9 @@ pub fn run() {
             commands::note_history,
             commands::list_unused_assets,
             commands::link_graph,
+            quick_capture::toggle_quick_capture,
+            quick_capture::submit_quick_capture,
+            quick_capture::dismiss_quick_capture,
             commands::trash_assets,
             commands::read_history_snapshot,
             commands::snapshot_note,
@@ -115,6 +127,25 @@ pub fn run() {
             settings_window::get_settings,
             settings_window::open_settings_window,
         ])
+        .setup(|app| {
+            // The global shortcut is best-effort: registration can fail on a
+            // conflict or missing permission, and the app stays fully usable
+            // (the capture window remains reachable in-app if we add one).
+            use tauri_plugin_global_shortcut::GlobalShortcutExt;
+            if let Err(err) = app.global_shortcut().register("cmd+alt+j") {
+                eprintln!("global shortcut cmd+alt+j unavailable: {err}");
+            }
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Closing the main window quits the whole app — the quick-capture
+            // window is not a standalone writer and must not outlive it.
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { .. } = event {
+                    window.app_handle().exit(0);
+                }
+            }
+        })
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 

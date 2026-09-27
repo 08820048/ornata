@@ -72,6 +72,8 @@ interface VaultState {
   loadPinned: () => Promise<void>;
   togglePin: (rel: string) => Promise<void>;
   openDailyNote: () => Promise<void>;
+  /** Append a quick-capture line to Inbox.md (creating it if needed). */
+  appendQuickCapture: (text: string) => Promise<void>;
   createNoteFromTemplate: (template: string) => Promise<void>;
   createFolder: (dir: string, name: string) => Promise<string | null>;
   renameEntry: (rel: string, name: string) => Promise<void>;
@@ -451,6 +453,37 @@ export const useVault = create<VaultState>((set, get) => ({
       const note = vaultNote(rel);
       get().expandTo(rel);
       get().setView({ type: "note", note });
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  appendQuickCapture: async (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const rel = "Inbox.md";
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const line = `- [${stamp}] ${trimmed.replace(/\s*\n+\s*/g, " ")}`;
+    // Single writer: when Inbox is open in a pane, that pane appends to its
+    // own content and saves through its normal pipeline.
+    if (useTabs.getState().tabs.some((tab) => tab.kind === "vault" && tab.rel === rel)) {
+      useTabs.getState().requestAppend(vaultNote(rel), line);
+      return;
+    }
+    try {
+      const current = await ipc.readNote(rel).catch(() => null);
+      if (current === null) {
+        const created = await get().createNoteAtRel(rel);
+        if (!created) return;
+        await ipc.writeNote(created, `${line}\n`);
+      } else {
+        const base = current.replace(/\n*$/, "");
+        await ipc.writeNote(rel, base ? `${base}\n${line}\n` : `${line}\n`);
+      }
+      await get().refreshTree();
+      toast(t("quick.captured"));
     } catch (err) {
       oops(err);
     }

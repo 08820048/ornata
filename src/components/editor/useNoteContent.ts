@@ -541,6 +541,34 @@ export function useNoteContentEffects({
     }
   }, [active, reloadIfChanged]);
 
+  // Quick capture: the main window routed a captured line here because Inbox
+  // is open in this pane — append to the pane's own content and save through
+  // its normal pipeline (single-writer rule).
+  const appendReq = useTabs((s) => s.appendReq);
+  useEffect(() => {
+    if (!appendReq || appendReq.key !== currentKey) return;
+    const line = appendReq.line;
+    if (markdownSource) {
+      const base = rawText.replace(/\n*$/, "");
+      const next = base ? `${base}\n${line}\n` : `${line}\n`;
+      setRawText(next);
+      const { frontmatter: fm, body } = splitFrontmatter(next);
+      frontmatter.current = fm;
+      pending.current = body;
+      debouncedPersist(body);
+      return;
+    }
+    if (!editor || editor.isDestroyed) return;
+    const end = editor.state.doc.content.size;
+    editor
+      .chain()
+      .insertContentAt(end, {
+        type: "paragraph",
+        content: [{ type: "text", text: line }],
+      })
+      .run();
+  }, [appendReq, currentKey, markdownSource, rawText, editor, setRawText, frontmatter, pending, debouncedPersist]);
+
   // Palette/menu "copy markdown / export / delete" actions routed through a
   // window event, so menus that outlive this pane can still target it.
   useEffect(() => {
