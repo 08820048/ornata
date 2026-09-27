@@ -80,9 +80,14 @@ export function noteLinkParts(
  */
 export function headingPlainText(raw: string): string {
   return raw
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[\[([^\[\]|]+)\|([^\[\]]+)\]\]/g, "$2")
+    .replace(/\[\[([^\]]+)\]\]/g, "$1")
     .replace(/\s+#+\s*$/, "")
     .replace(/`+/g, "")
     .replace(/\*\*\*|\*\*|~~/g, "")
+    .replace(/(^|[^\w])__([^_]+)__(?=[^\w]|$)/g, "$1$2")
     .replace(/(^|[^\w])_([^_]+)_(?=[^\w]|$)/g, "$1$2")
     .replace(/\*/g, "")
     .replace(/\s+/g, " ")

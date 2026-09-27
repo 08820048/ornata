@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  headingPlainText,
   hrefToRel,
   relToHref,
   resolveWiki,
@@ -55,6 +56,16 @@ test("wikiToMarkdown converts wiki syntax and keeps the rest verbatim", () => {
   expect(wikiToMarkdown(md, notes)).toBe(
     "a [Journal](Journal.md) b [the app](projects/app.md) c [x](y.md)",
   );
+});
+
+test("headingPlainText matches what the DOM renders", () => {
+  expect(headingPlainText("hello_world")).toBe("hello_world");
+  expect(headingPlainText("Title ##")).toBe("Title");
+  expect(headingPlainText("**你好** 和 `code`")).toBe("你好 和 code");
+  expect(headingPlainText("__加粗__ 文字")).toBe("加粗 文字");
+  expect(headingPlainText("See [other](note.md) now")).toBe("See other now");
+  expect(headingPlainText("logo ![pic](a.png) end")).toBe("logo end");
+  expect(headingPlainText("[[projects/app|the app]] intro")).toBe("the app intro");
 });
 
 test("splitWikiTarget splits note target and heading", () => {

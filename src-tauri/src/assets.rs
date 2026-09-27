@@ -38,7 +38,9 @@ fn unreferenced_assets_before(root: &Path, now: SystemTime) -> AppResult<Vec<Unu
     collect_references(root, &crate::vault::notes_root(root), &mut referenced)?;
     // History snapshots and templates can reference assets too — restoring a
     // snapshot or spawning from a template after a cleanup must not break.
-    collect_references(root, &root.join(DATA_DIR).join("history"), &mut referenced)?;
+    // Snapshot files are bare millisecond timestamps (no extension), so they
+    // get their own walker; `.keep` pins are markers, not content.
+    collect_history_references(root, &root.join(DATA_DIR).join("history"), &mut referenced)?;
     collect_references(root, &root.join(DATA_DIR).join("templates"), &mut referenced)?;
     let mut out: Vec<UnusedAsset> = Vec::new();
     for entry in fs::read_dir(root.join(ASSETS_DIR)).into_iter().flatten().flatten() {
@@ -128,18 +130,51 @@ fn collect_references(root: &Path, dir: &Path, referenced: &mut HashSet<String>)
         // A failed read (iCloud placeholder, permissions) must fail the whole
         // scan — treating the note as empty would orphan its images.
         let content = fs::read_to_string(&path)?;
-        let mut rest = content.as_str();
-        while let Some(pos) = rest.find("assets/") {
-            let tail = &rest[pos + "assets/".len()..];
-            let name: String = tail
-                .chars()
-                .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
-                .collect();
-            if name.contains('.') {
-                referenced.insert(name);
-            }
-            rest = tail;
+        collect_asset_names(&content, referenced);
+    }
+    Ok(())
+}
+
+fn collect_asset_names(content: &str, referenced: &mut HashSet<String>) {
+    let mut rest = content;
+    while let Some(pos) = rest.find("assets/") {
+        let tail = &rest[pos + "assets/".len()..];
+        let name: String = tail
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+            .collect();
+        if name.contains('.') {
+            referenced.insert(name);
         }
+        rest = tail;
+    }
+}
+
+/// Same scan as [`collect_references`] but over the history directory, whose
+/// snapshot files are extensionless millisecond timestamps.
+fn collect_history_references(
+    root: &Path,
+    dir: &Path,
+    referenced: &mut HashSet<String>,
+) -> AppResult<()> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if entry.file_name().to_string_lossy().starts_with('.') {
+            continue;
+        }
+        if path.is_dir() {
+            collect_history_references(root, &path, referenced)?;
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.ends_with(".keep") || name.parse::<i64>().is_err() {
+            continue;
+        }
+        let content = fs::read_to_string(&path)?;
+        collect_asset_names(&content, referenced);
     }
     Ok(())
 }
@@ -277,7 +312,8 @@ mod tests {
         let b = create_note(root, "", "Two").unwrap();
         write_note(root, &b, "![y](.markd/assets/two.png)").unwrap();
         // History snapshot + template referencing three.png / four.png.
-        let snap = root.join(DATA_DIR).join("history/One.md/1700000000000.md");
+        // Snapshot files are bare timestamps under history/<rel-without-md>/.
+        let snap = root.join(DATA_DIR).join("history/One/1700000000000");
         std::fs::create_dir_all(snap.parent().unwrap()).unwrap();
         std::fs::write(&snap, "![z](.ornata/assets/three.png)").unwrap();
         let tpl = root.join(DATA_DIR).join("templates/t.md");
