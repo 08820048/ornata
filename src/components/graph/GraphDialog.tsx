@@ -15,7 +15,7 @@ import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { FadeLoop, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
 import { forceGroup, groupOf } from "./graphGroups";
-import { paintGraph, type SimEdge, type SimNode } from "./graphPaint";
+import { mergeLinks, paintGraph, type SimEdge, type SimNode } from "./graphPaint";
 import { searchNodes } from "./graphSearch";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
@@ -210,9 +210,7 @@ export function GraphDialog() {
       };
     });
     const byRel = new Map(nodes.map((n) => [n.rel, n]));
-    const edges: SimEdge[] = graph.edges
-      .filter((e) => byRel.has(e.from) && byRel.has(e.to))
-      .map((e) => ({ from: e.from, to: e.to, source: e.from, target: e.to }));
+    const edges = mergeLinks(graph.edges.filter((e) => byRel.has(e.from) && byRel.has(e.to)));
 
     const sim = forceSimulation(nodes)
       .force(

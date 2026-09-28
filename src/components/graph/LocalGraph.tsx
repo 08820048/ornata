@@ -11,7 +11,7 @@ import { useT } from "@/stores/locale";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { FadeLoop, type View, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
-import { type SimEdge, type SimNode, paintGraph } from "./graphPaint";
+import { type SimEdge, type SimNode, mergeLinks, paintGraph } from "./graphPaint";
 import { neighborhood } from "./neighborhood";
 
 const OPEN_KEY = "ornata:local-graph-open";
@@ -238,7 +238,7 @@ function LocalCanvas({
     }
     const center = nodes.find((n) => n.rel === rel);
     if (center) Object.assign(center, { fx: 0, fy: 0 });
-    const edges: SimEdge[] = hood.edges.map((e) => ({ ...e, source: e.from, target: e.to }));
+    const edges = mergeLinks(hood.edges);
     const depthOf = (node: unknown) => hood.depth.get((node as SimNode).rel) ?? 0;
     const sim = forceSimulation(nodes as never[])
       .force(

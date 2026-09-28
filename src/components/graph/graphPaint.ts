@@ -35,7 +35,27 @@ export interface SimEdge {
   to: string;
   source: unknown;
   target: unknown;
+  /** Both notes link each other; drawn once, heavier, without an arrow. */
+  mutual: boolean;
   tint?: Tint;
+}
+
+/**
+ * One SimEdge per linked pair: `a→b` plus `b→a` becomes a single mutual
+ * edge (so the pair isn't stroked twice), a lone `a→b` stays one-way.
+ */
+export function mergeLinks(links: readonly { from: string; to: string }[]): SimEdge[] {
+  const byPair = new Map<string, SimEdge>();
+  for (const { from, to } of links) {
+    const key = from < to ? `${from}\n${to}` : `${to}\n${from}`;
+    const seen = byPair.get(key);
+    if (seen) {
+      if (seen.from !== from) seen.mutual = true;
+      continue;
+    }
+    byPair.set(key, { from, to, source: from, target: to, mutual: false });
+  }
+  return [...byPair.values()];
 }
 
 interface Tint {
@@ -86,6 +106,11 @@ const LABEL_FADE_START = 5.5;
 const LABEL_FADE_RANGE = 3;
 /** Label opacity kept for notes outside the hovered neighborhood. */
 const DIMMED_LABEL = 0.12;
+/** One-way links recede at rest; mutual ones carry the structure. */
+const ONE_WAY_ALPHA = 0.55;
+const MUTUAL_WIDTH = 1.25;
+const ARROW_LENGTH = 6;
+const ARROW_HALF_WIDTH = 3;
 const LABEL_SIZE = 11;
 const LABEL_GAP = 4;
 const LABEL_PAD = 2;
@@ -148,7 +173,6 @@ export function paintGraph(input: PaintInput): boolean {
     : [];
 
   // Edges: the hovered note's edges go last, on top of everything else.
-  ctx.lineWidth = 1;
   const touching = (edge: SimEdge) => hover !== null && (edge.from === hover || edge.to === hover);
   for (const pass of [false, true]) {
     for (const edge of edges) {
@@ -158,15 +182,27 @@ export function paintGraph(input: PaintInput): boolean {
       if (!a || !b || !visible(a) || !visible(b)) continue;
       const target = pass
         ? { ...muted, a: 1 }
-        : { ...line, a: narrowed ? 0.4 : 1 };
+        : { ...line, a: (narrowed ? 0.4 : 1) * (edge.mutual ? 1 : ONE_WAY_ALPHA) };
       edge.tint = approach(edge.tint, target);
+      const ax = a.x * k + vx;
+      const ay = a.y * k + vy;
+      const bx = b.x * k + vx;
+      const by = b.y * k + vy;
       ctx.strokeStyle = css(edge.tint);
+      ctx.lineWidth = edge.mutual ? MUTUAL_WIDTH : 1;
       ctx.beginPath();
-      ctx.moveTo(a.x * k + vx, a.y * k + vy);
-      ctx.lineTo(b.x * k + vx, b.y * k + vy);
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
       ctx.stroke();
+      if (!edge.mutual) {
+        // How far the tint has moved from rest toward highlighted: the arrow
+        // eases in and out with the hover instead of popping.
+        const lift = clamp01(Math.abs(edge.tint.r - line.r) / Math.max(Math.abs(muted.r - line.r), 1));
+        if (lift > 0.02) paintArrow(ctx, ax, ay, bx, by, b.r, edge.tint, lift);
+      }
     }
   }
+  ctx.lineWidth = 1;
 
   // Nodes, collecting label candidates as we go.
   const labels: { node: SimNode; x: number; y: number; priority: number }[] = [];
@@ -281,6 +317,35 @@ export function paintGraph(input: PaintInput): boolean {
   ctx.globalAlpha = 1;
 
   return settling;
+}
+
+/** Small filled arrowhead touching the target dot's rim. */
+function paintArrow(
+  ctx: CanvasRenderingContext2D,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  targetR: number,
+  tint: Tint,
+  alpha: number,
+) {
+  const length = Math.hypot(bx - ax, by - ay);
+  // Too short to fit an arrow outside both dots.
+  if (length < targetR + ARROW_LENGTH * 2 + 2) return;
+  const ux = (bx - ax) / length;
+  const uy = (by - ay) / length;
+  const tipX = bx - ux * (targetR + 1.5);
+  const tipY = by - uy * (targetR + 1.5);
+  const baseX = tipX - ux * ARROW_LENGTH;
+  const baseY = tipY - uy * ARROW_LENGTH;
+  ctx.fillStyle = css({ ...tint, a: tint.a * alpha });
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(baseX - uy * ARROW_HALF_WIDTH, baseY + ux * ARROW_HALF_WIDTH);
+  ctx.lineTo(baseX + uy * ARROW_HALF_WIDTH, baseY - ux * ARROW_HALF_WIDTH);
+  ctx.closePath();
+  ctx.fill();
 }
 
 interface GroupLabel {
