@@ -25,6 +25,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { ApprovalPreview } from "@/components/agent/ApprovalPreview";
 import { EASE_OUT } from "@/lib/ease";
 import { ipc } from "@/lib/ipc";
 import { noteKey, noteTitle } from "@/lib/noteRef";
@@ -811,19 +812,11 @@ function ApprovalCard({
   onRespond: (allow: boolean) => void;
 }) {
   const t = useT();
-  const detail = ["path", "title", "text", "url", "name"]
-    .map((key) => approval.args[key])
-    .find((value): value is string => typeof value === "string" && Boolean(value.trim()));
   return (
     <div className="mb-2 rounded-2xl border border-line bg-bg p-3 shadow-lg shadow-black/5">
       <div className="flex items-start gap-2.5">
         <PencilLine className="mt-1 shrink-0 text-muted" size={15} />
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-medium text-ink">{t("agent.approval.title")}</p>
-          <p className="mt-0.5 truncate text-[10.5px] text-faint">
-            {approval.resource} · {approval.action}{detail ? ` · ${detail}` : ""}
-          </p>
-        </div>
+        <ApprovalPreview approval={approval} />
       </div>
       <div className="mt-3 flex justify-end gap-2">
         <button type="button" onClick={() => onRespond(false)} className="h-8 rounded-lg px-3 text-[11px] font-medium text-muted transition-colors hover:bg-hover hover:text-ink">
