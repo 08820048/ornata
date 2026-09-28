@@ -8,7 +8,6 @@ import { ipc } from "@/lib/ipc";
 import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
-import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { FadeLoop, type View, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
 import { type SimEdge, type SimNode, mergeLinks, paintGraph } from "./graphPaint";
@@ -114,7 +113,7 @@ export function LocalGraph({ rel, active }: { rel: string; active: boolean }) {
             ))}
             <button
               type="button"
-              onClick={() => useUi.getState().setGraphOpen(true)}
+              onClick={() => useVault.getState().setView({ type: "graph" })}
               aria-label={t("graph.openFull")}
               title={t("graph.openFull")}
               className="ml-1 grid h-5 w-5 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-muted"

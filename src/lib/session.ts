@@ -1,8 +1,8 @@
 import { debounce } from "@/lib/utils";
-import { externalNote, vaultNote } from "@/lib/noteRef";
+import { GRAPH_TAB, externalNote, vaultNote, viewOfTab } from "@/lib/noteRef";
 import { ipc } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
-import type { NoteRef, TreeSort, View } from "@/lib/types";
+import type { NoteRef, TabRef, TreeSort, View } from "@/lib/types";
 import { useTabs } from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
 
@@ -12,7 +12,7 @@ import { useVault } from "@/stores/vault";
  * root so switching vaults restores that vault's own layout.
  */
 interface Session {
-  tabs: NoteRef[];
+  tabs: TabRef[];
   view: View | null;
   treeSort?: TreeSort;
 }
@@ -51,9 +51,17 @@ function parseNoteRef(value: unknown): NoteRef | null {
   return null;
 }
 
+function parseTab(value: unknown): TabRef | null {
+  if (value && typeof value === "object" && (value as { kind?: unknown }).kind === "graph") {
+    return GRAPH_TAB;
+  }
+  return parseNoteRef(value);
+}
+
 function parseView(value: unknown): View | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;
+  if (raw.type === "graph") return { type: "graph" };
   if (raw.type === "note") {
     // Migrate pre-NoteRef sessions whose note view stored `rel` directly.
     const note = parseNoteRef(raw.note ?? raw.rel);
@@ -81,8 +89,8 @@ export async function restoreSession(root: string) {
   const vault = useVault.getState();
   const existing = new Set(flattenNotes(vault.tree).map((n) => n.rel));
   const parsedTabs = (data.tabs ?? [])
-    .map(parseNoteRef)
-    .filter((note): note is NoteRef => note !== null);
+    .map(parseTab)
+    .filter((tab): tab is TabRef => tab !== null);
   const parsedView = parseView(data.view);
   const externalPaths = [
     ...parsedTabs,
@@ -101,10 +109,11 @@ export async function restoreSession(root: string) {
       // Missing or no-longer-readable external files are simply not restored.
     }
   }
-  const valid = (note: NoteRef) =>
-    note.kind === "vault"
-      ? existing.has(note.rel)
-      : authorizedExternal.has(note.path);
+  const valid = (tab: TabRef) =>
+    tab.kind === "graph" ||
+    (tab.kind === "vault"
+      ? existing.has(tab.rel)
+      : authorizedExternal.has(tab.path));
   // Drop tabs whose notes were deleted since last session.
   const tabs = parsedTabs.filter(valid);
   useTabs.setState({ tabs });
@@ -116,12 +125,12 @@ export async function restoreSession(root: string) {
       vault.setView(view);
     } else {
       // Active note gone — fall back to the first surviving tab, else nothing.
-      vault.setView(tabs[0] ? { type: "note", note: tabs[0] } : null);
+      vault.setView(tabs[0] ? viewOfTab(tabs[0]) : null);
     }
   } else if (view) {
     vault.setView(view);
   } else if (tabs[0]) {
-    vault.setView({ type: "note", note: tabs[0] });
+    vault.setView(viewOfTab(tabs[0]));
   }
   if (data.treeSort === "name" || data.treeSort === "modified") {
     useVault.setState({ treeSort: data.treeSort });

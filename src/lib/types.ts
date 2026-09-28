@@ -194,4 +194,10 @@ export type NoteRef =
   | { kind: "vault"; rel: string }
   | { kind: "external"; path: string };
 
-export type View = { type: "note"; note: NoteRef };
+/** The vault's link graph, open as a tab beside notes. */
+export type GraphTab = { kind: "graph" };
+
+/** Anything the tab strip can hold. Notes stay `NoteRef` everywhere else. */
+export type TabRef = NoteRef | GraphTab;
+
+export type View = { type: "note"; note: NoteRef } | { type: "graph" };

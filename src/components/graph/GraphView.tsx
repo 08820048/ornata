@@ -8,7 +8,6 @@ import {
 } from "d3-force";
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal } from "@/components/ui/Modal";
 import { ipc } from "@/lib/ipc";
 import { vaultNote } from "@/lib/noteRef";
 import type { LinkGraph } from "@/lib/types";
@@ -19,7 +18,6 @@ import { mergeLinks, paintGraph, type SimEdge, type SimNode } from "./graphPaint
 import { searchNodes } from "./graphSearch";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
-import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 
 /** Pointer travel (px) under which a press on a node counts as a click. */
@@ -50,17 +48,17 @@ function readGroupsPref(): boolean {
 }
 
 /**
- * The vault's link graph, laid out by d3-force and drawn on a plain canvas.
+ * The vault's link graph as a tab pane, laid out by d3-force and drawn on a
+ * plain canvas. Like note panes it stays mounted while other tabs are shown;
+ * each visit re-queries the vault, but only a changed graph is laid out again.
  * The simulation runs in time-sliced batches across animation frames, so the
  * graph settles into place instead of blocking; once it has settled only
  * hover/pan/zoom redraw. Dragging a node pins it under the pointer and
- * reheats the simulation; on release it is unpinned and the graph relaxes. The view keeps fitting the layout until the user
- * pans or zooms. Isolated notes are hidden by default — they drown the
+ * reheats the simulation; on release it is unpinned and the graph relaxes.
+ * The view keeps fitting the layout until the user pans or zooms. Isolated notes are hidden by default — they drown the
  * interesting structure in dots.
  */
-export function GraphDialog() {
-  const open = useUi((s) => s.graphOpen);
-  const setOpen = useUi((s) => s.setGraphOpen);
+export function GraphView({ active }: { active: boolean }) {
   const [graph, setGraph] = useState<LinkGraph | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [showIsolated, setShowIsolated] = useState(false);
@@ -103,34 +101,46 @@ export function GraphDialog() {
   showIsolatedRef.current = showIsolated;
   const groupsRef = useRef(groups);
   groupsRef.current = groups;
-  // The note being read gets the "you are here" ring.
-  const focus = useVault((s) =>
-    s.view?.type === "note" && s.view.note.kind === "vault" ? s.view.note.rel : null,
-  );
+  // The note read last gets the "you are here" ring.
+  const focus = useVault((s) => s.recentNotes[0] ?? null);
+  const tree = useVault((s) => s.tree);
+  const graphKeyRef = useRef("");
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const focusRef = useRef(focus);
   focusRef.current = focus;
   const t = useT();
 
+  // Query on every visit and vault refresh (links may have changed in a
+  // note), but hand a new object to the layout only when the graph differs,
+  // so revisiting doesn't reshuffle the dots.
   useEffect(() => {
-    if (!open) return;
-    setGraph(null);
-    setLoadError(false);
-    setHovered(null);
-    hoverRef.current = null;
-    setQuery("");
+    if (!active) return;
     let cancelled = false;
     ipc
       .linkGraph()
       .then((g) => {
-        if (!cancelled) setGraph(g);
+        if (cancelled) return;
+        setLoadError(false);
+        const key = graphSignature(g);
+        if (key !== graphKeyRef.current) {
+          graphKeyRef.current = key;
+          setGraph(g);
+        }
       })
       .catch(() => {
-        if (!cancelled) setLoadError(true);
+        if (!cancelled && graphKeyRef.current === "") setLoadError(true);
       });
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [active, tree]);
+
+  // Arriving on the tab puts the cursor in search, as the dialog did.
+  useEffect(() => {
+    if (!active) return;
+    const frame = requestAnimationFrame(() => searchRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [active]);
 
   // On a capped graph the unlinked notes are not in the largest component, so
   // they have no coordinates until this is on. Smaller graphs already lay
@@ -320,7 +330,10 @@ export function GraphDialog() {
     runSim();
   };
 
-  useEffect(() => () => loop.cancel(), [open, loop]);
+  useEffect(() => () => loop.cancel(), [loop]);
+  useEffect(() => {
+    if (!active) loop.cancel();
+  }, [active, loop]);
 
   useEffect(() => {
     if (autoFitRef.current) fitToLayout();
@@ -454,10 +467,7 @@ export function GraphDialog() {
       event.preventDefault();
       stepMatch(event.key === "ArrowDown" ? 1 : -1);
     } else if (event.key === "Escape" && query) {
-      // First Escape clears the search; the Modal's own handler (on window)
-      // never sees it, so a second one closes the dialog.
       event.preventDefault();
-      event.stopPropagation();
       setQuery("");
     }
   };
@@ -525,14 +535,11 @@ export function GraphDialog() {
   };
 
   const openNote = (rel: string) => {
-    setOpen(false);
-    setTimeout(() => {
-      const vault = useVault.getState();
-      const note = vaultNote(rel);
-      vault.expandTo(rel);
-      vault.setView({ type: "note", note });
-      useTabs.getState().requestScrollTop(note);
-    }, 0);
+    const vault = useVault.getState();
+    const note = vaultNote(rel);
+    vault.expandTo(rel);
+    vault.setView({ type: "note", note });
+    useTabs.getState().requestScrollTop(note);
   };
 
   const isolatedCount = useMemo(() => {
@@ -546,18 +553,12 @@ export function GraphDialog() {
   }, [graph]);
 
   return (
-    <Modal
-      open={open}
-      onClose={() => setOpen(false)}
-      ariaLabel={t("graph.aria")}
-      className="w-[min(1100px,92vw)]"
-    >
-      <div className="flex flex-col">
+    <section aria-label={t("graph.aria")} className="flex h-full flex-col bg-bg">
         <div className="flex items-center gap-3 border-b border-line-soft px-4 py-2.5">
-          <span className="shrink-0 text-[13px] font-semibold text-ink">{t("graph.title")}</span>
           <label className="flex min-w-0 max-w-xs flex-1 items-center gap-1.5 rounded-md border border-line-soft px-2 py-1 transition-colors duration-100 focus-within:border-line">
             <Search size={12} strokeWidth={2} className="shrink-0 text-faint" />
             <input
+              ref={searchRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={onSearchKey}
@@ -579,7 +580,7 @@ export function GraphDialog() {
             {graph && `${graph.nodes.length} · ${graph.edges.length}`}
           </span>
         </div>
-        <div className="relative h-[72vh]">
+        <div className="relative min-h-0 flex-1">
           {loadError ? (
             <p className="grid h-full place-items-center text-[13px] text-faint">
               {t("graph.loadFailed")}
@@ -668,9 +669,15 @@ export function GraphDialog() {
             </div>
           )}
         </div>
-      </div>
-    </Modal>
+    </section>
   );
+}
+
+/** Identity of a graph's content, to skip relayouts when nothing changed. */
+function graphSignature(graph: LinkGraph): string {
+  const nodes = graph.nodes.map((n) => n.rel).join("\n");
+  const edges = graph.edges.map((e) => `${e.from}>${e.to}`).join("\n");
+  return `${nodes}\n--\n${edges}`;
 }
 
 function Toggle({

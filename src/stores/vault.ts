@@ -7,13 +7,16 @@ import {
   relIsUnder,
   remapRelList,
   sameNote,
+  sameTab,
   vaultNote,
+  viewOfTab,
+  GRAPH_TAB,
 } from "@/lib/noteRef";
 import type {
   ExternalNote,
   TreeSort,
   ImageUpload,
-  NoteRef,
+  TabRef,
   Theme,
   TreeNode,
   VaultSnapshot,
@@ -331,6 +334,8 @@ export const useVault = create<VaultState>((set, get) => ({
     if (view?.type === "note") {
       useTabs.getState().open(view.note);
       if (view.note.kind === "vault") get().pushRecent(view.note.rel);
+    } else if (view?.type === "graph") {
+      useTabs.getState().open(GRAPH_TAB);
     }
   },
 
@@ -594,7 +599,7 @@ export const useVault = create<VaultState>((set, get) => ({
       const { view } = get();
       await get().refreshTree();
       const gone = (r: string) => relIsUnder(r, rel);
-      const goneTab = (note: NoteRef) =>
+      const goneTab = (note: TabRef) =>
         note.kind === "vault" && gone(note.rel);
       set({ recentNotes: get().recentNotes.filter((r) => !gone(r)) });
       dropPinned(set, get, rel);
@@ -608,11 +613,11 @@ export const useVault = create<VaultState>((set, get) => ({
         view.note.kind === "vault" &&
         gone(view.note.rel)
       ) {
-        const index = before.findIndex((tab) => sameNote(tab, view.note));
+        const index = before.findIndex((tab) => sameTab(tab, view.note));
         const right = before.slice(index + 1).find((tab) => !goneTab(tab));
         const survivors = before.filter((tab) => !goneTab(tab));
         const next = right ?? survivors[survivors.length - 1] ?? null;
-        get().setView(next ? { type: "note", note: next } : null);
+        get().setView(next ? viewOfTab(next) : null);
       }
       toast(t("toast.movedToTrash"), {
         description: rel.split("/").pop()?.replace(/\.md$/, ""),
@@ -627,12 +632,12 @@ export const useVault = create<VaultState>((set, get) => ({
       const note = externalNote(path);
       await ipc.deleteExternalNote(path);
       const { tabs, close } = useTabs.getState();
-      const index = tabs.findIndex((tab) => sameNote(tab, note));
+      const index = tabs.findIndex((tab) => sameTab(tab, note));
       const next = tabs[index + 1] ?? tabs[index - 1] ?? null;
       close(note);
       const { view } = get();
       if (view?.type === "note" && sameNote(view.note, note)) {
-        get().setView(next ? { type: "note", note: next } : null);
+        get().setView(next ? viewOfTab(next) : null);
       }
       toast(t("toast.movedToTrash"), {
         description: path.split(/[\\/]/).pop(),

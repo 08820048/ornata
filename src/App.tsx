@@ -7,6 +7,7 @@ import { Welcome } from "@/components/welcome/Welcome";
 import { initSessionSync, restoreSession } from "@/lib/session";
 import { useSettingsBridge } from "@/lib/useSettingsBridge";
 import { ipc } from "@/lib/ipc";
+import { tabOfView } from "@/lib/noteRef";
 import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
@@ -16,7 +17,6 @@ import { writeRich } from "@/lib/clipboard";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
-import { GraphDialog } from "@/components/graph/GraphDialog";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -219,9 +219,9 @@ export default function App() {
       } else if (event.key === ",") {
         event.preventDefault();
         void ipc.openSettingsWindow();
-      } else if (event.key === "w" && vault.view?.type === "note") {
+      } else if (event.key === "w" && vault.view) {
         event.preventDefault();
-        closeTab(vault.view.note);
+        closeTab(tabOfView(vault.view));
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -237,7 +237,6 @@ export default function App() {
         {status === "ready" && <TasksDialog />}
       {status === "ready" && <TagsDialog />}
       {status === "ready" && <UnusedAssetsDialog />}
-      {status === "ready" && <GraphDialog />}
       </Suspense>
       <AppToaster />
     </>

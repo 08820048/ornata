@@ -1,6 +1,7 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import { ipc, IpcError } from "@/lib/ipc";
+import { viewOfTab } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type {
   AgentConnection as AgentModelConnection,
@@ -175,7 +176,7 @@ async function refreshAfterMutation(
     ) {
       const remaining = useTabs.getState().tabs;
       const next = remaining[remaining.length - 1] ?? null;
-      useVault.getState().setView(next ? { type: "note", note: next } : null);
+      useVault.getState().setView(next ? viewOfTab(next) : null);
     }
     window.dispatchEvent(new Event("ornata-agent-notes-changed"));
   }

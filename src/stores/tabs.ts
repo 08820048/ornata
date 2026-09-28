@@ -1,14 +1,14 @@
 import { create } from "zustand";
-import { noteKey, sameNote, vaultNote } from "@/lib/noteRef";
-import type { LinkRewrite, NoteRef } from "@/lib/types";
+import { noteKey, sameTab, tabKey, vaultNote } from "@/lib/noteRef";
+import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
 
 /**
- * Open note tabs, in strip order. Intentionally dumb: just the ordered list
- * of note references. Which tab is *active* is derived from `vault.view` — never stored
+ * Open tabs, in strip order: notes, plus at most one graph tab.
+ * Intentionally dumb: just the ordered list of tab references. Which tab is *active* is derived from `vault.view` — never stored
  * here — so the two can't drift apart.
  */
 interface TabsState {
-  tabs: NoteRef[];
+  tabs: TabRef[];
   /** Bumped to ask a note's pane to scroll to top (e.g. opened via a link). */
   scrollTopReq: { key: string; nonce: number } | null;
   /** Bumped to ask a note's pane to scroll to and flash the block containing `text`. */
@@ -24,10 +24,10 @@ interface TabsState {
    * link marks matching these rel pairs so editor content follows the disk.
    */
   linkRewritesReq: { rewrites: LinkRewrite[]; nonce: number } | null;
-  /** Add a tab for `rel` if not already open (no-op otherwise). */
-  open: (note: NoteRef) => void;
-  close: (note: NoteRef) => void;
-  closeMany: (notes: NoteRef[]) => void;
+  /** Add a tab if not already open (no-op otherwise). */
+  open: (tab: TabRef) => void;
+  close: (tab: TabRef) => void;
+  closeMany: (tabs: TabRef[]) => void;
   /** Replace a note reference in place after its path changes. */
   replace: (note: NoteRef, next: NoteRef) => void;
   /** Rewrite rels after a rename/move of `rel` → `next` (note or folder). */
@@ -58,23 +58,23 @@ export const useTabs = create<TabsState>((set, get) => ({
   titleFocusReq: null,
   linkRewritesReq: null,
 
-  open: (note) => {
-    if (!get().tabs.some((tab) => sameNote(tab, note))) {
-      set({ tabs: [...get().tabs, note] });
+  open: (next) => {
+    if (!get().tabs.some((tab) => sameTab(tab, next))) {
+      set({ tabs: [...get().tabs, next] });
     }
   },
 
-  close: (note) =>
-    set({ tabs: get().tabs.filter((tab) => !sameNote(tab, note)) }),
+  close: (closing) =>
+    set({ tabs: get().tabs.filter((tab) => !sameTab(tab, closing)) }),
 
-  closeMany: (notes) => {
-    const closing = new Set(notes.map(noteKey));
-    set({ tabs: get().tabs.filter((tab) => !closing.has(noteKey(tab))) });
+  closeMany: (closingTabs) => {
+    const closing = new Set(closingTabs.map(tabKey));
+    set({ tabs: get().tabs.filter((tab) => !closing.has(tabKey(tab))) });
   },
 
   replace: (note, next) =>
     set({
-      tabs: get().tabs.map((tab) => (sameNote(tab, note) ? next : tab)),
+      tabs: get().tabs.map((tab) => (sameTab(tab, note) ? next : tab)),
     }),
 
   remap: (rel, next) =>
@@ -162,9 +162,9 @@ export const useTabs = create<TabsState>((set, get) => ({
     }),
 }));
 
-/** Tab to activate after closing `rel`: right neighbor, else left, else none. */
-export function nextAfterClose(tabs: NoteRef[], note: NoteRef): NoteRef | null {
-  const index = tabs.findIndex((tab) => sameNote(tab, note));
+/** Tab to activate after closing `closing`: right neighbor, else left, else none. */
+export function nextAfterClose(tabs: TabRef[], closing: TabRef): TabRef | null {
+  const index = tabs.findIndex((tab) => sameTab(tab, closing));
   if (index === -1) return tabs[0] ?? null;
   return tabs[index + 1] ?? tabs[index - 1] ?? null;
 }
@@ -173,13 +173,13 @@ export type BulkCloseScope = "left" | "right" | "others";
 
 /** Resolve the tabs affected by a context-menu bulk close operation. */
 export function tabsForBulkClose(
-  tabs: NoteRef[],
-  note: NoteRef,
+  tabs: TabRef[],
+  kept: TabRef,
   scope: BulkCloseScope,
-): NoteRef[] {
-  const index = tabs.findIndex((tab) => sameNote(tab, note));
+): TabRef[] {
+  const index = tabs.findIndex((tab) => sameTab(tab, kept));
   if (index === -1) return [];
   if (scope === "left") return tabs.slice(0, index);
   if (scope === "right") return tabs.slice(index + 1);
-  return tabs.filter((tab) => !sameNote(tab, note));
+  return tabs.filter((tab) => !sameTab(tab, kept));
 }

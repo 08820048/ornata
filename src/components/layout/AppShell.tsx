@@ -31,7 +31,7 @@ function viewPath(
   root: string,
   view: ReturnType<typeof useVault.getState>["view"],
 ): string | null {
-  if (!root || !view) return null;
+  if (!root || view?.type !== "note") return null;
   return noteDisplayPath(root, view.note);
 }
 
@@ -216,7 +216,7 @@ export function AppShell() {
         <div className="relative min-h-0 flex-1">
           {/* Workspace stays mounted (hidden) across view switches — open
               tabs keep their live editors, so returning to notes is instant. */}
-          <NotesWorkspace visible={view?.type === "note"} />
+          <NotesWorkspace visible={view !== null} />
           {!view && <EmptyState />}
           <AgentPanel />
         </div>

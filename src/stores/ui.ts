@@ -8,7 +8,6 @@ interface UiState {
   tagsOpen: boolean;
   saveTemplateOpen: boolean;
   unusedAssetsOpen: boolean;
-  graphOpen: boolean;
   agentOpen: boolean;
   sidebarHidden: boolean;
   markdownSource: boolean;
@@ -18,7 +17,6 @@ interface UiState {
   setTagsOpen: (open: boolean) => void;
   setSaveTemplateOpen: (open: boolean) => void;
   setUnusedAssetsOpen: (open: boolean) => void;
-  setGraphOpen: (open: boolean) => void;
   setAgentOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   toggleMarkdownSource: () => void;
@@ -31,7 +29,6 @@ export const useUi = create<UiState>((set, get) => ({
   tagsOpen: false,
   saveTemplateOpen: false,
   unusedAssetsOpen: false,
-  graphOpen: false,
   agentOpen: false,
   sidebarHidden: false,
   markdownSource: false,
@@ -41,7 +38,6 @@ export const useUi = create<UiState>((set, get) => ({
   setTagsOpen: (tagsOpen) => set({ tagsOpen }),
   setSaveTemplateOpen: (saveTemplateOpen) => set({ saveTemplateOpen }),
   setUnusedAssetsOpen: (unusedAssetsOpen) => set({ unusedAssetsOpen }),
-  setGraphOpen: (graphOpen) => set({ graphOpen }),
   setAgentOpen: (agentOpen) => set({ agentOpen }),
   toggleSidebar: () => set({ sidebarHidden: !get().sidebarHidden }),
   toggleMarkdownSource: () =>

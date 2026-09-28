@@ -141,7 +141,7 @@ export function CommandPalette() {
         id: "link-graph",
         label: t("graph.title"),
         icon: Share2,
-        run: () => useUi.getState().setGraphOpen(true),
+        run: () => useVault.getState().setView({ type: "graph" }),
       },
       {
         id: "cleanup-assets",
