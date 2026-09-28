@@ -42,10 +42,11 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 
 ### Frontend (`src/`)
 
-- `stores/` — zustand: `vault` (tree, view, theme, recents), `tabs` (open note tabs; active = derived from `vault.view`), `ui`, `agent`
-- `components/` — by feature: `layout/`, `tree/`, `editor/`, `palette/`, `settings/`, `welcome/`, `ui/`
+- `stores/` — zustand: `vault` (tree, view, theme, recents), `tabs` (open tabs as `TabRef` = note `NoteRef` or the graph tab; active = derived from `vault.view`), `ui`, `agent`
+- `components/` — by feature: `layout/`, `tree/`, `editor/`, `graph/`, `palette/`, `settings/`, `welcome/`, `ui/`
 - Editor: Tiptap with `contentType: "markdown"`; autosave debounced 500ms, flush on unmount; images stored as vault-relative paths, rendered via asset protocol
-- Tabs: `NotesWorkspace` keeps one live editor per open tab, inactive panes hidden via `display:none` — tab switch is a CSS toggle, never a remount/re-parse. Keep it that way.
+- Tabs: `NotesWorkspace` keeps one live pane per open tab — a `NoteEditor` per note, `GraphView` for the graph tab — with inactive panes hidden via `visibility:hidden` — tab switch is a CSS toggle, never a remount/re-parse. Keep it that way. `NoteRef` stays note-only (IPC, editors); only tab/view code deals in `TabRef` / `View`.
+- Graph: `components/graph/` — `GraphView` (full graph tab: search, drag, folder regions) and `LocalGraph` (note footer), sharing `graphPaint.ts` (drawing, eased hover, labels) and `graphCanvas.ts` (sizing, fit, hit-test, fade loop).
 - Session: `lib/session.ts` persists per-vault UI layout (open tabs, active view) to localStorage keyed by vault root, restoring it on launch.
 - Page links: internal note links are plain markdown links whose href is a vault-relative note path (`[Title](projects/app.md)`). `lib/noteLinks.ts` converts href↔rel and rewrites `[[wiki]]`/`[[target|alias]]` syntax (on type + on load) into those markdown links; clicking one opens the note; `/link` slash command + `NoteLinkPicker` also insert them.
 - Frontmatter: `lib/frontmatter.ts` splits a leading `---` YAML block off the body on load and re-attaches it verbatim on save (so metadata round-trips), and parses it for the read-only `NoteProperties` panel shown above the editor. The editor body never contains the raw YAML.
@@ -77,5 +78,6 @@ Our `Modal` (`components/ui/Modal.tsx`) is built on the same tokens; keep new di
 ## Rules
 
 - Never add "Co-Authored-By" or any AI attribution to commits or PRs.
+- After finishing each discrete task (feature, fix, or reviewable unit of work): commit with a conventional message and `git push` to the remote tracking branch (usually `origin/main`). Do not leave completed work only on the local machine.
 - Commit messages: conventional commits, subject ≤50 chars where possible.
 - Don't reintroduce: sticky notes, note IDs, plugin-fs, standalone todos/bookmarks. Don't *author* frontmatter (external frontmatter is preserved/rendered, not written by us). `[[wiki]]` is accepted as input but stored as standard markdown `[title](path.md)` links.
