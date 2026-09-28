@@ -5,29 +5,11 @@ import { ipc } from "@/lib/ipc";
 import { vaultNote } from "@/lib/noteRef";
 import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
+import { paintGraph, type SimEdge, type SimNode } from "./graphPaint";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
-
-interface SimNode {
-  rel: string;
-  title: string;
-  x: number;
-  y: number;
-  r: number;
-  degree: number;
-  isolated: boolean;
-}
-
-/** `from`/`to` keep the rel strings for drawing and hover; d3-force rewrites
- *  its own source/target fields into node objects as the simulation runs. */
-interface SimEdge {
-  from: string;
-  to: string;
-  source: unknown;
-  target: unknown;
-}
 
 /** Pointer travel (px) under which a press on a node counts as a click. */
 const CLICK_SLOP = 4;
@@ -71,6 +53,10 @@ export function GraphDialog() {
     rel: string | null;
   } | null>(null);
   const autoFitRef = useRef(true);
+  /** Fade loop: the pending frame, and when the last frame painted (null
+   *  while idle, so a fresh fade starts from a normal frame step). */
+  const fadeFrameRef = useRef(0);
+  const lastPaintRef = useRef<number | null>(null);
   const showIsolatedRef = useRef(showIsolated);
   showIsolatedRef.current = showIsolated;
   const t = useT();
@@ -273,71 +259,52 @@ export function GraphDialog() {
       canvas.height = pixelHeight;
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
 
-    const ink = cssVar("--ink", "#141413");
-    const line = cssVar("--line", "#e5e3d8");
-    const muted = cssVar("--muted", "#6b6a64");
-    const faint = cssVar("--faint", "#b8b6ad");
-    const font = cssVar("--font-sans", "system-ui, sans-serif");
-    const hover = hoverRef.current;
-    const neighbors = new Set<string>();
-    if (hover) {
-      for (const edge of sim.edges) {
-        if (edge.from === hover) neighbors.add(edge.to);
-        if (edge.to === hover) neighbors.add(edge.from);
+    const now = performance.now();
+    const last = lastPaintRef.current;
+    const settling = paintGraph({
+      ctx,
+      width,
+      height,
+      nodes: sim.nodes,
+      edges: sim.edges,
+      view: viewRef.current,
+      hover: hoverRef.current,
+      showIsolated,
+      palette: {
+        ink: cssVar("--ink", "#191919"),
+        muted: cssVar("--muted", "#6e6e6a"),
+        faint: cssVar("--faint", "#a3a39e"),
+        line: cssVar("--line", "#e3e3e0"),
+        bg: cssVar("--bg", "#fbfbfa"),
+        font: cssVar("--font-sans", "system-ui, sans-serif"),
+      },
+      dt: last === null ? 16 : Math.min(64, now - last),
+    });
+    // Keep painting until every fade has landed; one frame in flight at most.
+    if (settling) {
+      lastPaintRef.current = now;
+      if (fadeFrameRef.current === 0) {
+        fadeFrameRef.current = requestAnimationFrame(() => {
+          fadeFrameRef.current = 0;
+          drawRef.current();
+        });
       }
-    }
-    const byRel = new Map(sim.nodes.map((n) => [n.rel, n]));
-    const visible = (n: SimNode) => showIsolated || !n.isolated;
-    const { x: vx, y: vy, k } = viewRef.current;
-
-    ctx.lineWidth = 1;
-    // Two passes: the hovered note's edges go on top of everything else.
-    for (const pass of [false, true]) {
-      ctx.strokeStyle = pass ? muted : line;
-      ctx.beginPath();
-      for (const edge of sim.edges) {
-        const highlighted =
-          hover !== null && (edge.from === hover || edge.to === hover);
-        if (highlighted !== pass) continue;
-        const a = byRel.get(edge.from);
-        const b = byRel.get(edge.to);
-        if (!a || !b || !visible(a) || !visible(b)) continue;
-        ctx.moveTo(a.x * k + vx, a.y * k + vy);
-        ctx.lineTo(b.x * k + vx, b.y * k + vy);
-      }
-      ctx.stroke();
-    }
-
-    ctx.font = `11px ${font}`;
-    for (const node of sim.nodes) {
-      if (!visible(node)) continue;
-      const x = node.x * k + vx;
-      const y = node.y * k + vy;
-      const isHover = node.rel === hover;
-      const isNeighbor = hover !== null && neighbors.has(node.rel);
-      const dimmed = hover !== null && !isHover && !isNeighbor;
-      ctx.beginPath();
-      ctx.arc(x, y, node.r, 0, Math.PI * 2);
-      ctx.fillStyle = isHover
-        ? ink
-        : dimmed
-          ? faint
-          : node.isolated
-            ? faint
-            : muted;
-      ctx.globalAlpha = dimmed ? 0.45 : 1;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      if (isHover || isNeighbor || node.r >= 8) {
-        ctx.fillStyle = dimmed ? faint : muted;
-        ctx.fillText(node.title, x + node.r + 3, y + 3.5);
-      }
+    } else {
+      lastPaintRef.current = null;
     }
   }, [showIsolated, showAll]);
   const drawRef = useRef(draw);
   drawRef.current = draw;
+
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(fadeFrameRef.current);
+      fadeFrameRef.current = 0;
+      lastPaintRef.current = null;
+    },
+    [open],
+  );
 
   useEffect(() => {
     if (autoFitRef.current) fitView();
