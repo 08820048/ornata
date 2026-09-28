@@ -14,6 +14,22 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.7.0",
+    date: "September 28, 2026",
+    dateTime: "2026-09-28",
+    summary:
+      "AssistantPi remembers the conversation, undoes its own edits, and can be pointed at other notes.",
+    changes: [
+      "Conversations stay with the vault. Start a new chat, or reopen an earlier one from the panel.",
+      "Each reply lists the notes AssistantPi edited or created, with one-click undo. If you changed a note after that, undo stops and points you at the note's history.",
+      "Type @ to attach any note. Linked notes can also include the notes this one links to and from — paths and titles only, up to 20, so the model reads what it needs.",
+      "With a note attached and an empty composer, Summarize, Suggest links, and Extract tasks are one tap away. Suggest links and Extract tasks only propose changes.",
+      "Approval cards show the shell command, a before/after diff for an edit, the body of a new note, and the path for delete, rename, and move.",
+      "Read, grep, find, and ls stay inside the vault, including paths that follow a symlink out of it.",
+      "The editor tab strip uses the same panel tone as the sidebar.",
+    ],
+  },
+  {
     version: "0.6.0",
     date: "September 28, 2026",
     dateTime: "2026-09-28",
