@@ -11,6 +11,26 @@ export function groupOf(rel: string): string | null {
   return slash > 0 ? rel.slice(0, slash) : null;
 }
 
+const GROUPS_KEY = "ornata:graph-groups";
+
+/** "Group by folder" (regions + folder colors), shared by the full graph and
+ *  the local graph. On unless the user turned it off. */
+export function readGroupsPref(): boolean {
+  try {
+    return localStorage.getItem(GROUPS_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function writeGroupsPref(on: boolean) {
+  try {
+    localStorage.setItem(GROUPS_KEY, on ? "1" : "0");
+  } catch {
+    // Storage unavailable — the choice just won't stick.
+  }
+}
+
 /** How many folders get a color; the rest stay gray. Four is the most the
  *  palette separates when any two regions may touch (validated all-pairs,
  *  both themes) — more would need hues people can't tell apart. */

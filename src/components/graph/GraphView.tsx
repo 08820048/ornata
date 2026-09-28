@@ -13,7 +13,7 @@ import { vaultNote } from "@/lib/noteRef";
 import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { FadeLoop, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
-import { folderSlots, forceGroup, groupOf } from "./graphGroups";
+import { folderSlots, forceGroup, groupOf, readGroupsPref, writeGroupsPref } from "./graphGroups";
 import { mergeLinks, paintGraph, type SimEdge, type SimNode } from "./graphPaint";
 import { searchNodes } from "./graphSearch";
 import { useT } from "@/stores/locale";
@@ -34,19 +34,12 @@ const MAX_ZOOM = 4;
 /** Auto-fit never magnifies a small graph past this. */
 /** Room for the floating control bar and the counts line. */
 const FIT = { padding: 64, minZoom: MIN_ZOOM, maxZoom: 1.5 };
-const GROUPS_KEY = "ornata:graph-groups";
 /** Camera flight to a search hit; within the app's motion budget. */
 const FLY_MS = 160;
 /** A hit is framed at least this close. */
 const FLY_ZOOM = 1.2;
 
-function readGroupsPref(): boolean {
-  try {
-    return localStorage.getItem(GROUPS_KEY) !== "0";
-  } catch {
-    return true;
-  }
-}
+
 
 /**
  * The vault's link graph as a tab pane, laid out by d3-force and drawn on a
@@ -655,11 +648,7 @@ export function GraphView({ active }: { active: boolean }) {
                   <Toggle
                     on={groups}
                     onClick={() => {
-                      try {
-                        localStorage.setItem(GROUPS_KEY, groups ? "0" : "1");
-                      } catch {
-                        // Storage unavailable — the choice just won't stick.
-                      }
+                      writeGroupsPref(!groups);
                       setGroups(!groups);
                     }}
                   >

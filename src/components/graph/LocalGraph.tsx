@@ -11,6 +11,7 @@ import { useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 import { FadeLoop, type View, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
 import { type SimEdge, type SimNode, mergeLinks, paintGraph } from "./graphPaint";
+import { folderSlots, groupOf, readGroupsPref } from "./graphGroups";
 import { neighborhood } from "./neighborhood";
 
 const OPEN_KEY = "ornata:local-graph-open";
@@ -18,6 +19,8 @@ const DEPTH_KEY = "ornata:local-graph-depth";
 /** Ring spacing: each hop settles roughly this far out from the center. */
 const RING = 84;
 const FIT = { padding: 28, minZoom: 0.3, maxZoom: 1.3 };
+/** Widest horizontal stretch of the round layout (see the layout effect). */
+const MAX_STRETCH = 1.8;
 const always = () => true;
 
 function readPref<T extends string>(key: string, fallback: T, allowed: readonly T[]): T {
@@ -215,6 +218,11 @@ function LocalCanvas({
   useEffect(() => {
     if (!hood) return;
     const titleOf = new Map((titles?.nodes ?? []).map((n) => [n.rel, n.title]));
+    // Same slots as the full graph (from the whole vault), so a folder keeps
+    // its color in both views.
+    const slots = readGroupsPref()
+      ? folderSlots((titles?.nodes ?? []).map((n) => n.rel))
+      : new Map<string, number>();
     const rings = new Map<number, string[]>();
     for (const [r, d] of hood.depth) rings.set(d, [...(rings.get(d) ?? []), r]);
     const nodes: SimNode[] = [];
@@ -232,6 +240,7 @@ function LocalCanvas({
           r: Math.min(3.5 + Math.sqrt(degree) * 2.2, 14),
           degree,
           isolated: false,
+          hue: slots.get(groupOf(r) ?? "") ?? null,
         });
       });
     }
@@ -254,6 +263,12 @@ function LocalCanvas({
       .stop();
     // A neighborhood is small (≤ ~100 notes); settle it in one pass.
     for (let i = 0; i < 300; i += 1) sim.tick();
+    // The rings settle round, but the panel is wide: stretch across it so
+    // fitting by height doesn't crush the first ring into its labels.
+    const canvas = canvasRef.current;
+    const aspect = canvas && canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 2;
+    const stretch = Math.min(MAX_STRETCH, Math.max(1, aspect * 0.8));
+    for (const node of nodes) node.x *= stretch;
     simRef.current = {
       nodes,
       edges,
