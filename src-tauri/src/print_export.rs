@@ -238,10 +238,14 @@ pub async fn print_view_ready(
             };
             let app_handle = app.clone();
             let shown = path.display().to_string();
+            let written = path.clone();
             let page = crate::config::load(&app).pdf;
             let on_done = move |result: Result<(), String>| {
                 let _ = match result {
-                    Ok(()) => emit_to_window(&app_handle, "main", "ornata-export-done", shown),
+                    Ok(()) => {
+                        crate::reveal::remember_export(&app_handle, &written);
+                        emit_to_window(&app_handle, "main", "ornata-export-done", shown)
+                    }
                     Err(message) => {
                         emit_to_window(&app_handle, "main", "ornata-export-failed", message)
                     }
@@ -268,6 +272,7 @@ pub async fn print_view_ready(
             if let Some(window) = app.get_webview_window(LABEL) {
                 let _ = window.hide();
             }
+            crate::reveal::remember_export(&app, &path);
             emit_to_window(&app, "main", "ornata-export-done", path.display().to_string())?;
         }
         ExportKind::Clipboard => {

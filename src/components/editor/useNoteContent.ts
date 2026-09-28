@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { toastExported } from "@/lib/exportToast";
 import { ipc } from "@/lib/ipc";
 import {
   joinFrontmatter,
@@ -606,7 +607,7 @@ export function useNoteContentEffects({
             current.kind === "vault"
               ? await ipc.exportNote(current.rel, markdown)
               : await ipc.exportExternalNote(current.path, markdown);
-          if (path) toast(t("toast.noteExported"), { description: path });
+          if (path) toastExported(path);
         } else if (
           action === "print-pdf" ||
           action === "export-html" ||

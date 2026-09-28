@@ -54,6 +54,7 @@ pub fn run() {
         .manage(AppState::default())
         .manage(agent::AgentState::default())
         .manage(print_export::PrintState::default())
+        .manage(reveal::ExportedFiles::default())
         .invoke_handler(tauri::generate_handler![
             agent::agent_status,
             agent::agent_start,
@@ -114,6 +115,7 @@ pub fn run() {
             commands::move_entry,
             commands::delete_entry,
             reveal::reveal_entry,
+            reveal::reveal_export,
             commands::search_notes,
             commands::note_backlinks,
             commands::unlinked_mentions,

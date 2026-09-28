@@ -8,6 +8,7 @@ import { initSessionSync, restoreSession } from "@/lib/session";
 import { useSettingsBridge } from "@/lib/useSettingsBridge";
 import { ipc } from "@/lib/ipc";
 import { tabOfView } from "@/lib/noteRef";
+import { toastExported } from "@/lib/exportToast";
 import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
@@ -114,7 +115,7 @@ export default function App() {
           },
         );
         const unDone = await listen<string>("ornata-export-done", (event) => {
-          toast(t("toast.noteExported"), { description: event.payload });
+          toastExported(event.payload);
         });
         const unFailed = await listen<string>("ornata-export-failed", (event) => {
           toast.error(event.payload);

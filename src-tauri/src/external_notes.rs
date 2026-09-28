@@ -252,6 +252,7 @@ pub async fn export_external_note(
         .into_path()
         .map_err(|error| AppError::InvalidPath(error.to_string()))?;
     std::fs::write(&destination, content)?;
+    crate::reveal::remember_export(&app, &destination);
     Ok(Some(destination.display().to_string()))
 }
 

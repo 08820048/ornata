@@ -168,6 +168,8 @@ export const ipc = {
     call<RenameOutcome>("move_entry", { rel, dir }),
   deleteEntry: (rel: string) => call<void>("delete_entry", { rel }),
   revealEntry: (rel: string) => call<void>("reveal_entry", { rel }),
+  /** Only files exported this session (the backend refuses anything else). */
+  revealExport: (path: string) => call<void>("reveal_export", { path }),
   searchNotes: (query: string, limit?: number) =>
     call<SearchHit[]>("search_notes", { query, limit }),
 
