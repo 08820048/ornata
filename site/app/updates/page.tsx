@@ -14,6 +14,24 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.6.0",
+    date: "September 28, 2026",
+    dateTime: "2026-09-28",
+    summary:
+      "A relationship graph, note export, and a fuller way to find and revisit what you wrote.",
+    changes: [
+      "Open the vault as a relationship graph in its own tab, or see the current note's neighborhood at the bottom of the page. The graph colors the largest folders, and you can drag nodes, search, and follow link direction.",
+      "Export a note to PDF, HTML, or rich text. PDFs include heading bookmarks, paper size and margin settings, and a Show in Finder action when the file is ready.",
+      "Keep a history of each note, compare a snapshot with the current text, and restore it.",
+      "Search the vault with more than one term, and find and replace inside the open note.",
+      "Added tags, daily notes, templates, and pinned notes.",
+      "Capture a thought into Inbox from anywhere. Heading links use path.md#heading, and renaming or moving a note rewrites the links that point to it.",
+      "See every open task in one list. The bottom of a note lists the notes that mention it, including unlinked mentions.",
+      "Sort the sidebar by modified time. Unreferenced images in the vault can be cleaned up.",
+      "Retired the standalone Todos and Bookmarks pages. On the next launch, existing lists become Todos.md and Bookmarks.md, and the old files are kept as archives.",
+    ],
+  },
+  {
     version: "0.5.1",
     date: "September 21, 2026",
     dateTime: "2026-09-21",
