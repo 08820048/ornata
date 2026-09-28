@@ -178,7 +178,7 @@ export function GraphScene({ phase }: { phase: GraphPhase }) {
               x={region.labelX}
               y={region.labelY}
               textAnchor="middle"
-              className="fill-faint font-mono text-[8px] uppercase tracking-[0.12em]"
+              className="fill-faint text-[10.5px] font-semibold"
             >
               {region.folder}
             </text>
@@ -299,7 +299,7 @@ export function GraphDemo() {
           <span aria-hidden className="h-3.5 w-px bg-border" />
           <span className="rounded-md bg-active px-2 py-1 text-[10.5px] text-foreground">Group by folder</span>
         </div>
-        <p className="pointer-events-none absolute bottom-2.5 left-4 font-mono text-[9px] tabular-nums text-faint">
+        <p className="pointer-events-none absolute bottom-2.5 left-4 text-[10.5px] tabular-nums text-faint">
           {NODES.length} notes · {LINKS.length} links
         </p>
       </div>

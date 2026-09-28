@@ -1,13 +1,20 @@
 "use client";
 
 import {
+  ArrowDownAZ,
   ChevronRight,
+  Code2,
+  Copy,
   FilePlus,
   FileText,
   Folder,
   FolderOpen,
   FolderPlus,
+  Hash,
+  ListChecks,
+  MoreHorizontal,
   PanelLeft,
+  Pin,
   Search,
   Settings,
   Share2,
@@ -37,11 +44,18 @@ const TYPED_FULL = `${TYPED}[[${LINK}]]`;
 
 /* ── Sidebar ─────────────────────────────────────────────────────────── */
 
+/* Mirrors src/components/layout/Sidebar.tsx: traffic-light clearance, ⌘K
+   search, vault name, pinned notes, the Notes header with its tools, the
+   tree (selection is the light `active` fill, not an inverted pill), and
+   the Settings footer. */
+
 type TreeNode = { label: string; depth: number; kind: "folder" | "file"; open?: boolean };
+const PINNED = ["Q3 Roadmap", "Reading list"];
 const TREE: TreeNode[] = [
   { label: "Projects", depth: 0, kind: "folder", open: true },
   { label: "Q3 Roadmap", depth: 1, kind: "file" },
   { label: "Release notes", depth: 1, kind: "file" },
+  { label: "Architecture", depth: 1, kind: "file" },
   { label: "Research", depth: 0, kind: "folder" },
   { label: "Journal", depth: 0, kind: "folder" },
   { label: "Reading list", depth: 0, kind: "file" },
@@ -49,30 +63,56 @@ const TREE: TreeNode[] = [
 
 function Sidebar({ active }: { active: string | null }) {
   return (
-    <aside className="hidden w-[210px] shrink-0 flex-col border-r border-line-soft bg-panel sm:flex">
-      {/* Traffic lights live in the chrome, as in the app — no title bar. */}
-      <div className="flex h-11 items-center gap-2 px-4">
-        <span className="size-3 rounded-full bg-foreground/20" />
-        <span className="size-3 rounded-full bg-foreground/12" />
-        <span className="size-3 rounded-full bg-foreground/[0.08]" />
+    <aside className="hidden w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel sm:flex">
+      {/* The app leaves this band for the window's traffic lights. */}
+      <div className="flex h-12 items-center gap-2 px-4 pt-1">
+        <span className="size-3 rounded-full bg-[#ff5f57]" />
+        <span className="size-3 rounded-full bg-[#febc2e]" />
+        <span className="size-3 rounded-full bg-[#28c840]" />
       </div>
-      <div className="flex items-center justify-between pb-1 pl-4 pr-2 pt-2">
+      <div className="px-2 pb-2">
+        <div className="flex w-full items-center gap-2 rounded-md border border-line-soft bg-background px-2.5 py-1.5 text-[12.5px] text-faint">
+          <Search size={14} strokeWidth={2} className="shrink-0" />
+          <span>Search notes…</span>
+          <kbd className="ml-auto rounded border border-border bg-panel px-1 font-mono text-[10px] leading-4 text-faint">
+            ⌘K
+          </kbd>
+        </div>
+      </div>
+      <div className="px-4 pb-2">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">My Notes</span>
+      </div>
+
+      <div className="px-2 pb-2">
+        <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">Pinned</div>
+        {PINNED.map((label) => (
+          <div key={label} className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-foreground">
+            <Pin size={12} strokeWidth={2} className="shrink-0 text-faint" />
+            <span className="truncate">{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between pb-1 pl-4 pr-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">Notes</span>
-        <span className="flex items-center gap-0.5 text-faint">
-          <FilePlus size={14} strokeWidth={1.75} />
-          <FolderPlus size={14} strokeWidth={1.75} />
+        <span className="flex items-center text-faint">
+          {[ArrowDownAZ, ListChecks, Hash, FilePlus, FolderPlus].map((Icon, index) => (
+            <span key={index} className="grid size-[26px] place-items-center">
+              <Icon size={14.5} strokeWidth={1.75} />
+            </span>
+          ))}
         </span>
       </div>
-      <div className="flex-1 px-2 pt-1">
+      <div className="min-h-0 flex-1 px-2 pt-1">
         {TREE.map((node) => {
           const Icon = node.kind === "folder" ? (node.open ? FolderOpen : Folder) : FileText;
-          const selected = node.label === active;
+          const selected = node.label === active && node.kind === "file";
           return (
             <div
               key={node.label}
               className={cn(
                 "relative flex h-[30px] items-center rounded-md pr-1.5 text-[13px]",
-                selected ? "text-primary-foreground" : "text-muted-foreground",
+                selected ? "text-foreground" : "text-muted-foreground",
               )}
               style={{ paddingLeft: 8 + node.depth * 15 }}
             >
@@ -80,13 +120,13 @@ function Sidebar({ active }: { active: string | null }) {
                 <motion.span
                   layoutId="hero-tree-selection"
                   transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-                  className="absolute inset-0 rounded-md bg-foreground"
+                  className="absolute inset-0 rounded-md bg-active"
                 />
               )}
               <Icon
                 size={14}
                 strokeWidth={1.75}
-                className={cn("relative mr-2 shrink-0", selected ? "text-primary-foreground" : "text-faint")}
+                className={cn("relative mr-2 shrink-0", selected ? "text-foreground" : "text-faint")}
               />
               <span className={cn("relative truncate", node.kind === "folder" && "font-medium")}>
                 {node.label}
@@ -95,8 +135,12 @@ function Sidebar({ active }: { active: string | null }) {
           );
         })}
       </div>
-      <div className="flex items-center border-t border-line-soft px-3 py-2 text-faint">
-        <Settings size={15} strokeWidth={1.75} />
+      <div className="border-t border-line-soft px-2 py-1.5">
+        <div className="flex h-[30px] items-center gap-2.5 rounded-md px-2 text-[13px] font-medium text-muted-foreground">
+          <Settings size={15} strokeWidth={1.75} />
+          Settings
+          <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">⌘,</kbd>
+        </div>
       </div>
     </aside>
   );
@@ -163,6 +207,19 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
         <span className="text-muted-foreground">Projects</span>
         <ChevronRight size={13} strokeWidth={2} className="mx-1.5 text-faint" />
         <span className="font-semibold text-foreground">Q3 Roadmap</span>
+        {/* The app's actions: source toggle, Copy path, note menu. */}
+        <span className="ml-auto flex items-center gap-2">
+          <span className="grid size-7 place-items-center rounded-md border border-border bg-hover text-muted-foreground">
+            <Code2 size={15} strokeWidth={1.9} />
+          </span>
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-hover px-2.5 text-[12.5px] font-medium text-foreground">
+            <Copy size={12.5} strokeWidth={2} />
+            Copy path
+          </span>
+          <span className="grid size-7 place-items-center rounded-md border border-border bg-hover text-muted-foreground">
+            <MoreHorizontal size={15} strokeWidth={1.9} />
+          </span>
+        </span>
       </div>
       <div className="mx-auto max-w-[600px] px-8 pt-5 font-note sm:px-10">
         {/* UI mock, not document structure — no real headings here. */}
@@ -239,7 +296,7 @@ function GraphPane({ phase }: { phase: GraphPhase }) {
         <span aria-hidden className="h-3.5 w-px bg-border" />
         <span className="rounded-md bg-active px-2 py-1 text-[11px] text-foreground">Group by folder</span>
       </div>
-      <p className="absolute bottom-3 left-4 font-mono text-[9.5px] text-faint">13 notes · 14 links</p>
+      <p className="absolute bottom-3 left-4 text-[11px] tabular-nums text-faint">13 notes · 14 links</p>
     </div>
   );
 }
@@ -349,7 +406,8 @@ export function AppDemo() {
 
   return (
     <div ref={ref}>
-      <div className="overflow-hidden rounded-xl border border-border-strong bg-background shadow-workbench">
+      {/* app-ui: the app's real palette and typeface inside the window. */}
+      <div className="app-ui overflow-hidden rounded-xl border border-black/10 bg-background shadow-workbench">
         <div className="flex h-[480px] sm:aspect-[16/10] sm:h-auto">
           <Sidebar active={scene.id === "connect" ? null : "Q3 Roadmap"} />
           <main className="flex min-w-0 flex-1 flex-col">
