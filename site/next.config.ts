@@ -14,5 +14,7 @@ export default nextConfig;
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 if (process.env.NODE_ENV === "development") {
-  initOpenNextCloudflareForDev();
+  // No local bindings to keep. Disk persistence leaves an orphaned workerd
+  // holding `.wrangler` sqlite, and the next start dies with SQLITE_BUSY_RECOVERY.
+  initOpenNextCloudflareForDev({ persist: false });
 }
