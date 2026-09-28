@@ -11,6 +11,8 @@ interface PrintPayload {
   id: number;
   markdown: string;
   vaultRoot: string;
+  /** Margins come from the PDF page setup; drop the CSS inset. */
+  nativeMargins: boolean;
 }
 
 /**
@@ -128,10 +130,18 @@ export function PrintView() {
       {/* The app shell locks html/body/#root to the window and hides overflow.
           Left in place, print and the saved HTML keep only the visible slice. */}
       <style>{PRINT_UNCLIP}</style>
+      {job?.nativeMargins && <style>{NATIVE_MARGINS}</style>}
       <EditorContent editor={editor} />
     </div>
   );
 }
+
+/** Silent PDF export applies the user's margins to every page natively;
+ *  the CSS inset (and @page margin) would stack on top of them. */
+const NATIVE_MARGINS = `
+  .prose-note { padding: 0 !important; }
+  @page { margin: 0; }
+`;
 
 const PRINT_UNCLIP = `
   html, body, #root {

@@ -23,6 +23,8 @@ pub struct AppConfig {
     #[serde(default)]
     pub image_upload: ImageUpload,
     #[serde(default)]
+    pub pdf: PdfSettings,
+    #[serde(default)]
     pub agent_connections: Vec<AgentConnectionConfig>,
     #[serde(default)]
     pub active_agent_connection: Option<String>,
@@ -50,6 +52,64 @@ pub enum ImageUploadMode {
     Custom,
 }
 
+/// Page setup for PDF export. Presets rather than free-form numbers: a few
+/// well-chosen options cover real use and can't produce a broken page.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PdfSettings {
+    #[serde(default)]
+    pub paper: PaperSize,
+    #[serde(default)]
+    pub margins: PageMargins,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PaperSize {
+    /// Whatever the system print setup uses (A4 or Letter by region).
+    #[default]
+    System,
+    A4,
+    Letter,
+    A5,
+}
+
+impl PaperSize {
+    /// Width × height in PDF points (1/72 in); None follows the system.
+    pub fn points(self) -> Option<(f64, f64)> {
+        match self {
+            Self::System => None,
+            Self::A4 => Some((mm_to_points(210.0), mm_to_points(297.0))),
+            Self::Letter => Some((612.0, 792.0)),
+            Self::A5 => Some((mm_to_points(148.0), mm_to_points(210.0))),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PageMargins {
+    Narrow,
+    #[default]
+    Normal,
+    Wide,
+}
+
+impl PageMargins {
+    /// The same margin on all four sides, in PDF points.
+    pub fn points(self) -> f64 {
+        mm_to_points(match self {
+            Self::Narrow => 10.0,
+            Self::Normal => 18.0,
+            Self::Wide => 25.0,
+        })
+    }
+}
+
+fn mm_to_points(mm: f64) -> f64 {
+    mm / 25.4 * 72.0
+}
+
 const fn default_outline_sound() -> bool {
     true
 }
@@ -67,6 +127,7 @@ impl Default for AppConfig {
             outline_sound: default_outline_sound(),
             cursor_animation: default_cursor_animation(),
             image_upload: ImageUpload::default(),
+            pdf: PdfSettings::default(),
             agent_connections: Vec::new(),
             active_agent_connection: None,
             agent_connection: None,
@@ -179,5 +240,25 @@ mod tests {
         .unwrap();
         assert_eq!(config.image_upload.mode, super::ImageUploadMode::Custom);
         assert_eq!(config.image_upload.command, "picgo upload");
+    }
+
+    #[test]
+    fn pdf_settings_default_to_system_paper_and_normal_margins() {
+        let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(config.pdf.paper, super::PaperSize::System);
+        assert_eq!(config.pdf.margins, super::PageMargins::Normal);
+        assert_eq!(config.pdf.paper.points(), None);
+    }
+
+    #[test]
+    fn pdf_settings_roundtrip_and_measure() {
+        let config: AppConfig =
+            serde_json::from_str(r#"{"pdf":{"paper":"a4","margins":"wide"}}"#).unwrap();
+        assert_eq!(config.pdf.paper, super::PaperSize::A4);
+        let (w, h) = config.pdf.paper.points().unwrap();
+        assert!((w - 595.28).abs() < 0.01 && (h - 841.89).abs() < 0.01);
+        assert!((config.pdf.margins.points() - 70.87).abs() < 0.01);
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(json.contains(r#""pdf":{"paper":"a4","margins":"wide"}"#));
     }
 }

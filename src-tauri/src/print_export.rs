@@ -56,6 +56,13 @@ pub struct PrintSource {
     pub id: u64,
     pub markdown: String,
     pub vault_root: String,
+    /// Page margins come from the PDF print setup (every page, user's
+    /// setting), so the view must not add its own CSS inset.
+    pub native_margins: bool,
+}
+
+fn native_margins(kind: &ExportKind) -> bool {
+    *kind == ExportKind::Pdf && SILENT_PDF
 }
 
 #[derive(Default)]
@@ -111,6 +118,7 @@ fn store_job(
         id,
         markdown: markdown.clone(),
         vault_root: vault_root.clone(),
+        native_margins: native_margins(&kind),
     };
     let mut job = state.job.lock().map_err(|e| AppError::Other(e.to_string()))?;
     *job = Some(PrintJob {
@@ -135,6 +143,7 @@ pub fn current_print_job(app: AppHandle) -> AppResult<Option<PrintSource>> {
         id: job.id,
         markdown: job.markdown.clone(),
         vault_root: job.vault_root.clone(),
+        native_margins: native_margins(&job.kind),
     }))
 }
 
@@ -229,14 +238,16 @@ pub async fn print_view_ready(
             };
             let app_handle = app.clone();
             let shown = path.display().to_string();
-            crate::pdf_export::save_pdf(&window, path, job.default_name, headings, move |result| {
+            let page = crate::config::load(&app).pdf;
+            let on_done = move |result: Result<(), String>| {
                 let _ = match result {
                     Ok(()) => emit_to_window(&app_handle, "main", "ornata-export-done", shown),
                     Err(message) => {
                         emit_to_window(&app_handle, "main", "ornata-export-failed", message)
                     }
                 };
-            })?;
+            };
+            crate::pdf_export::save_pdf(&window, path, job.default_name, headings, page, on_done)?;
         }
         #[cfg(not(target_os = "macos"))]
         ExportKind::Pdf => {

@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import {
   Command,
   Download,
+  FileDown,
   FolderClosed,
   Image as ImageIcon,
   Palette,
@@ -21,6 +22,7 @@ import { useVault } from "@/stores/vault";
 import {
   AppearanceSection,
   EditorSection,
+  ExportSection,
   GeneralSection,
   ImageSection,
   ShortcutsSection,
@@ -33,6 +35,7 @@ type SectionId =
   | "appearance"
   | "editor"
   | "image"
+  | "export"
   | "vault"
   | "shortcuts"
   | "updates";
@@ -74,6 +77,13 @@ const SECTIONS: Section[] = [
     labelKey: "settings.section.image",
     keywords: ["image", "upload", "picgo", "图片", "上传", "图床"],
     render: () => <ImageSection />,
+  },
+  {
+    id: "export",
+    icon: FileDown,
+    labelKey: "settings.section.export",
+    keywords: ["pdf", "export", "paper", "margin", "a4", "letter", "导出", "纸张", "页边距"],
+    render: () => <ExportSection />,
   },
   {
     id: "vault",

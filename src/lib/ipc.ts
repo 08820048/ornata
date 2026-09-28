@@ -4,6 +4,7 @@ import type {
   AgentPermission,
   ExternalNote,
   ImageUpload,
+  PdfSettings,
   Language,
   AgentStatus,
   AgentConnection,
@@ -134,7 +135,7 @@ export const ipc = {
     }),
   hidePrintWindow: () => call<void>("hide_print_window"),
   currentPrintJob: () =>
-    call<{ id: number; markdown: string; vaultRoot: string } | null>(
+    call<{ id: number; markdown: string; vaultRoot: string; nativeMargins: boolean } | null>(
       "current_print_job",
     ),
   printViewReady: (input: {
@@ -194,6 +195,8 @@ export const ipc = {
   saveImageAsset: (data: string, extension: string) =>
     call<string>("save_image_asset", { data, extension }),
   getImageUpload: () => call<ImageUpload>("get_image_upload"),
+  getPdfSettings: () => call<PdfSettings>("get_pdf_settings"),
+  setPdfSettings: (pdf: PdfSettings) => call<void>("set_pdf_settings", { pdf }),
   setImageUpload: (upload: ImageUpload) =>
     call<void>("set_image_upload", { upload }),
   uploadImage: (data: string, extension: string, command?: string) =>

@@ -3,6 +3,14 @@ export type Language = "en" | "zh-CN";
 export type AgentPermission = "readOnly" | "readWrite" | "fullAccess";
 export type ImageUploadMode = "local" | "custom";
 
+/** PDF page setup (Rust `config::PdfSettings`). */
+export type PaperSize = "system" | "a4" | "letter" | "a5";
+export type PageMargins = "narrow" | "normal" | "wide";
+export interface PdfSettings {
+  paper: PaperSize;
+  margins: PageMargins;
+}
+
 export interface ImageUpload {
   mode: ImageUploadMode;
   command: string;

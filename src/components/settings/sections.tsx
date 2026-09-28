@@ -16,6 +16,7 @@ import {
   Toggle,
 } from "@/components/settings/controls";
 import { ImageUploadSettings } from "@/components/settings/ImageUploadSettings";
+import { PdfExportSettings } from "@/components/settings/PdfExportSettings";
 import { UpdateControl } from "@/components/settings/UpdateControl";
 import { useLocale, useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
@@ -142,6 +143,15 @@ export function ImageSection() {
   return (
     <SettingGroup title={t("settings.imageUpload")}>
       <ImageUploadSettings />
+    </SettingGroup>
+  );
+}
+
+export function ExportSection() {
+  const t = useT();
+  return (
+    <SettingGroup title={t("settings.pdf")}>
+      <PdfExportSettings />
     </SettingGroup>
   );
 }

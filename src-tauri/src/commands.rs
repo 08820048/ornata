@@ -7,7 +7,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::backlinks::{self, Backlink};
-use crate::config::{self, ImageUpload, ImageUploadMode, Language, Theme};
+use crate::config::{self, ImageUpload, ImageUploadMode, Language, PdfSettings, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::graph;
@@ -472,6 +472,18 @@ pub fn save_image_asset(
 #[tauri::command]
 pub fn get_image_upload(app: AppHandle) -> ImageUpload {
     config::load(&app).image_upload
+}
+
+#[tauri::command]
+pub fn get_pdf_settings(app: AppHandle) -> PdfSettings {
+    config::load(&app).pdf
+}
+
+#[tauri::command]
+pub fn set_pdf_settings(app: AppHandle, pdf: PdfSettings) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.pdf = pdf;
+    config::save(&app, &cfg)
 }
 
 #[tauri::command]

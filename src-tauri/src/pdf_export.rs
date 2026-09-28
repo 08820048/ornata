@@ -21,15 +21,12 @@ use objc2_app_kit::{
     NSPrintInfo, NSPrintJobSavingURL, NSPrintOperation, NSPrintSaveJob, NSPrintingPaginationMode,
     NSWindow,
 };
-use objc2_foundation::{NSObject, NSString, NSURL};
+use objc2_foundation::{NSObject, NSSize, NSString, NSURL};
 use objc2_web_kit::WKWebView;
 
+use crate::config::PdfSettings;
 use crate::error::{AppError, AppResult};
 use crate::print_export::OutlineEntry;
-
-/// 12mm in points — vertical page margin. Horizontal inset comes from the
-/// print view's own padding.
-const PAGE_MARGIN_PT: f64 = 34.0;
 
 type Done = Box<dyn FnOnce(Result<(), String>)>;
 
@@ -82,6 +79,7 @@ pub fn save_pdf(
     dest: PathBuf,
     title: String,
     outline: Vec<OutlineEntry>,
+    page: PdfSettings,
     done: impl FnOnce(Result<(), String>) + Send + 'static,
 ) -> AppResult<()> {
     window
@@ -97,7 +95,7 @@ pub fn save_pdf(
             match MainThreadMarker::new() {
                 Some(mtm) => {
                     let job = Job { done: Box::new(done), dest, outline };
-                    run(mtm, wk, ns_window, &title, job)
+                    run(mtm, wk, ns_window, &title, page, job)
                 }
                 None => done(Err("PDF export ran off the main thread".into())),
             }
@@ -110,6 +108,7 @@ fn run(
     wk: &WKWebView,
     ns_window: &NSWindow,
     title: &str,
+    page: PdfSettings,
     job: Job,
 ) {
     let Some(url) = NSURL::from_file_path(&job.dest) else {
@@ -117,16 +116,22 @@ fn run(
         return;
     };
 
-    // A private copy of the shared print info: keeps the user's paper size
-    // (A4/Letter by locale) without mutating the app-wide defaults.
+    // A private copy of the shared print info: starts from the system paper
+    // size (A4/Letter by region) without mutating the app-wide defaults.
     let shared = NSPrintInfo::sharedPrintInfo();
     // SAFETY: the dictionary is NSPrintInfo's own attribute dictionary.
     let info =
         unsafe { NSPrintInfo::initWithDictionary(NSPrintInfo::alloc(), &shared.dictionary()) };
-    info.setTopMargin(PAGE_MARGIN_PT);
-    info.setBottomMargin(PAGE_MARGIN_PT);
-    info.setLeftMargin(0.0);
-    info.setRightMargin(0.0);
+    if let Some((width, height)) = page.paper.points() {
+        info.setPaperSize(NSSize::new(width, height));
+    }
+    // Margins apply to every page here; the print view drops its own CSS
+    // inset for these exports (see PrintSource::native_margins).
+    let margin = page.margins.points();
+    info.setTopMargin(margin);
+    info.setBottomMargin(margin);
+    info.setLeftMargin(margin);
+    info.setRightMargin(margin);
     info.setHorizontalPagination(NSPrintingPaginationMode::Fit);
     info.setVerticalPagination(NSPrintingPaginationMode::Automatic);
     // SAFETY: NSPrintSaveJob / NSPrintJobSavingURL are AppKit constants and
