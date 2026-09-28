@@ -148,12 +148,12 @@ fn collect_asset_names(content: &str, referenced: &mut HashSet<String>) {
                 !c.is_control()
                     && !matches!(
                         c,
-                        ')' | ']' | '"' | ''' | '<' | '>' | '#' | '?' | '&' | ' ' | '	'
+                        ')' | ']' | '"' | '\'' | '<' | '>' | '#' | '?' | '&' | ' ' | '\t'
                     )
             })
             .collect();
         let name = percent_decode_name(&name);
-        if name.contains('.') && !name.contains('/') && !name.contains('\') {
+        if name.contains('.') && !name.contains('/') && !name.contains('\\') {
             referenced.insert(name);
         }
         rest = tail;
