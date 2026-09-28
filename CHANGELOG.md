@@ -4,6 +4,24 @@ All notable changes to Ornata are documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-28
+
+### Added
+
+- AssistantPi keeps the conversation for each vault. Start a new chat, or reopen an earlier one.
+- One-click undo for notes AssistantPi edited or created. If you changed the note after that, undo refuses and points you at history.
+- Type `@` to attach another note. Linked notes can also include the notes this one links to and from, as paths and titles only.
+- Summarize, Suggest links, and Extract tasks appear when a note is attached and the composer is empty. Suggest links and Extract tasks only propose changes.
+
+### Fixed
+
+- AssistantPi's read, grep, find, and ls stay inside the vault, including paths that follow a symlink out of it.
+- Approval cards show the shell command, a before/after diff for an edit, the body of a new note, and the path for delete, rename, and move.
+
+### Changed
+
+- The editor tab strip uses the same panel tone as the sidebar.
+
 ## [0.6.0] - 2026-09-28
 
 ### Added
