@@ -16,6 +16,8 @@ mod image_source;
 mod legacy;
 mod mentions;
 mod notes;
+#[cfg(target_os = "macos")]
+mod pdf_export;
 mod print_export;
 mod quick_capture;
 mod reveal;

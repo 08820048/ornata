@@ -116,13 +116,20 @@ export default function App() {
         const unDone = await listen<string>("ornata-export-done", (event) => {
           toast(t("toast.noteExported"), { description: event.payload });
         });
+        const unFailed = await listen<string>("ornata-export-failed", (event) => {
+          toast.error(event.payload);
+        });
         if (cancelled) {
           unRich();
           unDone();
+          unFailed();
           return;
         }
         stopRich = unRich;
-        stopDone = unDone;
+        stopDone = () => {
+          unDone();
+          unFailed();
+        };
       } catch {
         // Event listeners unavailable — export still works, minus toasts.
       }

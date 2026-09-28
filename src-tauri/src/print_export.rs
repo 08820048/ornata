@@ -1,10 +1,11 @@
 //! Export a note through a hidden print window that renders the note with the
 //! app's real editor pipeline (same extensions: images, KaTeX, Mermaid,
-//! Shiki), then either opens the system print dialog (PDF via "Save as PDF")
-//! or hands the serialized HTML back for file/clipboard export.
+//! Shiki), then either writes a PDF or hands the serialized HTML back for
+//! file/clipboard export.
 //!
-//! tauri 2.11 has no `print_to_pdf`; the dialog route is the documented
-//! fallback and gives the user full print-sheet control.
+//! PDF on macOS is silent: save sheet first, then WebKit prints straight to
+//! that file (`pdf_export.rs`). Elsewhere it falls back to the system print
+//! dialog ("Save as PDF").
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -16,6 +17,9 @@ use tauri_plugin_dialog::DialogExt;
 use crate::error::{AppError, AppResult};
 
 pub const LABEL: &str = "print";
+
+/// PDF export writes the file directly (no print sheet) where supported.
+const SILENT_PDF: bool = cfg!(target_os = "macos");
 
 #[derive(Debug, Clone, Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -32,7 +36,7 @@ pub struct PrintJob {
     pub markdown: String,
     pub vault_root: String,
     pub default_name: String,
-    /// HTML file destination, picked before rendering (HTML exports only).
+    /// File destination, picked before rendering (HTML, and PDF on macOS).
     pub path: Option<PathBuf>,
 }
 
@@ -159,10 +163,15 @@ pub async fn start_print_export(
     default_name: String,
     kind: ExportKind,
 ) -> AppResult<()> {
-    // HTML exports need a destination picked before any rendering happens.
-    let path = if kind == ExportKind::Html {
+    // File exports need a destination picked before any rendering happens.
+    let extension = match kind {
+        ExportKind::Html => Some("html"),
+        ExportKind::Pdf if SILENT_PDF => Some("pdf"),
+        _ => None,
+    };
+    let path = if let Some(extension) = extension {
         let app_handle = app.clone();
-        let file_name = format!("{}.html", default_name);
+        let file_name = format!("{default_name}.{extension}");
         tauri::async_runtime::spawn_blocking(move || {
             app_handle
                 .dialog()
@@ -179,13 +188,13 @@ pub async fn start_print_export(
         None
     };
     // User cancelled the save sheet — nothing to render.
-    if kind == ExportKind::Html && path.is_none() {
+    if extension.is_some() && path.is_none() {
         return Ok(());
     }
 
-    // PDF has to be on screen so the system print sheet snapshots a painted
-    // page. HTML and clipboard stay hidden and only write the serialized DOM.
-    let show = kind == ExportKind::Pdf;
+    // The print-sheet fallback needs the window on screen so the sheet
+    // snapshots a painted page. Every other export stays hidden.
+    let show = kind == ExportKind::Pdf && !SILENT_PDF;
     let source = store_job(&app, kind, markdown, vault_root, default_name, path)?;
     ensure_window(&app, show)?;
     emit_to_window(&app, LABEL, "ornata-print", source)?;
@@ -204,6 +213,23 @@ pub async fn print_view_ready(
 ) -> AppResult<()> {
     let job = take_job_if(&app, id)?;
     match job.kind {
+        #[cfg(target_os = "macos")]
+        ExportKind::Pdf => {
+            let Some(path) = job.path else {
+                return Err(AppError::Other("pdf export missing path".into()));
+            };
+            let app_handle = app.clone();
+            let shown = path.display().to_string();
+            crate::pdf_export::save_pdf(&window, path, job.default_name, move |result| {
+                let _ = match result {
+                    Ok(()) => emit_to_window(&app_handle, "main", "ornata-export-done", shown),
+                    Err(message) => {
+                        emit_to_window(&app_handle, "main", "ornata-export-failed", message)
+                    }
+                };
+            })?;
+        }
+        #[cfg(not(target_os = "macos"))]
         ExportKind::Pdf => {
             // Show only once the note is in the DOM, then open the system
             // print sheet (the user chooses "Save as PDF"). The sheet may
