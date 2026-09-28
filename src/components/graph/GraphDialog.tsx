@@ -1,4 +1,11 @@
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import {
+  type Simulation,
+  forceCenter,
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+} from "d3-force";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ipc } from "@/lib/ipc";
@@ -17,7 +24,11 @@ import { useVault } from "@/stores/vault";
 const CLICK_SLOP = 4;
 /** Layout work per animation frame, so large vaults never freeze the window. */
 const FRAME_BUDGET_MS = 10;
-const MAX_TICKS = 320;
+/** Simulation heat while a node is held: neighbors keep following it. */
+const DRAG_ALPHA = 0.3;
+/** After the first layout, ticks are paced per frame so drags and the
+ *  release read as motion (~2s to rest) instead of snapping in one frame. */
+const INTERACTIVE_TICKS_PER_FRAME = 2;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 /** Auto-fit never magnifies a small graph past this. */
@@ -36,7 +47,8 @@ function readGroupsPref(): boolean {
  * The vault's link graph, laid out by d3-force and drawn on a plain canvas.
  * The simulation runs in time-sliced batches across animation frames, so the
  * graph settles into place instead of blocking; once it has settled only
- * hover/pan/zoom redraw. The view keeps fitting the layout until the user
+ * hover/pan/zoom redraw. Dragging a node pins it under the pointer and
+ * reheats the simulation; on release it is unpinned and the graph relaxes. The view keeps fitting the layout until the user
  * pans or zooms. Isolated notes are hidden by default — they drown the
  * interesting structure in dots.
  */
@@ -54,15 +66,23 @@ export function GraphDialog() {
   const viewRef = useRef({ x: 0, y: 0, k: 1 });
   const hoverRef = useRef<string | null>(null);
   /** A press in progress: last pointer position for panning, press origin
-   *  for click detection, and the node (if any) it started on. */
+   *  for click detection, and the node (if any) it started on — with the
+   *  grab offset, so the node doesn't jump to center under the pointer. */
   const dragRef = useRef<{
     x: number;
     y: number;
     startX: number;
     startY: number;
     moved: boolean;
-    rel: string | null;
+    node: SimNode | null;
+    offsetX: number;
+    offsetY: number;
   } | null>(null);
+  const [draggingNode, setDraggingNode] = useState(false);
+  const simulationRef = useRef<Simulation<SimNode, undefined> | null>(null);
+  const runFrameRef = useRef(0);
+  /** False until the first layout has come to rest. */
+  const settledRef = useRef(false);
   const autoFitRef = useRef(true);
   const showIsolatedRef = useRef(showIsolated);
   showIsolatedRef.current = showIsolated;
@@ -178,7 +198,7 @@ export function GraphDialog() {
       .filter((e) => byRel.has(e.from) && byRel.has(e.to))
       .map((e) => ({ from: e.from, to: e.to, source: e.from, target: e.to }));
 
-    const sim = forceSimulation(nodes as never[])
+    const sim = forceSimulation(nodes)
       .force(
         "link",
         forceLink(edges as never[])
@@ -193,30 +213,16 @@ export function GraphDialog() {
       .stop();
 
     simRef.current = { nodes, edges };
+    simulationRef.current = sim;
+    settledRef.current = false;
     viewRef.current = { x: 0, y: 0, k: 1 };
     autoFitRef.current = true;
-    // Tick in frame-sized slices until alpha decays; the view tracks the
-    // spreading layout until the user takes over.
-    let ticks = 0;
-    let frame = 0;
-    const step = () => {
-      const start = performance.now();
-      while (
-        ticks < MAX_TICKS &&
-        sim.alpha() > sim.alphaMin() &&
-        performance.now() - start < FRAME_BUDGET_MS
-      ) {
-        sim.tick();
-        ticks += 1;
-      }
-      if (autoFitRef.current) fitToLayout();
-      draw();
-      if (ticks < MAX_TICKS && sim.alpha() > sim.alphaMin()) {
-        frame = requestAnimationFrame(step);
-      }
+    runSim();
+    return () => {
+      cancelAnimationFrame(runFrameRef.current);
+      runFrameRef.current = 0;
+      simulationRef.current = null;
     };
-    step();
-    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph, showAll, layoutIsolates, groups]);
 
@@ -258,6 +264,45 @@ export function GraphDialog() {
     [],
   );
   const draw = loop.draw;
+
+  /** Tick in frame-sized slices until alpha decays, painting each frame; the
+   *  view tracks the layout until the user takes over. Safe to call while
+   *  already running — a drag reheat just extends the run. */
+  const runSim = useCallback(() => {
+    if (runFrameRef.current !== 0) return;
+    const step = () => {
+      runFrameRef.current = 0;
+      const sim = simulationRef.current;
+      if (!sim) return;
+      const start = performance.now();
+      const limit = settledRef.current ? INTERACTIVE_TICKS_PER_FRAME : Infinity;
+      for (
+        let ticks = 0;
+        ticks < limit &&
+        sim.alpha() > sim.alphaMin() &&
+        performance.now() - start < FRAME_BUDGET_MS;
+        ticks += 1
+      ) {
+        sim.tick();
+      }
+      if (autoFitRef.current) fitToLayout();
+      draw();
+      if (sim.alpha() > sim.alphaMin()) runFrameRef.current = requestAnimationFrame(step);
+      else settledRef.current = true;
+    };
+    step();
+  }, [draw, fitToLayout]);
+
+  /** Let go of a dragged node: unpin it and let the graph cool down. */
+  const releaseNode = () => {
+    const drag = dragRef.current;
+    const sim = simulationRef.current;
+    if (!drag?.node || !drag.moved || !sim) return;
+    drag.node.fx = null;
+    drag.node.fy = null;
+    sim.alphaTarget(0);
+    runSim();
+  };
 
   useEffect(() => () => loop.cancel(), [open, loop]);
 
@@ -339,8 +384,29 @@ export function GraphDialog() {
       ) {
         return;
       }
+      const first = !drag.moved;
       drag.moved = true;
       autoFitRef.current = false;
+      const sim = simulationRef.current;
+      const canvas = canvasRef.current;
+      if (drag.node && sim && canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const { x: vx, y: vy, k } = viewRef.current;
+        const x = (event.clientX - rect.left - vx) / k + drag.offsetX;
+        const y = (event.clientY - rect.top - vy) / k + drag.offsetY;
+        // Move the dot now rather than on the next tick, so it never lags.
+        drag.node.fx = drag.node.x = x;
+        drag.node.fy = drag.node.y = y;
+        if (first) {
+          setDraggingNode(true);
+          // Grabbing mid-layout switches to paced ticks too.
+          settledRef.current = true;
+          sim.alphaTarget(DRAG_ALPHA);
+          if (sim.alpha() < DRAG_ALPHA) sim.alpha(DRAG_ALPHA);
+        }
+        runSim();
+        return;
+      }
       viewRef.current.x += event.clientX - drag.x;
       viewRef.current.y += event.clientY - drag.y;
       drag.x = event.clientX;
@@ -399,28 +465,52 @@ export function GraphDialog() {
           ) : graph === null ? null : (
             <canvas
               ref={canvasRef}
-              className="h-full w-full cursor-grab active:cursor-grabbing"
+              className={cx(
+                "h-full w-full",
+                draggingNode
+                  ? "cursor-grabbing"
+                  : hovered
+                    ? "cursor-pointer"
+                    : "cursor-grab active:cursor-grabbing",
+              )}
               onPointerMove={onPointerMove}
               onPointerDown={(event) => {
                 if (event.button !== 0) return;
                 // Capture so a pan that leaves the canvas still ends cleanly.
                 event.currentTarget.setPointerCapture(event.pointerId);
+                const node = nodeAt(event.clientX, event.clientY);
+                let offsetX = 0;
+                let offsetY = 0;
+                if (node) {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  const { x: vx, y: vy, k } = viewRef.current;
+                  offsetX = node.x - (event.clientX - rect.left - vx) / k;
+                  offsetY = node.y - (event.clientY - rect.top - vy) / k;
+                }
                 dragRef.current = {
                   x: event.clientX,
                   y: event.clientY,
                   startX: event.clientX,
                   startY: event.clientY,
                   moved: false,
-                  rel: nodeAt(event.clientX, event.clientY)?.rel ?? null,
+                  node,
+                  offsetX,
+                  offsetY,
                 };
               }}
               onPointerUp={() => {
                 const drag = dragRef.current;
+                releaseNode();
                 dragRef.current = null;
-                // A press that never became a pan is a click on its node.
-                if (drag && !drag.moved && drag.rel) openNote(drag.rel);
+                setDraggingNode(false);
+                // A press that never moved is a click on its node.
+                if (drag && !drag.moved && drag.node) openNote(drag.node.rel);
               }}
-              onPointerCancel={() => (dragRef.current = null)}
+              onPointerCancel={() => {
+                releaseNode();
+                dragRef.current = null;
+                setDraggingNode(false);
+              }}
               onPointerLeave={() => {
                 if (dragRef.current) return;
                 hoverRef.current = null;

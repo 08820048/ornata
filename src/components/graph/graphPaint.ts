@@ -15,6 +15,9 @@ export interface SimNode {
   r: number;
   degree: number;
   isolated: boolean;
+  /** d3-force pin: set while the node is being dragged. */
+  fx?: number | null;
+  fy?: number | null;
   /** Top-level folder, for folder regions (see graphGroups). */
   group?: string | null;
   /** Current eased fill and label opacity; seeded on first paint. */
