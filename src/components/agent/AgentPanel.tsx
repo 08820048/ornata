@@ -21,13 +21,22 @@ import {
 import type { OrbState } from "thinking-orbs";
 import { ThinkingOrb } from "thinking-orbs";
 import { AnimatePresence, motion } from "motion/react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { ApprovalPreview } from "@/components/agent/ApprovalPreview";
 import { ChatControls } from "@/components/agent/ChatControls";
 import { AgentChanges } from "@/components/agent/AgentChanges";
+import {
+  LinkedToggle,
+  MentionChip,
+  MentionPicker,
+  mentionAt,
+  noteReference,
+  useLinkedNotes,
+  useNoteCandidates,
+} from "@/components/agent/composerContext";
 import { EASE_OUT } from "@/lib/ease";
 import { ipc } from "@/lib/ipc";
 import { noteKey, noteTitle } from "@/lib/noteRef";
@@ -87,6 +96,13 @@ export function AgentPanel() {
   const selection = useAgent((state) => state.selection);
   const setSelection = useAgent((state) => state.setSelection);
   const [draft, setDraft] = useState("");
+  // @-mentions and linked-note context (see composerContext).
+  const [mentions, setMentions] = useState<AgentNoteReference[]>([]);
+  const [includeLinked, setIncludeLinked] = useState(false);
+  const [caret, setCaret] = useState(0);
+  const [pickerIndex, setPickerIndex] = useState(0);
+  const [pickerDismissed, setPickerDismissed] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showSetup, setShowSetup] = useState(false);
   // The auto-attached current note can be dismissed; it comes back only when
   // a different note is opened.
@@ -131,11 +147,39 @@ export function AgentPanel() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [open, setOpen]);
 
+  const mention = pickerDismissed ? null : mentionAt(draft, caret);
+  const mentionedRels = useMemo(
+    () => new Set(mentions.map((note) => note.source.replace(/^notes\//, ""))),
+    [mentions],
+  );
+  const candidates = useNoteCandidates(mention ? mention.query : null, mentionedRels);
+  const linkedRel =
+    open && currentNote && view?.type === "note" && view.note.kind === "vault" ? view.note.rel : null;
+  const linked = useLinkedNotes(linkedRel);
+
+  const pickMention = (rel: string) => {
+    if (!mention) return;
+    const after = draft.slice(caret);
+    const next = draft.slice(0, mention.start) + after.replace(/^\S*/, "");
+    setDraft(next);
+    setMentions((list) => [...list, noteReference(rel)]);
+    setPickerIndex(0);
+    const at = mention.start;
+    requestAnimationFrame(() => {
+      textareaRef.current?.setSelectionRange(at, at);
+      setCaret(at);
+    });
+  };
+
   const submit = () => {
     const message = draft.trim();
     if (!message || connection === "running") return;
     setDraft("");
-    void send(message, currentNote);
+    void send(message, currentNote, {
+      mentions,
+      linked: includeLinked && linked ? linked : [],
+    });
+    setMentions([]);
   };
 
   const prepare = () => {
@@ -409,10 +453,63 @@ export function AgentPanel() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              {/* Anchored to the composer box: floats above the whole composer. */}
+              {mention && (
+                <MentionPicker
+                  notes={candidates}
+                  active={Math.min(pickerIndex, Math.max(0, candidates.length - 1))}
+                  onPick={(note) => pickMention(note.rel)}
+                />
+              )}
+              {(mentions.length > 0 || (linked && linked.length > 0)) && (
+                <div className="flex flex-wrap items-center gap-1 px-1 pb-1">
+                  {linked && linked.length > 0 && (
+                    <LinkedToggle
+                      count={linked.length}
+                      on={includeLinked}
+                      onToggle={() => setIncludeLinked((v) => !v)}
+                    />
+                  )}
+                  {mentions.map((note) => (
+                    <MentionChip
+                      key={note.sourceKey}
+                      note={note}
+                      onRemove={() => setMentions((list) => list.filter((m) => m.sourceKey !== note.sourceKey))}
+                    />
+                  ))}
+                </div>
+              )}
               <textarea
+                ref={textareaRef}
                 value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  setCaret(event.target.selectionStart);
+                  setPickerDismissed(false);
+                  setPickerIndex(0);
+                }}
+                onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
                 onKeyDown={(event) => {
+                  if (mention && candidates.length > 0) {
+                    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                      event.preventDefault();
+                      const step = event.key === "ArrowDown" ? 1 : -1;
+                      setPickerIndex((i) => (i + step + candidates.length) % candidates.length);
+                      return;
+                    }
+                    if (event.key === "Enter" || event.key === "Tab") {
+                      event.preventDefault();
+                      pickMention(candidates[Math.min(pickerIndex, candidates.length - 1)].rel);
+                      return;
+                    }
+                  }
+                  if (mention && event.key === "Escape") {
+                    // Close the picker, not the panel.
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setPickerDismissed(true);
+                    return;
+                  }
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
                     submit();

@@ -10,6 +10,7 @@ import type {
   AgentPermission,
   AgentStatus,
 } from "@/lib/types";
+import { messageWithContext } from "@/lib/agentContext";
 import { useTabs } from "@/stores/tabs";
 import { useVault } from "@/stores/vault";
 
@@ -43,6 +44,15 @@ export interface AgentNoteReference {
   sourceKey: string;
   source: string;
   title: string;
+}
+
+/** More notes to point the model at, beyond the current one. Sent as
+ *  references (path + title): the model reads what it needs with its tools. */
+export interface AgentExtraContext {
+  /** Notes the user @-mentioned. */
+  mentions?: AgentNoteReference[];
+  /** The current note's direct links, in and out. */
+  linked?: AgentNoteReference[];
 }
 
 export interface AgentSelection {
@@ -98,7 +108,11 @@ interface AgentStore {
   openChat: (path: string) => Promise<void>;
   undoChange: (changeId: string) => Promise<void>;
   start: () => Promise<boolean>;
-  send: (message: string, note?: AgentNoteReference | null) => Promise<void>;
+  send: (
+    message: string,
+    note?: AgentNoteReference | null,
+    extra?: AgentExtraContext,
+  ) => Promise<void>;
   abort: () => Promise<void>;
   respondApproval: (allow: boolean) => Promise<void>;
   retry: () => Promise<void>;
@@ -132,38 +146,6 @@ function activityDetail(value: unknown) {
     if (typeof detail === "string" && detail.trim()) return detail;
   }
   return null;
-}
-
-function messageWithContext(
-  message: string,
-  note: AgentNoteReference | null,
-  selection: AgentSelection | null,
-) {
-  if (!note && !selection) return message;
-
-  const context: string[] = [];
-  if (note) {
-    context.push(
-      "The user attached the current Ornata note.",
-      JSON.stringify({ source: note.source, title: note.title }),
-    );
-  }
-  if (selection) {
-    const available = Math.max(0, 28_000 - message.length);
-    const selectedText = selection.text.slice(0, available);
-    const truncated = selectedText.length < selection.text.length;
-    context.push(
-      "The user attached a text selection from an Ornata note.",
-      JSON.stringify({
-        source: selection.source,
-        title: selection.title,
-        selectedText,
-        truncated,
-      }),
-    );
-  }
-
-  return [...context, "User request:", message].join("\n\n");
 }
 
 function ensureListeners() {
@@ -431,7 +413,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
     }
   },
 
-  send: async (message, note = null) => {
+  send: async (message, note = null, extra = {}) => {
     const text = message.trim();
     if (!text || get().connection === "running") return;
     const selection = get().selection;
@@ -453,7 +435,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
       error: null,
     }));
     try {
-      await ipc.agentSend(messageWithContext(text, note, selection));
+      await ipc.agentSend(messageWithContext(text, note, selection, extra));
     } catch (error) {
       set({ connection: "error", error: String(error) });
     }
