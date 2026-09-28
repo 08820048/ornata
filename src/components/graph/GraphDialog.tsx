@@ -29,11 +29,24 @@ interface SimEdge {
   target: unknown;
 }
 
+/** Pointer travel (px) under which a press on a node counts as a click. */
+const CLICK_SLOP = 4;
+/** Layout work per animation frame, so large vaults never freeze the window. */
+const FRAME_BUDGET_MS = 10;
+const MAX_TICKS = 320;
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 4;
+/** Auto-fit never magnifies a small graph past this. */
+const MAX_FIT_ZOOM = 1.5;
+const FIT_PADDING = 48;
+
 /**
  * The vault's link graph, laid out by d3-force and drawn on a plain canvas.
- * The simulation runs a fixed number of ticks up front (no rAF loop); after
- * that only hover/pan/zoom redraw. Isolated notes are hidden by default —
- * they drown the interesting structure in dots.
+ * The simulation runs in time-sliced batches across animation frames, so the
+ * graph settles into place instead of blocking; once it has settled only
+ * hover/pan/zoom redraw. The view keeps fitting the layout until the user
+ * pans or zooms. Isolated notes are hidden by default — they drown the
+ * interesting structure in dots.
  */
 export function GraphDialog() {
   const open = useUi((s) => s.graphOpen);
@@ -47,7 +60,19 @@ export function GraphDialog() {
   const simRef = useRef<{ nodes: SimNode[]; edges: SimEdge[] } | null>(null);
   const viewRef = useRef({ x: 0, y: 0, k: 1 });
   const hoverRef = useRef<string | null>(null);
-  const dragRef = useRef<{ x: number; y: number } | null>(null);
+  /** A press in progress: last pointer position for panning, press origin
+   *  for click detection, and the node (if any) it started on. */
+  const dragRef = useRef<{
+    x: number;
+    y: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+    rel: string | null;
+  } | null>(null);
+  const autoFitRef = useRef(true);
+  const showIsolatedRef = useRef(showIsolated);
+  showIsolatedRef.current = showIsolated;
   const t = useT();
 
   useEffect(() => {
@@ -140,7 +165,8 @@ export function GraphDialog() {
         title: node.title,
         x: width / 2 + Math.cos(angle) * Math.min(width, height) * 0.35,
         y: height / 2 + Math.sin(angle) * Math.min(width, height) * 0.35,
-        r: Math.min(4 + d * 1.2, 13),
+        // sqrt keeps hubs distinct without leaf notes all hitting the cap.
+        r: Math.min(3.5 + Math.sqrt(d) * 2.2, 14),
         degree: d,
         isolated: d === 0,
       };
@@ -162,18 +188,74 @@ export function GraphDialog() {
       .force("center", forceCenter(width / 2, height / 2))
       .force("collide", forceCollide().radius((d: unknown) => (d as SimNode).r + 4))
       .stop();
-    // Run the layout synchronously — alpha decays, then the graph is static.
-    for (let i = 0; i < 320; i += 1) sim.tick();
-    sim.stop();
 
     simRef.current = { nodes, edges };
     viewRef.current = { x: 0, y: 0, k: 1 };
-    draw();
+    autoFitRef.current = true;
+    // Tick in frame-sized slices until alpha decays; the view tracks the
+    // spreading layout until the user takes over.
+    let ticks = 0;
+    let frame = 0;
+    const step = () => {
+      const start = performance.now();
+      while (
+        ticks < MAX_TICKS &&
+        sim.alpha() > sim.alphaMin() &&
+        performance.now() - start < FRAME_BUDGET_MS
+      ) {
+        sim.tick();
+        ticks += 1;
+      }
+      if (autoFitRef.current) fitView();
+      // Via the ref: toggles mid-layout change what draw() shows.
+      drawRef.current();
+      if (ticks < MAX_TICKS && sim.alpha() > sim.alphaMin()) {
+        frame = requestAnimationFrame(step);
+      }
+    };
+    step();
+    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph, showAll, layoutIsolates]);
 
   const cssVar = (name: string, fallback: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+  /** Frame every visible node, centered, without magnifying tiny graphs. */
+  const fitView = useCallback(() => {
+    const canvas = canvasRef.current;
+    const sim = simRef.current;
+    if (!canvas || !sim) return;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const node of sim.nodes) {
+      if (node.isolated && !showIsolatedRef.current) continue;
+      minX = Math.min(minX, node.x - node.r);
+      minY = Math.min(minY, node.y - node.r);
+      maxX = Math.max(maxX, node.x + node.r);
+      maxY = Math.max(maxY, node.y + node.r);
+    }
+    if (minX === Infinity) return;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const k = Math.min(
+      MAX_FIT_ZOOM,
+      Math.max(
+        MIN_ZOOM,
+        Math.min(
+          (width - FIT_PADDING * 2) / Math.max(maxX - minX, 1),
+          (height - FIT_PADDING * 2) / Math.max(maxY - minY, 1),
+        ),
+      ),
+    );
+    viewRef.current = {
+      k,
+      x: width / 2 - ((minX + maxX) / 2) * k,
+      y: height / 2 - ((minY + maxY) / 2) * k,
+    };
+  }, []);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -184,9 +266,11 @@ export function GraphDialog() {
     const dpr = window.devicePixelRatio || 1;
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
@@ -195,6 +279,7 @@ export function GraphDialog() {
     const line = cssVar("--line", "#e5e3d8");
     const muted = cssVar("--muted", "#6b6a64");
     const faint = cssVar("--faint", "#b8b6ad");
+    const font = cssVar("--font-sans", "system-ui, sans-serif");
     const hover = hoverRef.current;
     const neighbors = new Set<string>();
     if (hover) {
@@ -208,20 +293,24 @@ export function GraphDialog() {
     const { x: vx, y: vy, k } = viewRef.current;
 
     ctx.lineWidth = 1;
-    for (const edge of sim.edges) {
-      const a = byRel.get(edge.from);
-      const b = byRel.get(edge.to);
-      if (!a || !b || !visible(a) || !visible(b)) continue;
-      const highlighted =
-        hover !== null && (edge.from === hover || edge.to === hover);
-      ctx.strokeStyle = highlighted ? muted : line;
+    // Two passes: the hovered note's edges go on top of everything else.
+    for (const pass of [false, true]) {
+      ctx.strokeStyle = pass ? muted : line;
       ctx.beginPath();
-      ctx.moveTo(a.x * k + vx, a.y * k + vy);
-      ctx.lineTo(b.x * k + vx, b.y * k + vy);
+      for (const edge of sim.edges) {
+        const highlighted =
+          hover !== null && (edge.from === hover || edge.to === hover);
+        if (highlighted !== pass) continue;
+        const a = byRel.get(edge.from);
+        const b = byRel.get(edge.to);
+        if (!a || !b || !visible(a) || !visible(b)) continue;
+        ctx.moveTo(a.x * k + vx, a.y * k + vy);
+        ctx.lineTo(b.x * k + vx, b.y * k + vy);
+      }
       ctx.stroke();
     }
 
-    ctx.font = "11px Inter, system-ui, sans-serif";
+    ctx.font = `11px ${font}`;
     for (const node of sim.nodes) {
       if (!visible(node)) continue;
       const x = node.x * k + vx;
@@ -247,10 +336,63 @@ export function GraphDialog() {
       }
     }
   }, [showIsolated, showAll]);
+  const drawRef = useRef(draw);
+  drawRef.current = draw;
 
   useEffect(() => {
+    if (autoFitRef.current) fitView();
     draw();
-  }, [hovered, showIsolated, showAll, draw]);
+  }, [hovered, showIsolated, showAll, draw, fitView]);
+
+  // Canvas size follows the dialog; without this a window resize leaves a
+  // stretched, blurry bitmap until the next hover.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const observer = new ResizeObserver(() => {
+      if (autoFitRef.current) fitView();
+      draw();
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [graph, draw, fitView]);
+
+  // Native listener: React's onWheel is passive, so it can't preventDefault.
+  // Trackpad conventions: two-finger scroll pans, pinch (ctrlKey) or
+  // ⌘-scroll zooms around the cursor.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      autoFitRef.current = false;
+      const unit = event.deltaMode === 1 ? 16 : 1;
+      const view = viewRef.current;
+      if (event.ctrlKey || event.metaKey) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = event.clientX - rect.left;
+        const my = event.clientY - rect.top;
+        // Continuous factor: smooth for pinch deltas, capped per mouse notch.
+        const delta = Math.max(-30, Math.min(30, event.deltaY * unit));
+        const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, view.k * Math.exp(-delta * 0.01)));
+        // Keep the point under the cursor stable while zooming.
+        viewRef.current = {
+          k: next,
+          x: mx - ((mx - view.x) / view.k) * next,
+          y: my - ((my - view.y) / view.k) * next,
+        };
+      } else {
+        viewRef.current = {
+          ...view,
+          x: view.x - event.deltaX * unit,
+          y: view.y - event.deltaY * unit,
+        };
+      }
+      draw();
+    };
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", onWheel);
+  }, [graph, draw]);
 
   const nodeAt = (clientX: number, clientY: number): SimNode | null => {
     const canvas = canvasRef.current;
@@ -276,12 +418,20 @@ export function GraphDialog() {
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    if (dragRef.current) {
-      const dx = event.clientX - dragRef.current.x;
-      const dy = event.clientY - dragRef.current.y;
-      dragRef.current = { x: event.clientX, y: event.clientY };
-      viewRef.current.x += dx;
-      viewRef.current.y += dy;
+    const drag = dragRef.current;
+    if (drag) {
+      if (
+        !drag.moved &&
+        Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < CLICK_SLOP
+      ) {
+        return;
+      }
+      drag.moved = true;
+      autoFitRef.current = false;
+      viewRef.current.x += event.clientX - drag.x;
+      viewRef.current.y += event.clientY - drag.y;
+      drag.x = event.clientX;
+      drag.y = event.clientY;
       draw();
       return;
     }
@@ -291,24 +441,6 @@ export function GraphDialog() {
       hoverRef.current = rel;
       setHovered(rel);
     }
-  };
-
-  const onWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
-    event.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const mx = event.clientX - rect.left;
-    const my = event.clientY - rect.top;
-    const { x: vx, y: vy, k } = viewRef.current;
-    const next = Math.min(4, Math.max(0.2, k * (event.deltaY < 0 ? 1.08 : 0.93)));
-    // Keep the point under the cursor stable while zooming.
-    viewRef.current = {
-      k: next,
-      x: mx - ((mx - vx) / k) * next,
-      y: my - ((my - vy) / k) * next,
-    };
-    draw();
   };
 
   const openNote = (rel: string) => {
@@ -357,20 +489,30 @@ export function GraphDialog() {
               className="h-full w-full cursor-grab active:cursor-grabbing"
               onPointerMove={onPointerMove}
               onPointerDown={(event) => {
-                const node = nodeAt(event.clientX, event.clientY);
-                if (node) {
-                  openNote(node.rel);
-                  return;
-                }
-                dragRef.current = { x: event.clientX, y: event.clientY };
+                if (event.button !== 0) return;
+                // Capture so a pan that leaves the canvas still ends cleanly.
+                event.currentTarget.setPointerCapture(event.pointerId);
+                dragRef.current = {
+                  x: event.clientX,
+                  y: event.clientY,
+                  startX: event.clientX,
+                  startY: event.clientY,
+                  moved: false,
+                  rel: nodeAt(event.clientX, event.clientY)?.rel ?? null,
+                };
               }}
-              onPointerUp={() => (dragRef.current = null)}
-              onPointerLeave={() => {
+              onPointerUp={() => {
+                const drag = dragRef.current;
                 dragRef.current = null;
+                // A press that never became a pan is a click on its node.
+                if (drag && !drag.moved && drag.rel) openNote(drag.rel);
+              }}
+              onPointerCancel={() => (dragRef.current = null)}
+              onPointerLeave={() => {
+                if (dragRef.current) return;
                 hoverRef.current = null;
                 setHovered(null);
               }}
-              onWheel={onWheel}
             />
           )}
           {graph && graph.nodes.length > 0 && isolatedCount > 0 && (
