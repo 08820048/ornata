@@ -39,6 +39,12 @@
     0 18px 48px -26px rgba(0, 0, 0, 0.26);
   --shadow-workbench: 0 40px 90px -50px rgba(0, 0, 0, 0.5);
   --shadow-agent: 0 40px 100px -35px rgba(0, 0, 0, 0.7);
+
+  /* The app's link-graph folder colors (light theme), used only by the
+     graph demo — the site otherwise stays monochrome, like the app. */
+  --graph-1: #2a78d6;
+  --graph-2: #eda100;
+  --graph-3: #e87ba4;
 }
 
 @theme inline {
@@ -114,6 +120,12 @@
 }
 
 @layer utilities {
+  /* The app's note typeface, so the demo shows what a note actually
+     looks like in Ornata. */
+  .font-note {
+    font-family: Charter, "Bitstream Charter", Georgia, serif;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

@@ -66,7 +66,7 @@ export function AgentTrace() {
             <br />
             never imposed
           </p>
-          <span className="font-mono text-[10px] text-night-muted">04 / Pi</span>
+          <span className="font-mono text-[10px] text-night-muted">07 / Pi</span>
         </aside>
 
         <div className="px-5 py-20 sm:px-10 lg:px-16 lg:py-28">

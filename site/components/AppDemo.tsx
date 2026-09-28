@@ -176,16 +176,16 @@ function NotePane({ still }: { still: boolean }) {
           page's own heading outline. */}
       <div
         role="presentation"
-        className="text-[30px] font-[680] tracking-[-0.025em] text-foreground"
+        className="font-note text-[30px] font-[680] tracking-[-0.025em] text-foreground"
       >
         Q3 Roadmap
       </div>
-      <div className="mt-4 space-y-4 text-[15px] leading-[1.75] text-foreground/85">
+      <div className="mt-4 space-y-4 font-note text-[15.5px] leading-[1.7] text-foreground/85">
         <p>
           The quarter is about speed and focus — make writing feel instant, then
           let AssistantPi help only when it is invited.
         </p>
-        <h2 className="pt-1 text-[19px] font-semibold tracking-[-0.01em] text-foreground">Milestones</h2>
+        <h2 className="pt-1 text-[20px] font-[580] tracking-[-0.012em] text-foreground">Milestones</h2>
         <ul className="space-y-2">
           {[
             { done: true, text: "Persistent editor — instant note switching" },

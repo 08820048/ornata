@@ -15,6 +15,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 import { BacklinksDemo } from "@/components/BacklinksDemo";
+import { GraphDemo } from "@/components/GraphDemo";
 import { TasksDemo } from "@/components/TasksDemo";
 
 const FILES = [
@@ -23,6 +24,15 @@ const FILES = [
   { name: "Product principles.md", kind: "file", depth: 2 },
   { name: "Release notes.md", kind: "file", depth: 2 },
   { name: "Journal", kind: "folder", depth: 0 },
+] as const;
+
+const PRINCIPLES = [
+  "Own the files",
+  "Keep the interface quiet",
+  "Invite AI deliberately",
+  "Connect ideas freely",
+  "See the whole map",
+  "Track tasks globally",
 ] as const;
 
 const SEARCH_RESULTS = [
@@ -66,7 +76,8 @@ function Story({
   return (
     <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="hidden border-r border-border px-8 py-14 lg:block">
-        <span className="font-mono text-[10px] tracking-[0.14em] text-faint">
+        {/* Stays in view while the section scrolls past. */}
+        <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
           {index}
         </span>
       </aside>
@@ -372,28 +383,32 @@ export function FeaturesBento() {
               stays an instrument: quick to open, quiet while you write, and
               honest about where your files live.
             </p>
-            <div className="mt-12 flex max-w-3xl flex-wrap gap-x-10 gap-y-4 border-t border-border pt-5 font-mono text-[9px] uppercase tracking-[0.13em] text-muted-foreground">
-              <span>01 / Own the files</span>
-              <span>02 / Keep the interface quiet</span>
-              <span>03 / Invite AI deliberately</span>
-              <span>04 / Connect ideas freely</span>
-              <span>05 / Track tasks globally</span>
-            </div>
+            <ol className="mt-14 grid max-w-4xl grid-cols-2 border-t border-border sm:grid-cols-3">
+              {PRINCIPLES.map((principle, index) => (
+                <li
+                  key={principle}
+                  className="border-b border-border py-4 pr-6 font-mono text-[9px] uppercase leading-5 tracking-[0.13em] text-muted-foreground"
+                >
+                  <span className="block text-faint">{String(index + 1).padStart(2, "0")}</span>
+                  {principle}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
 
         <div id="features" className="scroll-mt-16">
           <Story
-            index="01 — 03"
+            index="01 / 06"
             eyebrow="Plain files, real folders"
             title="Your notes are already exported."
-            body="Choose any folder. Ornata writes ordinary Markdown into real directories, preserves frontmatter from other tools, and notices external edits when you return."
+            body="Choose any folder. Ornata writes ordinary Markdown into real directories, preserves frontmatter from other tools, and notices external edits when you return. When you need to share, export a PDF with a bookmark outline, or standalone HTML."
           >
             <FilesDemo />
           </Story>
 
           <Story
-            index="02 — 03"
+            index="02 / 06"
             eyebrow="A professional editor"
             title="Rich where it helps. Plain underneath."
             body="Write with clean typography, language-aware code, internal links, pasted images, and a magnetic outline for long notes. The file on disk stays readable everywhere."
@@ -403,7 +418,7 @@ export function FeaturesBento() {
           </Story>
 
           <Story
-            index="03 — 03"
+            index="03 / 06"
             eyebrow="Fast by default"
             title="Everything important is one keystroke away."
             body="Search titles and content, jump between notes, or run an action from ⌘K. Nothing competes with the page you're writing."
@@ -412,7 +427,7 @@ export function FeaturesBento() {
           </Story>
 
           <Story
-            index="04 — 05"
+            index="04 / 06"
             eyebrow="Connected knowledge"
             title="See who's linking to your notes."
             body="Backlinks show every note that references the current one, with folder context and snippet previews. Unlinked mentions surface title-only references that should be links."
@@ -422,10 +437,20 @@ export function FeaturesBento() {
           </Story>
 
           <Story
-            index="05 — 05"
+            index="05 / 06"
+            eyebrow="The link graph"
+            title="See how your ideas connect."
+            body="Every link becomes a map. Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text."
+          >
+            <GraphDemo />
+          </Story>
+
+          <Story
+            index="06 / 06"
             eyebrow="Vault-wide task tracking"
             title="Your open tasks, all in one place."
             body="Scan every markdown checkbox across your vault from a single view. Jump to any note to complete tasks, with live counts and folder context."
+            reverse
           >
             <TasksDemo />
           </Story>

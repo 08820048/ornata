@@ -26,7 +26,9 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - Account: not required
 - AI: AssistantPi runs as a local Pi sidecar; permission-gated (read-only by default), user chooses the model and provider
 - Compatibility: works on the same plain-Markdown vault as Obsidian; preserves external frontmatter
-- Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search
+- Linking: backlinks and unlinked mentions per note; a link graph tab (folder regions, search, link direction) and a local graph under each note
+- Export: PDF with a heading bookmark outline and paper/margin settings, standalone HTML, or the Markdown file itself
+- Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search, vault-wide open tasks
 - Updates: signed update feed; Developer ID signed and notarized builds
 - Languages: English, Simplified Chinese
 - License: MIT

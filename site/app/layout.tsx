@@ -15,7 +15,7 @@ const serif = Newsreader({
 
 const TITLE = "Ornata — Markdown, without the machinery";
 const DESCRIPTION =
-  "A focused, local-first Markdown editor for macOS. Plain files, real folders, and AssistantPi only when you invite it.";
+  "A focused, local-first Markdown editor for macOS. Plain files, real folders, a link graph of how your notes connect, and AssistantPi only when you invite it.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ornata.app"),

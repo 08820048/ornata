@@ -18,6 +18,14 @@ const FAQS: { q: string; a: string }[] = [
     a: "Yes. Ornata uses the same plain-Markdown vault with real folders, and preserves frontmatter from other tools. Point Ornata and Obsidian at the same folder and both just work.",
   },
   {
+    q: "Is there a graph view?",
+    a: "Yes. The link graph opens as a tab beside your notes: folders form soft colored regions, hovering a note traces its links and their direction, and you can search, drag, and zoom. Any note can also show its own local graph beneath the text.",
+  },
+  {
+    q: "Can I export my notes?",
+    a: "They're already Markdown files, so there's nothing to export to keep them. To share, export a note as a PDF — with a bookmark outline built from its headings, plus your choice of paper size and margins — or as standalone HTML. Each export offers Show in Finder when it's done.",
+  },
+  {
     q: "Is the macOS download signed?",
     a: "Yes. Production downloads are signed with an Apple Developer ID certificate, notarized by Apple, and distributed through Ornata’s signed update feed.",
   },
