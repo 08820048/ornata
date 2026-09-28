@@ -2,6 +2,10 @@ import { createInterface } from "node:readline";
 import {
   AuthStorage,
   createAgentSession,
+  createFindToolDefinition,
+  createGrepToolDefinition,
+  createLsToolDefinition,
+  createReadToolDefinition,
   DefaultResourceLoader,
   ModelRegistry,
   SessionManager,
@@ -14,10 +18,11 @@ import {
 import { Type } from "@sinclair/typebox";
 import { builtinProviders } from "@earendil-works/pi-ai/providers/all";
 import { getOAuthProvider } from "@earendil-works/pi-ai/oauth";
+import { VaultGuard } from "./vaultGuard";
 
 const PROTOCOL_VERSION = 1;
 const SYSTEM_PROMPT =
-  "You are AssistantPi, Ornata's notes assistant. Use the Ornata tools for every note operation. The host validates permissions and all data access. Never claim a mutation succeeded before its tool returns successfully. Use the least-destructive action that satisfies the request. The built-in read, grep, find, and ls tools inspect the vault folder directly; bash runs on the host and is subject to the permission mode the user selected; web_search and web_fetch reach the internet for anything outside the vault. Be concise and preserve the user's language. Avoid decorative emoji unless explicitly requested.";
+  "You are AssistantPi, Ornata's notes assistant. Use the Ornata tools for every note operation. The host validates permissions and all data access. Never claim a mutation succeeded before its tool returns successfully. Use the least-destructive action that satisfies the request. The read, grep, find, and ls tools inspect the vault folder only — paths outside it are refused; bash runs on the host and is subject to the permission mode the user selected; web_search and web_fetch reach the internet for anything outside the vault. Be concise and preserve the user's language. Avoid decorative emoji unless explicitly requested.";
 
 type EndpointApi = "openai-completions" | "anthropic-messages";
 
@@ -145,6 +150,34 @@ const notesTool = proxyTool(
     content: Type.Optional(Type.String()),
   }),
 );
+
+/**
+ * Pi's read/grep/find/ls, confined to the vault: every path (and find's
+ * glob) is checked by the guard before Pi touches the filesystem. They keep
+ * their built-in names, so they replace the unconfined originals.
+ */
+function confinedFileTools(vaultRoot: string): ToolDefinition[] {
+  const guard = new VaultGuard(vaultRoot);
+  const confine = (
+    definition: ToolDefinition,
+    check: (params: { path?: string; pattern?: string }) => void,
+  ): ToolDefinition => ({
+    ...definition,
+    execute(toolCallId, params, ...rest) {
+      check(params as { path?: string; pattern?: string });
+      return definition.execute(toolCallId, params, ...rest);
+    },
+  });
+  return [
+    confine(createReadToolDefinition(vaultRoot) as ToolDefinition, (p) => guard.resolve(p.path)),
+    confine(createLsToolDefinition(vaultRoot) as ToolDefinition, (p) => guard.resolve(p.path)),
+    confine(createGrepToolDefinition(vaultRoot) as ToolDefinition, (p) => guard.resolve(p.path)),
+    confine(createFindToolDefinition(vaultRoot) as ToolDefinition, (p) => {
+      guard.resolve(p.path);
+      guard.checkPattern(p.pattern);
+    }),
+  ];
+}
 
 /** Shell commands execute on the host via Ornata's permission-controlled bridge. */
 const bashTool = proxyTool(
@@ -405,8 +438,9 @@ async function initialize(message: InitMessage) {
     modelRegistry: registry,
     model,
     thinkingLevel: message.thinkingLevel ?? "medium",
-    // Built-in read/grep/find/ls operate on the vault folder inside the
-    // sidecar; everything else (bash + Ornata data) is proxied to the host.
+    // read/grep/find/ls run inside the sidecar, confined to the vault by
+    // confinedFileTools; everything else (bash + Ornata data) is proxied to
+    // the host, which enforces the permission mode.
     noTools: "all",
     tools: [
       "read", "grep", "find", "ls",
@@ -414,6 +448,7 @@ async function initialize(message: InitMessage) {
       notesTool.name,
     ],
     customTools: [
+      ...confinedFileTools(message.vaultRoot),
       notesTool,
       bashTool, webFetchTool, webSearchTool,
     ],
