@@ -54,6 +54,10 @@ export interface PaintInput {
   edges: SimEdge[];
   view: { x: number; y: number; k: number };
   hover: string | null;
+  /** The note being read: drawn in ink with a ring, always labeled. */
+  focus?: string | null;
+  /** Labeled regardless of zoom (the local graph's direct neighbors). */
+  alwaysLabel?: ReadonlySet<string>;
   showIsolated: boolean;
   palette: Palette;
   /** ms since the previous paint of an ongoing fade; 0 snaps to targets. */
@@ -76,6 +80,7 @@ const CELL = 64;
 /** Paint one frame. Returns true while any fade is still in progress. */
 export function paintGraph(input: PaintInput): boolean {
   const { ctx, width, height, nodes, edges, view, hover, showIsolated, palette } = input;
+  const focus = input.focus ?? null;
   const { x: vx, y: vy, k } = view;
   const ease = input.dt <= 0 ? 1 : 1 - Math.exp(-input.dt / FADE_TAU_MS);
   let settling = false;
@@ -142,9 +147,11 @@ export function paintGraph(input: PaintInput): boolean {
     const x = node.x * k + vx;
     const y = node.y * k + vy;
     const isHover = node.rel === hover;
+    const isFocus = node.rel === focus;
     const isNeighbor = hover !== null && neighbors.has(node.rel);
-    const dimmed = hover !== null && !isHover && !isNeighbor;
-    const target = isHover
+    const dimmed = hover !== null && !isHover && !isNeighbor && !isFocus;
+    const target =
+      isHover || isFocus
       ? { ...ink, a: 1 }
       : dimmed
         ? { ...faint, a: 0.35 }
@@ -152,7 +159,9 @@ export function paintGraph(input: PaintInput): boolean {
     node.tint = approach(node.tint, target);
 
     const zoomAlpha = clamp01((node.r * k - LABEL_FADE_START) / LABEL_FADE_RANGE);
-    const labelTarget = isHover || isNeighbor ? 1 : dimmed ? zoomAlpha * DIMMED_LABEL : zoomAlpha;
+    const baseLabel = input.alwaysLabel?.has(node.rel) ? 1 : zoomAlpha;
+    const labelTarget =
+      isHover || isNeighbor || isFocus ? 1 : dimmed ? baseLabel * DIMMED_LABEL : baseLabel;
     const labelNow =
       node.labelAlpha === undefined
         ? labelTarget
@@ -168,9 +177,18 @@ export function paintGraph(input: PaintInput): boolean {
     ctx.beginPath();
     ctx.arc(x, y, node.r, 0, Math.PI * 2);
     ctx.fill();
+    if (isFocus) {
+      // "You are here": a hairline ring just off the dot.
+      ctx.strokeStyle = palette.ink;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(x, y, node.r + 3.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
 
     if (node.labelAlpha > 0.02 && x > -200 && x < width + 20 && y > -20 && y < height + 20) {
-      labels.push({ node, x, y, priority: isHover ? 2 : isNeighbor ? 1 : 0 });
+      labels.push({ node, x, y, priority: isHover || isFocus ? 2 : isNeighbor ? 1 : 0 });
     }
   }
 
@@ -189,7 +207,8 @@ export function paintGraph(input: PaintInput): boolean {
       node.labelWidth = ctx.measureText(node.title).width;
       node.labelFont = font;
     }
-    const left = x + node.r + LABEL_GAP;
+    // Clear the focus ring as well as the dot.
+    const left = x + node.r + LABEL_GAP + (node.rel === focus ? 3.5 : 0);
     const rect: Rect = {
       x0: left - LABEL_PAD,
       y0: y - LABEL_SIZE / 2 - LABEL_PAD,

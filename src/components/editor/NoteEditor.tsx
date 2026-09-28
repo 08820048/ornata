@@ -33,6 +33,7 @@ import { usePaneDialogs } from "./usePaneDialogs";
 import { TitleInput } from "./TitleInput";
 import { BacklinksBadge, NoteBacklinks, useBacklinks } from "./NoteBacklinks";
 import { UnlinkedMentions } from "./UnlinkedMentions";
+import { LocalGraph } from "@/components/graph/LocalGraph";
 import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, type ImageTarget } from "./imageMenu";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
@@ -267,6 +268,7 @@ export const NoteEditor = memo(function NoteEditor({
                 onOpenChange={setBacklinksOpen}
                 sectionRef={backlinksRef}
               />
+              <LocalGraph rel={backlinkRel} active={active} />
               <UnlinkedMentions rel={backlinkRel} onLinked={backlinks.refresh} />
             </footer>
           )}

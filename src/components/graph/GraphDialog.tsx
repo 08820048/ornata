@@ -5,6 +5,7 @@ import { ipc } from "@/lib/ipc";
 import { vaultNote } from "@/lib/noteRef";
 import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
+import { FadeLoop, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
 import { paintGraph, type SimEdge, type SimNode } from "./graphPaint";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
@@ -19,8 +20,7 @@ const MAX_TICKS = 320;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 /** Auto-fit never magnifies a small graph past this. */
-const MAX_FIT_ZOOM = 1.5;
-const FIT_PADDING = 48;
+const FIT = { padding: 48, minZoom: MIN_ZOOM, maxZoom: 1.5 };
 
 /**
  * The vault's link graph, laid out by d3-force and drawn on a plain canvas.
@@ -53,12 +53,14 @@ export function GraphDialog() {
     rel: string | null;
   } | null>(null);
   const autoFitRef = useRef(true);
-  /** Fade loop: the pending frame, and when the last frame painted (null
-   *  while idle, so a fresh fade starts from a normal frame step). */
-  const fadeFrameRef = useRef(0);
-  const lastPaintRef = useRef<number | null>(null);
   const showIsolatedRef = useRef(showIsolated);
   showIsolatedRef.current = showIsolated;
+  // The note being read gets the "you are here" ring.
+  const focus = useVault((s) =>
+    s.view?.type === "note" && s.view.note.kind === "vault" ? s.view.note.rel : null,
+  );
+  const focusRef = useRef(focus);
+  focusRef.current = focus;
   const t = useT();
 
   useEffect(() => {
@@ -192,9 +194,8 @@ export function GraphDialog() {
         sim.tick();
         ticks += 1;
       }
-      if (autoFitRef.current) fitView();
-      // Via the ref: toggles mid-layout change what draw() shows.
-      drawRef.current();
+      if (autoFitRef.current) fitToLayout();
+      draw();
       if (ticks < MAX_TICKS && sim.alpha() > sim.alphaMin()) {
         frame = requestAnimationFrame(step);
       }
@@ -204,112 +205,50 @@ export function GraphDialog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph, showAll, layoutIsolates]);
 
-  const cssVar = (name: string, fallback: string) =>
-    getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  const visibleNode = (node: SimNode) => showIsolatedRef.current || !node.isolated;
 
   /** Frame every visible node, centered, without magnifying tiny graphs. */
-  const fitView = useCallback(() => {
+  const fitToLayout = useCallback(() => {
     const canvas = canvasRef.current;
     const sim = simRef.current;
     if (!canvas || !sim) return;
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const node of sim.nodes) {
-      if (node.isolated && !showIsolatedRef.current) continue;
-      minX = Math.min(minX, node.x - node.r);
-      minY = Math.min(minY, node.y - node.r);
-      maxX = Math.max(maxX, node.x + node.r);
-      maxY = Math.max(maxY, node.y + node.r);
-    }
-    if (minX === Infinity) return;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const k = Math.min(
-      MAX_FIT_ZOOM,
-      Math.max(
-        MIN_ZOOM,
-        Math.min(
-          (width - FIT_PADDING * 2) / Math.max(maxX - minX, 1),
-          (height - FIT_PADDING * 2) / Math.max(maxY - minY, 1),
-        ),
-      ),
-    );
-    viewRef.current = {
-      k,
-      x: width / 2 - ((minX + maxX) / 2) * k,
-      y: height / 2 - ((minY + maxY) / 2) * k,
-    };
+    const view = fitView(sim.nodes, canvas.clientWidth, canvas.clientHeight, visibleNode, FIT);
+    if (view) viewRef.current = view;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const sim = simRef.current;
-    if (!canvas || !sim) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const pixelWidth = Math.round(width * dpr);
-    const pixelHeight = Math.round(height * dpr);
-    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
-      canvas.width = pixelWidth;
-      canvas.height = pixelHeight;
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    const now = performance.now();
-    const last = lastPaintRef.current;
-    const settling = paintGraph({
-      ctx,
-      width,
-      height,
-      nodes: sim.nodes,
-      edges: sim.edges,
-      view: viewRef.current,
-      hover: hoverRef.current,
-      showIsolated,
-      palette: {
-        ink: cssVar("--ink", "#191919"),
-        muted: cssVar("--muted", "#6e6e6a"),
-        faint: cssVar("--faint", "#a3a39e"),
-        line: cssVar("--line", "#e3e3e0"),
-        bg: cssVar("--bg", "#fbfbfa"),
-        font: cssVar("--font-sans", "system-ui, sans-serif"),
-      },
-      dt: last === null ? 16 : Math.min(64, now - last),
-    });
-    // Keep painting until every fade has landed; one frame in flight at most.
-    if (settling) {
-      lastPaintRef.current = now;
-      if (fadeFrameRef.current === 0) {
-        fadeFrameRef.current = requestAnimationFrame(() => {
-          fadeFrameRef.current = 0;
-          drawRef.current();
+  // Paints read refs only, so one loop serves the dialog's whole lifetime
+  // and toggles mid-layout show up on the next frame.
+  const loop = useMemo(
+    () =>
+      new FadeLoop((dt) => {
+        const canvas = canvasRef.current;
+        const sim = simRef.current;
+        if (!canvas || !sim) return false;
+        const surface = prepareCanvas(canvas);
+        if (!surface) return false;
+        return paintGraph({
+          ...surface,
+          nodes: sim.nodes,
+          edges: sim.edges,
+          view: viewRef.current,
+          hover: hoverRef.current,
+          focus: focusRef.current,
+          showIsolated: showIsolatedRef.current,
+          palette: readPalette(),
+          dt,
         });
-      }
-    } else {
-      lastPaintRef.current = null;
-    }
-  }, [showIsolated, showAll]);
-  const drawRef = useRef(draw);
-  drawRef.current = draw;
-
-  useEffect(
-    () => () => {
-      cancelAnimationFrame(fadeFrameRef.current);
-      fadeFrameRef.current = 0;
-      lastPaintRef.current = null;
-    },
-    [open],
+      }),
+    [],
   );
+  const draw = loop.draw;
+
+  useEffect(() => () => loop.cancel(), [open, loop]);
 
   useEffect(() => {
-    if (autoFitRef.current) fitView();
+    if (autoFitRef.current) fitToLayout();
     draw();
-  }, [hovered, showIsolated, showAll, draw, fitView]);
+  }, [hovered, showIsolated, showAll, draw, fitToLayout]);
 
   // Canvas size follows the dialog; without this a window resize leaves a
   // stretched, blurry bitmap until the next hover.
@@ -317,12 +256,12 @@ export function GraphDialog() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const observer = new ResizeObserver(() => {
-      if (autoFitRef.current) fitView();
+      if (autoFitRef.current) fitToLayout();
       draw();
     });
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [graph, draw, fitView]);
+  }, [graph, draw, fitToLayout]);
 
   // Native listener: React's onWheel is passive, so it can't preventDefault.
   // Trackpad conventions: two-finger scroll pans, pinch (ctrlKey) or
@@ -366,22 +305,13 @@ export function GraphDialog() {
     const sim = simRef.current;
     if (!canvas || !sim) return null;
     const rect = canvas.getBoundingClientRect();
-    const { x: vx, y: vy, k } = viewRef.current;
-    const px = clientX - rect.left;
-    const py = clientY - rect.top;
-    let best: SimNode | null = null;
-    let bestDist = Infinity;
-    for (const node of sim.nodes) {
-      if (node.isolated && !showIsolated) continue;
-      const dx = px - (node.x * k + vx);
-      const dy = py - (node.y * k + vy);
-      const dist = Math.hypot(dx, dy);
-      if (dist < Math.max(node.r + 3, 8) && dist < bestDist) {
-        best = node;
-        bestDist = dist;
-      }
-    }
-    return best;
+    return nodeAtPoint(
+      sim.nodes,
+      viewRef.current,
+      clientX - rect.left,
+      clientY - rect.top,
+      visibleNode,
+    );
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
