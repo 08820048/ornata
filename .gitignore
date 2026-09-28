@@ -46,6 +46,6 @@ AuthKey_*.p8
 .claude
 .mimosa/
 
-# Internal design/research notes — not shipped
-/docs/
-!docs/review-*.md
+# docs notes are tracked (overrides the *.md ignore above)
+!docs/
+!docs/**
