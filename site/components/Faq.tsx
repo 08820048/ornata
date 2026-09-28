@@ -39,7 +39,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What can AssistantPi access?",
-    a: "Read only is the default. Read & write can create and update content but cannot run shell commands or perform destructive structured actions. Full Access enables every Pi tool, including shell commands, plus complete Ornata CRUD. You choose the mode in the composer before sending.",
+    a: "Read only is the default: AssistantPi can read and search, and browse the web. Ask to edit lets it propose any change — edits, deletes, or a shell command — and each one waits for your approval. Auto runs note and shell operations, including delete, without asking. You choose the mode in the composer before sending.",
   },
   {
     q: "Does AssistantPi keep everything on my Mac?",
