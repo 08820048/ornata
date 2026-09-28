@@ -249,6 +249,32 @@ pub fn agent_send(message: String, state: State<'_, AgentState>) -> AppResult<()
     })
 }
 
+/// Start a fresh conversation; the previous one stays saved in the vault.
+#[tauri::command]
+pub fn agent_new_chat(state: State<'_, AgentState>) -> AppResult<()> {
+    send_request(&state, "newChat", json!({}))
+}
+
+/// Ask for the saved conversations; they arrive as a `chats` event.
+#[tauri::command]
+pub fn agent_list_chats(state: State<'_, AgentState>) -> AppResult<()> {
+    send_request(&state, "listChats", json!({}))
+}
+
+/// Reopen a saved conversation (the sidecar only accepts this vault's).
+#[tauri::command]
+pub fn agent_open_chat(path: String, state: State<'_, AgentState>) -> AppResult<()> {
+    send_request(&state, "openChat", json!({ "path": path }))
+}
+
+fn send_request(state: &State<'_, AgentState>, kind: &str, fields: Value) -> AppResult<()> {
+    let mut message = json!({ "type": kind, "requestId": uuid::Uuid::new_v4().to_string() });
+    if let (Some(target), Some(extra)) = (message.as_object_mut(), fields.as_object()) {
+        target.extend(extra.clone());
+    }
+    with_backend(state, |backend| backend.send(&message))
+}
+
 #[tauri::command]
 pub fn agent_set_permission(
     permission: AgentPermission,

@@ -57,6 +57,10 @@ export const ipc = {
   agentStart: () => call<AgentStatus>("agent_start"),
   agentSend: (message: string) => call<void>("agent_send", { message }),
   agentAbort: () => call<void>("agent_abort"),
+  /** Conversation controls; results arrive as `history` / `chats` agent events. */
+  agentNewChat: () => call<void>("agent_new_chat"),
+  agentListChats: () => call<void>("agent_list_chats"),
+  agentOpenChat: (path: string) => call<void>("agent_open_chat", { path }),
   agentRespondApproval: (id: string, allow: boolean) =>
     call<void>("agent_respond_approval", { id, allow }),
   agentStop: () => call<void>("agent_stop"),

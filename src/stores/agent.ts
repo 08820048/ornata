@@ -48,6 +48,15 @@ export interface AgentActivity {
   status: "running" | "done" | "error";
 }
 
+/** A saved conversation (stored under the vault's .ornata/agent/sessions). */
+export interface AgentChat {
+  id: string;
+  path: string;
+  title: string;
+  modified: string;
+  current: boolean;
+}
+
 export interface AgentApproval {
   id: string;
   resource: string;
@@ -70,7 +79,12 @@ interface AgentStore {
   vaultRoot: string | null;
   permission: AgentPermission;
   selection: AgentSelection | null;
+  /** Saved conversations, newest first; null until first listed. */
+  chats: AgentChat[] | null;
   initialize: (root: string) => Promise<void>;
+  newChat: () => Promise<void>;
+  listChats: () => Promise<void>;
+  openChat: (path: string) => Promise<void>;
   start: () => Promise<boolean>;
   send: (message: string, note?: AgentNoteReference | null) => Promise<void>;
   abort: () => Promise<void>;
@@ -192,6 +206,24 @@ function handleAgentEvent(event: Record<string, unknown>) {
     return;
   }
 
+  // A conversation was (re)opened: the sidecar replays its transcript.
+  if (type === "history" && Array.isArray(event.messages)) {
+    const messages: AgentMessage[] = [];
+    for (const entry of event.messages) {
+      const item = object(entry);
+      if (!item || typeof item.content !== "string") continue;
+      if (item.role !== "user" && item.role !== "assistant") continue;
+      messages.push({ id: id(), role: item.role, content: item.content });
+    }
+    useAgent.setState({ messages, activities: [], streamingMessageId: null, approval: null, error: null });
+    return;
+  }
+
+  if (type === "chats" && Array.isArray(event.chats)) {
+    useAgent.setState({ chats: event.chats as AgentChat[] });
+    return;
+  }
+
   if (type === "runStarted") {
     const messageId = id();
     useAgent.setState((state) => ({
@@ -306,6 +338,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
   vaultRoot: null,
   permission: "readOnly",
   selection: null,
+  chats: null,
 
   initialize: async (root) => {
     const previousRoot = get().vaultRoot;
@@ -313,7 +346,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
     await ensureListeners();
     if (previousRoot && previousRoot !== root) {
       await ipc.agentStop().catch(() => undefined);
-      set({ messages: [], activities: [], model: null, selection: null });
+      set({ messages: [], activities: [], model: null, selection: null, chats: null });
     }
     await ipc.agentSetPermission(get().permission);
     const connectionState = await ipc.agentConnectionsList();
@@ -394,6 +427,30 @@ export const useAgent = create<AgentStore>((set, get) => ({
   abort: async () => {
     try {
       await ipc.agentAbort();
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  newChat: async () => {
+    try {
+      await ipc.agentNewChat();
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  listChats: async () => {
+    try {
+      await ipc.agentListChats();
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  openChat: async (path) => {
+    try {
+      await ipc.agentOpenChat(path);
     } catch (error) {
       set({ error: String(error) });
     }

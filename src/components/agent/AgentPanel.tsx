@@ -26,6 +26,7 @@ import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { ApprovalPreview } from "@/components/agent/ApprovalPreview";
+import { ChatControls } from "@/components/agent/ChatControls";
 import { EASE_OUT } from "@/lib/ease";
 import { ipc } from "@/lib/ipc";
 import { noteKey, noteTitle } from "@/lib/noteRef";
@@ -199,7 +200,8 @@ export function AgentPanel() {
             }}
             className="pointer-events-auto absolute bottom-3 right-3 flex origin-bottom-right flex-col overflow-hidden rounded-[20px] bg-bg shadow-2xl shadow-black/20 will-change-[transform,opacity] dark:shadow-black/60"
           >
-        <header className="relative grid h-14 shrink-0 place-items-center px-14">
+        <header className="relative grid h-14 shrink-0 place-items-center px-24">
+          {!starting && !unavailable && !showSetup && <ChatControls disabled={running} />}
           <button
             type="button"
             disabled={running}

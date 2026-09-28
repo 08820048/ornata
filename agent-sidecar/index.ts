@@ -1,4 +1,5 @@
 import { createInterface } from "node:readline";
+import path from "node:path";
 import {
   AuthStorage,
   createAgentSession,
@@ -18,6 +19,7 @@ import {
 import { Type } from "@sinclair/typebox";
 import { builtinProviders } from "@earendil-works/pi-ai/providers/all";
 import { getOAuthProvider } from "@earendil-works/pi-ai/oauth";
+import { transcript, userRequest } from "./transcript";
 import { VaultGuard } from "./vaultGuard";
 
 const PROTOCOL_VERSION = 1;
@@ -49,6 +51,9 @@ type InboundMessage =
   | { type: "prompt"; requestId: string; message: string }
   | { type: "abort"; requestId: string }
   | { type: "compact"; requestId: string }
+  | { type: "newChat"; requestId: string }
+  | { type: "listChats"; requestId: string }
+  | { type: "openChat"; requestId: string; path: string }
   | { type: "shutdown" }
   | {
       type: "toolResponse";
@@ -64,6 +69,11 @@ interface PendingTool {
 }
 
 let session: AgentSession | null = null;
+/** Everything needed to (re)build a session around another conversation. */
+let sessionDeps: {
+  vaultRoot: string;
+  build: (sessionManager: SessionManager) => Promise<AgentSession>;
+} | null = null;
 let unsubscribe: (() => void) | null = null;
 let activeAuthStorage: AuthStorage | null = null;
 let activeAuthProvider: string | null = null;
@@ -432,7 +442,7 @@ async function initialize(message: InitMessage) {
     systemPrompt: SYSTEM_PROMPT,
   });
   await resourceLoader.reload();
-  const created = await createAgentSession({
+  const build = async (sessionManager: SessionManager) => (await createAgentSession({
     cwd: message.vaultRoot,
     authStorage,
     modelRegistry: registry,
@@ -456,13 +466,12 @@ async function initialize(message: InitMessage) {
     settingsManager: SettingsManager.inMemory({
       compaction: { enabled: true },
     }),
-    sessionManager: SessionManager.inMemory(message.vaultRoot),
-  });
-  session = created.session;
-  unsubscribe = session.subscribe((event) => {
-    const normalized = normalizeEvent(event);
-    if (normalized) send({ type: "event", event: normalized });
-  });
+    sessionManager,
+  })).session;
+  sessionDeps = { vaultRoot: message.vaultRoot, build };
+  // Pick up the most recent conversation, so a restart keeps both the
+  // transcript and what the model remembers.
+  await startSession(SessionManager.continueRecent(message.vaultRoot, sessionsDir(message.vaultRoot)));
   send({
     type: "ready",
     protocolVersion: PROTOCOL_VERSION,
@@ -470,6 +479,23 @@ async function initialize(message: InitMessage) {
     model: message.model,
     capabilities: ["streaming", "abort", "compaction", "hostTools"],
   });
+}
+
+/** Conversations live with the vault's app data, not on one machine. */
+function sessionsDir(vaultRoot: string) {
+  return path.join(vaultRoot, ".ornata", "agent", "sessions");
+}
+
+async function startSession(sessionManager: SessionManager) {
+  if (!sessionDeps) throw new Error("Agent is not initialized");
+  unsubscribe?.();
+  session?.dispose();
+  session = await sessionDeps.build(sessionManager);
+  unsubscribe = session.subscribe((event) => {
+    const normalized = normalizeEvent(event);
+    if (normalized) send({ type: "event", event: normalized });
+  });
+  send({ type: "event", event: { type: "history", chatId: session.sessionId, messages: transcript(session) } });
 }
 
 async function handle(message: InboundMessage) {
@@ -544,6 +570,34 @@ async function handle(message: InboundMessage) {
     send({ type: "response", requestId: message.requestId, ok: true });
   } else if (message.type === "compact") {
     await session.compact();
+    send({ type: "response", requestId: message.requestId, ok: true });
+  } else if (message.type === "newChat" && sessionDeps) {
+    await startSession(SessionManager.create(sessionDeps.vaultRoot, sessionsDir(sessionDeps.vaultRoot)));
+    send({ type: "response", requestId: message.requestId, ok: true });
+  } else if (message.type === "listChats" && sessionDeps) {
+    const chats = await SessionManager.list(sessionDeps.vaultRoot, sessionsDir(sessionDeps.vaultRoot));
+    // An event rather than a response: the host forwards events to the panel.
+    send({
+      type: "event",
+      event: { type: "chats", chats: chats
+        .filter((chat) => chat.messageCount > 0)
+        .sort((a, b) => b.modified.getTime() - a.modified.getTime())
+        .map((chat) => ({
+          id: chat.id,
+          path: chat.path,
+          title: chat.name ?? userRequest(chat.firstMessage).slice(0, 80),
+          modified: chat.modified.toISOString(),
+          current: chat.id === session?.sessionId,
+        })) },
+    });
+  } else if (message.type === "openChat" && sessionDeps) {
+    // Only conversations stored for this vault can be opened.
+    const dir = sessionsDir(sessionDeps.vaultRoot);
+    const target = path.resolve(message.path);
+    if (path.relative(dir, target).startsWith("..") || path.isAbsolute(path.relative(dir, target))) {
+      throw new Error("Not a conversation from this vault");
+    }
+    await startSession(SessionManager.open(target, dir));
     send({ type: "response", requestId: message.requestId, ok: true });
   }
 }
