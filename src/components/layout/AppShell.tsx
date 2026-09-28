@@ -63,12 +63,12 @@ export function AppShell() {
       </motion.div>
 
       <main className="relative flex min-w-0 flex-1 flex-col">
-        {/* Row 1 — titlebar: sidebar toggle + open-note tabs. The strip is
-            recessed (panel); the active tab takes the content bg so it reads
-            as merged with the pane below, code-editor style. */}
+        {/* Row 1 — titlebar: sidebar toggle + open-note tabs. The strip shares
+            the sidebar's panel tone; the active tab takes the content bg so it
+            reads as merged with the pane below, code-editor style. */}
         <motion.div
           data-tauri-drag-region
-          className="flex h-11 shrink-0 items-stretch gap-1.5 bg-sunken pr-3"
+          className="flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pr-3"
           animate={{ paddingLeft: sidebarHidden ? 84 : 10 }}
           initial={false}
           transition={SPRING_PANEL}
