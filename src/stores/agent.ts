@@ -112,6 +112,8 @@ interface AgentStore {
     message: string,
     note?: AgentNoteReference | null,
     extra?: AgentExtraContext,
+    /** Shown in the transcript instead of `message` (note actions). */
+    label?: string,
   ) => Promise<void>;
   abort: () => Promise<void>;
   respondApproval: (allow: boolean) => Promise<void>;
@@ -413,7 +415,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
     }
   },
 
-  send: async (message, note = null, extra = {}) => {
+  send: async (message, note = null, extra = {}, label) => {
     const text = message.trim();
     if (!text || get().connection === "running") return;
     const selection = get().selection;
@@ -427,7 +429,7 @@ export const useAgent = create<AgentStore>((set, get) => ({
         {
           id: id(),
           role: "user",
-          content: text,
+          content: label ?? text,
           selection: selection ?? undefined,
         },
       ],

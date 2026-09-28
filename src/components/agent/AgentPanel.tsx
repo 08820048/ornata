@@ -28,6 +28,7 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { ApprovalPreview } from "@/components/agent/ApprovalPreview";
 import { ChatControls } from "@/components/agent/ChatControls";
 import { AgentChanges } from "@/components/agent/AgentChanges";
+import { NoteActions, type NOTE_ACTIONS } from "@/components/agent/NoteActions";
 import {
   LinkedToggle,
   MentionChip,
@@ -169,6 +170,19 @@ export function AgentPanel() {
       textareaRef.current?.setSelectionRange(at, at);
       setCaret(at);
     });
+  };
+
+  const runNoteAction = (action: (typeof NOTE_ACTIONS)[number]) => {
+    if (!currentNote || connection === "running") return;
+    // Suggest links always gets the existing links, so it proposes new ones.
+    const withLinks = action.id === "suggestLinks" || includeLinked;
+    void send(
+      t(action.prompt),
+      currentNote,
+      { mentions, linked: withLinks && linked ? linked : [] },
+      t(action.label),
+    );
+    setMentions([]);
   };
 
   const submit = () => {
@@ -453,6 +467,9 @@ export function AgentPanel() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              {currentNote && !running && !starting && !draft.trim() && (
+                <NoteActions onRun={runNoteAction} />
+              )}
               {/* Anchored to the composer box: floats above the whole composer. */}
               {mention && (
                 <MentionPicker
