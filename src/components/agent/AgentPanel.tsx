@@ -27,6 +27,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { ApprovalPreview } from "@/components/agent/ApprovalPreview";
 import { ChatControls } from "@/components/agent/ChatControls";
+import { AgentChanges } from "@/components/agent/AgentChanges";
 import { EASE_OUT } from "@/lib/ease";
 import { ipc } from "@/lib/ipc";
 import { noteKey, noteTitle } from "@/lib/noteRef";
@@ -285,6 +286,9 @@ export function AgentPanel() {
                           <ResponseLoading />
                         )}
                       </div>
+                      {message.changes && message.changes.length > 0 && (
+                        <AgentChanges changes={message.changes} />
+                      )}
                       {message.content && (
                         <div className="-mb-2 -mr-2 mt-1 flex justify-end">
                           <CopyButton

@@ -12,6 +12,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::agent_connection::{self, AgentConnectionConfig};
 use crate::agent_tools;
 use crate::agent_tools::AgentPermission;
+use crate::agent_undo::{self, UndoLog};
 use crate::commands::AppState;
 use crate::error::{AppError, AppResult};
 
@@ -24,6 +25,7 @@ pub struct AgentState {
     permission: Mutex<AgentPermission>,
     approvals: Mutex<HashMap<String, mpsc::SyncSender<bool>>>,
     oauth: Mutex<Option<OAuthBackend>>,
+    undo: UndoLog,
 }
 
 trait AgentBackend {
@@ -744,7 +746,8 @@ fn handle_tool_request(app: &AppHandle, value: &Value) {
     let Some(request_id) = value.get("requestId").and_then(Value::as_str) else {
         return;
     };
-    let result = (|| -> AppResult<agent_tools::BridgeOutcome> {
+    // Alongside the outcome: how to undo it (edits and creates), if it lands.
+    let result = (|| -> AppResult<(agent_tools::BridgeOutcome, Option<agent_undo::Pending>, std::path::PathBuf)> {
         let request: agent_tools::BridgeRequest = serde_json::from_value(
             value
                 .get("request")
@@ -792,19 +795,25 @@ fn handle_tool_request(app: &AppHandle, value: &Value) {
         } else {
             permission
         };
-        agent_tools::execute(&root, effective_permission, request)
+        let pending = agent_undo::before(&root, &request);
+        let outcome = agent_tools::execute(&root, effective_permission, request)?;
+        Ok((outcome, pending, root))
     })();
 
+    let mut undo = None;
     let (response, mutation) = match result {
-        Ok(outcome) => (
-            json!({
-                "type": "toolResponse",
-                "requestId": request_id,
-                "ok": true,
-                "value": outcome.value,
-            }),
-            outcome.mutation,
-        ),
+        Ok((outcome, pending, root)) => {
+            undo = pending.and_then(|pending| agent_undo::after(&root, pending, &outcome.value));
+            (
+                json!({
+                    "type": "toolResponse",
+                    "requestId": request_id,
+                    "ok": true,
+                    "value": outcome.value,
+                }),
+                outcome.mutation,
+            )
+        }
         Err(error) => (
             json!({
                 "type": "toolResponse",
@@ -824,6 +833,36 @@ fn handle_tool_request(app: &AppHandle, value: &Value) {
     } else if let Some(kind) = mutation {
         let _ = app.emit("ornata-agent-mutated", kind);
     }
+    if let Some(record) = undo {
+        let id = uuid::Uuid::new_v4().to_string();
+        emit_event(
+            app,
+            json!({
+                "type": "undoAvailable",
+                "id": id,
+                "action": record.action(),
+                "path": record.rel(),
+            }),
+        );
+        state.undo.insert(id, record);
+    }
+}
+
+/// Reverse one of AssistantPi's edits or creates (see agent_undo).
+#[tauri::command]
+pub fn agent_undo(app: AppHandle, id: String, state: State<'_, AgentState>) -> AppResult<()> {
+    let record = state
+        .undo
+        .take(&id)
+        .ok_or_else(|| AppError::NotFound("This change can no longer be undone".into()))?;
+    let root = app.state::<AppState>().root()?;
+    if let Err(error) = agent_undo::apply(&root, &record) {
+        // Keep it: the user may put the note back and try again.
+        state.undo.insert(id, record);
+        return Err(error);
+    }
+    let _ = app.emit("ornata-agent-mutated", agent_tools::MutationKind::Notes);
+    Ok(())
 }
 
 fn emit_event(app: &AppHandle, event: Value) {

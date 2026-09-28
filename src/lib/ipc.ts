@@ -61,6 +61,7 @@ export const ipc = {
   agentNewChat: () => call<void>("agent_new_chat"),
   agentListChats: () => call<void>("agent_list_chats"),
   agentOpenChat: (path: string) => call<void>("agent_open_chat", { path }),
+  agentUndo: (id: string) => call<void>("agent_undo", { id }),
   agentRespondApproval: (id: string, allow: boolean) =>
     call<void>("agent_respond_approval", { id, allow }),
   agentStop: () => call<void>("agent_stop"),

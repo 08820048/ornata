@@ -3,6 +3,7 @@ mod app_data;
 mod agent_connection;
 mod agent_docs;
 mod agent_tools;
+mod agent_undo;
 mod assets;
 mod backlinks;
 mod commands;
@@ -64,6 +65,7 @@ pub fn run() {
             agent::agent_new_chat,
             agent::agent_list_chats,
             agent::agent_open_chat,
+            agent::agent_undo,
             agent::agent_respond_approval,
             agent::agent_providers_list,
             agent::agent_models_list,

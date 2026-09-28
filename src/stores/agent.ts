@@ -26,6 +26,17 @@ export interface AgentMessage {
   role: "user" | "assistant";
   content: string;
   selection?: AgentSelection;
+  /** Notes this reply edited or created, each undoable once. */
+  changes?: AgentChange[];
+}
+
+export interface AgentChange {
+  /** Undo id issued by the host. */
+  id: string;
+  action: "edit" | "create";
+  path: string;
+  state: "ready" | "undoing" | "undone" | "failed";
+  error?: string;
 }
 
 export interface AgentNoteReference {
@@ -85,6 +96,7 @@ interface AgentStore {
   newChat: () => Promise<void>;
   listChats: () => Promise<void>;
   openChat: (path: string) => Promise<void>;
+  undoChange: (changeId: string) => Promise<void>;
   start: () => Promise<boolean>;
   send: (message: string, note?: AgentNoteReference | null) => Promise<void>;
   abort: () => Promise<void>;
@@ -216,6 +228,29 @@ function handleAgentEvent(event: Record<string, unknown>) {
       messages.push({ id: id(), role: item.role, content: item.content });
     }
     useAgent.setState({ messages, activities: [], streamingMessageId: null, approval: null, error: null });
+    return;
+  }
+
+  // A change the agent just made can be reversed; attach it to the reply
+  // that made it (the streaming one, else the latest).
+  if (
+    type === "undoAvailable" &&
+    typeof event.id === "string" &&
+    typeof event.path === "string" &&
+    (event.action === "edit" || event.action === "create")
+  ) {
+    const change: AgentChange = { id: event.id, action: event.action, path: event.path, state: "ready" };
+    useAgent.setState((state) => {
+      const target =
+        state.streamingMessageId ??
+        [...state.messages].reverse().find((message) => message.role === "assistant")?.id;
+      if (!target) return {};
+      return {
+        messages: state.messages.map((message) =>
+          message.id === target ? { ...message, changes: [...(message.changes ?? []), change] } : message,
+        ),
+      };
+    });
     return;
   }
 
@@ -445,6 +480,29 @@ export const useAgent = create<AgentStore>((set, get) => ({
       await ipc.agentListChats();
     } catch (error) {
       set({ error: String(error) });
+    }
+  },
+
+  undoChange: async (changeId) => {
+    const update = (patch: Partial<AgentChange>) =>
+      set((state) => ({
+        messages: state.messages.map((message) =>
+          message.changes?.some((change) => change.id === changeId)
+            ? {
+                ...message,
+                changes: message.changes.map((change) =>
+                  change.id === changeId ? { ...change, ...patch } : change,
+                ),
+              }
+            : message,
+        ),
+      }));
+    update({ state: "undoing", error: undefined });
+    try {
+      await ipc.agentUndo(changeId);
+      update({ state: "undone" });
+    } catch (error) {
+      update({ state: "failed", error: error instanceof Error ? error.message : String(error) });
     }
   },
 
