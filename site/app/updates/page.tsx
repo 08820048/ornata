@@ -244,14 +244,22 @@ const RELEASES: Release[] = [
   },
 ];
 
+const LATEST = RELEASES[0];
+const UPDATES_DESCRIPTION = `Release notes for Ornata on macOS. Version ${LATEST.version}: ${LATEST.summary}`;
+
 export const metadata: Metadata = {
-  title: "Updates — Ornata",
-  description: "See what is new in every version of Ornata for macOS.",
+  title: "Updates",
+  description: UPDATES_DESCRIPTION,
   alternates: { canonical: "/updates" },
   openGraph: {
     title: "Updates — Ornata",
-    description: "See what is new in every version of Ornata for macOS.",
+    description: UPDATES_DESCRIPTION,
     url: "https://ornata.app/updates",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Updates — Ornata",
+    description: UPDATES_DESCRIPTION,
   },
 };
 
@@ -277,9 +285,8 @@ export default function UpdatesPage() {
                     What&apos;s new in Ornata.
                   </h1>
                   <p className="mt-6 max-w-xl text-pretty text-[15px] leading-7 text-muted-foreground">
-                    New capabilities, thoughtful improvements, and the fixes
-                    that make Ornata quieter and more dependable with every
-                    release.
+                    Version {LATEST.version} ({LATEST.date}): {LATEST.summary}{" "}
+                    Earlier releases are listed below.
                   </p>
                 </div>
                 <DownloadButton label="Download latest" size="md" />

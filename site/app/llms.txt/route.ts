@@ -1,4 +1,5 @@
 import { DMG, VERSION } from "@/lib/config";
+import { FAQS } from "@/lib/faq";
 
 // llms.txt — a plain index for AI crawlers and answer engines.
 // Spec: https://llmstxt.org
@@ -32,6 +33,10 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - Updates: signed update feed; Developer ID signed and notarized builds
 - Languages: English, Simplified Chinese
 - License: MIT
+
+## Questions
+
+${FAQS.map((item) => `- **${item.q}**\n  ${item.a}`).join("\n")}
 `;
 
   return new Response(body, {

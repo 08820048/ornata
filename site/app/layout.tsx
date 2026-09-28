@@ -13,16 +13,18 @@ const serif = Newsreader({
   display: "swap",
 });
 
-const TITLE = "Ornata — Markdown, without the machinery";
+const TITLE = "Ornata — local-first Markdown notes for macOS";
 const DESCRIPTION =
-  "A focused, local-first Markdown editor for macOS. Plain files, real folders, a link graph of how your notes connect, and AssistantPi only when you invite it.";
+  "Ornata is a free, local-first Markdown notes app for macOS. Notes stay as plain .md files in a folder you own, with a link graph, backlinks, and an assistant that only acts when you allow it.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ornata.app"),
-  title: TITLE,
+  title: {
+    default: TITLE,
+    template: "%s — Ornata",
+  },
   description: DESCRIPTION,
   applicationName: "Ornata",
-  alternates: { canonical: "/" },
   keywords: [
     "markdown notes app",
     "notes app for macOS",
@@ -65,41 +67,53 @@ const JSON_LD = {
       name: "Ornata",
       url: "https://ornata.app",
       logo: "https://ornata.app/ornata-mark-2026.png",
+      description: DESCRIPTION,
     },
     {
       "@type": "WebSite",
       "@id": "https://ornata.app/#site",
       url: "https://ornata.app",
       name: "Ornata",
+      description: DESCRIPTION,
+      inLanguage: "en",
       publisher: { "@id": "https://ornata.app/#org" },
     },
     {
       "@type": "SoftwareApplication",
+      "@id": "https://ornata.app/#app",
       name: "Ornata",
       applicationCategory: "ProductivityApplication",
       operatingSystem: "macOS 12+",
       description: DESCRIPTION,
       url: "https://ornata.app",
+      image: "https://ornata.app/ornata-mark-2026.png",
       downloadUrl: DMG,
       softwareVersion: VERSION,
+      releaseNotes: "https://ornata.app/updates",
       author: { "@id": "https://ornata.app/#org" },
       publisher: { "@id": "https://ornata.app/#org" },
       featureList: [
         "Plain Markdown files in real folders",
         "Local-first: notes stay on your Mac",
         "No account required",
-        "Obsidian-compatible vault with frontmatter preservation",
-        "Note-to-note links stored as standard Markdown links",
-        "Backlinks: see which notes reference the current one",
-        "Unlinked mentions: surface title-only references",
-        "Vault-wide task tracking across all markdown checkboxes",
+        "Opens the same plain-Markdown folder as Obsidian, and preserves frontmatter",
+        "Backlinks and unlinked mentions",
+        "Link graph of the vault, plus a local graph on each note",
+        "Vault-wide open tasks",
+        "PDF export with a heading outline, and standalone HTML",
         "LaTeX math (KaTeX) and Mermaid diagrams",
         "Full-text search across titles and content",
         "AssistantPi: local AI assistant with permission-gated tools",
         "Signed and notarized builds with an auto-update feed",
         "English and Simplified Chinese interface",
       ],
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+        url: "https://ornata.app",
+      },
     },
   ],
 };
@@ -110,6 +124,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable} ${serif.variable}`}
     >
+      <head>
+        <link
+          rel="alternate"
+          type="text/plain"
+          href="https://ornata.app/llms.txt"
+          title="LLMs.txt"
+        />
+      </head>
       <body>
         <script
           type="application/ld+json"

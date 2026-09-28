@@ -6,13 +6,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: "https://ornata.app",
-      lastModified: new Date("2026-08-28"),
+      lastModified: new Date("2026-09-28"),
       changeFrequency: "weekly",
       priority: 1,
     },
     {
       url: "https://ornata.app/updates",
-      lastModified: new Date("2026-08-28"),
+      lastModified: new Date("2026-09-28"),
       changeFrequency: "monthly",
       priority: 0.8,
     },
