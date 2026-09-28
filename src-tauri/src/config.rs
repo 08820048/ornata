@@ -96,12 +96,13 @@ pub enum PageMargins {
 }
 
 impl PageMargins {
-    /// The same margin on all four sides, in PDF points.
+    /// The same margin on all four sides, in PDF points. Normal ≈ 40pt,
+    /// in line with Typora; WebKit prints 1 CSS px ≈ 1pt.
     pub fn points(self) -> f64 {
         mm_to_points(match self {
             Self::Narrow => 10.0,
-            Self::Normal => 18.0,
-            Self::Wide => 25.0,
+            Self::Normal => 14.0,
+            Self::Wide => 20.0,
         })
     }
 }
@@ -257,7 +258,7 @@ mod tests {
         assert_eq!(config.pdf.paper, super::PaperSize::A4);
         let (w, h) = config.pdf.paper.points().unwrap();
         assert!((w - 595.28).abs() < 0.01 && (h - 841.89).abs() < 0.01);
-        assert!((config.pdf.margins.points() - 70.87).abs() < 0.01);
+        assert!((config.pdf.margins.points() - 56.69).abs() < 0.01);
         let json = serde_json::to_string(&config).unwrap();
         assert!(json.contains(r#""pdf":{"paper":"a4","margins":"wide"}"#));
     }
