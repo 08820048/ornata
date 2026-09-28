@@ -11,8 +11,9 @@ interface PrintPayload {
   id: number;
   markdown: string;
   vaultRoot: string;
-  /** Margins come from the PDF page setup; drop the CSS inset. */
-  nativeMargins: boolean;
+  /** Silent PDF: the user's page margin, applied via `@page` in place of
+   *  the CSS inset (null for print-dialog, HTML and clipboard exports). */
+  pageMarginMm: number | null;
 }
 
 /**
@@ -130,18 +131,21 @@ export function PrintView() {
       {/* The app shell locks html/body/#root to the window and hides overflow.
           Left in place, print and the saved HTML keep only the visible slice. */}
       <style>{PRINT_UNCLIP}</style>
-      {job?.nativeMargins && <style>{NATIVE_MARGINS}</style>}
+      {job?.pageMarginMm != null && <style>{pageMargins(job.pageMarginMm)}</style>}
       <EditorContent editor={editor} />
     </div>
   );
 }
 
-/** Silent PDF export applies the user's margins to every page natively;
- *  the CSS inset (and @page margin) would stack on top of them. */
-const NATIVE_MARGINS = `
+/** Silent PDF export: WebKit paginates from `@page`, so the user's margin
+ *  goes there — on every page, all four sides — and the element's own inset
+ *  (which only padded the first and last page vertically) is dropped. */
+function pageMargins(mm: number) {
+  return `
   .prose-note { padding: 0 !important; }
-  @page { margin: 0; }
+  @page { margin: ${mm}mm; }
 `;
+}
 
 const PRINT_UNCLIP = `
   html, body, #root {

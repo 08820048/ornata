@@ -125,13 +125,14 @@ fn run(
     if let Some((width, height)) = page.paper.points() {
         info.setPaperSize(NSSize::new(width, height));
     }
-    // Margins apply to every page here; the print view drops its own CSS
-    // inset for these exports (see PrintSource::native_margins).
-    let margin = page.margins.points();
-    info.setTopMargin(margin);
-    info.setBottomMargin(margin);
-    info.setLeftMargin(margin);
-    info.setRightMargin(margin);
+    // Zero here on purpose: WebKit paginates from the page's CSS `@page`
+    // margin, which the print view sets to the user's choice (see
+    // PrintSource::page_margin_mm). Side margins set here were ignored, and
+    // any value would risk stacking on top of `@page`.
+    info.setTopMargin(0.0);
+    info.setBottomMargin(0.0);
+    info.setLeftMargin(0.0);
+    info.setRightMargin(0.0);
     info.setHorizontalPagination(NSPrintingPaginationMode::Fit);
     info.setVerticalPagination(NSPrintingPaginationMode::Automatic);
     // SAFETY: NSPrintSaveJob / NSPrintJobSavingURL are AppKit constants and

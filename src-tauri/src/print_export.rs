@@ -38,6 +38,8 @@ pub struct PrintJob {
     pub default_name: String,
     /// File destination, picked before rendering (HTML, and PDF on macOS).
     pub path: Option<PathBuf>,
+    /// See `PrintSource::page_margin_mm`.
+    pub page_margin_mm: Option<f64>,
 }
 
 /// One PDF bookmark: a heading's text and the index of its parent entry
@@ -56,13 +58,15 @@ pub struct PrintSource {
     pub id: u64,
     pub markdown: String,
     pub vault_root: String,
-    /// Page margins come from the PDF print setup (every page, user's
-    /// setting), so the view must not add its own CSS inset.
-    pub native_margins: bool,
+    /// Silent PDF only: the user's page margin, which the view applies as
+    /// `@page { margin }` in place of its CSS inset. WebKit lays pages out
+    /// from `@page` and ignores the print setup's side margins — setting
+    /// those instead left the text flush against the page edge.
+    pub page_margin_mm: Option<f64>,
 }
 
-fn native_margins(kind: &ExportKind) -> bool {
-    *kind == ExportKind::Pdf && SILENT_PDF
+fn page_margin_mm(app: &AppHandle, kind: &ExportKind) -> Option<f64> {
+    (*kind == ExportKind::Pdf && SILENT_PDF).then(|| crate::config::load(app).pdf.margins.mm())
 }
 
 #[derive(Default)]
@@ -118,7 +122,7 @@ fn store_job(
         id,
         markdown: markdown.clone(),
         vault_root: vault_root.clone(),
-        native_margins: native_margins(&kind),
+        page_margin_mm: page_margin_mm(app, &kind),
     };
     let mut job = state.job.lock().map_err(|e| AppError::Other(e.to_string()))?;
     *job = Some(PrintJob {
@@ -128,6 +132,7 @@ fn store_job(
         vault_root,
         default_name,
         path,
+        page_margin_mm: source.page_margin_mm,
     });
     Ok(source)
 }
@@ -143,7 +148,7 @@ pub fn current_print_job(app: AppHandle) -> AppResult<Option<PrintSource>> {
         id: job.id,
         markdown: job.markdown.clone(),
         vault_root: job.vault_root.clone(),
-        native_margins: native_margins(&job.kind),
+        page_margin_mm: job.page_margin_mm,
     }))
 }
 

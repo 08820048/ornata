@@ -135,7 +135,7 @@ export const ipc = {
     }),
   hidePrintWindow: () => call<void>("hide_print_window"),
   currentPrintJob: () =>
-    call<{ id: number; markdown: string; vaultRoot: string; nativeMargins: boolean } | null>(
+    call<{ id: number; markdown: string; vaultRoot: string; pageMarginMm: number | null } | null>(
       "current_print_job",
     ),
   printViewReady: (input: {
