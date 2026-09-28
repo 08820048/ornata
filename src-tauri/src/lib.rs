@@ -18,6 +18,8 @@ mod mentions;
 mod notes;
 #[cfg(target_os = "macos")]
 mod pdf_export;
+#[cfg(target_os = "macos")]
+mod pdf_outline;
 mod print_export;
 mod quick_capture;
 mod reveal;

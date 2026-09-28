@@ -5,6 +5,7 @@ import { EditorContent } from "@tiptap/react";
 import { createExtensions } from "@/components/editor/extensions";
 import { renderTheme } from "@/lib/theme";
 import { ipc } from "@/lib/ipc";
+import { headingsOf, outlineFromHeadings } from "@/lib/pdfOutline";
 
 interface PrintPayload {
   id: number;
@@ -111,6 +112,7 @@ export function PrintView() {
           id: jobId,
           bodyHtml,
           pageCss: css.join("\n"),
+          headings: outlineFromHeadings(headingsOf(editor.view.dom)),
         });
       }
     })();

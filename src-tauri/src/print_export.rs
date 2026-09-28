@@ -40,6 +40,14 @@ pub struct PrintJob {
     pub path: Option<PathBuf>,
 }
 
+/// One PDF bookmark: a heading's text and the index of its parent entry
+/// (-1 for top level), computed by the print view (see lib/pdfOutline.ts).
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct OutlineEntry {
+    pub text: String,
+    pub parent: i64,
+}
+
 /// What the print window renders. `id` changes on every export so a second
 /// export of the same note still retriggers the page.
 #[derive(Clone, Serialize)]
@@ -210,6 +218,7 @@ pub async fn print_view_ready(
     id: u64,
     body_html: String,
     page_css: String,
+    headings: Vec<OutlineEntry>,
 ) -> AppResult<()> {
     let job = take_job_if(&app, id)?;
     match job.kind {
@@ -220,7 +229,7 @@ pub async fn print_view_ready(
             };
             let app_handle = app.clone();
             let shown = path.display().to_string();
-            crate::pdf_export::save_pdf(&window, path, job.default_name, move |result| {
+            crate::pdf_export::save_pdf(&window, path, job.default_name, headings, move |result| {
                 let _ = match result {
                     Ok(()) => emit_to_window(&app_handle, "main", "ornata-export-done", shown),
                     Err(message) => {

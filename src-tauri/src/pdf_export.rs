@@ -25,6 +25,7 @@ use objc2_foundation::{NSObject, NSString, NSURL};
 use objc2_web_kit::WKWebView;
 
 use crate::error::{AppError, AppResult};
+use crate::print_export::OutlineEntry;
 
 /// 12mm in points — vertical page margin. Horizontal inset comes from the
 /// print view's own padding.
@@ -32,26 +33,38 @@ const PAGE_MARGIN_PT: f64 = 34.0;
 
 type Done = Box<dyn FnOnce(Result<(), String>)>;
 
+/// What the delegate needs once WebKit has written the file.
+struct Job {
+    done: Done,
+    dest: PathBuf,
+    outline: Vec<OutlineEntry>,
+}
+
 define_class!(
     // SAFETY: NSObject has no subclassing requirements; no Drop impl.
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
     #[name = "OrnataPdfExportDelegate"]
-    #[ivars = RefCell<Option<(Done, PathBuf)>>]
+    #[ivars = RefCell<Option<Job>>]
     struct PdfDelegate;
 
     impl PdfDelegate {
         #[unsafe(method(printOperationDidRun:success:contextInfo:))]
         fn did_run(&self, _op: &NSPrintOperation, success: Bool, _context: *mut c_void) {
-            let Some((done, dest)) = self.ivars().borrow_mut().take() else {
+            let Some(Job { done, dest, outline }) = self.ivars().borrow_mut().take() else {
                 return;
             };
             let written = std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false);
-            done(if success.as_bool() && written {
-                Ok(())
-            } else {
-                Err("PDF export failed".into())
-            });
+            if !(success.as_bool() && written) {
+                done(Err("PDF export failed".into()));
+                return;
+            }
+            // Bookmarks are a nicety: the PDF itself is already on disk, so a
+            // failure here is logged, not reported as a failed export.
+            if let Err(message) = crate::pdf_outline::add_outline(&dest, &outline) {
+                eprintln!("pdf outline: {message}");
+            }
+            done(Ok(()));
         }
     }
 );
@@ -68,6 +81,7 @@ pub fn save_pdf(
     window: &tauri::WebviewWindow,
     dest: PathBuf,
     title: String,
+    outline: Vec<OutlineEntry>,
     done: impl FnOnce(Result<(), String>) + Send + 'static,
 ) -> AppResult<()> {
     window
@@ -81,7 +95,10 @@ pub fn save_pdf(
                 )
             };
             match MainThreadMarker::new() {
-                Some(mtm) => run(mtm, wk, ns_window, dest, &title, Box::new(done)),
+                Some(mtm) => {
+                    let job = Job { done: Box::new(done), dest, outline };
+                    run(mtm, wk, ns_window, &title, job)
+                }
                 None => done(Err("PDF export ran off the main thread".into())),
             }
         })
@@ -92,12 +109,11 @@ fn run(
     mtm: MainThreadMarker,
     wk: &WKWebView,
     ns_window: &NSWindow,
-    dest: PathBuf,
     title: &str,
-    done: Done,
+    job: Job,
 ) {
-    let Some(url) = NSURL::from_file_path(&dest) else {
-        done(Err(format!("bad PDF path: {}", dest.display())));
+    let Some(url) = NSURL::from_file_path(&job.dest) else {
+        (job.done)(Err(format!("bad PDF path: {}", job.dest.display())));
         return;
     };
 
@@ -131,7 +147,7 @@ fn run(
     }
 
     let delegate: Retained<PdfDelegate> = {
-        let this = PdfDelegate::alloc(mtm).set_ivars(RefCell::new(Some((done, dest))));
+        let this = PdfDelegate::alloc(mtm).set_ivars(RefCell::new(Some(job)));
         // SAFETY: NSObject's init on a freshly allocated instance.
         unsafe { msg_send![super(this), init] }
     };

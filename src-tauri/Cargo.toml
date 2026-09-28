@@ -33,10 +33,12 @@ notify = "8.2.0"
 [dev-dependencies]
 tempfile = "3"
 
-# Silent PDF export (pdf_export.rs) drives WebKit's print operation directly.
-# Same versions wry already pulls in.
+# Silent PDF export (pdf_export.rs) drives WebKit's print operation directly;
+# pdf_outline.rs adds heading bookmarks with PDFKit.
+# Same objc2 family versions wry already pulls in.
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSDictionary", "NSGeometry", "NSObject", "NSString", "NSURL"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSGeometry", "NSObject", "NSString", "NSURL"] }
 objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSPrintInfo", "NSPrintOperation", "NSResponder", "NSView", "NSWindow"] }
+objc2-pdf-kit = { version = "0.3", default-features = false, features = ["std", "PDFDestination", "PDFDocument", "PDFOutline", "PDFPage", "PDFSelection"] }
 objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "objc2-app-kit", "WKWebView"] }

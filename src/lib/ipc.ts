@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { OutlineEntry } from "./pdfOutline";
 import type {
   AgentPermission,
   ExternalNote,
@@ -136,7 +137,13 @@ export const ipc = {
     call<{ id: number; markdown: string; vaultRoot: string } | null>(
       "current_print_job",
     ),
-  printViewReady: (input: { id: number; bodyHtml: string; pageCss: string }) =>
+  printViewReady: (input: {
+    id: number;
+    bodyHtml: string;
+    pageCss: string;
+    /** Bookmark outline for PDF exports (see lib/pdfOutline). */
+    headings: OutlineEntry[];
+  }) =>
     call<void>("print_view_ready", input),
   dismissQuickCapture: () => call<void>("dismiss_quick_capture"),
   toggleQuickCapture: () => call<void>("toggle_quick_capture"),
