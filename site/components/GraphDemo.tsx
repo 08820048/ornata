@@ -119,7 +119,8 @@ function arrow(from: string, to: string) {
 
 // rest → a hub in focus → search flies to a hit
 const PHASES = ["rest", "hover", "search"] as const;
-type Phase = (typeof PHASES)[number];
+export type GraphPhase = (typeof PHASES)[number];
+type Phase = GraphPhase;
 
 /** The camera is the viewBox: the full map, or zoomed onto the search hit
  *  (centered in the space below the toolbar). */
@@ -145,6 +146,121 @@ function usePhase(enabled: boolean) {
   return PHASES[index];
 }
 
+/** The graph drawing alone, driven by `phase` — shared by the feature demo
+ *  and the hero tour. Fills its container's width. */
+export function GraphScene({ phase }: { phase: GraphPhase }) {
+  const focus = phase === "hover" ? HOVER : phase === "search" ? MATCH : null;
+  const near = focus ? neighbors(focus) : new Set<string>();
+  const lit = (id: string) => !focus || id === focus || (phase === "hover" && near.has(id));
+  const fade = { duration: 0.18, ease: EASE_OUT };
+
+  return (
+    <motion.svg
+      viewBox={FULL_VIEW}
+      initial={false}
+      animate={{ viewBox: CAMERA[phase] }}
+      transition={{ duration: 0.6, ease: EASE_OUT }}
+      className="block h-auto w-full"
+      role="img"
+      aria-label="A graph of linked notes grouped into folder regions"
+    >
+      <g>
+        {REGIONS.map((region) => (
+          <g key={region.folder}>
+            <polygon
+              points={region.points}
+              fill={`color-mix(in srgb, ${FOLDER_COLOR[region.folder]} 14%, var(--card))`}
+              stroke={`color-mix(in srgb, ${FOLDER_COLOR[region.folder]} 14%, var(--card))`}
+              strokeWidth={region.margin * 2}
+              strokeLinejoin="round"
+            />
+            <text
+              x={region.labelX}
+              y={region.labelY}
+              textAnchor="middle"
+              className="fill-faint font-mono text-[8px] uppercase tracking-[0.12em]"
+            >
+              {region.folder}
+            </text>
+          </g>
+        ))}
+
+        {LINKS.map(([from, to, mutual]) => {
+          const a = byId.get(from)!;
+          const b = byId.get(to)!;
+          const touching = focus !== null && phase === "hover" && (from === focus || to === focus);
+          return (
+            <motion.line
+              key={`${from}>${to}`}
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              initial={false}
+              animate={{
+                stroke: touching ? "var(--fg-muted)" : "var(--border-strong)",
+                opacity: focus && !touching ? 0.35 : mutual ? 1 : 0.6,
+              }}
+              transition={fade}
+              strokeWidth={mutual ? 1.4 : 1}
+            />
+          );
+        })}
+
+        <AnimatePresence>
+          {phase === "hover" &&
+            LINKS.filter(([from, to, mutual]) => !mutual && (from === HOVER || to === HOVER)).map(
+              ([from, to]) => (
+                <motion.polygon
+                  key={`arrow-${from}>${to}`}
+                  points={arrow(from, to)}
+                  className="fill-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={fade}
+                />
+              ),
+            )}
+        </AnimatePresence>
+
+        {NODES.map((node) => {
+          const isFocus = node.id === focus;
+          const color = node.folder ? FOLDER_COLOR[node.folder] : "var(--fg-muted)";
+          const showLabel =
+            isFocus || (phase === "hover" && near.has(node.id)) || (!focus && (degree.get(node.id) ?? 0) >= 4);
+          return (
+            <g key={node.id}>
+              <motion.circle
+                cx={node.x}
+                cy={node.y}
+                r={radius(node.id)}
+                initial={false}
+                animate={{ fill: isFocus ? "var(--fg)" : color, opacity: lit(node.id) ? 1 : 0.28 }}
+                transition={fade}
+              />
+              {isFocus && (
+                <circle cx={node.x} cy={node.y} r={radius(node.id) + 4} fill="none" stroke="var(--fg)" strokeOpacity={0.45} />
+              )}
+              <motion.text
+                x={node.x + radius(node.id) + (isFocus ? 8 : 5)}
+                y={node.y + 3.5}
+                initial={false}
+                animate={{ opacity: showLabel ? 1 : 0 }}
+                transition={fade}
+                className={cn("text-[10.5px]", isFocus ? "fill-foreground" : "fill-muted-foreground")}
+                style={{ paintOrder: "stroke", stroke: "var(--card)", strokeWidth: 3, strokeLinejoin: "round" }}
+              >
+                {node.id}
+              </motion.text>
+            </g>
+          );
+        })}
+      </g>
+    </motion.svg>
+  );
+}
+
 export function GraphDemo() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "-20% 0px" });
@@ -153,10 +269,6 @@ export function GraphDemo() {
   const cycled = usePhase(Boolean(inView && !reduce));
   const phase: Phase = reduce ? "hover" : cycled;
 
-  const focus = phase === "hover" ? HOVER : phase === "search" ? MATCH : null;
-  const near = focus ? neighbors(focus) : new Set<string>();
-  const lit = (id: string) => !focus || id === focus || (phase === "hover" && near.has(id));
-  const fade = { duration: 0.18, ease: EASE_OUT };
 
   return (
     <div ref={ref} className="surface overflow-hidden rounded-[18px] bg-paper p-2">
@@ -169,109 +281,7 @@ export function GraphDemo() {
       </div>
 
       <div className="relative overflow-hidden rounded-[10px] bg-card">
-        <motion.svg
-          viewBox={FULL_VIEW}
-          initial={false}
-          animate={{ viewBox: CAMERA[phase] }}
-          transition={{ duration: 0.6, ease: EASE_OUT }}
-          className="block h-auto w-full"
-          role="img"
-          aria-label="A graph of linked notes grouped into folder regions"
-        >
-          <g>
-            {REGIONS.map((region) => (
-              <g key={region.folder}>
-                <polygon
-                  points={region.points}
-                  fill={`color-mix(in srgb, ${FOLDER_COLOR[region.folder]} 14%, var(--card))`}
-                  stroke={`color-mix(in srgb, ${FOLDER_COLOR[region.folder]} 14%, var(--card))`}
-                  strokeWidth={region.margin * 2}
-                  strokeLinejoin="round"
-                />
-                <text
-                  x={region.labelX}
-                  y={region.labelY}
-                  textAnchor="middle"
-                  className="fill-faint font-mono text-[8px] uppercase tracking-[0.12em]"
-                >
-                  {region.folder}
-                </text>
-              </g>
-            ))}
-
-            {LINKS.map(([from, to, mutual]) => {
-              const a = byId.get(from)!;
-              const b = byId.get(to)!;
-              const touching = focus !== null && phase === "hover" && (from === focus || to === focus);
-              return (
-                <motion.line
-                  key={`${from}>${to}`}
-                  x1={a.x}
-                  y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
-                  initial={false}
-                  animate={{
-                    stroke: touching ? "var(--fg-muted)" : "var(--border-strong)",
-                    opacity: focus && !touching ? 0.35 : mutual ? 1 : 0.6,
-                  }}
-                  transition={fade}
-                  strokeWidth={mutual ? 1.4 : 1}
-                />
-              );
-            })}
-
-            <AnimatePresence>
-              {phase === "hover" &&
-                LINKS.filter(([from, to, mutual]) => !mutual && (from === HOVER || to === HOVER)).map(
-                  ([from, to]) => (
-                    <motion.polygon
-                      key={`arrow-${from}>${to}`}
-                      points={arrow(from, to)}
-                      className="fill-muted-foreground"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={fade}
-                    />
-                  ),
-                )}
-            </AnimatePresence>
-
-            {NODES.map((node) => {
-              const isFocus = node.id === focus;
-              const color = node.folder ? FOLDER_COLOR[node.folder] : "var(--fg-muted)";
-              const showLabel =
-                isFocus || (phase === "hover" && near.has(node.id)) || (!focus && (degree.get(node.id) ?? 0) >= 4);
-              return (
-                <g key={node.id}>
-                  <motion.circle
-                    cx={node.x}
-                    cy={node.y}
-                    r={radius(node.id)}
-                    initial={false}
-                    animate={{ fill: isFocus ? "var(--fg)" : color, opacity: lit(node.id) ? 1 : 0.28 }}
-                    transition={fade}
-                  />
-                  {isFocus && (
-                    <circle cx={node.x} cy={node.y} r={radius(node.id) + 4} fill="none" stroke="var(--fg)" strokeOpacity={0.45} />
-                  )}
-                  <motion.text
-                    x={node.x + radius(node.id) + (isFocus ? 8 : 5)}
-                    y={node.y + 3.5}
-                    initial={false}
-                    animate={{ opacity: showLabel ? 1 : 0 }}
-                    transition={fade}
-                    className={cn("text-[10.5px]", isFocus ? "fill-foreground" : "fill-muted-foreground")}
-                    style={{ paintOrder: "stroke", stroke: "var(--card)", strokeWidth: 3, strokeLinejoin: "round" }}
-                  >
-                    {node.id}
-                  </motion.text>
-                </g>
-              );
-            })}
-          </g>
-        </motion.svg>
+        <GraphScene phase={phase} />
 
         {/* The app's floating bar: search and view toggles over the canvas. */}
         <div className="absolute left-3 top-3 flex items-center gap-1 rounded-[9px] border border-border bg-paper/85 p-1 shadow-sm backdrop-blur-md">
