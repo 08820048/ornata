@@ -32,7 +32,8 @@ const INTERACTIVE_TICKS_PER_FRAME = 2;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 /** Auto-fit never magnifies a small graph past this. */
-const FIT = { padding: 48, minZoom: MIN_ZOOM, maxZoom: 1.5 };
+/** Room for the floating control bar and the counts line. */
+const FIT = { padding: 64, minZoom: MIN_ZOOM, maxZoom: 1.5 };
 const GROUPS_KEY = "ornata:graph-groups";
 /** Camera flight to a search hit; within the app's motion budget. */
 const FLY_MS = 160;
@@ -542,6 +543,9 @@ export function GraphView({ active }: { active: boolean }) {
     useTabs.getState().requestScrollTop(note);
   };
 
+  /** Linked pairs, so a mutual link counts once — as it's drawn. */
+  const linkCount = useMemo(() => (graph ? mergeLinks(graph.edges).length : 0), [graph]);
+
   const isolatedCount = useMemo(() => {
     if (!graph) return 0;
     const linked = new Set<string>();
@@ -553,34 +557,8 @@ export function GraphView({ active }: { active: boolean }) {
   }, [graph]);
 
   return (
-    <section aria-label={t("graph.aria")} className="flex h-full flex-col bg-bg">
-        <div className="flex items-center gap-3 border-b border-line-soft px-4 py-2.5">
-          <label className="flex min-w-0 max-w-xs flex-1 items-center gap-1.5 rounded-md border border-line-soft px-2 py-1 transition-colors duration-100 focus-within:border-line">
-            <Search size={12} strokeWidth={2} className="shrink-0 text-faint" />
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={onSearchKey}
-              placeholder={t("graph.search")}
-              aria-label={t("graph.search")}
-              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-faint"
-            />
-            {query.trim() && (
-              <span className="shrink-0 text-[11px] tabular-nums text-faint">
-                {matches.length === 0
-                  ? t("graph.noMatches")
-                  : matchIndex >= 0
-                    ? `${matchIndex + 1} / ${matches.length}`
-                    : matches.length}
-              </span>
-            )}
-          </label>
-          <span className="ml-auto shrink-0 text-[11px] tabular-nums text-faint">
-            {graph && `${graph.nodes.length} · ${graph.edges.length}`}
-          </span>
-        </div>
-        <div className="relative min-h-0 flex-1">
+    <section aria-label={t("graph.aria")} className="relative h-full bg-bg">
+        <div className="absolute inset-0">
           {loadError ? (
             <p className="grid h-full place-items-center text-[13px] text-faint">
               {t("graph.loadFailed")}
@@ -641,32 +619,65 @@ export function GraphView({ active }: { active: boolean }) {
               }}
             />
           )}
-          {graph && graph.nodes.length > 0 && (
-            <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-              <Toggle
-                on={groups}
-                onClick={() => {
-                  try {
-                    localStorage.setItem(GROUPS_KEY, groups ? "0" : "1");
-                  } catch {
-                    // Storage unavailable — the choice just won't stick.
-                  }
-                  setGroups(!groups);
-                }}
-              >
-                {t("graph.groupFolders")}
-              </Toggle>
-              {isolatedCount > 0 && (
-                <Toggle on={showIsolated} onClick={() => setShowIsolated((v) => !v)}>
-                  {t("graph.showIsolated")}
-                </Toggle>
-              )}
-              {graph.nodes.length > 2000 && (
-                <Toggle on={showAll} onClick={() => setShowAll((v) => !v)}>
-                  {t("graph.showAll")}
-                </Toggle>
+          {/* One floating bar over the canvas instead of a header strip:
+              search, then the view toggles, no dividing line to the graph. */}
+          {graph && (
+            <div className="absolute left-3 top-3 flex max-w-[calc(100%-24px)] items-center gap-1 rounded-[10px] border border-line-soft bg-panel/85 p-1 shadow-sm backdrop-blur-md">
+              <label className="flex w-60 min-w-0 items-center gap-1.5 rounded-md px-2 py-1 transition-colors duration-100 focus-within:bg-bg">
+                <Search size={12} strokeWidth={2} className="shrink-0 text-faint" />
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={onSearchKey}
+                  placeholder={t("graph.search")}
+                  aria-label={t("graph.search")}
+                  className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-faint"
+                />
+                {query.trim() && (
+                  <span className="shrink-0 text-[11px] tabular-nums text-faint">
+                    {matches.length === 0
+                      ? t("graph.noMatches")
+                      : matchIndex >= 0
+                        ? `${matchIndex + 1} / ${matches.length}`
+                        : matches.length}
+                  </span>
+                )}
+              </label>
+              {graph.nodes.length > 0 && (
+                <>
+                  <span aria-hidden className="mx-0.5 h-4 w-px shrink-0 bg-line" />
+                  <Toggle
+                    on={groups}
+                    onClick={() => {
+                      try {
+                        localStorage.setItem(GROUPS_KEY, groups ? "0" : "1");
+                      } catch {
+                        // Storage unavailable — the choice just won't stick.
+                      }
+                      setGroups(!groups);
+                    }}
+                  >
+                    {t("graph.groupFolders")}
+                  </Toggle>
+                  {isolatedCount > 0 && (
+                    <Toggle on={showIsolated} onClick={() => setShowIsolated((v) => !v)}>
+                      {t("graph.showIsolated")}
+                    </Toggle>
+                  )}
+                  {graph.nodes.length > 2000 && (
+                    <Toggle on={showAll} onClick={() => setShowAll((v) => !v)}>
+                      {t("graph.showAll")}
+                    </Toggle>
+                  )}
+                </>
               )}
             </div>
+          )}
+          {graph && (
+            <p className="pointer-events-none absolute bottom-3 left-4 text-[11px] tabular-nums text-faint">
+              {t("graph.counts", { notes: graph.nodes.length, links: linkCount })}
+            </p>
           )}
         </div>
     </section>
@@ -695,10 +706,8 @@ function Toggle({
       aria-pressed={on}
       onClick={onClick}
       className={cx(
-        "rounded-md border px-2.5 py-1 text-[11.5px] transition-colors duration-100",
-        on
-          ? "border-line bg-active text-ink"
-          : "border-line-soft bg-panel text-faint hover:text-muted",
+        "h-7 shrink-0 whitespace-nowrap rounded-md px-2.5 text-[11.5px] transition-colors duration-100",
+        on ? "bg-active text-ink" : "text-faint hover:bg-hover hover:text-muted",
       )}
     >
       {children}
