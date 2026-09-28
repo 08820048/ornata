@@ -13,7 +13,7 @@ import { vaultNote } from "@/lib/noteRef";
 import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { FadeLoop, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
-import { forceGroup, groupOf } from "./graphGroups";
+import { folderSlots, forceGroup, groupOf } from "./graphGroups";
 import { mergeLinks, paintGraph, type SimEdge, type SimNode } from "./graphPaint";
 import { searchNodes } from "./graphSearch";
 import { useT } from "@/stores/locale";
@@ -205,9 +205,13 @@ export function GraphView({ active }: { active: boolean }) {
       if (inMajor.has(node.rel)) return true;
       return layoutIsolates && (degree.get(node.rel) ?? 0) === 0;
     });
+    // From every note in the vault, so toggles that change what's laid out
+    // never shift which folder owns which color.
+    const slots = folderSlots(graph.nodes.map((node) => node.rel));
     const nodes: SimNode[] = simmed.map((node, index) => {
       const d = degree.get(node.rel) ?? 0;
       const angle = (index / simmed.length) * Math.PI * 2;
+      const group = groupOf(node.rel);
       return {
         rel: node.rel,
         title: node.title,
@@ -217,7 +221,8 @@ export function GraphView({ active }: { active: boolean }) {
         r: Math.min(3.5 + Math.sqrt(d) * 2.2, 14),
         degree: d,
         isolated: d === 0,
-        group: groupOf(node.rel),
+        group,
+        hue: groups && group !== null ? (slots.get(group) ?? null) : null,
       };
     });
     const byRel = new Map(nodes.map((n) => [n.rel, n]));

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { convexHull, groupOf } from "../src/components/graph/graphGroups";
-import { mergeLinks } from "../src/components/graph/graphPaint";
+import { convexHull, folderSlots, groupOf } from "../src/components/graph/graphGroups";
+import { mergeLinks, paintGraph, type SimNode } from "../src/components/graph/graphPaint";
 import { searchNodes } from "../src/components/graph/graphSearch";
 import { neighborhood } from "../src/components/graph/neighborhood";
 
@@ -68,4 +68,56 @@ test("groups are top-level folders; hulls drop interior points", () => {
   ]);
   expect(hull).toHaveLength(4);
   expect(hull).not.toContainEqual({ x: 5, y: 5 });
+});
+
+test("folder slots go to the largest folders, ties by name, rest uncolored", () => {
+  const rels = [
+    "root.md",
+    ...["a", "b", "c"].map((n) => `big/${n}.md`),
+    ...["a", "b"].map((n) => `beta/${n}.md`),
+    ...["a", "b"].map((n) => `alpha/${n}.md`),
+    "gamma/a.md",
+    "tiny/a.md",
+  ];
+  expect([...folderSlots(rels)]).toEqual([
+    ["big", 0],
+    ["alpha", 1],
+    ["beta", 2],
+    ["gamma", 3],
+  ]);
+  expect(folderSlots(rels).has("tiny")).toBe(false);
+});
+
+test("colored folders tint their region and dots; others stay gray", () => {
+  const fills: string[] = [];
+  const ctx: any = new Proxy({ globalAlpha: 1 } as Record<string, unknown>, {
+    get(target, key) {
+      if (key === "measureText") return () => ({ width: 10 });
+      if (key === "fill") return () => fills.push(String(target.fillStyle));
+      return key in target ? target[key as string] : () => {};
+    },
+    set(target, key, value) {
+      target[key as string] = value;
+      return true;
+    },
+  });
+  const node = (rel: string, x: number, hue: number | null): SimNode => ({
+    rel, title: rel, x, y: 0, r: 5, degree: 1, isolated: false, group: groupOf(rel), hue,
+  });
+  paintGraph({
+    ctx, width: 800, height: 400, dt: 0, hover: null, showIsolated: true, groups: true,
+    view: { x: 100, y: 200, k: 1 },
+    nodes: [node("p/a.md", 0, 0), node("p/b.md", 60, 0), node("q/a.md", 300, null), node("q/b.md", 360, null)],
+    edges: [],
+    palette: { ink: "#000000", muted: "#666666", faint: "#aaaaaa", line: "#dddddd", bg: "#ffffff", sunken: "#eeeeee", groups: ["#2a78d6"], font: "x" },
+  });
+  // Regions first: p tinted 16% toward its blue, q on the neutral recess.
+  expect(fills.slice(0, 2)).toEqual(["rgb(221,233,248)", "#eeeeee"]);
+  // Then dots: p's in its folder color, q's in muted gray.
+  expect(fills.slice(2)).toEqual([
+    "rgba(42,120,214,1.000)",
+    "rgba(42,120,214,1.000)",
+    "rgba(102,102,102,1.000)",
+    "rgba(102,102,102,1.000)",
+  ]);
 });

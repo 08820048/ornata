@@ -20,6 +20,8 @@ export interface SimNode {
   fy?: number | null;
   /** Top-level folder, for folder regions (see graphGroups). */
   group?: string | null;
+  /** Folder color slot (index into `Palette.groups`); null/absent = gray. */
+  hue?: number | null;
   /** Current eased fill and label opacity; seeded on first paint. */
   tint?: Tint;
   labelAlpha?: number;
@@ -72,6 +74,8 @@ export interface Palette {
   line: string;
   bg: string;
   sunken: string;
+  /** Folder colors in fixed slot order (`--graph-N`). */
+  groups: string[];
   font: string;
 }
 
@@ -135,6 +139,10 @@ export function paintGraph(input: PaintInput): boolean {
   let settling = false;
 
   const ink = rgb(palette.ink);
+  const hues = palette.groups.map(rgb);
+  // Folder color when grouped, else the monochrome default.
+  const baseColor = (node: SimNode) =>
+    node.hue != null && hues[node.hue] ? hues[node.hue] : node.isolated ? faint : muted;
   const muted = rgb(palette.muted);
   const faint = rgb(palette.faint);
   const line = rgb(palette.line);
@@ -169,7 +177,9 @@ export function paintGraph(input: PaintInput): boolean {
   ctx.clearRect(0, 0, width, height);
 
   const groupLabels = input.groups
-    ? paintGroups(ctx, nodes, view, visible, palette.sunken)
+    ? paintGroups(ctx, nodes, view, visible, (hue) =>
+        hue === null ? palette.sunken : tint(palette.groups[hue], palette.bg),
+      )
     : [];
 
   // Edges: the hovered note's edges go last, on top of everything else.
@@ -220,7 +230,7 @@ export function paintGraph(input: PaintInput): boolean {
       ? { ...ink, a: 1 }
       : dimmed
         ? { ...faint, a: 0.35 }
-        : { ...(node.isolated ? faint : muted), a: 1 };
+        : { ...baseColor(node), a: 1 };
     node.tint = approach(node.tint, target);
 
     const zoomAlpha = clamp01((node.r * k - LABEL_FADE_START) / LABEL_FADE_RANGE);
@@ -366,25 +376,26 @@ function paintGroups(
   nodes: SimNode[],
   view: { x: number; y: number; k: number },
   visible: (node: SimNode) => boolean,
-  fill: string,
+  fillFor: (hue: number | null) => string,
 ): GroupLabel[] {
-  const members = new Map<string, { points: Point[]; maxR: number }>();
+  const members = new Map<string, { points: Point[]; maxR: number; hue: number | null }>();
   for (const node of nodes) {
     if (!node.group || !visible(node)) continue;
-    const entry = members.get(node.group) ?? { points: [], maxR: 0 };
+    const entry = members.get(node.group) ?? { points: [], maxR: 0, hue: node.hue ?? null };
     entry.points.push({ x: node.x * view.k + view.x, y: node.y * view.k + view.y });
     entry.maxR = Math.max(entry.maxR, node.r);
     members.set(node.group, entry);
   }
 
   const labels: GroupLabel[] = [];
-  ctx.fillStyle = fill;
-  ctx.strokeStyle = fill;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
-  for (const [group, { points, maxR }] of members) {
+  for (const [group, { points, maxR, hue }] of members) {
     // A lone note is not a region.
     if (points.length < 2) continue;
+    const fill = fillFor(hue);
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = fill;
     const hull = convexHull(points);
     const margin = maxR + HULL_MARGIN;
     ctx.lineWidth = margin * 2;
@@ -443,6 +454,17 @@ function place(grid: Map<string, Rect[]>, rect: Rect): boolean {
     }
   }
   return true;
+}
+
+/** Share of the folder color in its region's fill; the rest is page color,
+ *  so regions stay a quiet wash behind the dots in both themes. */
+const REGION_TINT = 0.16;
+
+function tint(hex: string, bg: string): string {
+  const c = rgb(hex);
+  const b = rgb(bg);
+  const mix = (from: number, to: number) => Math.round(from + (to - from) * REGION_TINT);
+  return `rgb(${mix(b.r, c.r)},${mix(b.g, c.g)},${mix(b.b, c.b)})`;
 }
 
 function clamp01(value: number): number {

@@ -11,6 +11,26 @@ export function groupOf(rel: string): string | null {
   return slash > 0 ? rel.slice(0, slash) : null;
 }
 
+/** How many folders get a color; the rest stay gray. Four is the most the
+ *  palette separates when any two regions may touch (validated all-pairs,
+ *  both themes) — more would need hues people can't tell apart. */
+export const FOLDER_COLORS = 4;
+
+/**
+ * Color slot per folder: the largest top-level folders across the whole
+ * vault, in slot order (ties by name). Computed from every note, not the
+ * visible subset, so view toggles never repaint a folder.
+ */
+export function folderSlots(rels: readonly string[], slots = FOLDER_COLORS): Map<string, number> {
+  const sizes = new Map<string, number>();
+  for (const rel of rels) {
+    const group = groupOf(rel);
+    if (group) sizes.set(group, (sizes.get(group) ?? 0) + 1);
+  }
+  const ranked = [...sizes].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  return new Map(ranked.slice(0, slots).map(([group], index) => [group, index]));
+}
+
 interface GroupedNode {
   group?: string | null;
   x: number;

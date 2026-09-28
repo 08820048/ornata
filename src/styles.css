@@ -103,6 +103,14 @@
     --danger: #b3261e;
     --success: #4d8660;
 
+    /* Link-graph folder colors — the one sanctioned exception to monochrome
+       (see AGENTS.md). Fixed slot order; validated all-pairs for CVD and
+       normal vision on --bg in both themes. Graph only. */
+    --graph-1: #2a78d6;
+    --graph-2: #eda100;
+    --graph-3: #e87ba4;
+    --graph-4: #008300;
+
     --code-surface: #f7f7f5;
     --diagram-surface: #fbfbfa;
     --diagram-node: #f0f0ed;
@@ -130,6 +138,11 @@
     --invert-ink: #131313;
     --danger: #e5484d;
     --success: #72b588;
+
+    --graph-1: #3987e5;
+    --graph-2: #c98500;
+    --graph-3: #d55181;
+    --graph-4: #008300;
 
     --code-surface: #1f1f1e;
     --diagram-surface: #232321;

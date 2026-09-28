@@ -45,6 +45,7 @@ export function readPalette(): Palette {
     line: cssVar("--line", "#e3e3e0"),
     bg: cssVar("--bg", "#fbfbfa"),
     sunken: cssVar("--sunken", "#e9e9e6"),
+    groups: [1, 2, 3, 4].map((n) => cssVar(`--graph-${n}`, "")).filter(Boolean),
     font: cssVar("--font-sans", "system-ui, sans-serif"),
   };
 }
