@@ -4,10 +4,21 @@ All notable changes to Ornata are documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-28
+
 ### Added
 
+- Relationship graph: open the vault graph in a tab, or the current note's neighborhood at the bottom of the note. Folder colors, drag, search, and link direction.
+- Export a note to PDF, HTML, or rich text. PDFs include heading bookmarks, paper size and margin settings, and Show in Finder when the export finishes.
+- Per-note history snapshots, with a diff and restore.
+- Multi-term vault search, plus find and replace in the open note.
+- Tags, daily notes, templates, and pinned notes.
+- Heading links (`path.md#heading`) and link rewrites when a note is renamed or moved.
+- Global quick capture into Inbox.
 - Open tasks: one list of every unchecked `- [ ]` item across your notes, from the sidebar or ⌘K. Tick a task to mark it done in its note, or click it to open the note.
-- Linked mentions: the bottom of each note lists the notes that link to it (markdown or `[[wiki]]` links), with the linking line as context. Click one to open it.
+- Linked mentions: the bottom of each note lists the notes that link to it (markdown or `[[wiki]]` links), including unlinked mentions, with the linking line as context.
+- Sort the note tree by modified time.
+- Cleanup of unreferenced images in the vault.
 
 ### Removed
 
