@@ -65,6 +65,9 @@ export interface PaintInput {
   hover: string | null;
   /** The note being read: drawn in ink with a ring, always labeled. */
   focus?: string | null;
+  /** Search hits: everything else dims, hits are always labeled. Null or
+   *  absent when not searching. */
+  matches?: ReadonlySet<string> | null;
   /** Labeled regardless of zoom (the local graph's direct neighbors). */
   alwaysLabel?: ReadonlySet<string>;
   showIsolated: boolean;
@@ -99,6 +102,9 @@ const GROUP_LABEL_RANGE = 60;
 export function paintGraph(input: PaintInput): boolean {
   const { ctx, width, height, nodes, edges, view, hover, showIsolated, palette } = input;
   const focus = input.focus ?? null;
+  const matches = input.matches ?? null;
+  // Anything narrowing the view: a hovered note, or a search.
+  const narrowed = hover !== null || matches !== null;
   const { x: vx, y: vy, k } = view;
   const ease = input.dt <= 0 ? 1 : 1 - Math.exp(-input.dt / FADE_TAU_MS);
   let settling = false;
@@ -152,7 +158,7 @@ export function paintGraph(input: PaintInput): boolean {
       if (!a || !b || !visible(a) || !visible(b)) continue;
       const target = pass
         ? { ...muted, a: 1 }
-        : { ...line, a: hover === null ? 1 : 0.4 };
+        : { ...line, a: narrowed ? 0.4 : 1 };
       edge.tint = approach(edge.tint, target);
       ctx.strokeStyle = css(edge.tint);
       ctx.beginPath();
@@ -171,7 +177,8 @@ export function paintGraph(input: PaintInput): boolean {
     const isHover = node.rel === hover;
     const isFocus = node.rel === focus;
     const isNeighbor = hover !== null && neighbors.has(node.rel);
-    const dimmed = hover !== null && !isHover && !isNeighbor && !isFocus;
+    const isMatch = matches?.has(node.rel) ?? false;
+    const dimmed = narrowed && !isHover && !isNeighbor && !isFocus && !isMatch;
     const target =
       isHover || isFocus
       ? { ...ink, a: 1 }
@@ -181,7 +188,7 @@ export function paintGraph(input: PaintInput): boolean {
     node.tint = approach(node.tint, target);
 
     const zoomAlpha = clamp01((node.r * k - LABEL_FADE_START) / LABEL_FADE_RANGE);
-    const baseLabel = input.alwaysLabel?.has(node.rel) ? 1 : zoomAlpha;
+    const baseLabel = isMatch || input.alwaysLabel?.has(node.rel) ? 1 : zoomAlpha;
     const labelTarget =
       isHover || isNeighbor || isFocus ? 1 : dimmed ? baseLabel * DIMMED_LABEL : baseLabel;
     const labelNow =
@@ -210,7 +217,12 @@ export function paintGraph(input: PaintInput): boolean {
     }
 
     if (node.labelAlpha > 0.02 && x > -200 && x < width + 20 && y > -20 && y < height + 20) {
-      labels.push({ node, x, y, priority: isHover || isFocus ? 2 : isNeighbor ? 1 : 0 });
+      labels.push({
+        node,
+        x,
+        y,
+        priority: isHover || isFocus ? 2 : isNeighbor || isMatch ? 1 : 0,
+      });
     }
   }
 

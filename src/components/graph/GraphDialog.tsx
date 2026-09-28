@@ -6,6 +6,7 @@ import {
   forceManyBody,
   forceSimulation,
 } from "d3-force";
+import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ipc } from "@/lib/ipc";
@@ -15,6 +16,7 @@ import { cx } from "@/lib/utils";
 import { FadeLoop, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
 import { forceGroup, groupOf } from "./graphGroups";
 import { paintGraph, type SimEdge, type SimNode } from "./graphPaint";
+import { searchNodes } from "./graphSearch";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
@@ -34,6 +36,10 @@ const MAX_ZOOM = 4;
 /** Auto-fit never magnifies a small graph past this. */
 const FIT = { padding: 48, minZoom: MIN_ZOOM, maxZoom: 1.5 };
 const GROUPS_KEY = "ornata:graph-groups";
+/** Camera flight to a search hit; within the app's motion budget. */
+const FLY_MS = 160;
+/** A hit is framed at least this close. */
+const FLY_ZOOM = 1.2;
 
 function readGroupsPref(): boolean {
   try {
@@ -61,6 +67,11 @@ export function GraphDialog() {
   const [showAll, setShowAll] = useState(false);
   const [groups, setGroups] = useState(readGroupsPref);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  /** Position in `matches` of the hit the camera last flew to (-1: none). */
+  const [matchIndex, setMatchIndex] = useState(-1);
+  /** Bumped when a new layout lands, so search sees the new node set. */
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simRef = useRef<{ nodes: SimNode[]; edges: SimEdge[] } | null>(null);
   const viewRef = useRef({ x: 0, y: 0, k: 1 });
@@ -83,6 +94,10 @@ export function GraphDialog() {
   const runFrameRef = useRef(0);
   /** False until the first layout has come to rest. */
   const settledRef = useRef(false);
+  const matchesRef = useRef<ReadonlySet<string> | null>(null);
+  /** The search hit in focus; stands in for hover when the mouse is idle. */
+  const selectedRef = useRef<string | null>(null);
+  const flyFrameRef = useRef(0);
   const autoFitRef = useRef(true);
   const showIsolatedRef = useRef(showIsolated);
   showIsolatedRef.current = showIsolated;
@@ -102,6 +117,7 @@ export function GraphDialog() {
     setLoadError(false);
     setHovered(null);
     hoverRef.current = null;
+    setQuery("");
     let cancelled = false;
     ipc
       .linkGraph()
@@ -215,6 +231,7 @@ export function GraphDialog() {
     simRef.current = { nodes, edges };
     simulationRef.current = sim;
     settledRef.current = false;
+    setLayoutVersion((v) => v + 1);
     viewRef.current = { x: 0, y: 0, k: 1 };
     autoFitRef.current = true;
     runSim();
@@ -253,8 +270,9 @@ export function GraphDialog() {
           nodes: sim.nodes,
           edges: sim.edges,
           view: viewRef.current,
-          hover: hoverRef.current,
+          hover: hoverRef.current ?? selectedRef.current,
           focus: focusRef.current,
+          matches: matchesRef.current,
           showIsolated: showIsolatedRef.current,
           groups: groupsRef.current,
           palette: readPalette(),
@@ -333,6 +351,8 @@ export function GraphDialog() {
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       autoFitRef.current = false;
+      cancelAnimationFrame(flyFrameRef.current);
+      flyFrameRef.current = 0;
       const unit = event.deltaMode === 1 ? 16 : 1;
       const view = viewRef.current;
       if (event.ctrlKey || event.metaKey) {
@@ -361,6 +381,89 @@ export function GraphDialog() {
     return () => canvas.removeEventListener("wheel", onWheel);
   }, [graph, draw]);
 
+  const matches = useMemo(() => {
+    const nodes = simRef.current?.nodes.filter(visibleNode) ?? [];
+    return searchNodes(nodes, query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, layoutVersion, showIsolated]);
+
+  useEffect(() => {
+    matchesRef.current = query.trim() ? new Set(matches) : null;
+    selectedRef.current = null;
+    setMatchIndex(-1);
+    draw();
+  }, [matches, query, draw]);
+
+  const cancelFly = () => {
+    cancelAnimationFrame(flyFrameRef.current);
+    flyFrameRef.current = 0;
+  };
+
+  /** Ease the camera to center `node`, zooming in to at least FLY_ZOOM. */
+  const flyTo = (node: SimNode) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    cancelFly();
+    autoFitRef.current = false;
+    const from = { ...viewRef.current };
+    const k = Math.min(MAX_ZOOM, Math.max(from.k, FLY_ZOOM));
+    const to = {
+      k,
+      x: canvas.clientWidth / 2 - node.x * k,
+      y: canvas.clientHeight / 2 - node.y * k,
+    };
+    const start = performance.now();
+    const step = () => {
+      const t = Math.min(1, (performance.now() - start) / FLY_MS);
+      const e = 1 - (1 - t) ** 3;
+      viewRef.current = {
+        k: from.k + (to.k - from.k) * e,
+        x: from.x + (to.x - from.x) * e,
+        y: from.y + (to.y - from.y) * e,
+      };
+      draw();
+      flyFrameRef.current = t < 1 ? requestAnimationFrame(step) : 0;
+    };
+    step();
+  };
+
+  /** Step through hits (wrapping) and fly to the new one. */
+  const stepMatch = (delta: 1 | -1) => {
+    if (matches.length === 0) return;
+    const next =
+      matchIndex < 0
+        ? delta === 1
+          ? 0
+          : matches.length - 1
+        : (matchIndex + delta + matches.length) % matches.length;
+    const node = simRef.current?.nodes.find((n) => n.rel === matches[next]);
+    setMatchIndex(next);
+    if (!node) return;
+    selectedRef.current = node.rel;
+    flyTo(node);
+  };
+
+  const onSearchKey = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (event.metaKey || event.ctrlKey) {
+        const rel = matchIndex >= 0 ? matches[matchIndex] : matches[0];
+        if (rel) openNote(rel);
+        return;
+      }
+      stepMatch(event.shiftKey ? -1 : 1);
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      stepMatch(event.key === "ArrowDown" ? 1 : -1);
+    } else if (event.key === "Escape" && query) {
+      // First Escape clears the search; the Modal's own handler (on window)
+      // never sees it, so a second one closes the dialog.
+      event.preventDefault();
+      event.stopPropagation();
+      setQuery("");
+    }
+  };
+
   const nodeAt = (clientX: number, clientY: number): SimNode | null => {
     const canvas = canvasRef.current;
     const sim = simRef.current;
@@ -387,6 +490,7 @@ export function GraphDialog() {
       const first = !drag.moved;
       drag.moved = true;
       autoFitRef.current = false;
+      cancelFly();
       const sim = simulationRef.current;
       const canvas = canvasRef.current;
       if (drag.node && sim && canvas) {
@@ -451,9 +555,29 @@ export function GraphDialog() {
       className="w-[min(1100px,92vw)]"
     >
       <div className="flex flex-col">
-        <div className="flex items-baseline justify-between border-b border-line-soft px-4 py-3">
-          <span className="text-[13px] font-semibold text-ink">{t("graph.title")}</span>
-          <span className="text-[11px] tabular-nums text-faint">
+        <div className="flex items-center gap-3 border-b border-line-soft px-4 py-2.5">
+          <span className="shrink-0 text-[13px] font-semibold text-ink">{t("graph.title")}</span>
+          <label className="flex min-w-0 max-w-xs flex-1 items-center gap-1.5 rounded-md border border-line-soft px-2 py-1 transition-colors duration-100 focus-within:border-line">
+            <Search size={12} strokeWidth={2} className="shrink-0 text-faint" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={onSearchKey}
+              placeholder={t("graph.search")}
+              aria-label={t("graph.search")}
+              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-faint"
+            />
+            {query.trim() && (
+              <span className="shrink-0 text-[11px] tabular-nums text-faint">
+                {matches.length === 0
+                  ? t("graph.noMatches")
+                  : matchIndex >= 0
+                    ? `${matchIndex + 1} / ${matches.length}`
+                    : matches.length}
+              </span>
+            )}
+          </label>
+          <span className="ml-auto shrink-0 text-[11px] tabular-nums text-faint">
             {graph && `${graph.nodes.length} · ${graph.edges.length}`}
           </span>
         </div>
