@@ -55,7 +55,7 @@ export function Hero() {
               href="#principles"
               className="group inline-flex min-h-11 items-center gap-2 text-[12px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
             >
-              Read the principles
+              Read the position
               <ArrowDownRight
                 size={14}
                 className="transition-transform duration-150 group-hover:translate-x-0.5 group-hover:translate-y-0.5"

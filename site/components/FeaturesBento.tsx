@@ -16,6 +16,7 @@ import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 import { BacklinksDemo } from "@/components/BacklinksDemo";
 import { GraphDemo } from "@/components/GraphDemo";
+import { MachineryDemo } from "@/components/MachineryDemo";
 import { TasksDemo } from "@/components/TasksDemo";
 
 const FILES = [
@@ -24,15 +25,6 @@ const FILES = [
   { name: "Product principles.md", kind: "file", depth: 2 },
   { name: "Release notes.md", kind: "file", depth: 2 },
   { name: "Journal", kind: "folder", depth: 0 },
-] as const;
-
-const PRINCIPLES = [
-  "Own the files",
-  "Keep the interface quiet",
-  "Invite AI deliberately",
-  "Connect ideas freely",
-  "See the whole map",
-  "Track tasks globally",
 ] as const;
 
 const SEARCH_RESULTS = [
@@ -364,10 +356,80 @@ function CommandDemo() {
   );
 }
 
+/** Editorial chapter opener: groups the stories into a short narrative. */
+function Chapter({ number, word, line }: { number: string; word: string; line: string }) {
+  const reduce = useReducedMotion();
+  return (
+    <div className="grid border-b border-border bg-paper lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="hidden border-r border-border px-8 py-10 lg:block">
+        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
+          Chapter {number}
+        </span>
+      </aside>
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 12 }}
+        whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
+        className="flex flex-wrap items-baseline gap-x-8 gap-y-2 px-5 py-9 sm:px-10 lg:px-16"
+      >
+        <span className="font-serif text-[44px] leading-none tracking-[-0.04em] text-foreground sm:text-[56px]">
+          {word}
+        </span>
+        <span className="text-[15px] text-muted-foreground">{line}</span>
+      </motion.div>
+    </div>
+  );
+}
+
+/** Two lighter features side by side, to break the alternating rhythm. */
+function Pair({
+  items,
+}: {
+  items: { index: string; eyebrow: string; title: string; body: string; demo: ReactNode }[];
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="hidden border-r border-border px-8 py-14 lg:block">
+        <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
+          {/* "05–06 / 06" */}
+          {`${items[0].index.split(" /")[0]}–${items[items.length - 1].index}`}
+        </span>
+      </aside>
+      <div className="grid gap-16 px-5 py-16 sm:px-10 sm:py-20 lg:px-16 xl:grid-cols-2 xl:gap-14">
+        {items.map((item, i) => (
+          <motion.div
+            key={item.index}
+            initial={reduce ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
+            whileInView={reduce ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.55, ease: EASE_OUT, delay: i * 0.08 }}
+            className="flex flex-col"
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
+              {item.eyebrow}
+            </p>
+            <h2 className="mt-4 text-balance font-serif text-[34px] leading-[1.02] tracking-[-0.03em] text-foreground sm:text-[40px]">
+              {item.title}
+            </h2>
+            <p className="mt-4 max-w-md text-pretty text-[15px] leading-7 text-muted-foreground">
+              {item.body}
+            </p>
+            <div className="mt-8">{item.demo}</div>
+          </motion.div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 export function FeaturesBento() {
+  const reduce = useReducedMotion();
   return (
     <section className="section-contain px-3 sm:px-6">
       <div className="mx-auto w-full max-w-[1440px] border-x border-border bg-background">
+        {/* The position: one claim, and a demo that proves it. */}
         <div
           id="principles"
           className="scroll-mt-20 grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]"
@@ -377,83 +439,85 @@ export function FeaturesBento() {
               The position
             </p>
           </aside>
-          <div className="px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
-            <p className="max-w-5xl text-balance font-serif text-[39px] leading-[1.08] tracking-[-0.035em] text-foreground sm:text-[56px] lg:text-[68px]">
-              Most notes apps grow into systems you have to maintain. Ornata
-              stays an instrument: quick to open, quiet while you write, and
-              honest about where your files live.
-            </p>
-            <ol className="mt-14 grid max-w-4xl grid-cols-2 border-t border-border sm:grid-cols-3">
-              {PRINCIPLES.map((principle, index) => (
-                <li
-                  key={principle}
-                  className="border-b border-border py-4 pr-6 font-mono text-[9px] uppercase leading-5 tracking-[0.13em] text-muted-foreground"
-                >
-                  <span className="block text-faint">{String(index + 1).padStart(2, "0")}</span>
-                  {principle}
-                </li>
-              ))}
-            </ol>
+          <div className="grid items-center gap-12 px-5 py-20 sm:px-10 lg:px-16 lg:py-24 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-20">
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.55, ease: EASE_OUT }}
+            >
+              <h2 className="text-balance font-serif text-[44px] leading-[0.98] tracking-[-0.04em] text-foreground sm:text-[60px]">
+                Notes should outlive the app.
+              </h2>
+              <p className="mt-7 max-w-md text-pretty text-[16px] leading-7 text-muted-foreground">
+                Most notes apps grow into systems you have to maintain — plugins,
+                sync layers, a private database. Ornata stays an instrument: quick
+                to open, quiet while you write, and honest about where your files
+                live.
+              </p>
+            </motion.div>
+            <MachineryDemo />
           </div>
         </div>
 
         <div id="features" className="scroll-mt-16">
+          <Chapter number="01" word="Write." line="Plain files underneath, a precise editor on top." />
           <Story
             index="01 / 06"
             eyebrow="Plain files, real folders"
             title="Your notes are already exported."
-            body="Choose any folder. Ornata writes ordinary Markdown into real directories, preserves frontmatter from other tools, and notices external edits when you return. When you need to share, export a PDF with a bookmark outline, or standalone HTML."
+            body="Pick any folder. Ornata writes ordinary Markdown into real directories, keeps frontmatter from other tools, and notices edits made elsewhere. When you need to share, export a PDF with a bookmark outline, or standalone HTML."
           >
             <FilesDemo />
           </Story>
-
           <Story
             index="02 / 06"
             eyebrow="A professional editor"
             title="Rich where it helps. Plain underneath."
-            body="Write with clean typography, language-aware code, internal links, pasted images, and a magnetic outline for long notes. The file on disk stays readable everywhere."
+            body="Clean typography, language-aware code, pasted images, and a magnetic outline for long notes — while the file on disk stays readable anywhere."
             reverse
           >
             <WritingDemo />
           </Story>
 
+          <Chapter number="02" word="Connect." line="Links become context, and the context becomes a map." />
           <Story
             index="03 / 06"
-            eyebrow="Fast by default"
-            title="Everything important is one keystroke away."
-            body="Search titles and content, jump between notes, or run an action from ⌘K. Nothing competes with the page you're writing."
-          >
-            <CommandDemo />
-          </Story>
-
-          <Story
-            index="04 / 06"
-            eyebrow="Connected knowledge"
-            title="See who's linking to your notes."
-            body="Backlinks show every note that references the current one, with folder context and snippet previews. Unlinked mentions surface title-only references that should be links."
-            reverse
+            eyebrow="Linked mentions"
+            title="See what links here."
+            body="Every note lists the notes that reference it, with the linking line as context — and surfaces plain mentions that should become links."
           >
             <BacklinksDemo />
           </Story>
-
           <Story
-            index="05 / 06"
+            index="04 / 06"
             eyebrow="The link graph"
             title="See how your ideas connect."
-            body="Every link becomes a map. Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text."
+            body="Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text."
+            reverse
           >
             <GraphDemo />
           </Story>
 
-          <Story
-            index="06 / 06"
-            eyebrow="Vault-wide task tracking"
-            title="Your open tasks, all in one place."
-            body="Scan every markdown checkbox across your vault from a single view. Jump to any note to complete tasks, with live counts and folder context."
-            reverse
-          >
-            <TasksDemo />
-          </Story>
+          <Chapter number="03" word="Find." line="Everything important is one keystroke away." />
+          <Pair
+            items={[
+              {
+                index: "05 / 06",
+                eyebrow: "Command palette",
+                title: "One keystroke to anywhere.",
+                body: "Search titles and content, jump between notes, or run any action from ⌘K.",
+                demo: <CommandDemo />,
+              },
+              {
+                index: "06 / 06",
+                eyebrow: "Vault-wide tasks",
+                title: "Every open task, in one list.",
+                body: "Checkboxes from across the vault, with counts and folder context. Tick one here and it's done in its note.",
+                demo: <TasksDemo />,
+              },
+            ]}
+          />
         </div>
       </div>
     </section>
