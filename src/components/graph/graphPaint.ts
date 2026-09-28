@@ -1,8 +1,11 @@
 /**
  * Canvas painting for the link graph: hover emphasis that eases between
- * states instead of snapping, and labels that fade in with zoom by node
- * importance, placed greedily so they never overlap.
+ * states instead of snapping, labels that fade in with zoom by node
+ * importance, placed greedily so they never overlap, and optional folder
+ * regions drawn beneath everything.
  */
+
+import { convexHull, type Point } from "./graphGroups";
 
 export interface SimNode {
   rel: string;
@@ -12,6 +15,8 @@ export interface SimNode {
   r: number;
   degree: number;
   isolated: boolean;
+  /** Top-level folder, for folder regions (see graphGroups). */
+  group?: string | null;
   /** Current eased fill and label opacity; seeded on first paint. */
   tint?: Tint;
   labelAlpha?: number;
@@ -43,6 +48,7 @@ export interface Palette {
   faint: string;
   line: string;
   bg: string;
+  sunken: string;
   font: string;
 }
 
@@ -59,6 +65,8 @@ export interface PaintInput {
   /** Labeled regardless of zoom (the local graph's direct neighbors). */
   alwaysLabel?: ReadonlySet<string>;
   showIsolated: boolean;
+  /** Draw each folder's notes on a shared recessed region. */
+  groups?: boolean;
   palette: Palette;
   /** ms since the previous paint of an ongoing fade; 0 snaps to targets. */
   dt: number;
@@ -76,6 +84,13 @@ const LABEL_SIZE = 11;
 const LABEL_GAP = 4;
 const LABEL_PAD = 2;
 const CELL = 64;
+/** Region margin beyond the largest dot in the folder (screen px). */
+const HULL_MARGIN = 9;
+const GROUP_LABEL_SIZE = 10.5;
+/** A folder name shows once its region is this wide on screen, fully
+ *  after RANGE more — so names appear as you zoom into a folder. */
+const GROUP_LABEL_START = 90;
+const GROUP_LABEL_RANGE = 60;
 
 /** Paint one frame. Returns true while any fade is still in progress. */
 export function paintGraph(input: PaintInput): boolean {
@@ -118,6 +133,10 @@ export function paintGraph(input: PaintInput): boolean {
   };
 
   ctx.clearRect(0, 0, width, height);
+
+  const groupLabels = input.groups
+    ? paintGroups(ctx, nodes, view, visible, palette.sunken)
+    : [];
 
   // Edges: the hovered note's edges go last, on top of everything else.
   ctx.lineWidth = 1;
@@ -202,6 +221,28 @@ export function paintGraph(input: PaintInput): boolean {
   ctx.strokeStyle = palette.bg;
   labels.sort((a, b) => b.priority - a.priority || b.node.r - a.node.r);
   const grid = new Map<string, Rect[]>();
+
+  // Folder names claim their spot first; note labels route around them.
+  if (groupLabels.length > 0) {
+    ctx.font = `600 ${GROUP_LABEL_SIZE}px ${palette.font}`;
+    ctx.textAlign = "center";
+    for (const label of groupLabels) {
+      const w = ctx.measureText(label.text).width;
+      const rect: Rect = {
+        x0: label.x - w / 2 - LABEL_PAD,
+        y0: label.y - GROUP_LABEL_SIZE / 2 - LABEL_PAD,
+        x1: label.x + w / 2 + LABEL_PAD,
+        y1: label.y + GROUP_LABEL_SIZE / 2 + LABEL_PAD,
+      };
+      if (!place(grid, rect)) continue;
+      ctx.globalAlpha = label.alpha;
+      ctx.fillStyle = palette.faint;
+      ctx.fillText(label.text, label.x, label.y);
+    }
+    ctx.textAlign = "start";
+    ctx.globalAlpha = 1;
+    ctx.font = font;
+  }
   for (const { node, x, y, priority } of labels) {
     if (node.labelFont !== font || node.labelWidth === undefined) {
       node.labelWidth = ctx.measureText(node.title).width;
@@ -225,6 +266,70 @@ export function paintGraph(input: PaintInput): boolean {
   ctx.globalAlpha = 1;
 
   return settling;
+}
+
+interface GroupLabel {
+  text: string;
+  x: number;
+  y: number;
+  alpha: number;
+}
+
+/**
+ * Fill each folder's region: the convex hull of its dots, grown by a margin
+ * and rounded — filling the polygon and stroking it with a round-joined line
+ * as wide as twice the margin. Opaque, so overlapping regions merge instead
+ * of stacking darker. Returns the folder names worth labeling.
+ */
+function paintGroups(
+  ctx: CanvasRenderingContext2D,
+  nodes: SimNode[],
+  view: { x: number; y: number; k: number },
+  visible: (node: SimNode) => boolean,
+  fill: string,
+): GroupLabel[] {
+  const members = new Map<string, { points: Point[]; maxR: number }>();
+  for (const node of nodes) {
+    if (!node.group || !visible(node)) continue;
+    const entry = members.get(node.group) ?? { points: [], maxR: 0 };
+    entry.points.push({ x: node.x * view.k + view.x, y: node.y * view.k + view.y });
+    entry.maxR = Math.max(entry.maxR, node.r);
+    members.set(node.group, entry);
+  }
+
+  const labels: GroupLabel[] = [];
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = fill;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  for (const [group, { points, maxR }] of members) {
+    // A lone note is not a region.
+    if (points.length < 2) continue;
+    const hull = convexHull(points);
+    const margin = maxR + HULL_MARGIN;
+    ctx.lineWidth = margin * 2;
+    ctx.beginPath();
+    ctx.moveTo(hull[0].x, hull[0].y);
+    for (const p of hull.slice(1)) ctx.lineTo(p.x, p.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    for (const p of hull) {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+    }
+    const alpha = clamp01((maxX - minX + margin * 2 - GROUP_LABEL_START) / GROUP_LABEL_RANGE);
+    if (alpha > 0.02) {
+      labels.push({ text: group, x: (minX + maxX) / 2, y: minY - margin - 7, alpha });
+    }
+  }
+  ctx.lineCap = "butt";
+  return labels;
 }
 
 interface Rect {

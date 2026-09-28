@@ -6,6 +6,7 @@ import { vaultNote } from "@/lib/noteRef";
 import type { LinkGraph } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { FadeLoop, fitView, nodeAtPoint, prepareCanvas, readPalette } from "./graphCanvas";
+import { forceGroup, groupOf } from "./graphGroups";
 import { paintGraph, type SimEdge, type SimNode } from "./graphPaint";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
@@ -21,6 +22,15 @@ const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 /** Auto-fit never magnifies a small graph past this. */
 const FIT = { padding: 48, minZoom: MIN_ZOOM, maxZoom: 1.5 };
+const GROUPS_KEY = "ornata:graph-groups";
+
+function readGroupsPref(): boolean {
+  try {
+    return localStorage.getItem(GROUPS_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
 
 /**
  * The vault's link graph, laid out by d3-force and drawn on a plain canvas.
@@ -37,6 +47,7 @@ export function GraphDialog() {
   const [loadError, setLoadError] = useState(false);
   const [showIsolated, setShowIsolated] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [groups, setGroups] = useState(readGroupsPref);
   const [hovered, setHovered] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simRef = useRef<{ nodes: SimNode[]; edges: SimEdge[] } | null>(null);
@@ -55,6 +66,8 @@ export function GraphDialog() {
   const autoFitRef = useRef(true);
   const showIsolatedRef = useRef(showIsolated);
   showIsolatedRef.current = showIsolated;
+  const groupsRef = useRef(groups);
+  groupsRef.current = groups;
   // The note being read gets the "you are here" ring.
   const focus = useVault((s) =>
     s.view?.type === "note" && s.view.note.kind === "vault" ? s.view.note.rel : null,
@@ -157,6 +170,7 @@ export function GraphDialog() {
         r: Math.min(3.5 + Math.sqrt(d) * 2.2, 14),
         degree: d,
         isolated: d === 0,
+        group: groupOf(node.rel),
       };
     });
     const byRel = new Map(nodes.map((n) => [n.rel, n]));
@@ -175,6 +189,7 @@ export function GraphDialog() {
       .force("charge", forceManyBody().strength(-140))
       .force("center", forceCenter(width / 2, height / 2))
       .force("collide", forceCollide().radius((d: unknown) => (d as SimNode).r + 4))
+      .force("group", groups ? (forceGroup() as never) : null)
       .stop();
 
     simRef.current = { nodes, edges };
@@ -203,7 +218,7 @@ export function GraphDialog() {
     step();
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, showAll, layoutIsolates]);
+  }, [graph, showAll, layoutIsolates, groups]);
 
   const visibleNode = (node: SimNode) => showIsolatedRef.current || !node.isolated;
 
@@ -235,6 +250,7 @@ export function GraphDialog() {
           hover: hoverRef.current,
           focus: focusRef.current,
           showIsolated: showIsolatedRef.current,
+          groups: groupsRef.current,
           palette: readPalette(),
           dt,
         });
@@ -412,33 +428,32 @@ export function GraphDialog() {
               }}
             />
           )}
-          {graph && graph.nodes.length > 0 && isolatedCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowIsolated((v) => !v)}
-              className={cx(
-                "absolute left-3 top-3 rounded-md border px-2.5 py-1 text-[11.5px] transition-colors duration-100",
-                showIsolated
-                  ? "border-line bg-active text-ink"
-                  : "border-line-soft bg-panel text-faint hover:text-muted",
+          {graph && graph.nodes.length > 0 && (
+            <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+              <Toggle
+                on={groups}
+                onClick={() => {
+                  try {
+                    localStorage.setItem(GROUPS_KEY, groups ? "0" : "1");
+                  } catch {
+                    // Storage unavailable — the choice just won't stick.
+                  }
+                  setGroups(!groups);
+                }}
+              >
+                {t("graph.groupFolders")}
+              </Toggle>
+              {isolatedCount > 0 && (
+                <Toggle on={showIsolated} onClick={() => setShowIsolated((v) => !v)}>
+                  {t("graph.showIsolated")}
+                </Toggle>
               )}
-            >
-              {t("graph.showIsolated")}
-            </button>
-          )}
-          {graph && graph.nodes.length > 2000 && (
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className={cx(
-                "absolute left-3 top-12 rounded-md border px-2.5 py-1 text-[11.5px] transition-colors duration-100",
-                showAll
-                  ? "border-line bg-active text-ink"
-                  : "border-line-soft bg-panel text-faint hover:text-muted",
+              {graph.nodes.length > 2000 && (
+                <Toggle on={showAll} onClick={() => setShowAll((v) => !v)}>
+                  {t("graph.showAll")}
+                </Toggle>
               )}
-            >
-              {t("graph.showAll")}
-            </button>
+            </div>
           )}
         </div>
       </div>
@@ -446,3 +461,28 @@ export function GraphDialog() {
   );
 }
 
+function Toggle({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={cx(
+        "rounded-md border px-2.5 py-1 text-[11.5px] transition-colors duration-100",
+        on
+          ? "border-line bg-active text-ink"
+          : "border-line-soft bg-panel text-faint hover:text-muted",
+      )}
+    >
+      {children}
+    </button>
+  );
+}

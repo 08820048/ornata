@@ -44,6 +44,7 @@ export function readPalette(): Palette {
     faint: cssVar("--faint", "#a3a39e"),
     line: cssVar("--line", "#e3e3e0"),
     bg: cssVar("--bg", "#fbfbfa"),
+    sunken: cssVar("--sunken", "#e9e9e6"),
     font: cssVar("--font-sans", "system-ui, sans-serif"),
   };
 }
