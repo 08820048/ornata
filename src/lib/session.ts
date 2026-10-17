@@ -1,5 +1,6 @@
 import { debounce } from "@/lib/utils";
-import { GRAPH_TAB, externalNote, vaultNote, viewOfTab } from "@/lib/noteRef";
+import { GRAPH_TAB, externalNote, sameTab, tabOfView, vaultNote, viewOfTab } from "@/lib/noteRef";
+import { restorePanes } from "@/lib/paneSession";
 import { ipc } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
 import type { NoteRef, TabRef, TreeSort, View } from "@/lib/types";
@@ -15,6 +16,8 @@ interface Session {
   tabs: TabRef[];
   view: View | null;
   treeSort?: TreeSort;
+  /** The split layout (panes, widths) and every pane's own history. */
+  panes?: { split: unknown; solo: unknown };
 }
 
 const storageKey = (root: string) => `ornata:session:${root}`;
@@ -23,10 +26,12 @@ const legacyStorageKey = (root: string) => `markd:session:${root}`;
 function writeSession(root: string) {
   const vault = useVault.getState();
   if (!root || vault.status !== "ready") return;
+  const { tabs, split, solo } = useTabs.getState();
   const data: Session = {
-    tabs: useTabs.getState().tabs,
+    tabs,
     view: vault.view,
     treeSort: vault.treeSort,
+    panes: { split, solo },
   };
   try {
     localStorage.setItem(storageKey(root), JSON.stringify(data));
@@ -118,7 +123,18 @@ export async function restoreSession(root: string) {
   const tabs = parsedTabs.filter(valid);
   useTabs.setState({ tabs });
 
-  const view = parsedView;
+  // The split and each pane's history go back before the view is set, so that
+  // showing the saved view is a plain refocus and records nothing.
+  const panes = restorePanes(data.panes, parseTab, valid);
+  useTabs.setState({ split: panes.split, solo: panes.solo });
+  for (const pane of panes.split?.panes ?? []) useTabs.getState().open(pane);
+  // With a split, focus the saved view's pane (else the first one); with
+  // none, show the saved view as before.
+  let view: View | null = parsedView;
+  if (panes.split) {
+    const shown = parsedView && panes.split.panes.find((p) => sameTab(p, tabOfView(parsedView)));
+    view = viewOfTab(shown ?? panes.split.panes[0]);
+  }
   if (view?.type === "note") {
     if (valid(view.note)) {
       if (view.note.kind === "vault") vault.expandTo(view.note.rel);
@@ -143,7 +159,7 @@ export function initSessionSync() {
   if (started) return;
   started = true;
   useTabs.subscribe((s, p) => {
-    if (s.tabs !== p.tabs) saveSession();
+    if (s.tabs !== p.tabs || s.split !== p.split || s.solo !== p.solo) saveSession();
   });
   useVault.subscribe((s, p) => {
     if (s.view !== p.view || s.treeSort !== p.treeSort) saveSession();

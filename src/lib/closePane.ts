@@ -1,4 +1,4 @@
-import { viewOfTab } from "@/lib/noteRef";
+import { tabOfView, viewOfTab } from "@/lib/noteRef";
 import { neighbourOf } from "@/lib/split";
 import type { TabRef } from "@/lib/types";
 import { useTabs } from "@/stores/tabs";
@@ -11,4 +11,10 @@ export function closePaneAndRefocus(tab: TabRef) {
   const next = split ? neighbourOf(split, tab) : null;
   useTabs.getState().closePane(tab);
   if (next) useVault.getState().setView(viewOfTab(next));
+}
+
+/** End the split, keeping the pane that has focus (and its history). */
+export function closeSplitKeepingFocus() {
+  const view = useVault.getState().view;
+  useTabs.getState().closeSplit(view ? tabOfView(view) : null);
 }

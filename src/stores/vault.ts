@@ -28,7 +28,6 @@ import { parentDir } from "@/lib/utils";
 import { applyTheme } from "@/lib/theme";
 import { broadcastSettings } from "@/lib/settingsSync";
 import { dailyRel } from "@/lib/dateLinks";
-import { useNav } from "@/stores/nav";
 import { useTabs } from "@/stores/tabs";
 import { t } from "@/stores/locale";
 
@@ -133,7 +132,6 @@ function openVaultSnapshot(
     treeSort: "name",
   });
   useTabs.getState().clear();
-  useNav.getState().clear();
 }
 
 /** Top note rels by on-disk mtime — seeds "recent" before any note is opened. */
@@ -338,13 +336,13 @@ export const useVault = create<VaultState>((set, get) => ({
   setView: (view, options) => {
     const previous = get().view;
     set({ view });
+    // Moves focus between panes, and records the visit in the focused pane's
+    // own history (not when stepping through that history, or just refocusing).
     useTabs.getState().followFocus(
       previous ? tabOfView(previous) : null,
       view ? tabOfView(view) : null,
+      options?.record !== false,
     );
-    if (view && options?.record !== false) {
-      useNav.getState().record(view.type === "note" ? view.note : GRAPH_TAB);
-    }
     if (view?.type === "note") {
       useTabs.getState().open(view.note);
       if (view.note.kind === "vault") get().pushRecent(view.note.rel);
@@ -542,7 +540,6 @@ export const useVault = create<VaultState>((set, get) => ({
       remapRecents(set, get, rel, next);
       remapPinned(set, get, rel, next);
       useTabs.getState().remap(rel, next);
-      useNav.getState().remap(rel, next);
       useTabs.getState().applyLinkRewrites(outcome.rewrites);
       reportRewrites(outcome);
       if (view?.type === "note" && view.note.kind === "vault") {
@@ -587,7 +584,6 @@ export const useVault = create<VaultState>((set, get) => ({
       remapRecents(set, get, rel, next);
       remapPinned(set, get, rel, next);
       useTabs.getState().remap(rel, next);
-      useNav.getState().remap(rel, next);
       useTabs.getState().applyLinkRewrites(outcome.rewrites);
       reportRewrites(outcome);
       if (view?.type === "note" && view.note.kind === "vault") {
@@ -622,7 +618,6 @@ export const useVault = create<VaultState>((set, get) => ({
       // nearest surviving tab to its right (else the last one standing).
       const before = useTabs.getState().tabs;
       useTabs.getState().removeUnder(rel);
-      useNav.getState().removeUnder(rel);
       if (
         view?.type === "note" &&
         view.note.kind === "vault" &&

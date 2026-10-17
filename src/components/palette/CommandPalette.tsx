@@ -21,6 +21,7 @@ import { motion } from "motion/react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ipc } from "@/lib/ipc";
 import { SPRING_LAYOUT } from "@/lib/ease";
+import { closeSplitKeepingFocus } from "@/lib/closePane";
 import { openRelAside } from "@/lib/openAside";
 import { vaultNote } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
@@ -200,7 +201,7 @@ export function CommandPalette() {
               id: "close-split",
               label: t("split.close"),
               icon: PanelRight,
-              run: () => useTabs.getState().closeSplit(),
+              run: () => closeSplitKeepingFocus(),
             },
           ]
         : []),

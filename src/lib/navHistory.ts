@@ -56,3 +56,19 @@ export function pruneHistory(h: NavHistory, rel: string): NavHistory {
   });
   return { entries, index: entries.length ? Math.max(index, 0) : -1 };
 }
+
+/** Step back to the nearest earlier entry that `skip` doesn't reject (e.g. a
+ *  note already open in another pane); unchanged when there is none. */
+export function stepBackSkipping(h: NavHistory, skip: (tab: TabRef) => boolean): NavHistory {
+  for (let i = h.index - 1; i >= 0; i -= 1) {
+    if (!skip(h.entries[i])) return { ...h, index: i };
+  }
+  return h;
+}
+
+export function stepForwardSkipping(h: NavHistory, skip: (tab: TabRef) => boolean): NavHistory {
+  for (let i = h.index + 1; i < h.entries.length; i += 1) {
+    if (!skip(h.entries[i])) return { ...h, index: i };
+  }
+  return h;
+}

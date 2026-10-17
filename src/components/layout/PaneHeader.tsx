@@ -59,7 +59,7 @@ export function PaneHeader({
         !focused && "opacity-50 hover:opacity-100",
       )}
     >
-          <NavButtons />
+          <NavButtons tab={tab} />
           {note && <NoteBreadcrumb note={note} />}
 
           <div className="ml-auto flex items-center gap-0.5">

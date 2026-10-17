@@ -2,16 +2,23 @@ import { create } from "zustand";
 import { noteKey, sameTab, tabKey, vaultNote } from "@/lib/noteRef";
 import {
   closePane,
+  closeSplit,
   dropFromSplit,
   followFocus,
+  initialPanes,
   maxPanesFor,
   openAside,
+  pruneState,
   remapSplit,
   replaceInSplit,
+  stepPane,
   swapWithNext,
   tabIsUnder,
+  type PaneState,
   type Split,
+  type StepDirection,
 } from "@/lib/split";
+import type { NavHistory } from "@/lib/navHistory";
 import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
 
 /**
@@ -21,8 +28,10 @@ import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
  */
 interface TabsState {
   tabs: TabRef[];
-  /** Notes shown side by side; view-only, not persisted. */
+  /** Notes shown side by side, each pane with its own history. */
   split: Split | null;
+  /** Back/forward history of the one pane when there is no split. */
+  solo: NavHistory;
   /** Bumped to ask a note's pane to scroll to top (e.g. opened via a link). */
   scrollTopReq: { key: string; nonce: number } | null;
   /** Bumped to ask a note's pane to scroll to and flash the block containing `text`. */
@@ -42,12 +51,16 @@ interface TabsState {
   openAside: (focused: TabRef, target: TabRef) => void;
   /** Close the pane showing `tab` (the split ends when one pane is left). */
   closePane: (tab: TabRef) => void;
-  closeSplit: () => void;
+  /** End the split, keeping the pane showing `keep`. */
+  closeSplit: (keep: TabRef | null) => void;
+  /** Move the focused pane's history; returns the tab to show (the caller
+   *  displays it without recording), or null at the edge. */
+  step: (direction: StepDirection, focused: TabRef) => TabRef | null;
   /** Swap `tab`'s pane with its neighbour. */
   swapPane: (tab: TabRef) => void;
   setSplitSizes: (sizes: number[]) => void;
   /** Keep the split coherent when focus moves between tabs. */
-  followFocus: (prev: TabRef | null, next: TabRef | null) => void;
+  followFocus: (prev: TabRef | null, next: TabRef | null, record?: boolean) => void;
   /** Add a tab if not already open (no-op otherwise). */
   open: (tab: TabRef) => void;
   close: (tab: TabRef) => void;
@@ -73,9 +86,19 @@ interface TabsState {
   clear: () => void;
 }
 
-export const useTabs = create<TabsState>((set, get) => ({
+export const useTabs = create<TabsState>((set, get) => {
+  const panes = (): PaneState => ({ split: get().split, solo: get().solo });
+  /** Apply a new layout; a no-op (same objects) doesn't notify anyone. */
+  const apply = (next: PaneState, extra: Partial<TabsState> = {}) => {
+    const now = panes();
+    if (next.split === now.split && next.solo === now.solo && !Object.keys(extra).length) return;
+    set({ split: next.split, solo: next.solo, ...extra });
+  };
+
+  return {
   tabs: [],
   split: null,
+  solo: initialPanes.solo,
   scrollTopReq: null,
   revealReq: null,
   headingRevealReq: null,
@@ -90,51 +113,52 @@ export const useTabs = create<TabsState>((set, get) => ({
   },
 
   openAside: (focused, target) => {
-    const split = openAside(get().split, focused, target, maxPanesFor(window.innerWidth));
-    if (split === get().split) return;
+    const next = openAside(panes(), focused, target, maxPanesFor(window.innerWidth));
+    if (next.split === get().split) return;
     get().open(target);
-    set({ split });
+    apply(next);
   },
 
-  closePane: (tab) => set({ split: closePane(get().split, tab) }),
+  closePane: (tab) => apply(closePane(panes(), tab)),
 
-  closeSplit: () => set({ split: null }),
+  closeSplit: (keep) => apply(closeSplit(panes(), keep)),
 
-  swapPane: (tab) => set({ split: swapWithNext(get().split, tab) }),
+  swapPane: (tab) => apply(swapWithNext(panes(), tab)),
+
+  step: (direction, focused) => {
+    const moved = stepPane(panes(), focused, direction);
+    if (!moved) return null;
+    apply(moved.state);
+    return moved.tab;
+  },
 
   setSplitSizes: (sizes) => {
     const split = get().split;
     if (split && sizes.length === split.panes.length) set({ split: { ...split, sizes } });
   },
 
-  followFocus: (prev, next) => {
-    const split = followFocus(get().split, prev, next);
-    if (split !== get().split) set({ split });
-  },
+  followFocus: (prev, next, record = true) => apply(followFocus(panes(), prev, next, record)),
 
   close: (closing) =>
-    set({
+    apply(dropFromSplit(panes(), (tab) => sameTab(tab, closing)), {
       tabs: get().tabs.filter((tab) => !sameTab(tab, closing)),
-      split: dropFromSplit(get().split, (tab) => sameTab(tab, closing)),
     }),
 
   closeMany: (closingTabs) => {
     const closing = new Set(closingTabs.map(tabKey));
-    set({
+    apply(dropFromSplit(panes(), (tab) => closing.has(tabKey(tab))), {
       tabs: get().tabs.filter((tab) => !closing.has(tabKey(tab))),
-      split: dropFromSplit(get().split, (tab) => closing.has(tabKey(tab))),
     });
   },
 
   replace: (note, next) =>
-    set({
+    apply(replaceInSplit(panes(), note, next), {
       tabs: get().tabs.map((tab) => (sameTab(tab, note) ? next : tab)),
-      split: replaceInSplit(get().split, note, next),
     }),
 
   remap: (rel, next) =>
     set({
-      split: remapSplit(get().split, rel, next),
+      ...remapSplit(panes(), rel, next),
       tabs: get().tabs.map((tab) => {
         if (tab.kind !== "vault") return tab;
         if (tab.rel === rel) return vaultNote(next);
@@ -146,7 +170,7 @@ export const useTabs = create<TabsState>((set, get) => ({
 
   removeUnder: (rel) =>
     set({
-      split: dropFromSplit(get().split, (tab) => tabIsUnder(tab, rel)),
+      ...pruneState(dropFromSplit(panes(), (tab) => tabIsUnder(tab, rel)), rel),
       tabs: get().tabs.filter(
         (tab) =>
           tab.kind !== "vault" ||
@@ -211,6 +235,7 @@ export const useTabs = create<TabsState>((set, get) => ({
     set({
       tabs: [],
       split: null,
+      solo: initialPanes.solo,
       scrollTopReq: null,
       revealReq: null,
       headingRevealReq: null,
@@ -218,7 +243,8 @@ export const useTabs = create<TabsState>((set, get) => ({
       titleFocusReq: null,
       linkRewritesReq: null,
     }),
-}));
+  };
+});
 
 /** Tab to activate after closing `closing`: right neighbor, else left, else none. */
 export function nextAfterClose(tabs: TabRef[], closing: TabRef): TabRef | null {

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { SPRING_LAYOUT } from "@/lib/ease";
+import { closeSplitKeepingFocus } from "@/lib/closePane";
 import { openNoteAside } from "@/lib/openAside";
 import { neighbourOf } from "@/lib/split";
 import { isNoteTab, noteTitle, sameTab, tabKey, tabOfView, viewOfTab } from "@/lib/noteRef";
@@ -155,7 +156,7 @@ function tabMenuItems(
     items.push({ label: t("split.openAside"), onSelect: () => openNoteAside(target) });
   }
   if (useTabs.getState().split) {
-    items.push({ label: t("split.close"), onSelect: () => useTabs.getState().closeSplit() });
+    items.push({ label: t("split.close"), onSelect: () => closeSplitKeepingFocus() });
   }
   items.push({ label: t("editor.closeTabMenu"), onSelect: () => closeTab(target) });
   if (tabs.length > 1) {

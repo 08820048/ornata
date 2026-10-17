@@ -43,7 +43,7 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 
 ### Frontend (`src/`)
 
-- `stores/` — zustand: `vault` (tree, view, theme, recents), `tabs` (open tabs as `TabRef` = note `NoteRef` or the graph tab; active = derived from `vault.view`), `ui`, `agent`
+- `stores/` — zustand: `vault` (tree, view, theme, recents), `tabs` (open tabs as `TabRef` = note `NoteRef` or the graph tab; active = derived from `vault.view`; also the split layout and every pane's own back/forward history — the pure model is `lib/split.ts`'s `PaneState`, saved with the session by `lib/paneSession.ts`), `ui`, `agent`
 - `components/` — by feature: `layout/`, `tree/`, `editor/`, `graph/`, `palette/`, `settings/`, `welcome/`, `ui/`
 - Editor: Tiptap with `contentType: "markdown"`; autosave debounced 500ms, flush on unmount; images stored as vault-relative paths, rendered via asset protocol
 - Tabs: `NotesWorkspace` keeps one live pane per open tab — a `NoteEditor` per note, `GraphView` for the graph tab — with inactive panes hidden via `visibility:hidden` — tab switch is a CSS toggle, never a remount/re-parse. Keep it that way. `NoteRef` stays note-only (IPC, editors); only tab/view code deals in `TabRef` / `View`.

@@ -59,6 +59,10 @@ beforeAll(() => {
     removeEventListener() {},
   })) as unknown as typeof window.matchMedia;
   window.addEventListener("error", (event) => errors.push(event.error));
+  // happy-dom's Web Animations shim rejects `Animation.finished` whenever motion
+  // restarts an animation. Without `animate`, motion drives animations itself.
+  delete (window.Element.prototype as { animate?: unknown }).animate;
+  delete (window.HTMLElement.prototype as { animate?: unknown }).animate;
 });
 
 afterAll(async () => {
@@ -269,5 +273,102 @@ describe("AppShell smoke", () => {
     // clicking the plus types a "/" on that line, which is what opens the menu
     expect(editorEl.textContent).toContain("/");
     note.body = "# Hello\n\nbody text";
+  });
+
+  test("each pane keeps its own back/forward history", async () => {
+    const { act, useVault, useTabs, vaultNote } = await mountShell();
+    // the stores are shared across tests: start from nothing open
+    await act(async () => {
+      // (clear() would unmount every pane mid-animation, which happy-dom reports as an unhandled abort)
+      useTabs.setState({ split: null, solo: { entries: [], index: -1 } });
+      useVault.setState({ view: null });
+    });
+    const { goBack, goForward } = await import("../src/lib/navigate");
+    const { tabOfView } = await import("../src/lib/noteRef");
+    const [a, b, c, d] = NOTES.map(vaultNote);
+    const show = (n: ReturnType<typeof vaultNote>) =>
+      act(async () => {
+        useVault.getState().setView({ type: "note", note: n });
+      });
+    const shown = () => useTabs.getState().split?.panes.map((p) => (p.kind === "vault" ? p.rel : "?"));
+    const focused = () => {
+      const view = useVault.getState().view;
+      return view?.type === "note" && view.note.kind === "vault" ? view.note.rel : null;
+    };
+
+    // one pane: a → b, back returns to a
+    await show(a);
+    await show(b);
+    await act(async () => goBack());
+    expect(focused()).toBe("a.md");
+    await act(async () => goForward());
+    expect(focused()).toBe("b.md");
+
+    // split b | c, then walk the right pane c → d
+    await act(async () => {
+      useTabs.getState().openAside(tabOfView(useVault.getState().view!), c);
+    });
+    expect(shown()).toEqual(["b.md", "c.md"]);
+    await show(c); // click the right pane: only a refocus
+    await show(d); // open d in it
+    expect(shown()).toEqual(["b.md", "d.md"]);
+
+    // back in the right pane returns to c — the left pane still shows b
+    await act(async () => goBack());
+    expect(shown()).toEqual(["b.md", "c.md"]);
+    expect(focused()).toBe("c.md");
+
+    // focusing the left pane and going back uses *its* trail (a), not the right pane's
+    await show(b);
+    expect(shown()).toEqual(["b.md", "c.md"]); // refocus changed nothing
+    await act(async () => goBack());
+    expect(shown()).toEqual(["a.md", "c.md"]);
+    await act(async () => goForward());
+    expect(shown()).toEqual(["b.md", "c.md"]);
+
+    // close the left pane: the right one keeps its own trail as the single history
+    await act(async () => {
+      const { closePaneAndRefocus } = await import("../src/lib/closePane");
+      closePaneAndRefocus(b);
+    });
+    expect(useTabs.getState().split).toBeNull();
+    expect(focused()).toBe("c.md");
+    await act(async () => goBack()); // c began its own trail here, so there's nothing earlier
+    expect(focused()).toBe("c.md");
+  });
+
+  test("a restart restores the split, the focused pane, and each pane's history", async () => {
+    const { act, useVault, useTabs, vaultNote } = await mountShell();
+    const { restoreSession } = await import("../src/lib/session");
+    const { goBack } = await import("../src/lib/navigate");
+    const [a, b, c, d] = NOTES.map(vaultNote);
+    const hist = (...tabs: unknown[]) => ({ entries: tabs, index: tabs.length - 1 });
+    localStorage.setItem(
+      "ornata:session:/vault",
+      JSON.stringify({
+        tabs: [a, b, c, d],
+        view: { type: "note", note: d },
+        panes: {
+          split: { panes: [b, d], sizes: [0.3, 0.7], histories: [hist(a, b), hist(c, d)] },
+          solo: { entries: [], index: -1 },
+        },
+      }),
+    );
+    await act(async () => {
+      useTabs.setState({ split: null, solo: { entries: [], index: -1 } });
+      useVault.setState({ view: null });
+      await restoreSession("/vault");
+    });
+    const split = useTabs.getState().split!;
+    expect(split.panes.map((p) => (p.kind === "vault" ? p.rel : "?"))).toEqual(["b.md", "d.md"]);
+    expect(split.sizes).toEqual([0.3, 0.7]);
+    const view = useVault.getState().view;
+    expect(view?.type === "note" && view.note.kind === "vault" && view.note.rel).toBe("d.md");
+
+    // back in the focused (right) pane uses its own trail: d → c; the left pane is untouched
+    await act(async () => goBack());
+    expect(useTabs.getState().split!.panes.map((p) => (p.kind === "vault" ? p.rel : "?"))).toEqual(["b.md", "c.md"]);
+    expect(useTabs.getState().split!.histories[0].entries).toHaveLength(2);
+    localStorage.removeItem("ornata:session:/vault");
   });
 });

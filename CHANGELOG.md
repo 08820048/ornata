@@ -8,7 +8,8 @@ All notable changes to Ornata are documented in this file.
 
 - Split view: open notes side by side, up to four panes. Each pane has its own header with history arrows, breadcrumb, and actions. Drag the dividers to resize; adding or closing a pane shares the width evenly again.
 - Open a note to the side from the command palette (⌘↵), a tab's or file's context menu, or by ⌘-clicking a link. The pane menu can split, swap with the next pane, or jump to a pane; ⌘1–⌘4 and ⌘. move between panes.
-- Back and forward through the notes you visited, with ⌘[ and ⌘].
+- Back and forward through the notes you visited, with ⌘[ and ⌘]. In a split, every pane keeps its own trail, so the arrows only move the pane they sit in; a step that would land on a note open in another pane skips past it. Splitting starts the new pane's trail fresh, swapping panes moves a trail with its pane, and clicking another pane only moves focus.
+- Split layouts survive a restart: the panes, their widths, and each pane's back/forward trail come back. Panes whose note was deleted meanwhile are dropped.
 - Focus mode (⌘⇧F) hides the sidebar and fades the tab strip and header until you point at them.
 - Fold a heading's section with the arrow beside it.
 - Move the current block or list item up and down with ⌥↑ and ⌥↓. In a list or task list it moves that item among its siblings; elsewhere it moves the whole block. One undo puts it back. In a list or task list it moves that item among its siblings; elsewhere it moves the whole block. One undo puts it back.

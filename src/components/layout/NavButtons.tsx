@@ -1,32 +1,26 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { canGoBack, canGoForward } from "@/lib/navHistory";
+import { canStep } from "@/lib/split";
 import { goBack, goForward } from "@/lib/navigate";
+import type { TabRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
-import { useNav } from "@/stores/nav";
+import { useTabs } from "@/stores/tabs";
 
-/** Back / forward through the notes visited in this session. */
-export function NavButtons() {
+/** Back / forward through the notes this pane has shown. Each pane keeps its
+ *  own trail, so these arrows only move the pane they sit in. */
+export function NavButtons({ tab }: { tab: TabRef | null }) {
   const t = useT();
-  const entries = useNav((s) => s.entries);
-  const index = useNav((s) => s.index);
-  const history = { entries, index };
+  // Primitive selectors: a fresh object here would re-render forever.
+  const canBack = useTabs((s) => (tab ? canStep(s, tab, "back") : false));
+  const canForward = useTabs((s) => (tab ? canStep(s, tab, "forward") : false));
 
   return (
     <div className="mr-2 flex shrink-0 items-center gap-0.5">
-      <NavButton
-        label={`${t("settings.shortcut.back")} ⌘[`}
-        disabled={!canGoBack(history)}
-        onClick={goBack}
-      >
+      <NavButton label={`${t("settings.shortcut.back")} ⌘[`} disabled={!canBack} onClick={goBack}>
         <ArrowLeft size={15} strokeWidth={1.9} />
       </NavButton>
-      <NavButton
-        label={`${t("settings.shortcut.forward")} ⌘]`}
-        disabled={!canGoForward(history)}
-        onClick={goForward}
-      >
+      <NavButton label={`${t("settings.shortcut.forward")} ⌘]`} disabled={!canForward} onClick={goForward}>
         <ArrowRight size={15} strokeWidth={1.9} />
       </NavButton>
     </div>
@@ -53,9 +47,7 @@ function NavButton({
         onClick={onClick}
         className={cx(
           "grid h-7 w-7 place-items-center rounded-md text-muted transition-[color,background-color,transform] duration-100 active:scale-[0.96]",
-          disabled
-            ? "pointer-events-none opacity-30"
-            : "hover:bg-hover hover:text-ink",
+          disabled ? "pointer-events-none opacity-30" : "hover:bg-hover hover:text-ink",
         )}
       >
         {children}
