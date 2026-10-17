@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import type { LucideIcon } from "lucide-react";
 import {
+  CalendarDays,
   Code,
   Heading1,
   Heading2,
@@ -16,11 +17,15 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { addDays, dailyRel, dateStamp, DATE_MENTIONS } from "@/lib/dateLinks";
+import { relToHref } from "@/lib/noteLinks";
 import { cx } from "@/lib/utils";
 import type { MessageKey } from "@/lib/i18n";
 import { useT } from "@/stores/locale";
 
 export interface SlashMenuState {
+  /** `/` = block commands, `@` = date mentions. */
+  trigger: "/" | "@";
   query: string;
   range: { from: number; to: number };
   position: { left: number; top: number };
@@ -34,7 +39,32 @@ interface SlashCommand {
   keywords: string;
   /** Edit to run on select. Omitted for special commands (e.g. note link). */
   run?: (editor: Editor) => void;
+  /** Faint trailing text, e.g. the resolved date. */
+  hint?: () => string;
 }
+
+/** `@today` & co: a standard Markdown link to that day's daily note. */
+function insertDateLink(editor: Editor, date: Date) {
+  editor
+    .chain()
+    .focus()
+    .insertContent({
+      type: "text",
+      text: dateStamp(date),
+      marks: [{ type: "link", attrs: { href: relToHref(dailyRel(date)) } }],
+    })
+    .insertContent(" ")
+    .run();
+}
+
+const dateCommands: SlashCommand[] = DATE_MENTIONS.map((mention) => ({
+  id: `date-${mention.id}`,
+  label: `slash.${mention.id}` as const,
+  icon: CalendarDays,
+  keywords: mention.keywords,
+  hint: () => dateStamp(addDays(new Date(), mention.offset)),
+  run: (editor: Editor) => insertDateLink(editor, addDays(new Date(), mention.offset)),
+}));
 
 const commands: SlashCommand[] = [
   {
@@ -143,14 +173,15 @@ export function SlashMenu({
 
   const filtered = useMemo(() => {
     const query = menu?.query.toLowerCase().trim() ?? "";
+    const base = menu?.trigger === "@" ? dateCommands : commands;
     const available = allowNoteLinks
-      ? commands
-      : commands.filter((command) => command.id !== "note-link");
+      ? base
+      : base.filter((command) => command.id !== "note-link");
     if (!query) return available;
     return available.filter((c) =>
       `${t(c.label)} ${c.keywords}`.toLowerCase().includes(query),
     );
-  }, [allowNoteLinks, menu?.query, t]);
+  }, [allowNoteLinks, menu?.query, menu?.trigger, t]);
 
   useEffect(() => {
     keyboardNav.current = false;
@@ -238,6 +269,11 @@ export function SlashMenu({
         >
           <command.icon size={14.5} strokeWidth={1.75} className="shrink-0" />
           {t(command.label)}
+          {command.hint && (
+            <span className="ml-auto pl-2 font-mono text-[10.5px] text-faint tabular-nums">
+              {command.hint()}
+            </span>
+          )}
         </button>
       ))}
     </motion.div>

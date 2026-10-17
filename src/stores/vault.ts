@@ -26,6 +26,7 @@ import { flattenNotes } from "@/lib/tree";
 import { parentDir } from "@/lib/utils";
 import { applyTheme } from "@/lib/theme";
 import { broadcastSettings } from "@/lib/settingsSync";
+import { dailyRel } from "@/lib/dateLinks";
 import { useNav } from "@/stores/nav";
 import { useTabs } from "@/stores/tabs";
 import { t } from "@/stores/locale";
@@ -76,7 +77,8 @@ interface VaultState {
   pinned: string[];
   loadPinned: () => Promise<void>;
   togglePin: (rel: string) => Promise<void>;
-  openDailyNote: () => Promise<void>;
+  /** Open (creating from the daily template if needed) the note for `date`, default today. */
+  openDailyNote: (date?: Date) => Promise<void>;
   /** Append a quick-capture line to Inbox.md (creating it if needed). */
   appendQuickCapture: (text: string) => Promise<void>;
   createNoteFromTemplate: (template: string) => Promise<void>;
@@ -441,11 +443,9 @@ export const useVault = create<VaultState>((set, get) => ({
     }
   },
 
-  openDailyNote: async () => {
+  openDailyNote: async (date) => {
     try {
-      const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const rel = `journal/${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.md`;
+      const rel = dailyRel(date ?? new Date());
       const exists = flattenNotes(get().tree).some(
         (n) => n.rel.toLowerCase() === rel.toLowerCase(),
       );

@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/react";
+import type { SlashMenuState } from "./SlashMenu";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { toastExported } from "@/lib/exportToast";
@@ -73,12 +74,7 @@ export function useNoteContentState({
   const setSaveState = useUi((s) => s.setSaveState);
   const t = useT();
 
-  const [slashMenu, setSlashMenu] = useState<{
-    query: string;
-    range: { from: number; to: number };
-    position: { left: number; top: number };
-    side: "top" | "bottom";
-  } | null>(null);
+  const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
   const [words, setWords] = useState(0);
   const [missing, setMissing] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -166,17 +162,22 @@ export function useNoteContentState({
       undefined,
       "￼",
     );
-    const match = /(?:^|\s)\/([\p{L}\p{N} ]*)$/iu.exec(textBefore);
+    // `/` opens the block menu, `@` the date mentions.
+    const slash = /(?:^|\s)\/([\p{L}\p{N} ]*)$/iu.exec(textBefore);
+    const at = slash ? null : /(?:^|\s)@([\p{L}\p{N}]*)$/iu.exec(textBefore);
+    const match = slash ?? at;
     if (!match) {
       setSlashMenu(null);
       return;
     }
-    const slashIndex = textBefore.lastIndexOf("/");
-    const from = position - (textBefore.length - slashIndex);
+    const trigger = slash ? "/" : "@";
+    const triggerIndex = textBefore.lastIndexOf(trigger);
+    const from = position - (textBefore.length - triggerIndex);
     const coords = instance.view.coordsAtPos(position);
     const menuHeight = 272;
     const below = window.innerHeight - coords.bottom > menuHeight + 16;
     setSlashMenu({
+      trigger,
       query: match[1] ?? "",
       range: { from, to: position },
       position: {

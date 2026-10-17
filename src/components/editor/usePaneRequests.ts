@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
+import { parseDailyRel } from "@/lib/dateLinks";
 import { hrefToRel } from "@/lib/noteLinks";
 import { vaultNote } from "@/lib/noteRef";
 import type { NoteRef } from "@/lib/types";
@@ -58,6 +59,12 @@ export function usePaneLinkClicks(input: {
           (n) => n.rel.toLowerCase() === targetRel.toLowerCase(),
         );
         let openRel = targetRel;
+        const daily = exists ? null : parseDailyRel(targetRel);
+        if (daily) {
+          // A missing daily note is created from the daily template.
+          await vault.openDailyNote(daily);
+          return;
+        }
         if (!exists) {
           // Broken link — clicking creates the note it points at.
           const created = await vault.createNoteAtRel(targetRel);
