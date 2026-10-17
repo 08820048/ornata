@@ -257,6 +257,8 @@ body {
     max-width: 1200px;
     margin-inline: auto;
     padding: 24px clamp(24px, 5vw, 72px) 0;
+    /* Room in the left margin for the drag grip, the "+", and fold arrows. */
+    padding-left: clamp(60px, 5vw, 72px);
 }
 
 /* sonner toasts follow the theme tokens (description was stuck dark).
@@ -371,6 +373,34 @@ body {
 .prose-note h3,
 .prose-note h4 {
     position: relative;
+}
+
+/* Drag grip: sits left of the "+" / fold arrows; the extension shows it for
+   the hovered block and positions it on that block's first line. */
+.block-handle {
+    display: grid;
+    width: 18px;
+    height: 24px;
+    place-items: center;
+    margin-right: 34px;
+    border-radius: 5px;
+    color: var(--faint);
+    cursor: grab;
+    transition:
+        background-color 100ms var(--ease-out),
+        color 100ms var(--ease-out);
+}
+.block-handle:hover {
+    background: var(--hover);
+    color: var(--ink);
+}
+.block-handle:active {
+    cursor: grabbing;
+}
+@media print {
+    .block-handle {
+        display: none;
+    }
 }
 
 /* The "+" on an empty line: left gutter, shown for the caret's line or on hover. */

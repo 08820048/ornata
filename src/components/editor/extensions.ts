@@ -12,6 +12,7 @@ import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { BlockPlus } from "./blockPlus";
 import { CodeBlockWithCopy } from "./CodeBlock";
+import { BlockDragHandle } from "./dragHandle";
 import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
 import { StarTask } from "./starTask";
@@ -122,6 +123,7 @@ export function createExtensions(assetRoot: string) {
     HeadingFold,
     BlockPlus,
     MoveBlock,
+    BlockDragHandle,
     FindReplace,
   ];
 }
