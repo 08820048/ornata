@@ -12,6 +12,7 @@ import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { MathBlock, MathInline } from "./Mathematics";
+import { StarTask } from "./starTask";
 import { BrokenLinks } from "./brokenLinks";
 import { HeadingFold } from "./headingFold";
 import { FindReplace } from "./findReplace";
@@ -106,6 +107,7 @@ export function createExtensions(assetRoot: string) {
     LocalImage(assetRoot).configure({ allowBase64: true, inline: false }),
     TaskList,
     TaskItem.configure({ nested: true }),
+    StarTask,
     Table.configure({ resizable: false }),
     TableRow,
     TableHeader,

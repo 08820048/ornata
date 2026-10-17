@@ -15,6 +15,7 @@ All notable changes to Ornata are documented in this file.
 - Search finds titles from shorthand: `prjroad` matches "project roadmap". Exact matches still rank first.
 - A shortcut bar along the bottom shows the keys that matter for the current view. Hide or show it from the command palette.
 - The sidebar has quick rows for daily notes and tasks.
+- Type `* ` at the start of a line to start a to-do. `- ` and `+ ` still make bullets, and inside a list nothing changes.
 
 ### Changed
 
