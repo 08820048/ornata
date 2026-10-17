@@ -64,6 +64,10 @@ pub fn run() {
         .manage(print_export::PrintState::default())
         .manage(reveal::ExportedFiles::default())
         .invoke_handler(tauri::generate_handler![
+            cli::app_api::mcp_status,
+            cli::app_api::mcp_set_access,
+            cli::app_api::mcp_install_cli,
+            cli::app_api::mcp_uninstall_cli,
             agent::agent_status,
             agent::agent_start,
             agent::agent_send,

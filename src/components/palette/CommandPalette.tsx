@@ -5,6 +5,7 @@ import {
   FileText,
   Focus,
   PanelRight,
+  Plug,
   FolderOpen,
   ImageOff,
   Keyboard,
@@ -203,6 +204,12 @@ export function CommandPalette() {
             },
           ]
         : []),
+      {
+        id: "open-mcp",
+        label: t("palette.openMcp"),
+        icon: Plug,
+        run: () => useUi.getState().setMcpOpen(true),
+      },
       {
         id: "toggle-focus-mode",
         label: t("palette.toggleFocus"),

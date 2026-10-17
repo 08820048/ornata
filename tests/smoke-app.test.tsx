@@ -10,9 +10,13 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 const NOTES = ["a.md", "b.md", "c.md", "d.md", "e.md"];
 
+/** What the mocked `mcp_status` command returns. */
+const mcp: { status: unknown } = { status: null };
+
 mock.module("@tauri-apps/api/core", () => ({
   invoke: async (command: string) => {
     if (command === "read_note") return "# Hello\n\nbody text";
+    if (command === "mcp_status") return mcp.status;
     if (/(backlinks|mentions|history|templates|search|list_|tasks)/.test(command)) return [];
     if (command === "link_graph") return { nodes: [], edges: [] };
     return null;
@@ -140,5 +144,49 @@ describe("AppShell smoke", () => {
       root.unmount();
     });
     expect(errors.filter(Boolean)).toEqual([]);
+  });
+
+  test("the MCP plug is green while an agent is connected and opens its settings", async () => {
+    mcp.status = {
+      vaultPath: "/vault",
+      access: "readWrite",
+      sessions: [{ pid: 1, vault: "/vault", client: "claude-code", startedMs: 1 }],
+      executable: "/Applications/Ornata.app/Contents/MacOS/Ornata",
+      installedAt: null,
+    };
+    const { act, useUi } = await mountShell();
+    const plug = () => container.querySelector<HTMLElement>('button[aria-label*="MCP"]');
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(plug()?.className).toContain("text-success");
+    expect(plug()?.getAttribute("aria-label")).toContain("claude-code");
+
+    // The dialog is mounted by App, beside AppShell.
+    const { McpDialog } = await import("../src/components/mcp/McpDialog");
+    const { createElement } = await import("react");
+    const { createRoot } = await import("react-dom/client");
+    const dialogHost = document.createElement("div");
+    document.body.appendChild(dialogHost);
+    const dialogRoot = createRoot(dialogHost);
+    await act(async () => {
+      dialogRoot.render(createElement(McpDialog));
+    });
+    await act(async () => {
+      useUi.getState().setMcpOpen(true);
+    });
+    const panel = document.body.textContent ?? "";
+    expect(panel).toContain("claude mcp add ornata");
+    expect(panel).toContain("Connected · claude-code");
+
+    // access off: gray, even though the process is still there
+    mcp.status = { ...(mcp.status as object), access: "off" };
+    const { useMcp } = await import("../src/stores/mcp");
+    await act(async () => {
+      await useMcp.getState().refresh();
+    });
+    expect(plug()?.className).not.toContain("text-success");
+    // No unmount here: tearing down a modal mid-animation makes happy-dom's
+    // Web Animations shim reject unhandled (a test-environment artefact).
   });
 });

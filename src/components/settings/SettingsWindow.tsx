@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   Palette,
   PencilLine,
+  Plug,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import type { MessageKey } from "@/lib/i18n";
 import { EASE_OUT } from "@/lib/ease";
 import { cx } from "@/lib/utils";
 import { useSettingsBridge } from "@/lib/useSettingsBridge";
+import { McpSection } from "@/components/settings/McpSection";
 import { AppToaster } from "@/components/ui/AppToaster";
 import { useLocale, useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
@@ -37,6 +39,7 @@ type SectionId =
   | "image"
   | "export"
   | "vault"
+  | "agents"
   | "shortcuts"
   | "updates";
 
@@ -91,6 +94,13 @@ const SECTIONS: Section[] = [
     labelKey: "settings.section.vault",
     keywords: ["vault", "folder", "path", "仓库", "文件夹", "路径"],
     render: () => <VaultSection />,
+  },
+  {
+    id: "agents",
+    icon: Plug,
+    labelKey: "settings.section.agents",
+    keywords: ["mcp", "agent", "claude", "codex", "cli", "command line", "智能体", "命令行", "权限"],
+    render: () => <McpSection />,
   },
   {
     id: "shortcuts",

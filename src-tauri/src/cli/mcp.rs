@@ -7,18 +7,33 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
+use super::presence::Presence;
 use super::tools::{call, tools, Level};
 
 const PROTOCOL: &str = "2025-06-18";
 
-pub fn serve(input: impl BufRead, mut output: impl Write, root: &Path, level: Level) -> io::Result<()> {
+pub fn serve(
+    input: impl BufRead,
+    mut output: impl Write,
+    root: &Path,
+    level: Level,
+    presence: Option<&Presence>,
+) -> io::Result<()> {
     for line in input.lines() {
         let line = line?;
         if line.trim().is_empty() {
             continue;
         }
         let reply = match serde_json::from_str::<Value>(&line) {
-            Ok(message) => handle(root, level, &message),
+            Ok(message) => {
+                if message.get("method").and_then(Value::as_str) == Some("initialize") {
+                    let client = message["params"]["clientInfo"]["name"].as_str().unwrap_or("unknown");
+                    if let Some(presence) = presence {
+                        presence.set_client(client);
+                    }
+                }
+                handle(root, level, &message)
+            }
             Err(_) => Some(error(Value::Null, -32700, "parse error")),
         };
         if let Some(reply) = reply {
@@ -101,7 +116,7 @@ mod tests {
         write_note(dir.path(), &note, "# Hello\n- [ ] ship it\n").unwrap();
         let input: String = lines.iter().map(|l| format!("{l}\n")).collect();
         let mut out = Vec::new();
-        serve(input.as_bytes(), &mut out, dir.path(), level).unwrap();
+        serve(input.as_bytes(), &mut out, dir.path(), level, None).unwrap();
         String::from_utf8(out).unwrap().lines().map(|l| serde_json::from_str(l).unwrap()).collect()
     }
 
@@ -179,7 +194,7 @@ mod tests {
         let replies = session(Level::ReadOnly, &[rpc(1, "nope", json!({}))]);
         assert_eq!(replies[0]["error"]["code"], -32601);
         let mut out = Vec::new();
-        serve("not json\n".as_bytes(), &mut out, Path::new("/"), Level::ReadOnly).unwrap();
+        serve("not json\n".as_bytes(), &mut out, Path::new("/"), Level::ReadOnly, None).unwrap();
         assert!(String::from_utf8(out).unwrap().contains("-32700"));
     }
 }

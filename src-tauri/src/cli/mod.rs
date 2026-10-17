@@ -4,7 +4,9 @@
 //! allows it, writes. See `tools` for the shared tool set.
 
 mod commands;
+pub(crate) mod app_api;
 mod mcp;
+pub(crate) mod presence;
 mod tools;
 mod vault_path;
 

@@ -36,6 +36,7 @@ One module per concern, each with unit tests; keep files under ~300 lines:
 - `tasks.rs` — vault-wide open `- [ ]` tasks; ticks a line only if it still matches
 - `legacy.rs` — one-time conversion of retired todo/bookmark stores into notes
 - `assets.rs` — save pasted images into `.ornata/assets/`
+- `cli/` — the `ornata` command line and MCP server (stdio), the same executable as the app: `main.rs` calls `try_cli()` first and only starts the UI when no subcommand was given. `tools.rs` is the one tool set behind both `ornata <cmd>` and MCP, built on `agent_tools`/`notes`/`search`/`tasks`/`backlinks` (writes keep history snapshots). What a vault allows (`CliAccess`: off / read-only / read & write / full) lives in `config.json` and is chosen in Settings → Agents; launch flags (`--access`) may only lower it, so an agent can't grant itself more. `presence.rs` writes a per-process file in the app config dir so the app can show who is connected. `app_api.rs` holds its Tauri commands.
 - `commands.rs` — thin `#[tauri::command]` wrappers only; `lib.rs` — wiring only
 
 Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_blocking` — on the main thread they deadlock the app.
@@ -54,6 +55,7 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 ## UI conventions
 
 - Strict monochrome: only the semantic tokens in `styles.css` (`bg`, `panel`, `sunken`, `ink`, `muted`, `faint`, `line`, `hover`, `active`, `invert`…). `panel` is the chrome surface (sidebar and tab strip); `sunken` is the recessed surface (segmented controls, code wells), darker than `panel`. Never hardcode colors; `danger` is the exception for destructive actions, and the link graph's folder colors (`--graph-1…4`, graph only) are the other. Those four hues are validated all-pairs for color-blind and normal vision on `--bg` in both themes — don't add a fifth or reuse them elsewhere; extra folders stay gray.
+- The green `success` token is for state that is literally "on": the MCP plug in the top bar while an agent is connected (gray otherwise).
 - Dark mode = `.dark` class on `<html>`; themes: system/light/dark.
 - Active/selected rows use inverted style (`bg-invert text-invert-ink`) — the signature look.
 - Motion: 100–160ms ease-out only. Fonts: Inter Variable (UI), Space Grotesk (editor body + titles, CJK falls back to PingFang), JetBrains Mono (code).

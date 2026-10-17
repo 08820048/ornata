@@ -102,7 +102,9 @@ fn run(command: &str, args: &[String]) -> Result<(), String> {
     if command == "mcp" {
         eprintln!("ornata mcp: {} ({})", target.root.display(), target.level.label());
         let stdin = std::io::stdin();
-        return mcp::serve(stdin.lock(), std::io::stdout().lock(), &target.root, target.level)
+        let presence = vault_path::config_dir()
+            .and_then(|dir| super::presence::Presence::start(&super::presence::sessions_dir(&dir), &target.root));
+        return mcp::serve(stdin.lock(), std::io::stdout().lock(), &target.root, target.level, presence.as_ref())
             .map_err(|e| e.to_string());
     }
     let stdin_text = || {

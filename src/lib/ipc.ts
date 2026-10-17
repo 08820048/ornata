@@ -14,6 +14,9 @@ import type {
   AgentProvider,
   SearchHit,
   Backlink,
+  CliAccess,
+  McpInstallOutcome,
+  McpStatus,
   Mention,
   RenameOutcome,
   SnapshotMeta,
@@ -221,6 +224,11 @@ export const ipc = {
   getLanguage: () => call<Language>("get_language"),
   setLanguage: (language: Language) =>
     call<void>("set_language", { language }),
+
+  mcpStatus: () => call<McpStatus>("mcp_status"),
+  mcpSetAccess: (access: CliAccess) => call<void>("mcp_set_access", { access }),
+  mcpInstallCli: () => call<McpInstallOutcome>("mcp_install_cli"),
+  mcpUninstallCli: () => call<void>("mcp_uninstall_cli"),
 
   settingsSnapshot: () => call<SettingsSnapshot>("get_settings"),
   openSettingsWindow: () => call<void>("open_settings_window"),

@@ -15,6 +15,9 @@ All notable changes to Ornata are documented in this file.
 - Search finds titles from shorthand: `prjroad` matches "project roadmap". Exact matches still rank first.
 - A shortcut bar along the bottom shows the keys that matter for the current view. Hide or show it from the command palette.
 - The sidebar has quick rows for daily notes and tasks.
+- Let any AI agent work on your vault without opening Ornata. `ornata mcp` is an MCP server over stdio (Claude Code, Codex, Gemini CLI, Cursor, and others), and the same tools are available as commands: `ornata search`, `read`, `tasks`, `backlinks`, `daily`, `journal add`, `capture`, `create`, `append`, `done`. Text can be piped in.
+- The plug in the top bar turns green while an agent is connected and opens MCP Settings. Settings has a matching Agents page with one-line setup commands for each agent and an optional install of `ornata` into `~/.local/bin`.
+- Agent access is set per vault in Settings — off, read only, read & write, or full access — and defaults to read only. An agent can't raise it, and launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the Trash.
 - Type `* ` at the start of a line to start a to-do. `- ` and `+ ` still make bullets, and inside a list nothing changes.
 
 ### Changed

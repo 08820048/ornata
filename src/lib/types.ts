@@ -209,3 +209,27 @@ export type GraphTab = { kind: "graph" };
 export type TabRef = NoteRef | GraphTab;
 
 export type View = { type: "note"; note: NoteRef } | { type: "graph" };
+
+/** What external agents (the `ornata` command line / MCP server) may do. */
+export type CliAccess = "off" | "readOnly" | "readWrite" | "full";
+
+export interface McpSession {
+  pid: number;
+  vault: string;
+  /** The agent's own name from the MCP handshake, e.g. "claude-code". */
+  client: string;
+  startedMs: number;
+}
+
+export interface McpStatus {
+  vaultPath: string | null;
+  access: CliAccess;
+  sessions: McpSession[];
+  executable: string;
+  installedAt: string | null;
+}
+
+export interface McpInstallOutcome {
+  path: string;
+  onPath: boolean;
+}

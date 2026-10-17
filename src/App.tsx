@@ -18,6 +18,7 @@ import { t as translate, useLocale, useT } from "@/stores/locale";
 import { writeRich } from "@/lib/clipboard";
 import { goBack, goForward } from "@/lib/navigate";
 import { focusNextPane, focusPaneNumber } from "@/lib/panes";
+import { McpDialog } from "@/components/mcp/McpDialog";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
@@ -258,6 +259,7 @@ export default function App() {
         {status === "ready" && <AppShell />}
         <CommandPalette />
         {status === "ready" && <TasksDialog />}
+        {status === "ready" && <McpDialog />}
       {status === "ready" && <TagsDialog />}
       {status === "ready" && <UnusedAssetsDialog />}
       </Suspense>
