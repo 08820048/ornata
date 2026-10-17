@@ -4,6 +4,7 @@ import {
   FilePlus2,
   FileText,
   Focus,
+  PanelRight,
   FolderOpen,
   ImageOff,
   Keyboard,
@@ -19,6 +20,7 @@ import { motion } from "motion/react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ipc } from "@/lib/ipc";
 import { SPRING_LAYOUT } from "@/lib/ease";
+import { openRelAside } from "@/lib/openAside";
 import { vaultNote } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { SearchHit, TreeNode } from "@/lib/types";
@@ -37,6 +39,8 @@ interface PaletteItem {
   hint?: string;
   icon: LucideIcon;
   run: () => void;
+  /** ⌘↵: open beside the focused note (notes only). */
+  runAside?: () => void;
 }
 
 /** "projects/research/deep.md" → "projects / research" ("" for root notes). */
@@ -51,6 +55,7 @@ export function CommandPalette() {
   const status = useVault((s) => s.status);
   const tree = useVault((s) => s.tree);
   const recentNotes = useVault((s) => s.recentNotes);
+  const split = useTabs((s) => s.split);
   const t = useT();
 
   const [query, setQuery] = useState("");
@@ -187,6 +192,16 @@ export function CommandPalette() {
           if (vault.root) void openPath(vault.root);
         },
       },
+      ...(split
+        ? [
+            {
+              id: "close-split",
+              label: t("split.close"),
+              icon: PanelRight,
+              run: () => useTabs.getState().closeSplit(),
+            },
+          ]
+        : []),
       {
         id: "toggle-focus-mode",
         label: t("palette.toggleFocus"),
@@ -216,6 +231,7 @@ export function CommandPalette() {
           path: folderRoute(hit.rel),
           hint: hit.titleMatch ? undefined : hit.snippet,
           icon: FileText,
+          runAside: () => openRelAside(hit.rel),
           run: () => {
             vault.expandTo(hit.rel);
             vault.setView({ type: "note", note: vaultNote(hit.rel) });
@@ -238,6 +254,7 @@ export function CommandPalette() {
               label: node.name,
               path: folderRoute(node.rel),
               icon: FileText,
+              runAside: () => openRelAside(node.rel),
               run: () => {
                 vault.expandTo(node.rel);
                 vault.setView({ type: "note", note: vaultNote(node.rel) });
@@ -246,7 +263,7 @@ export function CommandPalette() {
         })();
 
     return q ? [...noteItems, ...actions] : [...actions, ...noteItems];
-  }, [query, hits, tree, recentNotes, t]);
+  }, [query, hits, tree, recentNotes, split, t]);
 
   // Index where the "Recent" section starts (no query only), for the header.
   const recentStart = query.trim()
@@ -307,7 +324,9 @@ export function CommandPalette() {
                   } else if (event.key === "Enter") {
                     event.preventDefault();
                     const item = items[selected];
-                    if (item) runDeferred(item.run);
+                    if (!item) return;
+                    const aside = event.metaKey || event.ctrlKey ? item.runAside : undefined;
+                    runDeferred(aside ?? item.run);
                   }
                 }}
               />

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { SPRING_LAYOUT } from "@/lib/ease";
+import { openNoteAside } from "@/lib/openAside";
 import { isNoteTab, noteTitle, sameTab, tabKey, tabOfView, viewOfTab } from "@/lib/noteRef";
 import type { TabRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -144,9 +145,15 @@ function tabMenuItems(
   t: ReturnType<typeof useT>,
 ): MenuItem[] {
   const index = tabs.findIndex((tab) => sameTab(tab, target));
-  const items: MenuItem[] = [
-    { label: t("editor.closeTabMenu"), onSelect: () => closeTab(target) },
-  ];
+  const items: MenuItem[] = [];
+  const focused = useVault.getState().view;
+  if (isNoteTab(target) && !(focused && sameTab(tabOfView(focused), target))) {
+    items.push({ label: t("split.openAside"), onSelect: () => openNoteAside(target) });
+  }
+  if (useTabs.getState().split) {
+    items.push({ label: t("split.close"), onSelect: () => useTabs.getState().closeSplit() });
+  }
+  items.push({ label: t("editor.closeTabMenu"), onSelect: () => closeTab(target) });
   if (tabs.length > 1) {
     items.push({
       label: t("editor.closeOtherTabs"),

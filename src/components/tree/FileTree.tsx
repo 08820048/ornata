@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
+  PanelRight,
   Pin,
   FilePlus,
   FileText,
@@ -34,6 +35,7 @@ import { ipc } from "@/lib/ipc";
 import { sortChildren } from "@/lib/tree";
 import type { TreeNode, TreeSort } from "@/lib/types";
 import { EASE_OUT } from "@/lib/ease";
+import { openRelAside } from "@/lib/openAside";
 import { vaultNote } from "@/lib/noteRef";
 import { cx, parentDir } from "@/lib/utils";
 import { useVault } from "@/stores/vault";
@@ -148,6 +150,11 @@ export function FileTree() {
     const vault = useVault.getState();
     const items: MenuItem[] = [];
     if (node.kind === "note") {
+      items.push({
+        label: t("split.openAside"),
+        icon: PanelRight,
+        onSelect: () => openRelAside(node.rel),
+      });
       items.push({
         label: vault.pinned.includes(node.rel) ? t("pinned.remove") : t("pinned.add"),
         icon: Pin,

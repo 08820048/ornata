@@ -8,6 +8,7 @@ import {
   remapRelList,
   sameNote,
   sameTab,
+  tabOfView,
   vaultNote,
   viewOfTab,
   GRAPH_TAB,
@@ -335,7 +336,12 @@ export const useVault = create<VaultState>((set, get) => ({
   },
 
   setView: (view, options) => {
+    const previous = get().view;
     set({ view });
+    useTabs.getState().followFocus(
+      previous ? tabOfView(previous) : null,
+      view ? tabOfView(view) : null,
+    );
     if (view && options?.record !== false) {
       useNav.getState().record(view.type === "note" ? view.note : GRAPH_TAB);
     }

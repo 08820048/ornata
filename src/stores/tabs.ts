@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { noteKey, sameTab, tabKey, vaultNote } from "@/lib/noteRef";
+import { dropFromSplit, followFocus, openAside, remapSplit, tabIsUnder, type Split } from "@/lib/split";
 import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
 
 /**
@@ -9,6 +10,8 @@ import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
  */
 interface TabsState {
   tabs: TabRef[];
+  /** Two notes shown side by side; view-only, not persisted. */
+  split: Split | null;
   /** Bumped to ask a note's pane to scroll to top (e.g. opened via a link). */
   scrollTopReq: { key: string; nonce: number } | null;
   /** Bumped to ask a note's pane to scroll to and flash the block containing `text`. */
@@ -24,6 +27,11 @@ interface TabsState {
    * link marks matching these rel pairs so editor content follows the disk.
    */
   linkRewritesReq: { rewrites: LinkRewrite[]; nonce: number } | null;
+  /** Show `target` beside the focused tab, opening it if needed. */
+  openAside: (focused: TabRef, target: TabRef) => void;
+  closeSplit: () => void;
+  /** Keep the split coherent when focus moves between tabs. */
+  followFocus: (prev: TabRef | null, next: TabRef | null) => void;
   /** Add a tab if not already open (no-op otherwise). */
   open: (tab: TabRef) => void;
   close: (tab: TabRef) => void;
@@ -51,6 +59,7 @@ interface TabsState {
 
 export const useTabs = create<TabsState>((set, get) => ({
   tabs: [],
+  split: null,
   scrollTopReq: null,
   revealReq: null,
   headingRevealReq: null,
@@ -64,21 +73,46 @@ export const useTabs = create<TabsState>((set, get) => ({
     }
   },
 
+  openAside: (focused, target) => {
+    const split = openAside(get().split, focused, target);
+    if (split === get().split) return;
+    get().open(target);
+    set({ split });
+  },
+
+  closeSplit: () => set({ split: null }),
+
+  followFocus: (prev, next) => {
+    const split = followFocus(get().split, prev, next);
+    if (split !== get().split) set({ split });
+  },
+
   close: (closing) =>
-    set({ tabs: get().tabs.filter((tab) => !sameTab(tab, closing)) }),
+    set({
+      tabs: get().tabs.filter((tab) => !sameTab(tab, closing)),
+      split: dropFromSplit(get().split, (tab) => sameTab(tab, closing)),
+    }),
 
   closeMany: (closingTabs) => {
     const closing = new Set(closingTabs.map(tabKey));
-    set({ tabs: get().tabs.filter((tab) => !closing.has(tabKey(tab))) });
+    set({
+      tabs: get().tabs.filter((tab) => !closing.has(tabKey(tab))),
+      split: dropFromSplit(get().split, (tab) => closing.has(tabKey(tab))),
+    });
   },
 
   replace: (note, next) =>
     set({
       tabs: get().tabs.map((tab) => (sameTab(tab, note) ? next : tab)),
+      split: get().split && {
+        left: sameTab(get().split!.left, note) ? next : get().split!.left,
+        right: sameTab(get().split!.right, note) ? next : get().split!.right,
+      },
     }),
 
   remap: (rel, next) =>
     set({
+      split: remapSplit(get().split, rel, next),
       tabs: get().tabs.map((tab) => {
         if (tab.kind !== "vault") return tab;
         if (tab.rel === rel) return vaultNote(next);
@@ -90,6 +124,7 @@ export const useTabs = create<TabsState>((set, get) => ({
 
   removeUnder: (rel) =>
     set({
+      split: dropFromSplit(get().split, (tab) => tabIsUnder(tab, rel)),
       tabs: get().tabs.filter(
         (tab) =>
           tab.kind !== "vault" ||
@@ -153,6 +188,7 @@ export const useTabs = create<TabsState>((set, get) => ({
   clear: () =>
     set({
       tabs: [],
+      split: null,
       scrollTopReq: null,
       revealReq: null,
       headingRevealReq: null,

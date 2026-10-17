@@ -5,6 +5,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
 import { parseDailyRel } from "@/lib/dateLinks";
+import { openNoteAside } from "@/lib/openAside";
 import { hrefToRel } from "@/lib/noteLinks";
 import { vaultNote } from "@/lib/noteRef";
 import type { NoteRef } from "@/lib/types";
@@ -73,7 +74,9 @@ export function usePaneLinkClicks(input: {
         }
         const target = vaultNote(openRel);
         vault.expandTo(openRel);
-        vault.setView({ type: "note", note: target });
+        // ⌘-click opens the target beside this note instead of replacing it.
+        if (event.metaKey || event.ctrlKey) openNoteAside(target);
+        else vault.setView({ type: "note", note: target });
         const hashIndex = href.indexOf("#");
         if (hashIndex !== -1) {
           let heading = href.slice(hashIndex + 1);
