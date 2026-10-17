@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Code2,
+  Columns2,
   FilePlus,
   FileText,
   Folder,
@@ -30,12 +31,13 @@ import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
 /* The hero workbench: the app as it looks today, playing a short tour —
-   write (a [[link]] resolves as you type), connect (the graph opens as a
-   tab), find (⌘K). It only plays while on screen; reduced motion gets the
-   finished writing frame. */
+   write (a [[link]] resolves as you type), split (⌘-click opens it beside
+   this note), connect (the graph opens as a tab), find (⌘K). It only plays
+   while on screen; reduced motion gets the finished writing frame. */
 
 const SCENES = [
   { id: "write", label: "Write", ms: 4600 },
+  { id: "split", label: "Split", ms: 5800 },
   { id: "connect", label: "Connect", ms: 4400 },
   { id: "find", label: "Find", ms: 3800 },
 ] as const;
@@ -198,12 +200,14 @@ function Tab({ label, active, graph }: { label: string; active: boolean; graph?:
   );
 }
 
-function TabStrip({ scene }: { scene: Scene }) {
+type TabId = "Q3 Roadmap" | "Release notes" | "graph";
+
+function TabStrip({ scene, activeTab }: { scene: Scene; activeTab: TabId }) {
   return (
     <div className="flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pl-2.5 pr-3">
       <div className="flex min-w-0 flex-1 items-stretch overflow-hidden">
-        <Tab label="Q3 Roadmap" active={scene !== "connect"} />
-        <Tab label="Release notes" active={false} />
+        <Tab label="Q3 Roadmap" active={activeTab === "Q3 Roadmap"} />
+        <Tab label="Release notes" active={activeTab === "Release notes"} />
         <AnimatePresence initial={false}>
           {scene === "connect" && <Tab key="graph" label="Link graph" active graph />}
         </AnimatePresence>
@@ -235,6 +239,9 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
           </span>
           <span className="grid size-7 place-items-center rounded-md">
             <MoreHorizontal size={16} strokeWidth={1.75} />
+          </span>
+          <span className="grid size-7 place-items-center rounded-md">
+            <Columns2 size={15} strokeWidth={1.75} />
           </span>
         </span>
       </div>
@@ -291,6 +298,100 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
               />
             )}
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Split view ──────────────────────────────────────────────────────── */
+
+/* With a split open, every pane carries its own header (the single header
+   above the workspace goes away); an unfocused pane's header fades back. */
+function PaneBar({
+  folder,
+  title,
+  focused,
+  closable,
+}: {
+  folder: string;
+  title: string;
+  focused: boolean;
+  closable?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex h-10 shrink-0 items-center px-3 text-[13px] transition-opacity duration-150",
+        !focused && "opacity-50",
+      )}
+    >
+      <span className="mr-2 flex items-center text-muted-foreground">
+        <span className="grid size-6 place-items-center"><ArrowLeft size={14} strokeWidth={1.9} /></span>
+        <span className="grid size-6 place-items-center opacity-30"><ArrowRight size={14} strokeWidth={1.9} /></span>
+      </span>
+      <span className="truncate text-muted-foreground">{folder}</span>
+      <ChevronRight size={12} strokeWidth={2} className="mx-1 shrink-0 text-faint" />
+      <span className="truncate font-semibold text-foreground">{title}</span>
+      <span className="ml-auto flex shrink-0 items-center text-muted-foreground">
+        <span className="grid size-6 place-items-center"><Code2 size={14} strokeWidth={1.75} /></span>
+        <span className="grid size-6 place-items-center"><MoreHorizontal size={15} strokeWidth={1.75} /></span>
+        <span className="grid size-6 place-items-center"><Columns2 size={14} strokeWidth={1.75} /></span>
+        {closable && <span className="grid size-6 place-items-center"><X size={14} strokeWidth={1.75} /></span>}
+      </span>
+    </div>
+  );
+}
+
+function SplitPanes({ elapsed, still }: { elapsed: number; still: boolean }) {
+  // The right pane opens after a ⌘-click on the link, then takes focus.
+  const k = still ? 1 : Math.min(1, Math.max(0, (elapsed - 1100) / 750));
+  const right = 0.5 * (1 - (1 - k) ** 3);
+  const focusRight = !still && elapsed > 3900;
+  const linkHot = !still && elapsed > 350 && elapsed < 1300;
+  return (
+    <div className="flex h-full bg-background">
+      <div className="flex min-w-0 flex-col" style={{ width: `${(1 - right) * 100}%` }}>
+        <PaneBar folder="Projects" title="Q3 Roadmap" focused={!focusRight} />
+        <div className="font-note px-6 pt-3 sm:px-8">
+          <div role="presentation" className="text-[24px] font-[680] leading-tight tracking-[-0.025em] text-foreground">
+            Q3 Roadmap
+          </div>
+          <p className="mt-3 text-[14px] leading-[1.7] text-foreground/85">
+            Next, polish the editor pass and ship it — see{" "}
+            <span
+              className={cn(
+                "rounded-[3px] text-foreground underline decoration-border-strong underline-offset-[3px] transition-colors duration-150",
+                linkHot && "bg-foreground/10",
+              )}
+            >
+              Release notes
+            </span>
+            .
+          </p>
+          <span
+            aria-hidden
+            className={cn(
+              "mt-3 inline-flex rounded-md border border-border bg-panel px-2 py-1 font-mono text-[10px] text-muted-foreground transition-opacity duration-150",
+              linkHot ? "opacity-100" : "opacity-0",
+            )}
+          >
+            ⌘ click
+          </span>
+        </div>
+      </div>
+      <div aria-hidden className={cn("w-px shrink-0", right > 0.02 ? "bg-border" : "bg-transparent")} />
+      <div className="flex min-w-0 flex-col overflow-hidden" style={{ width: `${right * 100}%` }}>
+        <div className="flex min-w-[220px] flex-1 flex-col">
+          <PaneBar folder="Projects" title="Release notes" focused={focusRight} closable />
+          <div className="font-note px-6 pt-3 sm:px-8">
+            <div role="presentation" className="text-[24px] font-[680] leading-tight tracking-[-0.025em] text-foreground">
+              Release notes
+            </div>
+            <p className="mt-3 text-[14px] leading-[1.7] text-foreground/85">
+              A quieter release: faster switching, a calmer sidebar, and a link graph for the whole vault.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -444,6 +545,12 @@ export function AppDemo() {
     : scene.id === "write"
       ? Math.min(TYPED_FULL.length, Math.max(0, Math.floor((elapsed - 500) / 45)))
       : TYPED_FULL.length;
+  const activeTab: TabId =
+    scene.id === "connect"
+      ? "graph"
+      : scene.id === "split" && !reduce && elapsed > 3900
+        ? "Release notes"
+        : "Q3 Roadmap";
   const graphPhase: GraphPhase = scene.id === "connect" && elapsed > 1500 ? "hover" : "rest";
   const query = "Release".slice(0, Math.max(0, Math.floor((elapsed - 500) / 110)));
 
@@ -452,12 +559,14 @@ export function AppDemo() {
       {/* app-ui: the app's real palette and typeface inside the window. */}
       <div className="app-ui overflow-hidden rounded-xl border border-black/10 bg-background shadow-workbench">
         <div className="flex h-[480px] sm:aspect-[16/10] sm:h-auto">
-          <Sidebar active={scene.id === "connect" ? null : "Q3 Roadmap"} />
+          <Sidebar active={activeTab === "graph" ? null : activeTab} />
           <main className="flex min-w-0 flex-1 flex-col">
-            <TabStrip scene={scene.id} />
+            <TabStrip scene={scene.id} activeTab={activeTab} />
             <div className="relative min-h-0 flex-1 overflow-hidden">
               {scene.id === "connect" ? (
                 <GraphPane phase={graphPhase} />
+              ) : scene.id === "split" ? (
+                <SplitPanes elapsed={elapsed} still={reduce} />
               ) : (
                 <NotePane typed={typed} still={reduce} />
               )}
@@ -471,7 +580,7 @@ export function AppDemo() {
       </div>
 
       {/* Chapter rail: where the tour is, and a way to jump. */}
-      <div className="mx-auto mt-6 grid max-w-[520px] grid-cols-3 gap-4">
+      <div className="mx-auto mt-6 grid max-w-[600px] grid-cols-4 gap-4">
         {SCENES.map((item, i) => (
           <button
             key={item.id}
