@@ -17,12 +17,28 @@ pub struct SearchHit {
     /// First term that matched (the UI uses it to reveal the hit in the note).
     pub term: String,
     /// Ranking tier, lower is better: 0 = every term in the title, 1 = every
-    /// term matched with title involvement, 2 = content-only matches.
+    /// term matched with title involvement, 2 = some term matched the title
+    /// only fuzzily (subsequence), 3 = content-only matches.
     #[serde(skip)]
     tier: u8,
 }
 
 const SNIPPET_RADIUS: usize = 60;
+/// Shorter terms are too ambiguous for subsequence matching.
+const FUZZY_MIN_CHARS: usize = 3;
+
+/// Fuzzy matching is for typed Latin shorthand; CJK terms match by substring
+/// only, since scattered ideographs in a title are rarely what was meant.
+fn is_fuzzy_candidate(term: &str) -> bool {
+    term.chars().count() >= FUZZY_MIN_CHARS && term.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
+/// True when the chars of `needle` appear in `haystack` in order, not
+/// necessarily adjacent (`prjroad` ⊂ `project roadmap`).
+fn is_subsequence(needle: &str, haystack: &str) -> bool {
+    let mut hay = haystack.chars();
+    needle.chars().all(|n| hay.any(|h| h == n))
+}
 
 /// Case-insensitive multi-term search across note titles and contents. Terms
 /// are whitespace-separated and every term must match somewhere (intersect),
@@ -76,16 +92,23 @@ fn walk(root: &Path, dir: &Path, terms: &[String], hits: &mut Vec<SearchHit>) ->
 
         // Every term must match somewhere; remember where terms landed.
         let mut in_title = 0usize;
+        let mut in_fuzzy = 0usize;
         let mut all_matched = true;
         let mut first_term: Option<&String> = None;
         let mut first_content_term: Option<&String> = None;
         for term in terms {
             let title_hit = title_lower.contains(term.as_str());
             let content_hit = content_lower.contains(term.as_str());
+            let fuzzy_hit = !title_hit
+                && !content_hit
+                && is_fuzzy_candidate(term)
+                && is_subsequence(term, &title_lower);
             if title_hit {
                 in_title += 1;
+            } else if fuzzy_hit {
+                in_fuzzy += 1;
             }
-            if !title_hit && !content_hit {
+            if !title_hit && !content_hit && !fuzzy_hit {
                 all_matched = false;
                 break;
             }
@@ -103,8 +126,10 @@ fn walk(root: &Path, dir: &Path, terms: &[String], hits: &mut Vec<SearchHit>) ->
             0
         } else if in_title > 0 {
             1
-        } else {
+        } else if in_fuzzy > 0 {
             2
+        } else {
+            3
         };
         hits.push(SearchHit {
             snippet: match first_content_term {
@@ -113,7 +138,7 @@ fn walk(root: &Path, dir: &Path, terms: &[String], hits: &mut Vec<SearchHit>) ->
             },
             rel,
             title,
-            title_match: in_title > 0,
+            title_match: in_title + in_fuzzy > 0,
             term: first_term.expect("all_matched implies a term").clone(),
             tier,
         });
@@ -184,6 +209,42 @@ mod tests {
     use crate::notes::{create_note, write_note};
     use crate::vault::ensure_layout;
     use tempfile::tempdir;
+
+    #[test]
+    fn fuzzy_title_matches_rank_after_exact_ones() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        create_note(dir.path(), "", "project roadmap").unwrap();
+        let exact = create_note(dir.path(), "", "prjroad notes").unwrap();
+        let body = create_note(dir.path(), "", "misc").unwrap();
+        write_note(dir.path(), &body, "see the prjroad doc").unwrap();
+        let _ = exact;
+
+        let hits = search_notes(dir.path(), "prjroad", 10).unwrap();
+        let titles: Vec<&str> = hits.iter().map(|h| h.title.as_str()).collect();
+        assert_eq!(titles, ["prjroad notes", "project roadmap", "misc"]);
+        assert!(hits[1].title_match);
+    }
+
+    #[test]
+    fn fuzzy_needs_three_chars_and_in_order() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        create_note(dir.path(), "", "project roadmap").unwrap();
+        assert!(search_notes(dir.path(), "pr", 10).unwrap().len() == 1); // substring, not fuzzy
+        assert!(search_notes(dir.path(), "pz", 10).unwrap().is_empty()); // too short to be fuzzy
+        assert!(search_notes(dir.path(), "dar", 10).unwrap().is_empty()); // out of order
+        assert_eq!(search_notes(dir.path(), "prd", 10).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn cjk_terms_never_match_fuzzily() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        create_note(dir.path(), "", "我的项目路线图").unwrap();
+        assert!(search_notes(dir.path(), "我项图", 10).unwrap().is_empty());
+        assert_eq!(search_notes(dir.path(), "项目", 10).unwrap().len(), 1);
+    }
 
     #[test]
     fn title_hits_rank_first() {
