@@ -17,6 +17,7 @@ import { MathBlock, MathInline } from "./Mathematics";
 import { StarTask } from "./starTask";
 import { BrokenLinks } from "./brokenLinks";
 import { HeadingFold } from "./headingFold";
+import { MoveBlock } from "./moveBlock";
 import { FindReplace } from "./findReplace";
 import { WikiLink } from "./wikiLink";
 import { NonInclusiveLink } from "./link";
@@ -120,6 +121,7 @@ export function createExtensions(assetRoot: string) {
     BrokenLinks,
     HeadingFold,
     BlockPlus,
+    MoveBlock,
     FindReplace,
   ];
 }
