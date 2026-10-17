@@ -1,7 +1,7 @@
 import type { McpStatus } from "@/lib/types";
 
 export interface SetupCommand {
-  id: "claude" | "codex" | "gemini" | "json" | "desktop";
+  id: "claude" | "codex" | "gemini" | "json" | "vscode" | "desktop" | "other";
   label: string;
   text: string;
 }
@@ -32,10 +32,17 @@ export function setupCommands(executable: string, installed: boolean, port: numb
       text: JSON.stringify({ mcpServers: { ornata: { url } } }, null, 2),
     },
     {
+      id: "vscode",
+      label: "VS Code",
+      text: JSON.stringify({ servers: { ornata: { type: "http", url } } }, null, 2),
+    },
+    {
       id: "desktop",
       label: "Claude Desktop",
       text: JSON.stringify({ mcpServers: { ornata: { command: raw, args: ["mcp"] } } }, null, 2),
     },
+    // Any other MCP client: the URL is all it needs.
+    { id: "other", label: "Other", text: url },
   ];
 }
 

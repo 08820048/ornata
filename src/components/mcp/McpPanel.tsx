@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Segmented } from "@/components/settings/controls";
 import { CopyButton } from "@/components/ui/CopyButton";
 import type { MessageKey } from "@/lib/i18n";
 import {
   connectedClients,
   mcpState,
+  serverCommand,
   setupCommands,
   stdioCommand,
   type SetupCommand,
@@ -44,6 +44,16 @@ export function McpPanel() {
   const vaultName = status.vaultPath.split("/").filter(Boolean).pop() ?? status.vaultPath;
 
   const clients = connectedClients(status).join(", ");
+  const hint =
+    current.id === "json"
+      ? t("mcp.connect.json")
+      : current.id === "vscode"
+        ? t("mcp.connect.vscode")
+        : current.id === "desktop"
+          ? t("mcp.connect.desktop")
+          : current.id === "other"
+            ? t("mcp.connect.other", { command: `${serverCommand(status.executable, installed)} mcp` })
+            : null;
   const banner =
     state === "server"
       ? [
@@ -148,14 +158,23 @@ export function McpPanel() {
       <section>
         <h3 className="text-[13px] font-semibold text-ink">{t("mcp.connect.title")}</h3>
         <p className="mt-0.5 text-[11.5px] text-faint">{t("mcp.connect.detail")}</p>
-        <Segmented
-          id="mcp-agent"
-          value={agent}
-          ariaLabel={t("mcp.connect.title")}
-          options={commands.map((command) => ({ value: command.id, label: command.label }))}
-          onChange={setAgent}
-          className="mt-2.5"
-        />
+        <div role="tablist" aria-label={t("mcp.connect.title")} className="mt-2.5 flex flex-wrap gap-1.5">
+          {commands.map((command) => (
+            <button
+              key={command.id}
+              type="button"
+              role="tab"
+              aria-selected={command.id === agent}
+              onClick={() => setAgent(command.id)}
+              className={cx(
+                "h-7 rounded-full px-3 text-[12px] font-medium transition-colors duration-100",
+                command.id === agent ? "bg-invert text-invert-ink" : "bg-sunken text-muted hover:bg-active hover:text-ink",
+              )}
+            >
+              {command.label}
+            </button>
+          ))}
+        </div>
         <div className="relative mt-2 rounded-xl border border-line-soft bg-sunken">
           <pre className="max-h-[132px] overflow-auto px-3.5 py-3 pr-11 font-mono text-[11.5px] leading-5 text-ink">
             {current.text}
@@ -164,12 +183,8 @@ export function McpPanel() {
             <CopyButton value={current.text} side="left" />
           </span>
         </div>
-        {(current.id === "json" || current.id === "desktop") && (
-          <p className="mt-1.5 text-[11px] leading-4 text-faint">
-            {t(current.id === "json" ? "mcp.connect.json" : "mcp.connect.desktop")}
-          </p>
-        )}
-        {current.id !== "desktop" && (
+        {hint && <p className="mt-1.5 text-[11px] leading-4 text-faint">{hint}</p>}
+        {current.id !== "desktop" && current.id !== "other" && (
           <p className="mt-2 break-all text-[11px] leading-4 text-faint">
             {t("mcp.connect.stdioNote")}{" "}
             <code className="font-mono text-muted">{stdioCommand(status.executable, installed)}</code>

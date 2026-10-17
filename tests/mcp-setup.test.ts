@@ -30,6 +30,14 @@ describe("setup commands", () => {
     expect(JSON.parse(by.json)).toEqual({ mcpServers: { ornata: { url: "http://127.0.0.1:13200/mcp" } } });
   });
 
+  test("VS Code uses its own shape, and any other client just gets the URL", () => {
+    const by = Object.fromEntries(setupCommands(APP, false, 13200).map((c) => [c.id, c.text]));
+    expect(JSON.parse(by.vscode)).toEqual({
+      servers: { ornata: { type: "http", url: "http://127.0.0.1:13200/mcp" } },
+    });
+    expect(by.other).toBe("http://127.0.0.1:13200/mcp");
+  });
+
   test("the port follows the server, and Claude Desktop uses stdio", () => {
     const commands = setupCommands("/Users/me/My Apps/Ornata", false, 13205);
     expect(commands.find((c) => c.id === "claude")!.text).toContain(":13205/mcp");
