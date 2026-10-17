@@ -1,6 +1,7 @@
 import {
   ArrowDownAZ,
   ArrowDownToLine,
+  CalendarDays,
   Clock,
   FilePlus,
   FolderPlus,
@@ -56,6 +57,19 @@ export function Sidebar() {
             ⌘K
           </kbd>
         </button>
+        <div className="mt-1.5 flex flex-col gap-px">
+          <QuickRow
+            icon={<CalendarDays size={14} strokeWidth={1.75} />}
+            label={t("daily.new")}
+            keys="⌘J"
+            onClick={() => void useVault.getState().openDailyNote()}
+          />
+          <QuickRow
+            icon={<ListChecks size={14} strokeWidth={1.75} />}
+            label={t("tasks.title")}
+            onClick={() => setTasksOpen(true)}
+          />
+        </div>
       </div>
 
       <div className="flex items-center px-4 pb-2">
@@ -130,9 +144,6 @@ export function Sidebar() {
             size="icon"
             className="h-7 w-7 rounded-md text-faint hover:text-muted"
           />
-          <IconAction label={t("tasks.title")} onClick={() => setTasksOpen(true)}>
-            <ListChecks size={14.5} strokeWidth={1.75} />
-          </IconAction>
           <IconAction label={t("tags.title")} onClick={() => setTagsOpen(true)}>
             <Hash size={14.5} strokeWidth={1.75} />
           </IconAction>
@@ -169,6 +180,32 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+  );
+}
+
+function QuickRow({
+  icon,
+  label,
+  keys,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  keys?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-[28px] w-full items-center gap-2.5 rounded-md px-2.5 text-[12.5px] text-muted transition-colors duration-100 hover:bg-hover hover:text-ink"
+    >
+      <span className="shrink-0 text-faint">{icon}</span>
+      <span className="truncate">{label}</span>
+      {keys && (
+        <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">{keys}</kbd>
+      )}
+    </button>
   );
 }
 
