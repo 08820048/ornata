@@ -56,7 +56,7 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 - Strict monochrome: only the semantic tokens in `styles.css` (`bg`, `panel`, `sunken`, `ink`, `muted`, `faint`, `line`, `hover`, `active`, `invert`…). `panel` is the chrome surface (sidebar and tab strip); `sunken` is the recessed surface (segmented controls, code wells), darker than `panel`. Never hardcode colors; `danger` is the exception for destructive actions, and the link graph's folder colors (`--graph-1…4`, graph only) are the other. Those four hues are validated all-pairs for color-blind and normal vision on `--bg` in both themes — don't add a fifth or reuse them elsewhere; extra folders stay gray.
 - Dark mode = `.dark` class on `<html>`; themes: system/light/dark.
 - Active/selected rows use inverted style (`bg-invert text-invert-ink`) — the signature look.
-- Motion: 100–160ms ease-out only. Fonts: Inter Variable (UI), JetBrains Mono (code).
+- Motion: 100–160ms ease-out only. Fonts: Inter Variable (UI), Space Grotesk (editor body + titles, CJK falls back to PingFang), JetBrains Mono (code).
 - No autocorrect anywhere: global `focusin` hook in `main.tsx` handles inputs; editor sets its own attrs.
 - Website feature additions must use the animated product-behavior demos established in `site/components/FeaturesBento.tsx` (for example, “Link ideas together”). Do not add static feature-card/checklist grids, and do not promote small release details as standalone homepage features.
 

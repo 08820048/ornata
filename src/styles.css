@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/space-grotesk";
 
 /* Kai-style reading font, bundled for every install under the SIL OFL
    (license alongside the file). Converted to woff2 from the upstream
@@ -39,6 +40,11 @@
     --font-mono:
         "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo,
         monospace;
+    /* Editor writing stack: Space Grotesk (OFL, bundled) carries Latin;
+       CJK falls back to the system PingFang. */
+    --font-note:
+        "Space Grotesk Variable", -apple-system, BlinkMacSystemFont,
+        "PingFang SC", "Segoe UI", sans-serif;
     /* Serif reading stack (Kami-style). Charter carries Latin; the bundled
        LXGW WenKai Screen (OFL, see assets/fonts/LXGWWenKaiScreen-OFL.txt)
        carries CJK; Songti SC is the system fallback. */
@@ -258,13 +264,13 @@ body {
 /* ---------- editor typography ---------- */
 
 .note-title {
-    font-family: var(--font-serif);
+    font-family: var(--font-note);
 }
 
 .prose-note {
     user-select: text;
     cursor: text;
-    font-family: var(--font-serif);
+    font-family: var(--font-note);
     font-size: 16px;
     line-height: 1.65;
     color: var(--ink);
