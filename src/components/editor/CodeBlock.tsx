@@ -5,15 +5,18 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from "@tiptap/react";
-import { Check, Copy } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Copy, Languages, TextSelect } from "lucide-react";
 import {
   createHighlightPlugin,
   type Parser,
 } from "prosemirror-highlight";
 import { createParser } from "prosemirror-highlight/shiki";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useReducer, useRef, useState } from "react";
 import { ActionSwapIcon } from "@/components/motion/action-swap";
+import { ContextMenu, type MenuItem } from "@/components/ui/ContextMenu";
+import { codeFoldKey, type FoldMeta } from "./codeFold";
 import {
+  SUPPORTED_LANGUAGES,
   isSyntaxLanguageLoaded,
   loadSyntaxLanguage,
   normalizeSyntaxLanguage,
@@ -132,8 +135,9 @@ function MermaidPreview({ source }: { source: string }) {
   );
 }
 
-function CodeBlockView({ node }: NodeViewProps) {
+function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
   const [copied, setCopied] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number; languages: boolean } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t = useT();
   const language = node.attrs.language || "plaintext";
@@ -146,6 +150,72 @@ function CodeBlockView({ node }: NodeViewProps) {
     [],
   );
 
+  const position = () => {
+    const pos = getPos();
+    return typeof pos === "number" ? pos : null;
+  };
+  const multiLine = node.textContent.includes("\n");
+  const isCollapsed = () => codeFoldKey.getState(editor.state)?.collapsed.has(position() ?? -1) ?? false;
+  const collapsed = isCollapsed();
+
+  // A fold change alone doesn't touch this node, so React wouldn't redraw the
+  // toolbar: redraw when this block's collapsed state flips.
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
+  const lastCollapsed = useRef(collapsed);
+  lastCollapsed.current = collapsed;
+  useEffect(() => {
+    const onTransaction = () => {
+      if (isCollapsed() !== lastCollapsed.current) redraw();
+    };
+    editor.on("transaction", onTransaction);
+    return () => {
+      editor.off("transaction", onTransaction);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
+  const toggleCollapsed = () => {
+    const pos = position();
+    if (pos === null) return;
+    editor.view.dispatch(editor.state.tr.setMeta(codeFoldKey, { collapse: pos } satisfies FoldMeta));
+  };
+
+  const selectBlock = () => {
+    const pos = position();
+    if (pos === null) return;
+    editor.chain().focus().setTextSelection({ from: pos + 1, to: pos + node.nodeSize - 1 }).run();
+  };
+
+  const menuItems = (): MenuItem[] => {
+    if (menu?.languages) {
+      return SUPPORTED_LANGUAGES.map((name) => ({
+        label: name,
+        icon: name === language ? Check : undefined,
+        onSelect: () => updateAttributes({ language: name === "plaintext" ? null : name }),
+      }));
+    }
+    return [
+      { label: t("code.selectBlock"), icon: TextSelect, onSelect: selectBlock },
+      { label: t("editor.copyCode"), icon: Copy, onSelect: () => void copy() },
+      ...(multiLine
+        ? [
+            {
+              label: collapsed ? t("code.expand") : t("code.collapse"),
+              icon: collapsed ? ChevronsUpDown : ChevronsDownUp,
+              onSelect: toggleCollapsed,
+            },
+          ]
+        : []),
+      { label: t("code.setLanguage"), icon: Languages, onSelect: () => openLanguages() },
+    ];
+  };
+
+  // Reopen as the language list: the first menu closes on select, so defer.
+  const anchor = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const openLanguages = () => {
+    window.setTimeout(() => setMenu({ ...anchor.current, languages: true }), 0);
+  };
+
   const copy = async () => {
     await navigator.clipboard.writeText(node.textContent);
     setCopied(true);
@@ -156,7 +226,33 @@ function CodeBlockView({ node }: NodeViewProps) {
   return (
     <NodeViewWrapper className="code-block-wrap">
       <div className="code-block-toolbar" contentEditable={false}>
-        <span className="code-block-language">{language}</span>
+        <div className="code-block-lead">
+          {multiLine && !isMermaid && (
+            <button
+              type="button"
+              aria-label={collapsed ? t("code.expand") : t("code.collapse")}
+              aria-expanded={!collapsed}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={toggleCollapsed}
+              className="code-block-toggle press"
+            >
+              {collapsed ? <ChevronRight size={14} strokeWidth={2} /> : <ChevronDown size={14} strokeWidth={2} />}
+            </button>
+          )}
+          <button
+            type="button"
+            aria-haspopup="menu"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              anchor.current = { x: rect.left, y: rect.bottom + 4 };
+              setMenu({ ...anchor.current, languages: false });
+            }}
+            className="code-block-language code-block-chip"
+          >
+            {language}
+          </button>
+        </div>
         <button
           type="button"
           aria-label={copied ? t("common.copied") : t("editor.copyCode")}
@@ -191,6 +287,13 @@ function CodeBlockView({ node }: NodeViewProps) {
         <pre>
           <NodeViewContent<"code"> as="code" />
         </pre>
+      )}
+      {menu && (
+        <ContextMenu
+          position={{ x: menu.x, y: menu.y }}
+          items={menuItems()}
+          onClose={() => setMenu(null)}
+        />
       )}
     </NodeViewWrapper>
   );

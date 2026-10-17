@@ -11,6 +11,7 @@ All notable changes to Ornata are documented in this file.
 - Back and forward through the notes you visited, with ⌘[ and ⌘].
 - Focus mode (⌘⇧F) hides the sidebar and fades the tab strip and header until you point at them.
 - Fold a heading's section with the arrow beside it.
+- Code blocks fold by indentation: hover a block and use the arrow in its gutter to hide a function or branch, and the block's own arrow collapses it to its first line. Folding only changes what you see; copying still copies everything. Click the language label for a menu to select the block, copy it, collapse it, or change its syntax highlighting.
 - Type `@` to insert a link to today's, tomorrow's, or yesterday's daily note. A daily note that doesn't exist yet is created from your daily template when you open the link.
 - Search finds titles from shorthand: `prjroad` matches "project roadmap". Exact matches still rank first.
 - A shortcut bar along the bottom shows the keys that matter for the current view. Hide or show it from the command palette.

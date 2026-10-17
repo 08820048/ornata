@@ -10,12 +10,15 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 const NOTES = ["a.md", "b.md", "c.md", "d.md", "e.md"];
 
+/** What the mocked `read_note` command returns. */
+const note = { body: "# Hello\n\nbody text" };
+
 /** What the mocked `mcp_status` command returns. */
 const mcp: { status: unknown } = { status: null };
 
 mock.module("@tauri-apps/api/core", () => ({
   invoke: async (command: string) => {
-    if (command === "read_note") return "# Hello\n\nbody text";
+    if (command === "read_note") return note.body;
     if (command === "mcp_status") return mcp.status;
     if (/(backlinks|mentions|history|templates|search|list_|tasks)/.test(command)) return [];
     if (command === "link_graph") return { nodes: [], edges: [] };
@@ -202,5 +205,48 @@ describe("AppShell smoke", () => {
     expect(plug()?.className).not.toContain("text-success");
     // No unmount here: tearing down a modal mid-animation makes happy-dom's
     // Web Animations shim reject unhandled (a test-environment artefact).
+  });
+
+  test("code blocks fold by indentation and collapse as a whole", async () => {
+    note.body = "# Code\n\n```rust\nfn a() {\n    one();\n    two();\n}\n```\n";
+    const { act, useVault, vaultNote } = await mountShell();
+    await act(async () => {
+      useVault.getState().setView({ type: "note", note: vaultNote("code.md") });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    const wrap = () => document.querySelector<HTMLElement>(".code-block-wrap");
+    expect(wrap()).not.toBeNull();
+    expect(document.querySelector(".code-fold")).not.toBeNull();
+    expect(document.querySelector(".code-hidden")).toBeNull();
+
+    // the gutter arrow folds the function body and leaves a marker behind
+    await act(async () => {
+      document.querySelector(".code-fold")!.dispatchEvent(new window.MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    });
+    const hiddenText = [...document.querySelectorAll(".code-hidden")].map((el) => el.textContent).join("");
+    expect(hiddenText).toContain("one();");
+    expect(hiddenText).toContain("two();");
+    expect(hiddenText).not.toContain("fn a()");
+    expect(document.querySelector(".code-fold-ellipsis")?.textContent).toContain("2");
+    expect(document.querySelector(".code-fold")?.getAttribute("data-folded")).toBe("true");
+
+    // unfold, then collapse the whole block from the toolbar
+    await act(async () => {
+      document.querySelector(".code-fold")!.dispatchEvent(new window.MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    });
+    expect(document.querySelector(".code-hidden")).toBeNull();
+    const toggle = document.querySelector<HTMLElement>(".code-block-toggle")!;
+    await act(async () => {
+      toggle.click();
+    });
+    expect(document.querySelector(".code-collapsed")).not.toBeNull();
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    await act(async () => {
+      toggle.click();
+    });
+    expect(document.querySelector(".code-collapsed")).toBeNull();
+    note.body = "# Hello\n\nbody text";
   });
 });

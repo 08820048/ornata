@@ -583,6 +583,44 @@ body {
     user-select: none;
 }
 
+.prose-note .code-block-lead {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 2px;
+    margin-left: -8px;
+}
+
+.prose-note .code-block-toggle,
+.prose-note .code-block-chip {
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    cursor: pointer;
+    transition:
+        background-color 100ms ease,
+        color 100ms ease;
+}
+
+.prose-note .code-block-toggle {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    color: var(--faint);
+}
+
+.prose-note .code-block-chip {
+    height: 24px;
+    padding: 0 8px;
+}
+
+.prose-note .code-block-toggle:hover,
+.prose-note .code-block-chip:hover {
+    background: var(--hover);
+    color: var(--ink);
+}
+
 .prose-note .code-block-language {
     overflow: hidden;
     color: var(--muted);
@@ -661,14 +699,81 @@ body {
 }
 
 .prose-note pre {
+    position: relative;
     font-family: var(--font-mono);
     font-size: 0.86em;
+    font-variant-ligatures: contextual;
     background: transparent;
     border: 0;
     border-radius: 0;
-    padding: 14px 16px 16px;
+    padding: 14px 16px 16px 28px;
     margin: 0;
     overflow-x: auto;
+}
+
+/* Code folding: gutter arrows (by indentation), the hidden text, and the
+   "⋯ n" marker that stands in for it. */
+.prose-note .code-hidden {
+    display: none;
+}
+
+.prose-note .code-fold {
+    position: absolute;
+    left: 7px;
+    display: inline-grid;
+    width: 16px;
+    height: 1.55em;
+    place-items: center;
+    color: var(--faint);
+    cursor: pointer;
+    opacity: 0;
+    user-select: none;
+    transition:
+        opacity 100ms ease,
+        color 100ms ease;
+}
+
+.prose-note .code-fold::before {
+    width: 0.38em;
+    height: 0.38em;
+    border: solid currentColor;
+    border-width: 0 1.5px 1.5px 0;
+    content: "";
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 100ms var(--ease-out);
+}
+
+.prose-note .code-fold[data-folded="true"]::before {
+    transform: rotate(-45deg);
+}
+
+.prose-note .code-block-wrap:hover .code-fold,
+.prose-note .code-fold[data-folded="true"] {
+    opacity: 1;
+}
+
+.prose-note .code-fold:hover {
+    color: var(--ink);
+}
+
+.prose-note .code-fold-ellipsis {
+    margin-left: 8px;
+    border-radius: 4px;
+    background: var(--hover);
+    padding: 0 6px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.9em;
+    user-select: none;
+}
+
+.prose-note .code-fold-ellipsis:hover {
+    background: var(--active);
+    color: var(--ink);
+}
+
+.prose-note .code-collapsed pre {
+    padding-bottom: 14px;
 }
 .prose-note pre code {
     color: var(--syntax-plain);

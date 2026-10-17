@@ -11,6 +11,7 @@ import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { CodeBlockWithCopy } from "./CodeBlock";
+import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
 import { StarTask } from "./starTask";
 import { BrokenLinks } from "./brokenLinks";
@@ -87,6 +88,7 @@ export function createExtensions(assetRoot: string) {
     }),
     StarterKit.configure({ link: false, codeBlock: false }),
     CodeBlockWithCopy,
+    CodeFold,
     MathBlock,
     MathInline,
     Typography,

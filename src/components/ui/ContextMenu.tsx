@@ -77,7 +77,7 @@ export function ContextMenu({
     <div
       ref={ref}
       role="menu"
-      className="fixed z-100 min-w-[168px] rounded-lg border border-line bg-bg p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
+      className="fixed z-100 max-h-[calc(100vh-16px)] min-w-[168px] overflow-y-auto rounded-lg border border-line bg-bg p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
       style={{ left: adjusted.x, top: adjusted.y }}
     >
       {items.map((item) => (
