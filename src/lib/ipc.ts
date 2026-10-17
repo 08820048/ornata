@@ -227,6 +227,8 @@ export const ipc = {
 
   mcpStatus: () => call<McpStatus>("mcp_status"),
   mcpSetAccess: (access: CliAccess) => call<void>("mcp_set_access", { access }),
+  mcpServerStart: () => call<void>("mcp_server_start"),
+  mcpServerStop: () => call<void>("mcp_server_stop"),
   mcpInstallCli: () => call<McpInstallOutcome>("mcp_install_cli"),
   mcpUninstallCli: () => call<void>("mcp_uninstall_cli"),
 

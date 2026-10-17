@@ -153,9 +153,10 @@ describe("AppShell smoke", () => {
       sessions: [{ pid: 1, vault: "/vault", client: "claude-code", startedMs: 1 }],
       executable: "/Applications/Ornata.app/Contents/MacOS/Ornata",
       installedAt: null,
+      server: { running: false, port: 13200, activity: null },
     };
     const { act, useUi } = await mountShell();
-    const plug = () => container.querySelector<HTMLElement>('button[aria-label*="MCP"]');
+    const plug = () => container.querySelector<HTMLElement>("footer[aria-label] button");
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
@@ -176,11 +177,24 @@ describe("AppShell smoke", () => {
       useUi.getState().setMcpOpen(true);
     });
     const panel = document.body.textContent ?? "";
-    expect(panel).toContain("claude mcp add ornata");
-    expect(panel).toContain("Connected · claude-code");
+    expect(panel).toContain("claude mcp add ornata --transport http http://127.0.0.1:13200/mcp");
+    expect(panel).toContain("Connected · claude-code (stdio)");
+
+    // switching the server on turns the banner into "active on port"
+    mcp.status = {
+      ...(mcp.status as object),
+      sessions: [],
+      server: { running: true, port: 13200, activity: { lastClient: "claude-code", lastSeenMs: 1, sessions: 1 } },
+    };
+    const { useMcp: store } = await import("../src/stores/mcp");
+    await act(async () => {
+      await store.getState().refresh();
+    });
+    expect(document.body.textContent).toContain("MCP server active on port 13200 · last used by claude-code");
+    expect(document.body.textContent).toContain("Disconnect");
 
     // access off: gray, even though the process is still there
-    mcp.status = { ...(mcp.status as object), access: "off" };
+    mcp.status = { ...(mcp.status as object), access: "off", sessions: [] };
     const { useMcp } = await import("../src/stores/mcp");
     await act(async () => {
       await useMcp.getState().refresh();

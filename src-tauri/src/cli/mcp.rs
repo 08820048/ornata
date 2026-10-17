@@ -53,7 +53,7 @@ fn error(id: Value, code: i64, message: &str) -> Value {
 }
 
 /// `None` for notifications, which get no reply.
-fn handle(root: &Path, level: Level, message: &Value) -> Option<Value> {
+pub(super) fn handle(root: &Path, level: Level, message: &Value) -> Option<Value> {
     let id = message.get("id")?.clone();
     let method = message.get("method").and_then(Value::as_str).unwrap_or("");
     let params = message.get("params").cloned().unwrap_or(Value::Null);

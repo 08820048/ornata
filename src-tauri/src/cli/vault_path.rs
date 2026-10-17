@@ -44,6 +44,18 @@ pub fn resolve(flag: Option<&str>, ceiling: Option<Level>) -> AppResult<Target> 
 
 fn resolve_in(flag: Option<&str>, ceiling: Option<Level>, config: Option<&Path>) -> AppResult<Target> {
     let config = config.map(load_config).unwrap_or_default();
+    resolve_with(flag, ceiling, &config)
+}
+
+/// The vault the app has open and what Settings allow there; `None` before
+/// any vault is chosen. Used by the in-app server, which re-reads settings on
+/// every request so a change in the panel applies immediately.
+pub fn target_from(config: &AppConfig) -> Option<Target> {
+    // The app's own vault, never ORNATA_VAULT from whatever launched it.
+    resolve_with(config.vault_path.as_deref(), None, config).ok()
+}
+
+fn resolve_with(flag: Option<&str>, ceiling: Option<Level>, config: &AppConfig) -> AppResult<Target> {
     let chosen = flag
         .map(str::to_string)
         .or_else(|| std::env::var("ORNATA_VAULT").ok().filter(|v| !v.is_empty()))

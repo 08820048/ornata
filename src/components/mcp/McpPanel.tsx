@@ -3,7 +3,13 @@ import { toast } from "sonner";
 import { Segmented } from "@/components/settings/controls";
 import { CopyButton } from "@/components/ui/CopyButton";
 import type { MessageKey } from "@/lib/i18n";
-import { connectedClients, isConnected, setupCommands, type SetupCommand } from "@/lib/mcpSetup";
+import {
+  connectedClients,
+  mcpState,
+  setupCommands,
+  stdioCommand,
+  type SetupCommand,
+} from "@/lib/mcpSetup";
 import type { CliAccess } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
@@ -30,17 +36,37 @@ export function McpPanel() {
     return <p className="py-6 text-[13px] text-faint">{t("mcp.noVault")}</p>;
   }
 
-  const connected = isConnected(status);
+  const state = mcpState(status);
+  const connected = state === "server" || state === "stdio";
   const installed = status.installedAt !== null;
-  const commands = setupCommands(status.executable, installed);
+  const commands = setupCommands(status.executable, installed, status.server.port);
   const current = commands.find((command) => command.id === agent) ?? commands[0];
   const vaultName = status.vaultPath.split("/").filter(Boolean).pop() ?? status.vaultPath;
 
-  const banner = connected
-    ? t("mcp.status.connectedTo", { client: connectedClients(status).join(", ") })
-    : status.access === "off"
-      ? t("mcp.status.off")
-      : t("mcp.status.idle");
+  const clients = connectedClients(status).join(", ");
+  const banner =
+    state === "server"
+      ? [
+          t("mcp.status.serverOn", { port: status.server.port }),
+          status.server.activity?.lastClient &&
+            t("mcp.status.lastUsed", { client: status.server.activity.lastClient }),
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : state === "stdio"
+        ? t("mcp.status.stdio", { client: clients })
+        : state === "off"
+          ? t("mcp.status.off")
+          : t("mcp.status.serverOff");
+
+  const toggleServer = () => {
+    setBusy(true);
+    useMcp
+      .getState()
+      .setServer(!status.server.running)
+      .catch(report)
+      .finally(() => setBusy(false));
+  };
 
   const setAccess = (access: CliAccess) => {
     setBusy(true);
@@ -82,7 +108,15 @@ export function McpPanel() {
           aria-hidden
           className={cx("size-2 shrink-0 rounded-full", connected ? "bg-success" : "bg-faint")}
         />
-        <span className="min-w-0 truncate">{banner}</span>
+        <span className="min-w-0 flex-1 truncate">{banner}</span>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={toggleServer}
+          className="h-7 shrink-0 rounded-md border border-line bg-bg px-2.5 text-[12px] font-medium text-ink transition-colors duration-100 hover:bg-hover disabled:opacity-60"
+        >
+          {status.server.running ? t("mcp.server.disconnect") : t("mcp.server.connect")}
+        </button>
       </div>
 
       <section>
@@ -118,10 +152,7 @@ export function McpPanel() {
           id="mcp-agent"
           value={agent}
           ariaLabel={t("mcp.connect.title")}
-          options={commands.map((command) => ({
-            value: command.id,
-            label: command.id === "json" ? "JSON" : command.label,
-          }))}
+          options={commands.map((command) => ({ value: command.id, label: command.label }))}
           onChange={setAgent}
           className="mt-2.5"
         />
@@ -133,8 +164,16 @@ export function McpPanel() {
             <CopyButton value={current.text} side="left" />
           </span>
         </div>
-        {current.id === "json" && (
-          <p className="mt-1.5 text-[11px] text-faint">{t("mcp.connect.json")}</p>
+        {(current.id === "json" || current.id === "desktop") && (
+          <p className="mt-1.5 text-[11px] leading-4 text-faint">
+            {t(current.id === "json" ? "mcp.connect.json" : "mcp.connect.desktop")}
+          </p>
+        )}
+        {current.id !== "desktop" && (
+          <p className="mt-2 break-all text-[11px] leading-4 text-faint">
+            {t("mcp.connect.stdioNote")}{" "}
+            <code className="font-mono text-muted">{stdioCommand(status.executable, installed)}</code>
+          </p>
         )}
       </section>
 

@@ -5,6 +5,7 @@
 
 mod commands;
 pub(crate) mod app_api;
+pub(crate) mod http;
 mod mcp;
 pub(crate) mod presence;
 mod tools;

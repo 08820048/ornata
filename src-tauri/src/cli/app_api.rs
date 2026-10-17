@@ -3,14 +3,29 @@
 //! around helpers that are unit-tested here.
 
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
 
 use crate::config::{self, CliAccess};
 use crate::error::{AppError, AppResult};
 
+use super::http::{self, Activity, Provider, ServerHandle};
 use super::presence::{live_sessions, sessions_dir, Session};
+use super::vault_path;
+
+/// The in-app MCP server while it is on.
+#[derive(Default)]
+pub struct McpServer(Mutex<Option<ServerHandle>>);
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerStatus {
+    running: bool,
+    port: u16,
+    activity: Option<Activity>,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +37,8 @@ pub struct McpStatus {
     executable: String,
     /// Where `ornata` is linked on the PATH, when it is.
     installed_at: Option<String>,
+    /// The localhost server agents can reach with `--transport http`.
+    server: ServerStatus,
 }
 
 #[derive(Serialize)]
@@ -85,8 +102,59 @@ fn on_path(dir: &Path) -> bool {
     std::env::var_os("PATH").is_some_and(|paths| std::env::split_paths(&paths).any(|p| p == dir))
 }
 
+fn provider(app: &AppHandle) -> Provider {
+    let app = app.clone();
+    // Settings are re-read on every request, so access changes apply at once.
+    Arc::new(move || vault_path::target_from(&config::load(&app)))
+}
+
+fn set_enabled(app: &AppHandle, enabled: bool, port: Option<u16>) -> AppResult<()> {
+    let mut config = config::load(app);
+    config.mcp_server.enabled = enabled;
+    if let Some(port) = port {
+        config.mcp_server.port = port;
+    }
+    config::save(app, &config)
+}
+
+/// Start the server if it was left on. Best-effort: a taken port just means
+/// it stays off until the user switches it on again.
+pub fn autostart(app: &AppHandle) {
+    let config = config::load(app);
+    if !config.mcp_server.enabled {
+        return;
+    }
+    if let Ok(handle) = http::start(config.mcp_server.port, provider(app)) {
+        let _ = set_enabled(app, true, Some(handle.port()));
+        if let Ok(mut slot) = app.state::<McpServer>().0.lock() {
+            *slot = Some(handle);
+        }
+    }
+}
+
 #[tauri::command]
-pub fn mcp_status(app: AppHandle) -> AppResult<McpStatus> {
+pub fn mcp_server_start(app: AppHandle, server: State<'_, McpServer>) -> AppResult<()> {
+    let mut slot = server.0.lock().map_err(|_| AppError::Other("server lock poisoned".into()))?;
+    if slot.is_some() {
+        return Ok(());
+    }
+    let handle = http::start(config::load(&app).mcp_server.port, provider(&app))?;
+    set_enabled(&app, true, Some(handle.port()))?;
+    *slot = Some(handle);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn mcp_server_stop(app: AppHandle, server: State<'_, McpServer>) -> AppResult<()> {
+    let handle = server.0.lock().map_err(|_| AppError::Other("server lock poisoned".into()))?.take();
+    if let Some(handle) = handle {
+        handle.stop();
+    }
+    set_enabled(&app, false, None)
+}
+
+#[tauri::command]
+pub fn mcp_status(app: AppHandle, server: State<'_, McpServer>) -> AppResult<McpStatus> {
     let config = config::load(&app);
     let vault_path = config.vault_path.clone();
     let access = vault_path
@@ -97,7 +165,18 @@ pub fn mcp_status(app: AppHandle) -> AppResult<McpStatus> {
     let sessions = vault_path.as_deref().map(|v| live_sessions(&sessions_dir(&dir), v)).unwrap_or_default();
     let exe = exe()?;
     let installed_at = link_path().ok().filter(|link| points_to(link, &exe)).map(|p| p.display().to_string());
-    Ok(McpStatus { vault_path, access, sessions, executable: exe.display().to_string(), installed_at })
+    let (running, port, activity) = match server.0.lock().ok().as_deref() {
+        Some(Some(handle)) => (true, handle.port(), Some(handle.activity())),
+        _ => (false, config.mcp_server.port, None),
+    };
+    Ok(McpStatus {
+        vault_path,
+        access,
+        sessions,
+        executable: exe.display().to_string(),
+        installed_at,
+        server: ServerStatus { running, port, activity },
+    })
 }
 
 #[tauri::command]

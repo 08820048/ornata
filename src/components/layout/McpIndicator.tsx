@@ -1,6 +1,6 @@
 import { Plug } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { connectedClients, isConnected } from "@/lib/mcpSetup";
+import { connectedClients, mcpState } from "@/lib/mcpSetup";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 import { useMcp, useMcpPolling } from "@/stores/mcp";
@@ -12,10 +12,16 @@ export function McpIndicator() {
   const t = useT();
   const status = useMcp((s) => s.status);
   useMcpPolling();
-  const connected = isConnected(status);
-  const label = connected
-    ? t("mcp.indicator.connected", { client: connectedClients(status).join(", ") })
-    : t("mcp.indicator.idle");
+  const state = mcpState(status);
+  const connected = state === "server" || state === "stdio";
+  const label =
+    state === "server"
+      ? t("mcp.status.serverOn", { port: status?.server.port ?? 0 })
+      : state === "stdio"
+        ? t("mcp.indicator.connected", { client: connectedClients(status).join(", ") })
+        : state === "off"
+          ? t("mcp.status.off")
+          : t("mcp.indicator.idle");
 
   return (
     <div className="flex shrink-0 items-center">

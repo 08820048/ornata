@@ -7,6 +7,8 @@ interface McpState {
   status: McpStatus | null;
   refresh: () => Promise<void>;
   setAccess: (access: CliAccess) => Promise<void>;
+  /** Start or stop the in-app server. */
+  setServer: (on: boolean) => Promise<void>;
   install: () => Promise<McpInstallOutcome>;
   uninstall: () => Promise<void>;
 }
@@ -22,6 +24,10 @@ export const useMcp = create<McpState>((set, get) => ({
   },
   setAccess: async (access) => {
     await ipc.mcpSetAccess(access);
+    await get().refresh();
+  },
+  setServer: async (on) => {
+    await (on ? ipc.mcpServerStart() : ipc.mcpServerStop());
     await get().refresh();
   },
   install: async () => {

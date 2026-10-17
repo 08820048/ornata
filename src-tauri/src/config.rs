@@ -36,6 +36,30 @@ pub struct AppConfig {
     /// arguments; a vault with no entry is read-only.
     #[serde(default)]
     pub cli_access: HashMap<String, CliAccess>,
+    /// The in-app MCP server (HTTP on localhost), switched from the MCP panel.
+    #[serde(default)]
+    pub mcp_server: McpServerConfig,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct McpServerConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_mcp_port")]
+    pub port: u16,
+}
+
+pub const DEFAULT_MCP_PORT: u16 = 13200;
+
+fn default_mcp_port() -> u16 {
+    DEFAULT_MCP_PORT
+}
+
+impl Default for McpServerConfig {
+    fn default() -> Self {
+        Self { enabled: false, port: DEFAULT_MCP_PORT }
+    }
 }
 
 /// How much an external agent may do in a vault.
@@ -152,6 +176,7 @@ impl Default for AppConfig {
             active_agent_connection: None,
             agent_connection: None,
             cli_access: HashMap::new(),
+            mcp_server: McpServerConfig::default(),
         }
     }
 }

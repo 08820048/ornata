@@ -60,12 +60,15 @@ pub fn run() {
             }
         }).build())
         .manage(AppState::default())
+        .manage(cli::app_api::McpServer::default())
         .manage(agent::AgentState::default())
         .manage(print_export::PrintState::default())
         .manage(reveal::ExportedFiles::default())
         .invoke_handler(tauri::generate_handler![
             cli::app_api::mcp_status,
             cli::app_api::mcp_set_access,
+            cli::app_api::mcp_server_start,
+            cli::app_api::mcp_server_stop,
             cli::app_api::mcp_install_cli,
             cli::app_api::mcp_uninstall_cli,
             agent::agent_status,
@@ -165,6 +168,8 @@ pub fn run() {
             if let Err(err) = app.global_shortcut().register("cmd+alt+j") {
                 eprintln!("global shortcut cmd+alt+j unavailable: {err}");
             }
+            // The MCP server comes back up if it was left on.
+            cli::app_api::autostart(app.handle());
             Ok(())
         })
         .on_window_event(|window, event| {

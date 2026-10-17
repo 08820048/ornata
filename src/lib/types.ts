@@ -221,12 +221,19 @@ export interface McpSession {
   startedMs: number;
 }
 
+export interface McpServerStatus {
+  running: boolean;
+  port: number;
+  activity: { lastClient: string; lastSeenMs: number; sessions: number } | null;
+}
+
 export interface McpStatus {
   vaultPath: string | null;
   access: CliAccess;
   sessions: McpSession[];
   executable: string;
   installedAt: string | null;
+  server: McpServerStatus;
 }
 
 export interface McpInstallOutcome {
