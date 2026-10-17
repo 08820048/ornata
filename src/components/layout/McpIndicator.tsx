@@ -6,7 +6,7 @@ import { useT } from "@/stores/locale";
 import { useMcp, useMcpPolling } from "@/stores/mcp";
 import { useUi } from "@/stores/ui";
 
-/** Top-bar plug: green while an agent is connected over MCP, gray otherwise.
+/** Status-bar plug: green while an agent is connected over MCP, gray otherwise.
  *  Click to open MCP Settings. */
 export function McpIndicator() {
   const t = useT();
@@ -19,17 +19,17 @@ export function McpIndicator() {
 
   return (
     <div className="flex shrink-0 items-center">
-      <Tooltip label={label} side="bottom">
+      <Tooltip label={label} side="top">
         <button
           type="button"
           aria-label={label}
           onClick={() => useUi.getState().setMcpOpen(true)}
           className={cx(
-            "grid h-7 w-7 place-items-center rounded-md transition-[color,background-color,transform] duration-100 hover:bg-hover active:scale-[0.96]",
+            "grid h-5 w-6 place-items-center rounded transition-[color,background-color,transform] duration-100 hover:bg-hover active:scale-[0.96]",
             connected ? "text-success" : "text-faint hover:text-muted",
           )}
         >
-          <Plug size={15} strokeWidth={1.9} />
+          <Plug size={13.5} strokeWidth={2} />
         </button>
       </Tooltip>
     </div>

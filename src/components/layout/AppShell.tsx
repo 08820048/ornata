@@ -5,7 +5,6 @@ import { TabBar } from "@/components/editor/TabBar";
 import { SPRING_PANEL } from "@/lib/ease";
 import { tabOfView } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
-import { McpIndicator } from "./McpIndicator";
 import { PaneHeader } from "./PaneHeader";
 import { Sidebar } from "./Sidebar";
 import { ShortcutBar } from "./ShortcutBar";
@@ -63,7 +62,6 @@ export function AppShell() {
           transition={SPRING_PANEL}
         >
           <TabBar />
-          <McpIndicator />
         </motion.div>
 
         {/* Row 2 — the focused note's header. With a split open, every pane
