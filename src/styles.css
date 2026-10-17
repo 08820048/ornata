@@ -359,6 +359,61 @@ body {
     letter-spacing: -0.006em;
     margin: 1.1em 0 0.3em;
 }
+.prose-note h1,
+.prose-note h2,
+.prose-note h3,
+.prose-note h4 {
+    position: relative;
+}
+
+/* heading fold: chevron in the left gutter, section hidden via decoration */
+.prose-note .heading-fold {
+    position: absolute;
+    left: -1.35em;
+    top: 50%;
+    width: 1.1em;
+    height: 1.1em;
+    margin-top: -0.55em;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    user-select: none;
+    color: var(--faint);
+    font-size: 0.7em;
+    opacity: 0;
+    transition: opacity 100ms var(--ease-out), color 100ms var(--ease-out);
+}
+.prose-note .heading-fold::before {
+    content: "";
+    border: solid currentColor;
+    border-width: 0 1.5px 1.5px 0;
+    width: 0.4em;
+    height: 0.4em;
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 100ms var(--ease-out);
+}
+.prose-note h1:hover > .heading-fold,
+.prose-note h2:hover > .heading-fold,
+.prose-note h3:hover > .heading-fold,
+.prose-note h4:hover > .heading-fold,
+.prose-note .heading-folded > .heading-fold {
+    opacity: 1;
+}
+.prose-note .heading-fold:hover {
+    color: var(--ink);
+}
+.prose-note .heading-folded > .heading-fold::before {
+    transform: rotate(-45deg);
+}
+.prose-note .fold-hidden {
+    display: none;
+}
+@media print {
+    .prose-note .heading-fold {
+        display: none;
+    }
+}
+
 .prose-note h4 {
     font-size: 1em;
     font-weight: 550;
