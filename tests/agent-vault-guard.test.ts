@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createReadToolDefinition } from "@earendil-works/pi-coding-agent";
 import { VaultGuard } from "../agent-sidecar/vaultGuard";
 
 function fixture() {
-  const base = mkdtempSync(path.join(tmpdir(), "ornata-guard-"));
+  const base = realpathSync(mkdtempSync(path.join(tmpdir(), "ornata-guard-")));
   const vault = path.join(base, "vault");
   mkdirSync(path.join(vault, "notes"), { recursive: true });
   writeFileSync(path.join(vault, "notes", "a.md"), "# inside");

@@ -214,7 +214,7 @@ fn scan_hrefs(body: &str) -> Vec<HrefSpan> {
         let start = i + 2;
         let mut depth = 1usize;
         let mut end = None;
-        while let Some((j, ch)) = iter.next() {
+        for (j, ch) in iter.by_ref() {
             match ch {
                 '(' => depth += 1,
                 ')' => {

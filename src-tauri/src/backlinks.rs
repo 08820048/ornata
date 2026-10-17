@@ -106,7 +106,7 @@ pub(crate) fn markdown_hrefs(line: &str) -> impl Iterator<Item = &str> {
                 let start = i + 2; // position after ']['
                 let mut end = None;
 
-                while let Some((j, c)) = chars.next() {
+                for (j, c) in chars.by_ref() {
                     if c == '(' {
                         depth += 1;
                     } else if c == ')' {

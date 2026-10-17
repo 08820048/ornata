@@ -49,3 +49,7 @@ AuthKey_*.p8
 # docs notes are tracked (overrides the *.md ignore above)
 !docs/
 !docs/**
+
+# Editor/agent local config
+.zcodeignore
+.devin/

@@ -118,7 +118,7 @@ pub fn extract_url(output: &str) -> Option<String> {
     output
         .lines()
         .rev()
-        .filter_map(|line| find_url_in(line))
+        .filter_map(find_url_in)
         .next()
 }
 

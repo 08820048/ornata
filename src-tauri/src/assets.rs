@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 use serde::Serialize;
 use uuid::Uuid;
@@ -35,13 +35,13 @@ pub fn unreferenced_assets(root: &Path) -> AppResult<Vec<UnusedAsset>> {
 
 fn unreferenced_assets_before(root: &Path, now: SystemTime) -> AppResult<Vec<UnusedAsset>> {
     let mut referenced: HashSet<String> = HashSet::new();
-    collect_references(root, &crate::vault::notes_root(root), &mut referenced)?;
+    collect_references(&crate::vault::notes_root(root), &mut referenced)?;
     // History snapshots and templates can reference assets too — restoring a
     // snapshot or spawning from a template after a cleanup must not break.
     // Snapshot files are bare millisecond timestamps (no extension), so they
     // get their own walker; `.keep` pins are markers, not content.
-    collect_history_references(root, &root.join(DATA_DIR).join("history"), &mut referenced)?;
-    collect_references(root, &root.join(DATA_DIR).join("templates"), &mut referenced)?;
+    collect_history_references(&root.join(DATA_DIR).join("history"), &mut referenced)?;
+    collect_references(&root.join(DATA_DIR).join("templates"), &mut referenced)?;
     let mut out: Vec<UnusedAsset> = Vec::new();
     for entry in fs::read_dir(root.join(ASSETS_DIR)).into_iter().flatten().flatten() {
         let path = entry.path();
@@ -111,7 +111,7 @@ fn trash_assets_before(
 /// markdown (uuid names carry no spaces, so the token ends at whitespace,
 /// `)`, `>` or a quote). `.ornata/` and legacy `.markd/` both appear as
 /// prefixes; only the filename matters here.
-fn collect_references(root: &Path, dir: &Path, referenced: &mut HashSet<String>) -> AppResult<()> {
+fn collect_references(dir: &Path, referenced: &mut HashSet<String>) -> AppResult<()> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
     };
@@ -121,7 +121,7 @@ fn collect_references(root: &Path, dir: &Path, referenced: &mut HashSet<String>)
             continue;
         }
         if path.is_dir() {
-            collect_references(root, &path, referenced)?;
+            collect_references(&path, referenced)?;
             continue;
         }
         if path.extension().is_none_or(|e| e != "md") {
@@ -182,7 +182,6 @@ fn percent_decode_name(input: &str) -> String {
 /// Same scan as [`collect_references`] but over the history directory, whose
 /// snapshot files are extensionless millisecond timestamps.
 fn collect_history_references(
-    root: &Path,
     dir: &Path,
     referenced: &mut HashSet<String>,
 ) -> AppResult<()> {
@@ -195,7 +194,7 @@ fn collect_history_references(
             continue;
         }
         if path.is_dir() {
-            collect_history_references(root, &path, referenced)?;
+            collect_history_references(&path, referenced)?;
             continue;
         }
         let name = entry.file_name().to_string_lossy().to_string();

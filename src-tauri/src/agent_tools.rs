@@ -111,7 +111,7 @@ fn execute_bash(
     use std::time::Instant;
     let mut child = Command::new("/bin/zsh")
         .arg("-c")
-        .arg(&command)
+        .arg(command)
         .current_dir(root)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

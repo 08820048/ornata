@@ -25,7 +25,9 @@ pub struct AgentConnectionConfig {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub enum AgentAuthType {
+    #[default]
     ApiKey,
     #[serde(rename = "oauth")]
     OAuth,
@@ -35,11 +37,6 @@ pub enum AgentAuthType {
     None,
 }
 
-impl Default for AgentAuthType {
-    fn default() -> Self {
-        Self::ApiKey
-    }
-}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
