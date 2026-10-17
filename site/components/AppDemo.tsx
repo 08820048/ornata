@@ -262,7 +262,7 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
             {["Instant note switching", "A link graph for the whole vault", "PDF export with bookmarks"].map(
               (item) => (
                 <li key={item} className="flex items-center gap-2.5">
-                  <span className="grid size-[18px] shrink-0 place-items-center rounded border border-foreground bg-foreground text-background">
+                  <span className="grid size-[18px] shrink-0 place-items-center rounded border border-[var(--app-accent)] bg-[var(--app-accent)] text-white">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
                       <path d="M5 13l4 4L19 7" />
                     </svg>
@@ -280,7 +280,7 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
                   initial={still ? false : { backgroundColor: "rgba(22,23,20,0.12)" }}
                   animate={{ backgroundColor: "rgba(22,23,20,0)" }}
                   transition={{ duration: 0.9, ease: EASE_OUT }}
-                  className="rounded-[3px] text-foreground underline decoration-border-strong underline-offset-[3px]"
+                  className="rounded-[3px] text-[var(--app-accent)] underline decoration-[color-mix(in_srgb,var(--app-accent)_50%,transparent)] underline-offset-[3px]"
                 >
                   {LINK}
                 </motion.span>
@@ -361,7 +361,7 @@ function SplitPanes({ elapsed, still }: { elapsed: number; still: boolean }) {
             Next, polish the editor pass and ship it — see{" "}
             <span
               className={cn(
-                "rounded-[3px] text-foreground underline decoration-border-strong underline-offset-[3px] transition-colors duration-150",
+                "rounded-[3px] text-[var(--app-accent)] underline decoration-[color-mix(in_srgb,var(--app-accent)_50%,transparent)] underline-offset-[3px] transition-colors duration-150",
                 linkHot && "bg-foreground/10",
               )}
             >

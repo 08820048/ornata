@@ -101,8 +101,8 @@ export function SplitDemo() {
               Ship the editor pass first, then write it up in{" "}
               <span
                 className={cn(
-                  "rounded-[3px] underline decoration-border-strong underline-offset-[3px] transition-colors duration-150",
-                  linkHot ? "bg-foreground/10 text-foreground" : "text-foreground",
+                  "rounded-[3px] text-[var(--app-accent)] underline decoration-[color-mix(in_srgb,var(--app-accent)_50%,transparent)] underline-offset-[3px] transition-colors duration-150",
+                  linkHot && "bg-foreground/10",
                 )}
               >
                 Release notes

@@ -108,6 +108,11 @@
     --invert-ink: #fbfbfa;
     --danger: #b3261e;
     --success: #4d8660;
+    /* The one accent: links, checked tasks, the caret, the selection, the
+       quote bar. Everything else stays monochrome. Contrast on --bg is
+       checked by tests/accent-contrast.test.ts. */
+    --accent: #167a6e;
+    --accent-ink: #ffffff;
 
     /* Link-graph folder colors — the one sanctioned exception to monochrome
        (see AGENTS.md). Fixed slot order; validated all-pairs for CVD and
@@ -144,6 +149,8 @@
     --invert-ink: #131313;
     --danger: #e5484d;
     --success: #72b588;
+    --accent: #4cc3b0;
+    --accent-ink: #131313;
 
     --graph-1: #3987e5;
     --graph-2: #c98500;
@@ -274,7 +281,7 @@ body {
     font-size: 16px;
     line-height: 1.65;
     color: var(--ink);
-    caret-color: var(--ink);
+    caret-color: var(--accent);
     outline: none;
     padding-bottom: 40vh;
     overflow-wrap: break-word;
@@ -305,7 +312,7 @@ body {
     visibility: visible;
 }
 .cursor-motion polygon {
-    fill: var(--ink);
+    fill: var(--accent);
     animation: ornata-caret-blink 1.06s steps(1, end) infinite;
 }
 /* Solid while moving so the caret doesn't fade mid-flight. */
@@ -464,16 +471,19 @@ body {
 }
 
 .prose-note a.ornata-link {
-    color: var(--ink);
+    color: var(--accent);
     text-decoration: underline;
-    text-decoration-color: currentColor;
+    text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent);
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
     cursor: pointer;
     transition: text-decoration-color 120ms ease-out;
 }
 .prose-note a.ornata-link:hover {
-    text-decoration-color: var(--ink);
+    text-decoration-color: var(--accent);
+}
+.prose-note ::selection {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .find-match {
     background: var(--hover);
@@ -506,7 +516,7 @@ body {
 }
 
 .prose-note blockquote {
-    border-left: 2px solid var(--ink);
+    border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
     margin: 0.8em 0;
     padding-left: 1em;
     color: var(--muted);
@@ -1209,15 +1219,15 @@ body {
     top: 50%;
     width: 4px;
     height: 8px;
-    border-right: 1.5px solid var(--invert-ink);
-    border-bottom: 1.5px solid var(--invert-ink);
+    border-right: 1.5px solid var(--accent-ink);
+    border-bottom: 1.5px solid var(--accent-ink);
     transform: translate(-50%, -60%) rotate(45deg);
     opacity: 0;
     transition: opacity 120ms ease-out;
 }
 .prose-note ul[data-type="taskList"] input:checked + span {
-    background: var(--invert);
-    border-color: var(--invert);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 .prose-note ul[data-type="taskList"] input:checked + span::after {
     opacity: 1;

@@ -27,6 +27,7 @@ All notable changes to Ornata are documented in this file.
 
 ### Changed
 
+- A single teal accent in the editor: note links, checked tasks, the text caret and selection, and the quote bar. The rest of the interface stays monochrome. Links to notes that don't exist are still gray and dashed.
 - Editor text and note titles use Space Grotesk; Chinese falls back to the system font.
 - The sidebar toggle is a round arrow on the sidebar's edge instead of a button in the tab strip.
 - The note's top-right buttons share one quiet style. Copy path moved into the ··· menu, which also has Focus mode.

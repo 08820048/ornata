@@ -142,6 +142,8 @@
   --active: rgba(25, 25, 25, 0.09);
   --primary: #1c1c1c;
   --primary-fg: #fbfbfa;
+  /* The app's one accent (src/styles.css): links, checked tasks, caret. */
+  --app-accent: #167a6e;
   color: var(--fg);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
