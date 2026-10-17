@@ -1,6 +1,16 @@
 import { create } from "zustand";
 import { noteKey, sameTab, tabKey, vaultNote } from "@/lib/noteRef";
-import { dropFromSplit, followFocus, openAside, remapSplit, tabIsUnder, type Split } from "@/lib/split";
+import {
+  closePane,
+  dropFromSplit,
+  followFocus,
+  maxPanesFor,
+  openAside,
+  remapSplit,
+  replaceInSplit,
+  tabIsUnder,
+  type Split,
+} from "@/lib/split";
 import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
 
 /**
@@ -10,7 +20,7 @@ import type { LinkRewrite, NoteRef, TabRef } from "@/lib/types";
  */
 interface TabsState {
   tabs: TabRef[];
-  /** Two notes shown side by side; view-only, not persisted. */
+  /** Notes shown side by side; view-only, not persisted. */
   split: Split | null;
   /** Bumped to ask a note's pane to scroll to top (e.g. opened via a link). */
   scrollTopReq: { key: string; nonce: number } | null;
@@ -29,7 +39,10 @@ interface TabsState {
   linkRewritesReq: { rewrites: LinkRewrite[]; nonce: number } | null;
   /** Show `target` beside the focused tab, opening it if needed. */
   openAside: (focused: TabRef, target: TabRef) => void;
+  /** Close the pane showing `tab` (the split ends when one pane is left). */
+  closePane: (tab: TabRef) => void;
   closeSplit: () => void;
+  setSplitSizes: (sizes: number[]) => void;
   /** Keep the split coherent when focus moves between tabs. */
   followFocus: (prev: TabRef | null, next: TabRef | null) => void;
   /** Add a tab if not already open (no-op otherwise). */
@@ -74,13 +87,20 @@ export const useTabs = create<TabsState>((set, get) => ({
   },
 
   openAside: (focused, target) => {
-    const split = openAside(get().split, focused, target);
+    const split = openAside(get().split, focused, target, maxPanesFor(window.innerWidth));
     if (split === get().split) return;
     get().open(target);
     set({ split });
   },
 
+  closePane: (tab) => set({ split: closePane(get().split, tab) }),
+
   closeSplit: () => set({ split: null }),
+
+  setSplitSizes: (sizes) => {
+    const split = get().split;
+    if (split && sizes.length === split.panes.length) set({ split: { ...split, sizes } });
+  },
 
   followFocus: (prev, next) => {
     const split = followFocus(get().split, prev, next);
@@ -104,10 +124,7 @@ export const useTabs = create<TabsState>((set, get) => ({
   replace: (note, next) =>
     set({
       tabs: get().tabs.map((tab) => (sameTab(tab, note) ? next : tab)),
-      split: get().split && {
-        left: sameTab(get().split!.left, note) ? next : get().split!.left,
-        right: sameTab(get().split!.right, note) ? next : get().split!.right,
-      },
+      split: replaceInSplit(get().split, note, next),
     }),
 
   remap: (rel, next) =>

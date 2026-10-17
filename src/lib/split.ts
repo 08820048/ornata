@@ -1,42 +1,96 @@
 import { isNoteTab, relIsUnder, sameTab, vaultNote } from "@/lib/noteRef";
 import type { TabRef } from "@/lib/types";
 
-/** Two notes shown side by side. Positions are stable; focus moves between them. */
+/** Notes shown side by side, left to right, with their width fractions
+ *  (always `panes.length` entries summing to 1). Focus moves between panes
+ *  without moving them. */
 export interface Split {
-  left: TabRef;
-  right: TabRef;
+  panes: TabRef[];
+  sizes: number[];
 }
 
-const inSplit = (split: Split, tab: TabRef) => sameTab(split.left, tab) || sameTab(split.right, tab);
+export const MAX_PANES = 4;
+/** Narrowest a pane may be dragged to, in px. */
+export const MIN_PANE_PX = 280;
 
-/** Show `target` beside the focused tab. With a split already open, the side
- *  that is not focused is replaced. Only notes can be split. */
-export function openAside(split: Split | null, focused: TabRef, target: TabRef): Split | null {
+const indexOf = (split: Split, tab: TabRef) => split.panes.findIndex((p) => sameTab(p, tab));
+
+const evenSizes = (count: number) => Array.from({ length: count }, () => 1 / count);
+
+const normalized = (sizes: number[]) => {
+  const total = sizes.reduce((sum, n) => sum + n, 0);
+  return total > 0 ? sizes.map((n) => n / total) : evenSizes(sizes.length);
+};
+
+/** How many panes fit side by side in `width` px. */
+export const maxPanesFor = (width: number) =>
+  Math.max(2, Math.min(MAX_PANES, Math.floor(width / (MIN_PANE_PX + 80))));
+
+/** Show `target` right of the focused pane. The new pane takes half of the
+ *  focused one's width; at the cap it replaces the neighbour instead. Only
+ *  notes can be split. */
+export function openAside(
+  split: Split | null,
+  focused: TabRef,
+  target: TabRef,
+  maxPanes = MAX_PANES,
+): Split | null {
   if (!isNoteTab(focused) || !isNoteTab(target) || sameTab(focused, target)) return split;
-  if (split && sameTab(split.left, focused) && inSplit(split, focused)) {
-    return sameTab(split.right, target) ? split : { left: split.left, right: target };
+  if (!split || indexOf(split, focused) === -1) {
+    return { panes: [focused, target], sizes: [0.5, 0.5] };
   }
-  if (split && sameTab(split.right, focused)) {
-    return sameTab(split.left, target) ? split : { left: target, right: split.right };
+  if (indexOf(split, target) !== -1) return split;
+  const at = indexOf(split, focused);
+  if (split.panes.length >= maxPanes) {
+    const replace = at + 1 < split.panes.length ? at + 1 : at - 1;
+    const panes = split.panes.slice();
+    panes[replace] = target;
+    return { panes, sizes: split.sizes };
   }
-  return { left: focused, right: target };
+  const panes = split.panes.slice();
+  const sizes = split.sizes.slice();
+  const half = sizes[at] / 2;
+  sizes[at] = half;
+  panes.splice(at + 1, 0, target);
+  sizes.splice(at + 1, 0, half);
+  return { panes, sizes };
 }
 
 /** Keep the split coherent when focus moves from `prev` to `next`: landing on
- *  the other side just refocuses; any other note replaces the side that was
+ *  another pane just refocuses; any other note replaces the pane that was
  *  focused; the graph (or nothing) closes the split. */
 export function followFocus(split: Split | null, prev: TabRef | null, next: TabRef | null): Split | null {
   if (!split) return null;
   if (!next || !isNoteTab(next)) return null;
-  if (inSplit(split, next)) return split;
-  if (prev && sameTab(split.left, prev)) return { left: next, right: split.right };
-  if (prev && sameTab(split.right, prev)) return { left: split.left, right: next };
-  return split;
+  if (indexOf(split, next) !== -1) return split;
+  const at = prev ? indexOf(split, prev) : -1;
+  if (at === -1) return split;
+  const panes = split.panes.slice();
+  panes[at] = next;
+  return { panes, sizes: split.sizes };
 }
 
-/** The split collapses as soon as either side stops existing. */
+/** Remove the pane showing `tab`, handing its width to a neighbour. One
+ *  remaining pane is no split at all. */
+export function closePane(split: Split | null, tab: TabRef): Split | null {
+  if (!split) return null;
+  const at = indexOf(split, tab);
+  if (at === -1) return split;
+  if (split.panes.length <= 2) return null;
+  const panes = split.panes.filter((_, i) => i !== at);
+  const sizes = split.sizes.filter((_, i) => i !== at);
+  sizes[Math.max(0, at - 1)] += split.sizes[at];
+  return { panes, sizes };
+}
+
+/** Drop every pane whose tab no longer exists. */
 export function dropFromSplit(split: Split | null, gone: (tab: TabRef) => boolean): Split | null {
-  return split && !gone(split.left) && !gone(split.right) ? split : null;
+  if (!split) return null;
+  const keep = split.panes.map((tab) => !gone(tab));
+  if (keep.every(Boolean)) return split;
+  const panes = split.panes.filter((_, i) => keep[i]);
+  if (panes.length < 2) return null;
+  return { panes, sizes: normalized(split.sizes.filter((_, i) => keep[i])) };
 }
 
 /** Follow a rename/move of `rel` → `next` (note or folder). */
@@ -47,7 +101,26 @@ export function remapSplit(split: Split | null, rel: string, next: string): Spli
     if (tab.rel === rel) return vaultNote(next);
     return tab.rel.startsWith(`${rel}/`) ? vaultNote(next + tab.rel.slice(rel.length)) : tab;
   };
-  return { left: map(split.left), right: map(split.right) };
+  return { panes: split.panes.map(map), sizes: split.sizes };
+}
+
+/** Swap tab references in place (external-note rename). */
+export function replaceInSplit(split: Split | null, from: TabRef, to: TabRef): Split | null {
+  if (!split) return null;
+  return { panes: split.panes.map((p) => (sameTab(p, from) ? to : p)), sizes: split.sizes };
+}
+
+/** Drag the divider after pane `index` by `delta` (fraction of the total
+ *  width), starting from `start` sizes; neither neighbour goes below `min`. */
+export function resizeDivider(start: number[], index: number, delta: number, min: number): number[] {
+  const sizes = start.slice();
+  const pair = start[index] + start[index + 1];
+  if (pair === undefined || Number.isNaN(pair)) return start;
+  const floor = Math.min(min, pair / 2);
+  const left = Math.min(Math.max(start[index] + delta, floor), pair - floor);
+  sizes[index] = left;
+  sizes[index + 1] = pair - left;
+  return sizes;
 }
 
 export const tabIsUnder = (tab: TabRef, rel: string) => tab.kind === "vault" && relIsUnder(tab.rel, rel);

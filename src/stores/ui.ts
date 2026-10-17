@@ -16,6 +16,8 @@ let restoreSidebar = false;
 
 interface UiState {
   paletteOpen: boolean;
+  /** The palette was opened to pick a note for a new pane. */
+  paletteAside: boolean;
   tasksOpen: boolean;
   tagsOpen: boolean;
   saveTemplateOpen: boolean;
@@ -27,6 +29,7 @@ interface UiState {
   markdownSource: boolean;
   saveState: SaveState;
   setPaletteOpen: (open: boolean) => void;
+  openPaletteAside: () => void;
   setTasksOpen: (open: boolean) => void;
   setTagsOpen: (open: boolean) => void;
   setSaveTemplateOpen: (open: boolean) => void;
@@ -42,6 +45,7 @@ interface UiState {
 
 export const useUi = create<UiState>((set, get) => ({
   paletteOpen: false,
+  paletteAside: false,
   tasksOpen: false,
   tagsOpen: false,
   saveTemplateOpen: false,
@@ -52,7 +56,8 @@ export const useUi = create<UiState>((set, get) => ({
   focusMode: false,
   markdownSource: false,
   saveState: "idle",
-  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen, paletteAside: false }),
+  openPaletteAside: () => set({ paletteOpen: true, paletteAside: true }),
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),
   setTagsOpen: (tagsOpen) => set({ tagsOpen }),
   setSaveTemplateOpen: (saveTemplateOpen) => set({ saveTemplateOpen }),

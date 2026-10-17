@@ -219,6 +219,9 @@ export default function App() {
       } else if (event.key === "o" && vault.status === "ready") {
         event.preventDefault();
         vault.chooseExternalNotes();
+      } else if (event.shiftKey && (event.key === "\\" || event.key === "|")) {
+        event.preventDefault();
+        if (vault.view?.type === "note") ui.openPaletteAside();
       } else if (event.key === "\\") {
         event.preventDefault();
         ui.toggleSidebar();

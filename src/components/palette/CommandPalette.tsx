@@ -56,6 +56,7 @@ export function CommandPalette() {
   const tree = useVault((s) => s.tree);
   const recentNotes = useVault((s) => s.recentNotes);
   const split = useTabs((s) => s.split);
+  const asideIntent = useUi((s) => s.paletteAside);
   const t = useT();
 
   const [query, setQuery] = useState("");
@@ -262,8 +263,10 @@ export function CommandPalette() {
             }));
         })();
 
+    // Picking a note for a new pane: notes only, never the app actions.
+    if (asideIntent) return noteItems;
     return q ? [...noteItems, ...actions] : [...actions, ...noteItems];
-  }, [query, hits, tree, recentNotes, split, t]);
+  }, [query, hits, tree, recentNotes, split, asideIntent, t]);
 
   // Index where the "Recent" section starts (no query only), for the header.
   const recentStart = query.trim()
@@ -325,7 +328,7 @@ export function CommandPalette() {
                     event.preventDefault();
                     const item = items[selected];
                     if (!item) return;
-                    const aside = event.metaKey || event.ctrlKey ? item.runAside : undefined;
+                    const aside = event.metaKey || event.ctrlKey || asideIntent ? item.runAside : undefined;
                     runDeferred(aside ?? item.run);
                   }
                 }}
@@ -357,7 +360,7 @@ export function CommandPalette() {
                         setSelected(index);
                       }
                     }}
-                    onClick={() => runDeferred(item.run)}
+                    onClick={() => runDeferred((asideIntent ? item.runAside : undefined) ?? item.run)}
                   >
                     {index === selected && (
                       <motion.div

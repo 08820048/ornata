@@ -15,6 +15,7 @@ export const SHORTCUTS = {
   find: { keys: ["⌘", "F"], label: "settings.shortcut.find" },
   back: { keys: ["⌘", "["], label: "settings.shortcut.back" },
   forward: { keys: ["⌘", "]"], label: "settings.shortcut.forward" },
+  split: { keys: ["⌘", "⇧", "\\"], label: "settings.shortcut.split" },
   sidebar: { keys: ["⌘", "\\"], label: "settings.shortcut.sidebar" },
   focus: { keys: ["⌘", "⇧", "F"], label: "settings.shortcut.focus" },
   theme: { keys: ["⌘", "⇧", "D"], label: "settings.shortcut.theme" },
