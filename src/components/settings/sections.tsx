@@ -18,6 +18,7 @@ import {
 import { ImageUploadSettings } from "@/components/settings/ImageUploadSettings";
 import { PdfExportSettings } from "@/components/settings/PdfExportSettings";
 import { UpdateControl } from "@/components/settings/UpdateControl";
+import { SHORTCUTS } from "@/lib/shortcuts";
 import { useLocale, useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 import packageInfo from "../../../package.json";
@@ -31,15 +32,6 @@ const THEMES: Array<{ value: Theme; label: MessageKey; icon: typeof Sun }> = [
 const LANGUAGES: Array<{ value: Language; label: MessageKey }> = [
   { value: "en", label: "settings.language.en" },
   { value: "zh-CN", label: "settings.language.zhCN" },
-];
-
-const SHORTCUTS: Array<{ label: MessageKey; keys: string[] }> = [
-  { label: "settings.shortcut.palette", keys: ["⌘", "K"] },
-  { label: "settings.shortcut.newNote", keys: ["⌘", "N"] },
-  { label: "settings.shortcut.sidebar", keys: ["⌘", "\\"] },
-  { label: "settings.shortcut.theme", keys: ["⌘", "⇧", "D"] },
-  { label: "settings.shortcut.settings", keys: ["⌘", ","] },
-  { label: "settings.shortcut.closeTab", keys: ["⌘", "W"] },
 ];
 
 export function GeneralSection() {
@@ -189,7 +181,7 @@ export function ShortcutsSection() {
   return (
     <SettingGroup title={t("settings.shortcuts")}>
       <div className="overflow-hidden rounded-xl border border-line-soft">
-        {SHORTCUTS.map((shortcut, i) => (
+        {Object.values(SHORTCUTS).map((shortcut, i) => (
           <div
             key={shortcut.label}
             className={

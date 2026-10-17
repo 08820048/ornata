@@ -17,6 +17,7 @@ import {
   MorphPopoverTrigger,
 } from "@/components/motion/popover-morph";
 import { Sidebar } from "./Sidebar";
+import { ShortcutBar } from "./ShortcutBar";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useUi } from "@/stores/ui";
@@ -220,6 +221,7 @@ export function AppShell() {
           {!view && <EmptyState />}
           <AgentPanel />
         </div>
+        <ShortcutBar />
       </main>
     </div>
   );

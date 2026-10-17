@@ -5,6 +5,7 @@ import {
   FileText,
   FolderOpen,
   ImageOff,
+  Keyboard,
   ListChecks,
   Share2,
   Search,
@@ -184,6 +185,12 @@ export function CommandPalette() {
         run: () => {
           if (vault.root) void openPath(vault.root);
         },
+      },
+      {
+        id: "toggle-shortcut-bar",
+        label: t("palette.toggleShortcutBar"),
+        icon: Keyboard,
+        run: () => useUi.getState().toggleShortcutBar(),
       },
       {
         id: "settings",

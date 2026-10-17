@@ -2,6 +2,15 @@ import { create } from "zustand";
 
 type SaveState = "idle" | "saving" | "error";
 
+const SHORTCUT_BAR_KEY = "ornata.shortcutBarHidden";
+const readShortcutBarHidden = () => {
+  try {
+    return localStorage.getItem(SHORTCUT_BAR_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
 interface UiState {
   paletteOpen: boolean;
   tasksOpen: boolean;
@@ -10,6 +19,7 @@ interface UiState {
   unusedAssetsOpen: boolean;
   agentOpen: boolean;
   sidebarHidden: boolean;
+  shortcutBarHidden: boolean;
   markdownSource: boolean;
   saveState: SaveState;
   setPaletteOpen: (open: boolean) => void;
@@ -19,6 +29,7 @@ interface UiState {
   setUnusedAssetsOpen: (open: boolean) => void;
   setAgentOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  toggleShortcutBar: () => void;
   toggleMarkdownSource: () => void;
   setSaveState: (state: SaveState) => void;
 }
@@ -31,6 +42,7 @@ export const useUi = create<UiState>((set, get) => ({
   unusedAssetsOpen: false,
   agentOpen: false,
   sidebarHidden: false,
+  shortcutBarHidden: readShortcutBarHidden(),
   markdownSource: false,
   saveState: "idle",
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
@@ -40,6 +52,15 @@ export const useUi = create<UiState>((set, get) => ({
   setUnusedAssetsOpen: (unusedAssetsOpen) => set({ unusedAssetsOpen }),
   setAgentOpen: (agentOpen) => set({ agentOpen }),
   toggleSidebar: () => set({ sidebarHidden: !get().sidebarHidden }),
+  toggleShortcutBar: () => {
+    const shortcutBarHidden = !get().shortcutBarHidden;
+    try {
+      localStorage.setItem(SHORTCUT_BAR_KEY, shortcutBarHidden ? "1" : "0");
+    } catch {
+      /* private mode: the toggle still works for this session */
+    }
+    set({ shortcutBarHidden });
+  },
   toggleMarkdownSource: () =>
     set({ markdownSource: !get().markdownSource }),
   setSaveState: (saveState) => set({ saveState }),
