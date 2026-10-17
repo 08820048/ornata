@@ -148,7 +148,7 @@
   /* The app's note typeface, so the demo shows what a note actually
      looks like in Ornata. */
   .font-note {
-    font-family: Charter, "Bitstream Charter", Georgia, serif;
+    font-family: var(--font-space), -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
   }
 
   .text-balance {

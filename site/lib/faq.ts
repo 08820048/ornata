@@ -20,6 +20,10 @@ export const FAQS: { q: string; a: string }[] = [
     a: "Yes. The link graph opens as a tab beside your notes: folders form soft colored regions, hovering a note traces its links and their direction, and you can search, drag, and zoom. Any note can also show its own local graph beneath the text.",
   },
   {
+    q: "Can I view two notes side by side?",
+    a: "Yes. ⌘-click a link, press ⌘↵ on a result in the command palette, or choose Open to the side from a tab or a file's menu. You can have up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done.",
+  },
+  {
     q: "Can I export my notes?",
     a: "They're already Markdown files, so there's nothing to export to keep them. To share, export a note as a PDF — with a bookmark outline built from its headings, plus your choice of paper size and margins — or as standalone HTML. Each export offers Show in Finder when it's done.",
   },

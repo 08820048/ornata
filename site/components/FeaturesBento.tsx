@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { BacklinksDemo } from "@/components/BacklinksDemo";
 import { GraphDemo } from "@/components/GraphDemo";
 import { MachineryDemo } from "@/components/MachineryDemo";
+import { SplitDemo } from "@/components/SplitDemo";
 import { TasksDemo } from "@/components/TasksDemo";
 
 const FILES = [
@@ -393,7 +394,7 @@ function Pair({
     <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="hidden border-r border-border px-8 py-14 lg:block">
         <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
-          {/* "05–06 / 06" */}
+          {/* "05–06 / 07" */}
           {`${items[0].index.split(" /")[0]}–${items[items.length - 1].index}`}
         </span>
       </aside>
@@ -463,7 +464,7 @@ export function FeaturesBento() {
         <div id="features" className="scroll-mt-16">
           <Chapter number="01" word="Write." line="Plain files underneath, a precise editor on top." />
           <Story
-            index="01 / 06"
+            index="01 / 07"
             eyebrow="Plain files, real folders"
             title="Your notes are already exported."
             body="Pick any folder. Ornata writes ordinary Markdown into real directories, keeps frontmatter from other tools, and notices edits made elsewhere. When you need to share, export a PDF with a bookmark outline, or standalone HTML."
@@ -471,7 +472,7 @@ export function FeaturesBento() {
             <FilesDemo />
           </Story>
           <Story
-            index="02 / 06"
+            index="02 / 07"
             eyebrow="A professional editor"
             title="Rich where it helps. Plain underneath."
             body="Clean typography, language-aware code, pasted images, and a magnetic outline for long notes — while the file on disk stays readable anywhere."
@@ -482,7 +483,7 @@ export function FeaturesBento() {
 
           <Chapter number="02" word="Connect." line="Links become context, and the context becomes a map." />
           <Story
-            index="03 / 06"
+            index="03 / 07"
             eyebrow="Linked mentions"
             title="See what links here."
             body="Every note lists the notes that reference it, with the linking line as context — and surfaces plain mentions that should become links."
@@ -490,7 +491,7 @@ export function FeaturesBento() {
             <BacklinksDemo />
           </Story>
           <Story
-            index="04 / 06"
+            index="04 / 07"
             eyebrow="The link graph"
             title="See how your ideas connect."
             body="Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text."
@@ -499,18 +500,27 @@ export function FeaturesBento() {
             <GraphDemo />
           </Story>
 
+          <Story
+            index="05 / 07"
+            eyebrow="Side by side"
+            title="Read one note while you write another."
+            body="⌘-click a link, or press ⌘↵ in the palette, and the note opens beside this one. Up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done."
+          >
+            <SplitDemo />
+          </Story>
+
           <Chapter number="03" word="Find." line="Everything important is one keystroke away." />
           <Pair
             items={[
               {
-                index: "05 / 06",
+                index: "06 / 07",
                 eyebrow: "Command palette",
                 title: "One keystroke to anywhere.",
                 body: "Search titles and content, jump between notes, or run any action from ⌘K.",
                 demo: <CommandDemo />,
               },
               {
-                index: "06 / 06",
+                index: "07 / 07",
                 eyebrow: "Vault-wide tasks",
                 title: "Every open task, in one list.",
                 body: "Checkboxes from across the vault, with counts and folder context. Tick one here and it's done in its note.",

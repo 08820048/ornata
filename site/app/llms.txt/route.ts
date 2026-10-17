@@ -28,6 +28,8 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - AI: AssistantPi runs as a local Pi sidecar; permission-gated (read-only by default), user chooses the model and provider
 - Compatibility: works on the same plain-Markdown vault as Obsidian; preserves external frontmatter
 - Linking: backlinks and unlinked mentions per note; a link graph tab (folder regions, search, link direction) and a local graph under each note
+- Workspace: open tabs, plus split view — up to four notes side by side, each pane with its own header, draggable dividers, ⌘1–⌘4 to jump between panes; focus mode; back/forward through visited notes; headings fold; @ inserts a link to a daily note
+- Search: ⌘K command palette searches titles and content, and finds titles from shorthand (e.g. "prjroad" → "project roadmap")
 - Export: PDF with a heading bookmark outline and paper/margin settings, standalone HTML, or the Markdown file itself
 - Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search, vault-wide open tasks
 - Updates: signed update feed; Developer ID signed and notarized builds

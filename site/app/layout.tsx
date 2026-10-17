@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Newsreader } from "next/font/google";
+import { Inter, Newsreader, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
@@ -17,6 +17,13 @@ const serif = Newsreader({
 const appSans = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+// The app's note typeface (Space Grotesk), used only inside the product demos.
+const noteSans = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
   display: "swap",
 });
 
@@ -129,7 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${serif.variable} ${appSans.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${serif.variable} ${appSans.variable} ${noteSans.variable}`}
     >
       <head>
         <link

@@ -2,18 +2,21 @@
 
 import {
   ArrowDownAZ,
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  ChevronLeft,
   ChevronRight,
   Code2,
-  Copy,
   FilePlus,
   FileText,
   Folder,
   FolderOpen,
   FolderPlus,
   Hash,
+  History,
   ListChecks,
   MoreHorizontal,
-  PanelLeft,
   Pin,
   Search,
   Settings,
@@ -61,9 +64,23 @@ const TREE: TreeNode[] = [
   { label: "Reading list", depth: 0, kind: "file" },
 ];
 
+function QuickRow({ icon: Icon, label, keys }: { icon: typeof Search; label: string; keys?: string }) {
+  return (
+    <div className="flex h-[28px] items-center gap-2.5 rounded-md px-2.5 text-[12.5px] text-muted-foreground">
+      <Icon size={14} strokeWidth={1.75} className="shrink-0 text-faint" />
+      <span className="truncate">{label}</span>
+      {keys && <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">{keys}</kbd>}
+    </div>
+  );
+}
+
 function Sidebar({ active }: { active: string | null }) {
   return (
-    <aside className="hidden w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel sm:flex">
+    <aside className="relative hidden w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel sm:flex">
+      {/* The collapse control: a round chevron riding the sidebar's edge. */}
+      <span className="absolute right-0 top-1/2 z-10 grid size-[22px] -translate-y-1/2 translate-x-1/2 place-items-center rounded-full border border-border bg-background text-faint opacity-80 shadow-sm">
+        <ChevronLeft size={13} strokeWidth={2} />
+      </span>
       {/* The app leaves this band for the window's traffic lights. */}
       <div className="flex h-12 items-center gap-2 px-4 pt-1">
         <span className="size-3 rounded-full bg-[#ff5f57]" />
@@ -77,6 +94,10 @@ function Sidebar({ active }: { active: string | null }) {
           <kbd className="ml-auto rounded border border-border bg-panel px-1 font-mono text-[10px] leading-4 text-faint">
             ⌘K
           </kbd>
+        </div>
+        <div className="mt-1.5 flex flex-col gap-px">
+          <QuickRow icon={CalendarDays} label="New daily note" keys="⌘J" />
+          <QuickRow icon={ListChecks} label="Tasks" />
         </div>
       </div>
       <div className="px-4 pb-2">
@@ -96,7 +117,7 @@ function Sidebar({ active }: { active: string | null }) {
       <div className="flex items-center justify-between pb-1 pl-4 pr-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">Notes</span>
         <span className="flex items-center text-faint">
-          {[ArrowDownAZ, ListChecks, Hash, FilePlus, FolderPlus].map((Icon, index) => (
+          {[ArrowDownAZ, Hash, FilePlus, FolderPlus].map((Icon, index) => (
             <span key={index} className="grid size-[26px] place-items-center">
               <Icon size={14.5} strokeWidth={1.75} />
             </span>
@@ -180,11 +201,6 @@ function Tab({ label, active, graph }: { label: string; active: boolean; graph?:
 function TabStrip({ scene }: { scene: Scene }) {
   return (
     <div className="flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pl-2.5 pr-3">
-      <div className="flex shrink-0 items-center">
-        <span className="grid size-7 place-items-center rounded-md text-faint">
-          <PanelLeft size={15.5} strokeWidth={1.75} />
-        </span>
-      </div>
       <div className="flex min-w-0 flex-1 items-stretch overflow-hidden">
         <Tab label="Q3 Roadmap" active={scene !== "connect"} />
         <Tab label="Release notes" active={false} />
@@ -204,20 +220,21 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
   return (
     <div className="h-full bg-background">
       <div className="flex h-10 items-center px-3 text-[13.5px]">
+        {/* History arrows, then the breadcrumb. */}
+        <span className="mr-2 flex items-center gap-0.5 text-muted-foreground">
+          <span className="grid size-7 place-items-center"><ArrowLeft size={15} strokeWidth={1.9} /></span>
+          <span className="grid size-7 place-items-center opacity-30"><ArrowRight size={15} strokeWidth={1.9} /></span>
+        </span>
         <span className="text-muted-foreground">Projects</span>
         <ChevronRight size={13} strokeWidth={2} className="mx-1.5 text-faint" />
         <span className="font-semibold text-foreground">Q3 Roadmap</span>
-        {/* The app's actions: source toggle, Copy path, note menu. */}
-        <span className="ml-auto flex items-center gap-2">
-          <span className="grid size-7 place-items-center rounded-md border border-border bg-hover text-muted-foreground">
-            <Code2 size={15} strokeWidth={1.9} />
+        {/* The app's actions: quiet ghost buttons — source toggle, note menu. */}
+        <span className="ml-auto flex items-center gap-0.5 text-muted-foreground">
+          <span className="grid size-7 place-items-center rounded-md">
+            <Code2 size={15} strokeWidth={1.75} />
           </span>
-          <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-hover px-2.5 text-[12.5px] font-medium text-foreground">
-            <Copy size={12.5} strokeWidth={2} />
-            Copy path
-          </span>
-          <span className="grid size-7 place-items-center rounded-md border border-border bg-hover text-muted-foreground">
-            <MoreHorizontal size={15} strokeWidth={1.9} />
+          <span className="grid size-7 place-items-center rounded-md">
+            <MoreHorizontal size={16} strokeWidth={1.75} />
           </span>
         </span>
       </div>
@@ -276,6 +293,32 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Shortcut bar ────────────────────────────────────────────────────── */
+
+/* The strip along the bottom of the window: the keys that matter for the
+   current view, and the note's word count at the far right. */
+function ShortcutBar({ graph }: { graph: boolean }) {
+  const keys = graph
+    ? [["⌘K", "Command palette"], ["⌘N", "New note"], ["⌘[", "Back"], ["⌘\\", "Toggle sidebar"]]
+    : [["⌘K", "Command palette"], ["⌘N", "New note"], ["⌘J", "Today's note"], ["⌘F", "Find in note"], ["⌘[", "Back"]];
+  return (
+    <div className="flex h-7 shrink-0 items-center gap-4 overflow-hidden whitespace-nowrap border-t border-line-soft bg-background px-3 text-[10.5px] text-faint">
+      {keys.map(([combo, label]) => (
+        <span key={combo} className="flex items-center gap-1.5">
+          <kbd className="font-mono text-[10px] text-muted-foreground">{combo}</kbd>
+          {label}
+        </span>
+      ))}
+      {!graph && (
+        <span className="ml-auto flex items-center gap-1.5 tabular-nums">
+          <History size={12} strokeWidth={2} />
+          186 words
+        </span>
+      )}
     </div>
   );
 }
@@ -422,6 +465,7 @@ export function AppDemo() {
                 {scene.id === "find" && <Palette key="palette" query={query} />}
               </AnimatePresence>
             </div>
+            <ShortcutBar graph={scene.id === "connect"} />
           </main>
         </div>
       </div>
