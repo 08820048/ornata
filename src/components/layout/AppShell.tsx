@@ -17,6 +17,7 @@ import {
   MorphPopoverTrigger,
 } from "@/components/motion/popover-morph";
 import { Sidebar } from "./Sidebar";
+import { NavButtons } from "./NavButtons";
 import { ShortcutBar } from "./ShortcutBar";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -90,6 +91,7 @@ export function AppShell() {
 
         {/* Row 2 — current view title + right-side actions. */}
         <div className="flex h-10 bg-transparent shrink-0 items-center px-3">
+          <NavButtons />
           {view?.type === "note" && <NoteBreadcrumb note={view.note} />}
 
           <LayoutGroup>

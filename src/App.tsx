@@ -15,6 +15,7 @@ import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { useLocale, useT } from "@/stores/locale";
 import { writeRich } from "@/lib/clipboard";
+import { goBack, goForward } from "@/lib/navigate";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
@@ -220,6 +221,12 @@ export default function App() {
       } else if (event.key === ",") {
         event.preventDefault();
         void ipc.openSettingsWindow();
+      } else if (event.key === "[") {
+        event.preventDefault();
+        goBack();
+      } else if (event.key === "]") {
+        event.preventDefault();
+        goForward();
       } else if (event.key === "w" && vault.view) {
         event.preventDefault();
         closeTab(tabOfView(vault.view));

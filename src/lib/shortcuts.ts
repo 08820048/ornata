@@ -13,6 +13,8 @@ export const SHORTCUTS = {
   dailyNote: { keys: ["⌘", "J"], label: "settings.shortcut.dailyNote" },
   openFile: { keys: ["⌘", "O"], label: "settings.shortcut.openFile" },
   find: { keys: ["⌘", "F"], label: "settings.shortcut.find" },
+  back: { keys: ["⌘", "["], label: "settings.shortcut.back" },
+  forward: { keys: ["⌘", "]"], label: "settings.shortcut.forward" },
   sidebar: { keys: ["⌘", "\\"], label: "settings.shortcut.sidebar" },
   theme: { keys: ["⌘", "⇧", "D"], label: "settings.shortcut.theme" },
   settings: { keys: ["⌘", ","], label: "settings.shortcut.settings" },
@@ -27,10 +29,17 @@ const BAR: Record<BarContext, Shortcut[]> = {
     SHORTCUTS.newNote,
     SHORTCUTS.dailyNote,
     SHORTCUTS.find,
+    SHORTCUTS.back,
     SHORTCUTS.sidebar,
     SHORTCUTS.closeTab,
   ],
-  graph: [SHORTCUTS.palette, SHORTCUTS.newNote, SHORTCUTS.sidebar, SHORTCUTS.closeTab],
+  graph: [
+    SHORTCUTS.palette,
+    SHORTCUTS.newNote,
+    SHORTCUTS.back,
+    SHORTCUTS.sidebar,
+    SHORTCUTS.closeTab,
+  ],
   empty: [SHORTCUTS.palette, SHORTCUTS.newNote, SHORTCUTS.dailyNote, SHORTCUTS.openFile],
 };
 
