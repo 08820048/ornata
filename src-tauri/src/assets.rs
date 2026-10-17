@@ -70,7 +70,7 @@ fn unreferenced_assets_before(root: &Path, now: SystemTime) -> AppResult<Vec<Unu
             size: metadata.len() as i64,
         });
     }
-    out.sort_by(|a, b| b.size.cmp(&a.size));
+    out.sort_by_key(|a| std::cmp::Reverse(a.size));
     Ok(out)
 }
 

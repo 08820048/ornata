@@ -170,7 +170,7 @@ pub fn list_snapshots(root: &Path, rel: &str) -> Vec<SnapshotMeta> {
             Some(SnapshotMeta { timestamp, size })
         })
         .collect();
-    metas.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+    metas.sort_by_key(|a| std::cmp::Reverse(a.timestamp));
     metas
 }
 

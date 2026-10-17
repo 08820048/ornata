@@ -220,7 +220,7 @@ fn rewrite_content(content: &str, ctx: &MatchCtx) -> Option<String> {
     if edits.is_empty() {
         return None;
     }
-    edits.sort_by(|a, b| b.0.cmp(&a.0));
+    edits.sort_by_key(|a| std::cmp::Reverse(a.0));
     let mut out = body.to_string();
     for (start, end, text) in edits {
         out.replace_range(start..end, &text);
