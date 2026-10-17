@@ -21,6 +21,9 @@ import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { NavButtons } from "./NavButtons";
 
+/** Stable empty list: a selector must not mint a new array on every call. */
+const NO_PANES: TabRef[] = [];
+
 /** One grammar for the header's icon buttons: ghost, 28px, hover fill only. */
 const HEADER_BUTTON =
   "grid h-7 w-7 place-items-center rounded-md transition-[color,background-color,transform] duration-100 active:scale-[0.96]";
@@ -45,7 +48,7 @@ export function PaneHeader({
   const toggleMarkdownSource = useUi((s) => s.toggleMarkdownSource);
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
   const [paneMenuOpen, setPaneMenuOpen] = useState(false);
-  const panes = useTabs((s) => s.split?.panes ?? []);
+  const panes = useTabs((s) => s.split?.panes) ?? NO_PANES;
   const note = tab && isNoteTab(tab) ? tab : null;
   const path = note && root ? noteDisplayPath(root, note) : null;
 
