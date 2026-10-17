@@ -261,8 +261,6 @@ describe("AppShell smoke", () => {
     });
     const plus = document.querySelector(".block-plus");
     expect(plus).not.toBeNull();
-    // the drag grip is mounted too (shown on hover by the extension)
-    expect(document.querySelector(".block-handle")).not.toBeNull();
 
     const editorEl = plus!.closest(".ProseMirror")!;
     await act(async () => {

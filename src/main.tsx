@@ -6,7 +6,6 @@ import { SettingsWindow } from "@/components/settings/SettingsWindow";
 import { QuickCapture } from "@/components/quick/QuickCapture";
 import { PrintView } from "@/components/print/PrintView";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
-import { installDropGuard } from "@/lib/dropGuard";
 import { applyTheme, cachedTheme } from "@/lib/theme";
 import { currentWindowKind } from "@/lib/settingsSync";
 import "./styles.css";
@@ -14,8 +13,6 @@ import "./styles.css";
 // Paint the last-used theme before React mounts so neither window flashes the
 // wrong background while its config read is in flight.
 applyTheme(cachedTheme());
-
-installDropGuard();
 
 // Kill macOS autocorrect/autocapitalize/spellcheck in every text field.
 document.addEventListener("focusin", (event) => {

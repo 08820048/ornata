@@ -38,10 +38,6 @@ export default defineConfig(async () => ({
       "@/lib": path.resolve(__dirname, "./src/lib/"),
       "@/stores": path.resolve(__dirname, "./src/stores/"),
       "@/features": path.resolve(__dirname, "./src/features/"),
-      // Drag handle only needs these for yjs collaboration, which we don't
-      // use; see the stub for why.
-      "@tiptap/extension-collaboration": path.resolve(__dirname, "./src/lib/stubs/collab.ts"),
-      "@tiptap/y-tiptap": path.resolve(__dirname, "./src/lib/stubs/collab.ts"),
     },
   },
 }));
