@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: bun install --frozen-lockfile
+      # tauri-build requires the sidecar binary to exist.
+      - run: bun run agent:build
+      - run: bunx tsc --noEmit
+      - run: bun test
+      - run: cd src-tauri && cargo clippy --all-targets -- -D warnings
+      - run: cd src-tauri && cargo test

@@ -207,7 +207,7 @@ mod tests {
         let dir = tempdir().unwrap();
         ensure_layout(dir.path()).unwrap();
         let both_title = create_note(dir.path(), "", "apple pie").unwrap();
-        write_note(&dir.path(), &both_title, "sweet dessert").unwrap();
+        write_note(dir.path(), &both_title, "sweet dessert").unwrap();
         let split = create_note(dir.path(), "", "recipes").unwrap();
         write_note(dir.path(), &split, "an apple and a pie chart").unwrap();
         let partial = create_note(dir.path(), "", "basket").unwrap();

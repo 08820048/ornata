@@ -413,7 +413,7 @@ mod tests {
         assert!(root.join(ASSETS_DIR).join("one.png").is_file());
         assert!(!root.join(ASSETS_DIR).join("two.png").exists());
     }
-    use super::*;
+    
     use crate::vault::ensure_layout;
     use tempfile::tempdir;
 
