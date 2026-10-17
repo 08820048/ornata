@@ -12,10 +12,12 @@ import { toastExported } from "@/lib/exportToast";
 import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
+import { useTabs } from "@/stores/tabs";
 import { useUpdater } from "@/stores/updater";
 import { t as translate, useLocale, useT } from "@/stores/locale";
 import { writeRich } from "@/lib/clipboard";
 import { goBack, goForward } from "@/lib/navigate";
+import { focusNextPane, focusPaneNumber } from "@/lib/panes";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
@@ -200,7 +202,13 @@ export default function App() {
       const ui = useUi.getState();
       const vault = useVault.getState();
 
-      if (event.shiftKey && event.key.toLowerCase() === "f") {
+      if (!event.shiftKey && /^[1-4]$/.test(event.key) && useTabs.getState().split) {
+        event.preventDefault();
+        focusPaneNumber(Number(event.key));
+      } else if (!event.shiftKey && event.key === "." && useTabs.getState().split) {
+        event.preventDefault();
+        focusNextPane();
+      } else if (event.shiftKey && event.key.toLowerCase() === "f") {
         event.preventDefault();
         ui.toggleFocusMode();
         if (useUi.getState().focusMode) toast(translate("focus.entered"));

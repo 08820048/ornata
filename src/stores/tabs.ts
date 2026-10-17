@@ -8,6 +8,7 @@ import {
   openAside,
   remapSplit,
   replaceInSplit,
+  swapWithNext,
   tabIsUnder,
   type Split,
 } from "@/lib/split";
@@ -42,6 +43,8 @@ interface TabsState {
   /** Close the pane showing `tab` (the split ends when one pane is left). */
   closePane: (tab: TabRef) => void;
   closeSplit: () => void;
+  /** Swap `tab`'s pane with its neighbour. */
+  swapPane: (tab: TabRef) => void;
   setSplitSizes: (sizes: number[]) => void;
   /** Keep the split coherent when focus moves between tabs. */
   followFocus: (prev: TabRef | null, next: TabRef | null) => void;
@@ -96,6 +99,8 @@ export const useTabs = create<TabsState>((set, get) => ({
   closePane: (tab) => set({ split: closePane(get().split, tab) }),
 
   closeSplit: () => set({ split: null }),
+
+  swapPane: (tab) => set({ split: swapWithNext(get().split, tab) }),
 
   setSplitSizes: (sizes) => {
     const split = get().split;

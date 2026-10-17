@@ -71,6 +71,26 @@ export function neighbourOf(split: Split, tab: TabRef): TabRef | null {
   return split.panes[at > 0 ? at - 1 : 1] ?? null;
 }
 
+/** Swap `tab`'s pane with the one to its right (the last pane swaps with the
+ *  one to its left). Widths stay with their positions. */
+export function swapWithNext(split: Split | null, tab: TabRef): Split | null {
+  if (!split) return null;
+  const at = indexOf(split, tab);
+  if (at === -1) return split;
+  const other = at + 1 < split.panes.length ? at + 1 : at - 1;
+  if (other < 0) return split;
+  const panes = split.panes.slice();
+  [panes[at], panes[other]] = [panes[other], panes[at]];
+  return { panes, sizes: split.sizes };
+}
+
+/** The pane after `tab`, wrapping around — what ⌘. cycles through. */
+export function nextPane(split: Split, tab: TabRef): TabRef | null {
+  const at = indexOf(split, tab);
+  if (at === -1) return split.panes[0] ?? null;
+  return split.panes[(at + 1) % split.panes.length] ?? null;
+}
+
 /** Remove the pane showing `tab` and share the width evenly again. One
  *  remaining pane is no split at all. */
 export function closePane(split: Split | null, tab: TabRef): Split | null {

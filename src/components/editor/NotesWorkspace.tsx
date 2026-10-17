@@ -78,6 +78,7 @@ export function NotesWorkspace({ visible }: { visible: boolean }) {
         return (
           <div
             key={tabKey(tab)}
+            data-pane={tabKey(tab)}
             aria-hidden={!shown}
             inert={!shown}
             onMouseDownCapture={

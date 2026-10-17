@@ -10,6 +10,8 @@ import {
   replaceInSplit,
   resizeDivider,
   neighbourOf,
+  nextPane,
+  swapWithNext,
   tabIsUnder,
 } from "../src/lib/split";
 
@@ -131,5 +133,23 @@ describe("resizeDivider", () => {
     const left = resizeDivider([0.5, 0.5], 0, -0.9, 0.2);
     expect(left[0]).toBeCloseTo(0.2);
     expect(left[1]).toBeCloseTo(0.8);
+  });
+});
+
+describe("swapWithNext / nextPane", () => {
+  const split = { panes: [a, b, c], sizes: [0.5, 0.3, 0.2] };
+
+  test("swaps with the right neighbour; the last pane swaps left; widths stay put", () => {
+    expect(swapWithNext(split, a)).toEqual({ panes: [b, a, c], sizes: [0.5, 0.3, 0.2] });
+    expect(swapWithNext(split, b)).toEqual({ panes: [a, c, b], sizes: [0.5, 0.3, 0.2] });
+    expect(swapWithNext(split, c)).toEqual({ panes: [a, c, b], sizes: [0.5, 0.3, 0.2] });
+    expect(swapWithNext(split, d)).toBe(split);
+    expect(swapWithNext(null, a)).toBeNull();
+  });
+
+  test("nextPane wraps around and falls back to the first pane", () => {
+    expect(nextPane(split, a)).toEqual(b);
+    expect(nextPane(split, c)).toEqual(a);
+    expect(nextPane(split, d)).toEqual(a);
   });
 });

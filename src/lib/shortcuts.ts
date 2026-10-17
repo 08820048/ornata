@@ -16,6 +16,8 @@ export const SHORTCUTS = {
   back: { keys: ["⌘", "["], label: "settings.shortcut.back" },
   forward: { keys: ["⌘", "]"], label: "settings.shortcut.forward" },
   split: { keys: ["⌘", "⇧", "\\"], label: "settings.shortcut.split" },
+  paneJump: { keys: ["⌘", "1–4"], label: "settings.shortcut.paneJump" },
+  paneNext: { keys: ["⌘", "."], label: "settings.shortcut.paneNext" },
   sidebar: { keys: ["⌘", "\\"], label: "settings.shortcut.sidebar" },
   focus: { keys: ["⌘", "⇧", "F"], label: "settings.shortcut.focus" },
   theme: { keys: ["⌘", "⇧", "D"], label: "settings.shortcut.theme" },

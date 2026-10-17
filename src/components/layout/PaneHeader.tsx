@@ -1,5 +1,5 @@
 import {
-  ClipboardType, Code2, Columns2, Copy, Download, FileCode, Focus, Link2, MoreHorizontal, Pilcrow, Printer, Trash2, X } from "lucide-react";
+  ArrowLeftRight, ClipboardType, Code2, Columns2, FileText, Repeat, Copy, Download, FileCode, Focus, Link2, MoreHorizontal, Pilcrow, Printer, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
@@ -11,10 +11,12 @@ import {
 } from "@/components/motion/popover-morph";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { closePaneAndRefocus } from "@/lib/closePane";
-import { isNoteTab, noteDisplayPath } from "@/lib/noteRef";
+import { focusNextPane, focusPane } from "@/lib/panes";
+import { isNoteTab, noteDisplayPath, noteTitle, tabKey } from "@/lib/noteRef";
 import type { TabRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
+import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { NavButtons } from "./NavButtons";
@@ -42,6 +44,8 @@ export function PaneHeader({
   const markdownSource = useUi((s) => s.markdownSource);
   const toggleMarkdownSource = useUi((s) => s.toggleMarkdownSource);
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
+  const [paneMenuOpen, setPaneMenuOpen] = useState(false);
+  const panes = useTabs((s) => s.split?.panes ?? []);
   const note = tab && isNoteTab(tab) ? tab : null;
   const path = note && root ? noteDisplayPath(root, note) : null;
 
@@ -192,16 +196,70 @@ export function PaneHeader({
               </MorphPopover>
             )}
             {note && (
-              <Tooltip label={`${t("split.splitPane")} ⌘⇧\\`} side="bottom">
-                <button
-                  type="button"
-                  aria-label={t("split.splitPane")}
-                  onClick={() => useUi.getState().openPaletteAside()}
-                  className={cx(HEADER_BUTTON, "text-muted hover:bg-hover hover:text-ink")}
+              <MorphPopover open={paneMenuOpen} onOpenChange={setPaneMenuOpen}>
+                <MorphPopoverTrigger>
+                  <button
+                    type="button"
+                    aria-label={t("split.options")}
+                    className={cx(HEADER_BUTTON, "text-muted hover:bg-hover hover:text-ink")}
+                  >
+                    <Columns2 size={15} strokeWidth={1.75} />
+                  </button>
+                </MorphPopoverTrigger>
+                <MorphPopoverContent
+                  align="end"
+                  sideOffset={6}
+                  radius={10}
+                  className="w-64 bg-bg p-1"
                 >
-                  <Columns2 size={15} strokeWidth={1.75} />
-                </button>
-              </Tooltip>
+                  <NoteMenuButton
+                    icon={Columns2}
+                    label={t("split.splitPane")}
+                    keys="⌘⇧\\"
+                    onClick={() => {
+                      setPaneMenuOpen(false);
+                      useUi.getState().openPaletteAside();
+                    }}
+                  />
+                  {panes.length > 1 && (
+                    <>
+                      <NoteMenuButton
+                        icon={ArrowLeftRight}
+                        label={t("split.swap")}
+                        onClick={() => {
+                          setPaneMenuOpen(false);
+                          if (tab) useTabs.getState().swapPane(tab);
+                        }}
+                      />
+                      <NoteMenuButton
+                        icon={Repeat}
+                        label={t("split.switcher")}
+                        keys="⌘."
+                        onClick={() => {
+                          setPaneMenuOpen(false);
+                          focusNextPane();
+                        }}
+                      />
+                      <div className="mx-1 my-1 border-t border-line-soft" />
+                      <div className="px-2.5 pb-1 pt-1.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-faint">
+                        {t("split.openPanes")}
+                      </div>
+                      {panes.map((pane, index) => (
+                        <NoteMenuButton
+                          key={tabKey(pane)}
+                          icon={FileText}
+                          label={isNoteTab(pane) ? noteTitle(pane) : ""}
+                          keys={`⌘${index + 1}`}
+                          onClick={() => {
+                            setPaneMenuOpen(false);
+                            focusPane(pane);
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                </MorphPopoverContent>
+              </MorphPopover>
             )}
             {note && closable && (
               <Tooltip label={t("split.closePane")} side="bottom">
