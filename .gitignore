@@ -53,3 +53,4 @@ AuthKey_*.p8
 # Editor/agent local config
 .zcodeignore
 .devin/
+fixtures/
