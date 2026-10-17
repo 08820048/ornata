@@ -65,7 +65,7 @@ export const NoteEditor = memo(function NoteEditor({
   const renameExternalNote = useVault((s) => s.renameExternalNote);
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
-  const shortcutBarHidden = useUi((s) => s.shortcutBarHidden);
+  const shortcutBarHidden = useUi((s) => s.shortcutBarHidden || s.focusMode);
   const cursorAnimation = useVault((s) => s.cursorAnimation);
   const language = useLocale((s) => s.language);
   const t = useT();

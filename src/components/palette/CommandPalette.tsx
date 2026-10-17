@@ -3,6 +3,7 @@ import {
   FilePlus,
   FilePlus2,
   FileText,
+  Focus,
   FolderOpen,
   ImageOff,
   Keyboard,
@@ -185,6 +186,13 @@ export function CommandPalette() {
         run: () => {
           if (vault.root) void openPath(vault.root);
         },
+      },
+      {
+        id: "toggle-focus-mode",
+        label: t("palette.toggleFocus"),
+        hint: "⌘⇧F",
+        icon: Focus,
+        run: () => useUi.getState().toggleFocusMode(),
       },
       {
         id: "toggle-shortcut-bar",

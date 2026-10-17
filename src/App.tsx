@@ -13,7 +13,7 @@ import type { ExternalNote } from "@/lib/types";
 import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
-import { useLocale, useT } from "@/stores/locale";
+import { t as translate, useLocale, useT } from "@/stores/locale";
 import { writeRich } from "@/lib/clipboard";
 import { goBack, goForward } from "@/lib/navigate";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
@@ -200,7 +200,11 @@ export default function App() {
       const ui = useUi.getState();
       const vault = useVault.getState();
 
-      if (event.shiftKey && event.key.toLowerCase() === "d") {
+      if (event.shiftKey && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        ui.toggleFocusMode();
+        if (useUi.getState().focusMode) toast(translate("focus.entered"));
+      } else if (event.shiftKey && event.key.toLowerCase() === "d") {
         event.preventDefault();
         vault.cycleTheme();
       } else if (event.key === "k") {

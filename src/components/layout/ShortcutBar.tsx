@@ -6,7 +6,7 @@ import { useVault } from "@/stores/vault";
 /** Bottom strip of the shortcuts that matter for the current view. */
 export function ShortcutBar() {
   const t = useT();
-  const hidden = useUi((s) => s.shortcutBarHidden);
+  const hidden = useUi((s) => s.shortcutBarHidden || s.focusMode);
   const view = useVault((s) => s.view);
   if (hidden) return null;
 

@@ -42,6 +42,7 @@ export function AppShell() {
   const root = useVault((s) => s.root);
   const sidebarHidden = useUi((s) => s.sidebarHidden);
   const markdownSource = useUi((s) => s.markdownSource);
+  const focusMode = useUi((s) => s.focusMode);
   const toggleSidebar = useUi((s) => s.toggleSidebar);
   const toggleMarkdownSource = useUi((s) => s.toggleMarkdownSource);
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
@@ -64,11 +65,11 @@ export function AppShell() {
         </div>
       </motion.div>
 
-      <SidebarEdgeToggle
+      {!focusMode && <SidebarEdgeToggle
         hidden={sidebarHidden}
         label={`${t("editor.toggleSidebar")} ⌘\\`}
         onClick={toggleSidebar}
-      />
+      />}
 
       <main className="relative flex min-w-0 flex-1 flex-col">
         {/* Row 1 — titlebar: sidebar toggle + open-note tabs. The strip shares
@@ -76,7 +77,10 @@ export function AppShell() {
             reads as merged with the pane below, code-editor style. */}
         <motion.div
           data-tauri-drag-region
-          className="flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pr-3"
+          className={cx(
+            "flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pr-3 transition-opacity duration-150",
+            focusMode && "opacity-0 hover:opacity-100",
+          )}
           animate={{ paddingLeft: sidebarHidden ? 84 : 10 }}
           initial={false}
           transition={SPRING_PANEL}
@@ -85,7 +89,12 @@ export function AppShell() {
         </motion.div>
 
         {/* Row 2 — current view title + right-side actions. */}
-        <div className="flex h-10 bg-transparent shrink-0 items-center px-3">
+        <div
+          className={cx(
+            "flex h-10 bg-transparent shrink-0 items-center px-3 transition-opacity duration-150",
+            focusMode && "opacity-0 hover:opacity-100",
+          )}
+        >
           <NavButtons />
           {view?.type === "note" && <NoteBreadcrumb note={view.note} />}
 

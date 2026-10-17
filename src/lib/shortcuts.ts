@@ -16,6 +16,7 @@ export const SHORTCUTS = {
   back: { keys: ["⌘", "["], label: "settings.shortcut.back" },
   forward: { keys: ["⌘", "]"], label: "settings.shortcut.forward" },
   sidebar: { keys: ["⌘", "\\"], label: "settings.shortcut.sidebar" },
+  focus: { keys: ["⌘", "⇧", "F"], label: "settings.shortcut.focus" },
   theme: { keys: ["⌘", "⇧", "D"], label: "settings.shortcut.theme" },
   settings: { keys: ["⌘", ","], label: "settings.shortcut.settings" },
   closeTab: { keys: ["⌘", "W"], label: "settings.shortcut.closeTab" },

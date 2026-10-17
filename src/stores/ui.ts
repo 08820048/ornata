@@ -11,6 +11,9 @@ const readShortcutBarHidden = () => {
   }
 };
 
+/** Sidebar visibility to return to when focus mode ends. */
+let restoreSidebar = false;
+
 interface UiState {
   paletteOpen: boolean;
   tasksOpen: boolean;
@@ -20,6 +23,7 @@ interface UiState {
   agentOpen: boolean;
   sidebarHidden: boolean;
   shortcutBarHidden: boolean;
+  focusMode: boolean;
   markdownSource: boolean;
   saveState: SaveState;
   setPaletteOpen: (open: boolean) => void;
@@ -30,6 +34,8 @@ interface UiState {
   setAgentOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   toggleShortcutBar: () => void;
+  /** Hide the sidebar and fade the chrome; leaving restores the sidebar. */
+  toggleFocusMode: () => void;
   toggleMarkdownSource: () => void;
   setSaveState: (state: SaveState) => void;
 }
@@ -43,6 +49,7 @@ export const useUi = create<UiState>((set, get) => ({
   agentOpen: false,
   sidebarHidden: false,
   shortcutBarHidden: readShortcutBarHidden(),
+  focusMode: false,
   markdownSource: false,
   saveState: "idle",
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
@@ -60,6 +67,15 @@ export const useUi = create<UiState>((set, get) => ({
       /* private mode: the toggle still works for this session */
     }
     set({ shortcutBarHidden });
+  },
+  toggleFocusMode: () => {
+    const { focusMode, sidebarHidden } = get();
+    if (focusMode) {
+      set({ focusMode: false, sidebarHidden: restoreSidebar });
+    } else {
+      restoreSidebar = sidebarHidden;
+      set({ focusMode: true, sidebarHidden: true });
+    }
   },
   toggleMarkdownSource: () =>
     set({ markdownSource: !get().markdownSource }),
