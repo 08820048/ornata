@@ -10,11 +10,11 @@ import {
   MorphPopoverTrigger,
 } from "@/components/motion/popover-morph";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { closePaneAndRefocus } from "@/lib/closePane";
 import { isNoteTab, noteDisplayPath } from "@/lib/noteRef";
 import type { TabRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
-import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { NavButtons } from "./NavButtons";
@@ -208,7 +208,7 @@ export function PaneHeader({
                 <button
                   type="button"
                   aria-label={t("split.closePane")}
-                  onClick={() => tab && useTabs.getState().closePane(tab)}
+                  onClick={() => tab && closePaneAndRefocus(tab)}
                   className={cx(HEADER_BUTTON, "text-muted hover:bg-hover hover:text-ink")}
                 >
                   <X size={15} strokeWidth={1.75} />

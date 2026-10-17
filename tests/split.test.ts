@@ -9,6 +9,7 @@ import {
   remapSplit,
   replaceInSplit,
   resizeDivider,
+  neighbourOf,
   tabIsUnder,
 } from "../src/lib/split";
 
@@ -28,10 +29,15 @@ describe("openAside", () => {
     expect(openAside(split, a, b)).toBe(split);
   });
 
-  test("a new pane opens right of the focused one and takes half its width", () => {
-    const split = { panes: [a, b], sizes: [0.5, 0.5] };
-    expect(openAside(split, a, c)).toEqual({ panes: [a, c, b], sizes: [0.25, 0.25, 0.5] });
-    expect(openAside(split, b, c)).toEqual({ panes: [a, b, c], sizes: [0.5, 0.25, 0.25] });
+  test("a new pane opens right of the focused one and the width is shared evenly", () => {
+    const split = { panes: [a, b], sizes: [0.7, 0.3] };
+    const three = openAside(split, a, c)!;
+    expect(three.panes).toEqual([a, c, b]);
+    three.sizes.forEach((n) => expect(n).toBeCloseTo(1 / 3));
+    expect(openAside(split, b, c)!.panes).toEqual([a, b, c]);
+    const four = openAside(three, b, d)!;
+    expect(four.panes).toEqual([a, c, b, d]);
+    four.sizes.forEach((n) => expect(n).toBeCloseTo(0.25));
   });
 
   test("at the cap the neighbour is replaced instead", () => {
@@ -59,15 +65,26 @@ describe("followFocus", () => {
     expect(followFocus(split, b, d)).toEqual({ panes: [a, d, c], sizes: [0.4, 0.3, 0.3] });
     expect(followFocus(split, a, GRAPH_TAB)).toBeNull();
     expect(followFocus(split, a, null)).toBeNull();
+    // focus from a pane that no longer exists onto a note with no pane
+    expect(followFocus(split, d, e)).toBeNull();
+    expect(followFocus(split, d, c)).toBe(split);
     expect(followFocus(null, a, b)).toBeNull();
   });
 });
 
 describe("closePane", () => {
-  test("hands the width to the left neighbour (or right for the first pane)", () => {
+  test("shares the width evenly among the remaining panes", () => {
     const split = { panes: [a, b, c], sizes: [0.2, 0.3, 0.5] };
     expect(closePane(split, b)).toEqual({ panes: [a, c], sizes: [0.5, 0.5] });
     expect(closePane(split, a)).toEqual({ panes: [b, c], sizes: [0.5, 0.5] });
+  });
+
+  test("focus goes to the left neighbour, or the right one for the first pane", () => {
+    const split = { panes: [a, b, c], sizes: [0.2, 0.3, 0.5] };
+    expect(neighbourOf(split, b)).toEqual(a);
+    expect(neighbourOf(split, c)).toEqual(b);
+    expect(neighbourOf(split, a)).toEqual(b);
+    expect(neighbourOf(split, d)).toBeNull();
   });
 
   test("closing down to one pane ends the split", () => {
@@ -81,6 +98,7 @@ describe("dropFromSplit / remap / replace", () => {
   test("drops gone panes and renormalizes; collapses below two", () => {
     const next = dropFromSplit(split, (t) => tabIsUnder(t, "b.md"))!;
     expect(next.panes).toEqual([vaultNote("x/a.md"), c]);
+    expect(next.sizes).toEqual([0.5, 0.5]);
     expect(sum(next.sizes)).toBeCloseTo(1);
     expect(dropFromSplit(split, (t) => tabIsUnder(t, "x") || tabIsUnder(t, "b.md"))).toBeNull();
     expect(dropFromSplit(split, () => false)).toBe(split);

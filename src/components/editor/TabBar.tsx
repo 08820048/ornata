@@ -9,6 +9,7 @@ import {
 import { Tooltip } from "@/components/ui/Tooltip";
 import { SPRING_LAYOUT } from "@/lib/ease";
 import { openNoteAside } from "@/lib/openAside";
+import { neighbourOf } from "@/lib/split";
 import { isNoteTab, noteTitle, sameTab, tabKey, tabOfView, viewOfTab } from "@/lib/noteRef";
 import type { TabRef } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -118,7 +119,10 @@ export function closeTab(tab: TabRef) {
   const { tabs, close } = useTabs.getState();
   const vault = useVault.getState();
   const wasActive = vault.view !== null && sameTab(tabOfView(vault.view), tab);
-  const next = wasActive ? nextAfterClose(tabs, tab) : null;
+  // Closing a pane's tab keeps focus inside the split.
+  const split = useTabs.getState().split;
+  const paneNext = wasActive && split ? neighbourOf(split, tab) : null;
+  const next = wasActive ? (paneNext ?? nextAfterClose(tabs, tab)) : null;
   close(tab);
   if (wasActive) {
     vault.setView(next ? viewOfTab(next) : null);

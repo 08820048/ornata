@@ -17,18 +17,13 @@ const indexOf = (split: Split, tab: TabRef) => split.panes.findIndex((p) => same
 
 const evenSizes = (count: number) => Array.from({ length: count }, () => 1 / count);
 
-const normalized = (sizes: number[]) => {
-  const total = sizes.reduce((sum, n) => sum + n, 0);
-  return total > 0 ? sizes.map((n) => n / total) : evenSizes(sizes.length);
-};
-
 /** How many panes fit side by side in `width` px. */
 export const maxPanesFor = (width: number) =>
   Math.max(2, Math.min(MAX_PANES, Math.floor(width / (MIN_PANE_PX + 80))));
 
-/** Show `target` right of the focused pane. The new pane takes half of the
- *  focused one's width; at the cap it replaces the neighbour instead. Only
- *  notes can be split. */
+/** Show `target` right of the focused pane and share the width evenly again
+ *  (drag a divider to deviate); at the cap it replaces the neighbour instead.
+ *  Only notes can be split. */
 export function openAside(
   split: Split | null,
   focused: TabRef,
@@ -48,12 +43,8 @@ export function openAside(
     return { panes, sizes: split.sizes };
   }
   const panes = split.panes.slice();
-  const sizes = split.sizes.slice();
-  const half = sizes[at] / 2;
-  sizes[at] = half;
   panes.splice(at + 1, 0, target);
-  sizes.splice(at + 1, 0, half);
-  return { panes, sizes };
+  return { panes, sizes: evenSizes(panes.length) };
 }
 
 /** Keep the split coherent when focus moves from `prev` to `next`: landing on
@@ -64,13 +55,23 @@ export function followFocus(split: Split | null, prev: TabRef | null, next: TabR
   if (!next || !isNoteTab(next)) return null;
   if (indexOf(split, next) !== -1) return split;
   const at = prev ? indexOf(split, prev) : -1;
-  if (at === -1) return split;
+  // Focus arrived from outside the split (its pane was just closed): a note
+  // with no pane would cover the others, so the split ends instead.
+  if (at === -1) return null;
   const panes = split.panes.slice();
   panes[at] = next;
   return { panes, sizes: split.sizes };
 }
 
-/** Remove the pane showing `tab`, handing its width to a neighbour. One
+/** The pane that should take focus when `tab`'s pane closes: the one to its
+ *  left, or the one to its right for the first pane. */
+export function neighbourOf(split: Split, tab: TabRef): TabRef | null {
+  const at = indexOf(split, tab);
+  if (at === -1) return null;
+  return split.panes[at > 0 ? at - 1 : 1] ?? null;
+}
+
+/** Remove the pane showing `tab` and share the width evenly again. One
  *  remaining pane is no split at all. */
 export function closePane(split: Split | null, tab: TabRef): Split | null {
   if (!split) return null;
@@ -78,9 +79,7 @@ export function closePane(split: Split | null, tab: TabRef): Split | null {
   if (at === -1) return split;
   if (split.panes.length <= 2) return null;
   const panes = split.panes.filter((_, i) => i !== at);
-  const sizes = split.sizes.filter((_, i) => i !== at);
-  sizes[Math.max(0, at - 1)] += split.sizes[at];
-  return { panes, sizes };
+  return { panes, sizes: evenSizes(panes.length) };
 }
 
 /** Drop every pane whose tab no longer exists. */
@@ -90,7 +89,7 @@ export function dropFromSplit(split: Split | null, gone: (tab: TabRef) => boolea
   if (keep.every(Boolean)) return split;
   const panes = split.panes.filter((_, i) => keep[i]);
   if (panes.length < 2) return null;
-  return { panes, sizes: normalized(split.sizes.filter((_, i) => keep[i])) };
+  return { panes, sizes: evenSizes(panes.length) };
 }
 
 /** Follow a rename/move of `rel` → `next` (note or folder). */
