@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -30,6 +31,24 @@ pub struct AppConfig {
     pub active_agent_connection: Option<String>,
     #[serde(default, skip_serializing)]
     pub agent_connection: Option<AgentConnectionConfig>,
+    /// What external agents (the `ornata` command line / MCP server) may do,
+    /// per vault root. Chosen in Settings, never by the agent's own launch
+    /// arguments; a vault with no entry is read-only.
+    #[serde(default)]
+    pub cli_access: HashMap<String, CliAccess>,
+}
+
+/// How much an external agent may do in a vault.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CliAccess {
+    Off,
+    #[default]
+    ReadOnly,
+    /// Create, update, and append.
+    ReadWrite,
+    /// Also rename, move, and delete.
+    Full,
 }
 
 /// Where pasted images go. `Local` keeps them in the vault's asset folder;
@@ -132,6 +151,7 @@ impl Default for AppConfig {
             agent_connections: Vec::new(),
             active_agent_connection: None,
             agent_connection: None,
+            cli_access: HashMap::new(),
         }
     }
 }

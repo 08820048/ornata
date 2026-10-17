@@ -6,6 +6,7 @@ mod agent_tools;
 mod agent_undo;
 mod assets;
 mod backlinks;
+mod cli;
 mod commands;
 mod config;
 mod error;
@@ -36,6 +37,12 @@ mod watcher;
 
 use commands::AppState;
 use tauri::{Emitter, Manager};
+
+/// Runs a command-line subcommand (`ornata mcp`, `ornata search …`) when the
+/// executable was started with one; `None` means start the app.
+pub fn try_cli() -> Option<i32> {
+    cli::try_run()
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

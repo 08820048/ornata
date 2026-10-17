@@ -2,5 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
+    if let Some(code) = ornata_lib::try_cli() {
+        std::process::exit(code);
+    }
     ornata_lib::run()
 }
