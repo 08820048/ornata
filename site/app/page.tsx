@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/Nav";
 import { Hero } from "@/components/Hero";
 import { FeaturesBento } from "@/components/FeaturesBento";
+import { AgentBridge } from "@/components/AgentBridge";
 import { AgentTrace } from "@/components/AgentTrace";
 import { Faq } from "@/components/Faq";
 import { Footer } from "@/components/Footer";
@@ -20,6 +21,7 @@ export default function Home() {
         <Hero />
         <FeaturesBento />
         <AgentTrace />
+        <AgentBridge />
         <Faq />
       </main>
       <Footer />

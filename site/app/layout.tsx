@@ -118,6 +118,8 @@ const JSON_LD = {
         "LaTeX math (KaTeX) and Mermaid diagrams",
         "Full-text search across titles and content",
         "AssistantPi: local AI assistant with permission-gated tools",
+        "MCP server and command line: let any AI agent search and edit your vault, with per-vault access levels",
+        "Split view, focus mode, and a bottom status bar with keyboard shortcuts",
         "Signed and notarized builds with an auto-update feed",
         "English and Simplified Chinese interface",
       ],

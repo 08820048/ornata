@@ -36,6 +36,14 @@ export const FAQS: { q: string; a: string }[] = [
     a: "macOS first. Ornata is built on Tauri, which is cross-platform, so other platforms may follow — but macOS is where it's polished today.",
   },
   {
+    q: "Can I use Claude Code, Codex, or Cursor with my notes?",
+    a: "Yes. Ornata speaks MCP. Open MCP Settings from the plug in the status bar, press Connect, and add it to your agent with one line, for example claude mcp add ornata --transport http http://127.0.0.1:13200/mcp. Agents that only run commands can start ornata mcp instead, which works even when Ornata is closed. The same tools are available in a terminal as ornata search, ornata journal add, ornata tasks, and more.",
+  },
+  {
+    q: "What can an outside agent do to my notes?",
+    a: "Only what you allow, per vault, in Settings: off, read only (the default), read & write, or full access. Read only lists, reads, and searches. Read & write can also create, edit, append, and tick tasks, and every edit keeps the previous version in the note's history. Full access adds rename, move, and delete, and deleted notes go to the Trash. An agent can't change its own access, and the server only listens on your Mac's localhost.",
+  },
+  {
     q: "How does AssistantPi work?",
     a: "Install and configure Pi on your Mac, then Ornata connects to that local Pi process. You keep control of the model and provider in Pi, while Ornata supplies permission-controlled tools for your notes. The open note is attached automatically, and selected note text can be included for precise context.",
   },

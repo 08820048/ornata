@@ -28,6 +28,8 @@ Production downloads are signed with an Apple Developer ID certificate and notar
 - **Instant search** — title + content, ranked, in milliseconds
 - **Monochrome UI** — light, dark, or system theme; no color noise
 - **Portable vault** — plain files, no IDs, no frontmatter, no lock-in
+- **Split view** — up to four notes side by side, each with its own header; drag the dividers to resize
+- **Works with any AI agent** — an MCP server and a command line, with access you set per vault (see below)
 
 ---
 
@@ -42,6 +44,38 @@ Pick any folder on disk as your vault:
 ```
 
 Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes externally (vim, VS Code, whatever) — Ornata picks up changes on window focus.
+
+---
+
+## Command line & MCP
+
+Ornata can be driven by any AI agent that speaks [MCP](https://modelcontextprotocol.io) (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Claude Desktop, …) and from a terminal. The tools are the same either way: list, read, and search notes, backlinks, open tasks, daily notes, capture to `Inbox.md`; and, if you allow it, create, update, append, tick tasks, rename, move, and delete.
+
+**Connect an agent.** Click the plug in the status bar (or ⌘K → "MCP settings"), press **Connect**, and copy the line for your agent, for example:
+
+```bash
+claude mcp add ornata --transport http http://127.0.0.1:13200/mcp
+```
+
+The server runs inside the app on `127.0.0.1` only, so Ornata has to be open. To work with Ornata closed, let the agent start it over stdio instead — the executable is the app itself:
+
+```bash
+claude mcp add ornata -- "/Applications/Ornata.app/Contents/MacOS/Ornata" mcp
+```
+
+**What an agent may do** is set per vault in Settings → Agents (or the MCP panel): *off*, *read only* (the default), *read & write*, or *full access* (adds rename, move, delete). An agent can't raise it, and launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the OS trash. Web pages can't reach the server: every request's `Host` and `Origin` are checked.
+
+**From a terminal**, install the `ornata` command from the MCP panel (it links to `~/.local/bin`), then:
+
+```bash
+ornata search "roadmap"
+ornata tasks
+echo "ship it" | ornata journal add     # append to today's note
+ornata capture "buy milk"                # timestamped line in Inbox.md
+ornata help
+```
+
+Code lives in `src-tauri/src/cli/`: `tools.rs` is the shared tool set, `mcp.rs` the protocol, `http.rs` the local server, `commands.rs` the CLI.
 
 ---
 

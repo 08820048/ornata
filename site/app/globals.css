@@ -24,6 +24,7 @@
   --accent: #171815;
   --accent-2: #595a53;
   --accent-soft: rgba(22, 23, 20, 0.07);
+  --success: #4d8660;
   --night: #151613;
   --night-panel: #1d1e1a;
   --night-line: rgba(255, 255, 255, 0.1);
@@ -73,6 +74,7 @@
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
   --color-night: var(--night);
   --color-night-panel: var(--night-panel);
   --color-night-line: var(--night-line);
