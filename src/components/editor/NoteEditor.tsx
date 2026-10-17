@@ -65,6 +65,7 @@ export const NoteEditor = memo(function NoteEditor({
   const renameExternalNote = useVault((s) => s.renameExternalNote);
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
+  const shortcutBarHidden = useUi((s) => s.shortcutBarHidden);
   const cursorAnimation = useVault((s) => s.cursorAnimation);
   const language = useLocale((s) => s.language);
   const t = useT();
@@ -334,7 +335,9 @@ export const NoteEditor = memo(function NoteEditor({
       {active && (
         <div
           className={cx(
-            "pointer-events-none fixed bottom-3 right-4 flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
+            "pointer-events-none fixed right-4 flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
+            // Sit inside the shortcut bar's h-7 strip, centered on it.
+            shortcutBarHidden ? "bottom-3" : "bottom-0 h-7",
             (content.words === 0 || content.missing) && "opacity-0",
           )}
         >
