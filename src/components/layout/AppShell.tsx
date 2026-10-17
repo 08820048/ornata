@@ -1,11 +1,12 @@
 import {
-  CalendarDays, ChevronLeft, ChevronRight, ClipboardType, Code2, Copy, Download, FileCode, FilePlus, MoreVertical, Pilcrow, Printer, Search, Trash2 } from "lucide-react";
-import { LayoutGroup, motion } from "motion/react";
+  CalendarDays, ChevronLeft, ChevronRight, ClipboardType, Code2, Copy, Download, FileCode, FilePlus, Focus, Link2, MoreHorizontal, Pilcrow, Printer, Search, Trash2 } from "lucide-react";
+import { motion } from "motion/react";
+import { toast } from "sonner";
 import { useState } from "react";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
 import { NotesWorkspace } from "@/components/editor/NotesWorkspace";
 import { TabBar } from "@/components/editor/TabBar";
-import { SPRING_LAYOUT, SPRING_PANEL } from "@/lib/ease";
+import { SPRING_PANEL } from "@/lib/ease";
 import { noteDisplayPath } from "@/lib/noteRef";
 import { cx } from "@/lib/utils";
 import {
@@ -19,7 +20,6 @@ import {
 import { Sidebar } from "./Sidebar";
 import { NavButtons } from "./NavButtons";
 import { ShortcutBar } from "./ShortcutBar";
-import { CopyButton } from "@/components/ui/CopyButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
@@ -27,6 +27,10 @@ import { useT } from "@/stores/locale";
 import { AgentPanel } from "@/components/agent/AgentPanel";
 
 const SIDEBAR_WIDTH = 240;
+
+/** One grammar for the header's icon buttons: ghost, 28px, hover fill only. */
+const HEADER_BUTTON =
+  "grid h-7 w-7 place-items-center rounded-md transition-[color,background-color,transform] duration-100 active:scale-[0.96]";
 
 /** Absolute on-disk path for the current view — handy to hand to an agent. */
 function viewPath(
@@ -98,126 +102,143 @@ export function AppShell() {
           <NavButtons />
           {view?.type === "note" && <NoteBreadcrumb note={view.note} />}
 
-          <LayoutGroup>
-            <div className="ml-auto flex items-center gap-2">
-              {view?.type === "note" && (
-                <Tooltip
-                  label={
+          <div className="ml-auto flex items-center gap-0.5">
+            {view?.type === "note" && (
+              <Tooltip
+                label={
+                  markdownSource
+                    ? t("editor.showRich")
+                    : t("editor.showSource")
+                }
+                side="bottom"
+              >
+                <button
+                  type="button"
+                  aria-pressed={markdownSource}
+                  aria-label={
                     markdownSource
                       ? t("editor.showRich")
                       : t("editor.showSource")
                   }
-                  side="bottom"
+                  onClick={toggleMarkdownSource}
+                  className={cx(
+                    HEADER_BUTTON,
+                    markdownSource
+                      ? "bg-active text-ink"
+                      : "text-muted hover:bg-hover hover:text-ink",
+                  )}
                 >
+                  <ActionSwapIcon
+                    value={markdownSource ? "rich" : "markdown"}
+                    animation="roll"
+                    className="h-[15px] w-[15px]"
+                  >
+                    {markdownSource ? (
+                      <Pilcrow size={15} strokeWidth={1.75} />
+                    ) : (
+                      <Code2 size={15} strokeWidth={1.75} />
+                    )}
+                  </ActionSwapIcon>
+                </button>
+              </Tooltip>
+            )}
+            {view?.type === "note" && (
+              <MorphPopover open={noteMenuOpen} onOpenChange={setNoteMenuOpen}>
+                <MorphPopoverTrigger>
                   <button
                     type="button"
-                    aria-pressed={markdownSource}
-                    onClick={toggleMarkdownSource}
+                    aria-label={t("editor.noteActions")}
                     className={cx(
-                      "grid h-7 w-7 place-items-center rounded-md border transition-[color,background-color,border-color,transform] duration-100 active:scale-[0.96]",
-                      markdownSource
-                        ? "border-invert bg-invert text-invert-ink"
-                        : "border-line bg-hover text-muted hover:bg-active hover:text-ink",
+                      HEADER_BUTTON,
+                      "text-muted hover:bg-hover hover:text-ink",
                     )}
                   >
-                    <ActionSwapIcon
-                      value={markdownSource ? "rich" : "markdown"}
-                      animation="roll"
-                      className="h-[15px] w-[15px]"
-                    >
-                      {markdownSource ? (
-                        <Pilcrow size={15} strokeWidth={1.9} />
-                      ) : (
-                        <Code2 size={15} strokeWidth={1.9} />
-                      )}
-                    </ActionSwapIcon>
+                    <MoreHorizontal size={16} strokeWidth={1.75} />
                   </button>
-                </Tooltip>
-              )}
-              {path && (
-                <motion.div layout transition={SPRING_LAYOUT}>
-                  <CopyButton
-                    value={path}
-                    text={t("editor.copyPath")}
-                    copiedText={t("common.copied")}
-                  />
-                </motion.div>
-              )}
-              {view?.type === "note" && (
-                <MorphPopover
-                  open={noteMenuOpen}
-                  onOpenChange={setNoteMenuOpen}
+                </MorphPopoverTrigger>
+                <MorphPopoverContent
+                  align="end"
+                  sideOffset={6}
+                  radius={10}
+                  className="w-56 bg-bg p-1"
                 >
-                  <MorphPopoverTrigger>
-                    <button
-                      type="button"
-                      aria-label={t("editor.noteActions")}
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted transition-colors duration-100 hover:text-ink"
-                    >
-                      <MoreVertical size={15} strokeWidth={2} />
-                    </button>
-                  </MorphPopoverTrigger>
-                  <MorphPopoverContent
-                    align="end"
-                    sideOffset={6}
-                    radius={10}
-                    className="w-48 bg-bg p-1"
-                  >
+                  <NoteMenuButton
+                    icon={Focus}
+                    label={t("palette.toggleFocus")}
+                    keys="⌘⇧F"
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      useUi.getState().toggleFocusMode();
+                      if (useUi.getState().focusMode) toast(t("focus.entered"));
+                    }}
+                  />
+                  <div className="mx-1 my-1 border-t border-line-soft" />
+                  <NoteMenuButton
+                    icon={Download}
+                    label={t("editor.exportMarkdown")}
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      dispatchNoteAction("export");
+                    }}
+                  />
+                  <NoteMenuButton
+                    icon={Printer}
+                    label={t("editor.exportPdf")}
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      dispatchNoteAction("print-pdf");
+                    }}
+                  />
+                  <NoteMenuButton
+                    icon={FileCode}
+                    label={t("editor.exportHtml")}
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      dispatchNoteAction("export-html");
+                    }}
+                  />
+                  <div className="mx-1 my-1 border-t border-line-soft" />
+                  <NoteMenuButton
+                    icon={ClipboardType}
+                    label={t("editor.copyRich")}
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      dispatchNoteAction("copy-rich");
+                    }}
+                  />
+                  <NoteMenuButton
+                    icon={Copy}
+                    label={t("editor.copyMarkdown")}
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      dispatchNoteAction("copy");
+                    }}
+                  />
+                  {path && (
                     <NoteMenuButton
-                      icon={Download}
-                      label={t("editor.exportMarkdown")}
+                      icon={Link2}
+                      label={t("editor.copyPath")}
                       onClick={() => {
                         setNoteMenuOpen(false);
-                        dispatchNoteAction("export");
+                        void navigator.clipboard.writeText(path);
+                        toast(t("common.copied"));
                       }}
                     />
-                    <NoteMenuButton
-                      icon={Printer}
-                      label={t("editor.exportPdf")}
-                      onClick={() => {
-                        setNoteMenuOpen(false);
-                        dispatchNoteAction("print-pdf");
-                      }}
-                    />
-                    <NoteMenuButton
-                      icon={FileCode}
-                      label={t("editor.exportHtml")}
-                      onClick={() => {
-                        setNoteMenuOpen(false);
-                        dispatchNoteAction("export-html");
-                      }}
-                    />
-                    <NoteMenuButton
-                      icon={ClipboardType}
-                      label={t("editor.copyRich")}
-                      onClick={() => {
-                        setNoteMenuOpen(false);
-                        dispatchNoteAction("copy-rich");
-                      }}
-                    />
-                    <NoteMenuButton
-                      icon={Copy}
-                      label={t("editor.copyMarkdown")}
-                      onClick={() => {
-                        setNoteMenuOpen(false);
-                        dispatchNoteAction("copy");
-                      }}
-                    />
-                    <div className="mx-1 my-1 border-t border-line-soft" />
-                    <NoteMenuButton
-                      icon={Trash2}
-                      label={t("editor.deleteNote")}
-                      danger
-                      onClick={() => {
-                        setNoteMenuOpen(false);
-                        dispatchNoteAction("delete");
-                      }}
-                    />
-                  </MorphPopoverContent>
-                </MorphPopover>
-              )}
-            </div>
-          </LayoutGroup>
+                  )}
+                  <div className="mx-1 my-1 border-t border-line-soft" />
+                  <NoteMenuButton
+                    icon={Trash2}
+                    label={t("editor.deleteNote")}
+                    danger
+                    onClick={() => {
+                      setNoteMenuOpen(false);
+                      dispatchNoteAction("delete");
+                    }}
+                  />
+                </MorphPopoverContent>
+              </MorphPopover>
+            )}
+          </div>
         </div>
 
         <div className="relative min-h-0 flex-1">
@@ -277,11 +298,13 @@ function dispatchNoteAction(action: NoteAction) {
 function NoteMenuButton({
   icon: Icon,
   label,
+  keys,
   danger = false,
   onClick,
 }: {
   icon: typeof Download;
   label: string;
+  keys?: string;
   danger?: boolean;
   onClick: () => void;
 }) {
@@ -299,6 +322,9 @@ function NoteMenuButton({
     >
       <Icon size={14} strokeWidth={1.75} />
       {label}
+      {keys && (
+        <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">{keys}</kbd>
+      )}
     </button>
   );
 }
