@@ -249,4 +249,25 @@ describe("AppShell smoke", () => {
     expect(document.querySelector(".code-collapsed")).toBeNull();
     note.body = "# Hello\n\nbody text";
   });
+
+  test("the + on an empty line types a slash to open the suggestion menu", async () => {
+    note.body = "```js\nx\n```\n";
+    const { act, useVault, vaultNote } = await mountShell();
+    await act(async () => {
+      useVault.getState().setView({ type: "note", note: vaultNote("plus.md") });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    const plus = document.querySelector(".block-plus");
+    expect(plus).not.toBeNull();
+
+    const editorEl = plus!.closest(".ProseMirror")!;
+    await act(async () => {
+      plus!.dispatchEvent(new window.MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    });
+    // clicking the plus types a "/" on that line, which is what opens the menu
+    expect(editorEl.textContent).toContain("/");
+    note.body = "# Hello\n\nbody text";
+  });
 });

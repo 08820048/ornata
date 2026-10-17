@@ -366,6 +366,49 @@ body {
     position: relative;
 }
 
+/* The "+" on an empty line: left gutter, shown for the caret's line or on hover. */
+.prose-note p.empty-line {
+    position: relative;
+}
+.prose-note .block-plus {
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    margin-top: -11px;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--faint);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1;
+    opacity: 0;
+    user-select: none;
+    transition:
+        opacity 100ms var(--ease-out),
+        background-color 100ms var(--ease-out),
+        color 100ms var(--ease-out);
+}
+.prose-note p.empty-line:hover > .block-plus,
+.prose-note p.empty-line.has-caret > .block-plus {
+    opacity: 1;
+}
+.prose-note .block-plus:hover {
+    background: var(--hover);
+    color: var(--ink);
+}
+@media print {
+    .prose-note .block-plus {
+        display: none;
+    }
+}
+
 /* heading fold: chevron in the left gutter, section hidden via decoration */
 .prose-note .heading-fold {
     position: absolute;

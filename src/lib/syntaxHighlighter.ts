@@ -12,22 +12,71 @@ export const SUPPORTED_LANGUAGES = [
   "cpp",
   "csharp",
   "css",
+  "dart",
   "diff",
+  "dockerfile",
   "go",
+  "html",
   "java",
   "javascript",
   "json",
   "kotlin",
+  "lua",
   "markdown",
+  "php",
   "plaintext",
   "python",
+  "r",
+  "ruby",
   "rust",
   "sql",
   "swift",
+  "toml",
   "typescript",
   "xml",
   "yaml",
 ] as const;
+
+/** Names shown in menus, e.g. "Code Block: C++". */
+export const LANGUAGE_LABELS: Record<string, string> = {
+  bash: "Bash",
+  c: "C",
+  cpp: "C++",
+  csharp: "C#",
+  css: "CSS",
+  dart: "Dart",
+  diff: "Diff",
+  dockerfile: "Dockerfile",
+  go: "Go",
+  html: "HTML",
+  java: "Java",
+  javascript: "JavaScript",
+  json: "JSON",
+  kotlin: "Kotlin",
+  lua: "Lua",
+  markdown: "Markdown",
+  php: "PHP",
+  python: "Python",
+  r: "R",
+  ruby: "Ruby",
+  rust: "Rust",
+  sql: "SQL",
+  swift: "Swift",
+  toml: "TOML",
+  typescript: "TypeScript",
+  xml: "XML",
+  yaml: "YAML",
+};
+
+/** `/code` entries: the plain block, then one per language (and Mermaid). */
+export const CODE_BLOCK_VARIANTS: Array<{ language: string | null; name: string }> = [
+  { language: null, name: "" },
+  ...SUPPORTED_LANGUAGES.filter((language) => language !== "plaintext").map((language) => ({
+    language: language as string,
+    name: LANGUAGE_LABELS[language],
+  })),
+  { language: "mermaid", name: "Mermaid" },
+];
 
 const LANGUAGE_ALIASES: Record<string, string> = {
   bash: "shellscript",
@@ -97,6 +146,15 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   wsf: "xml",
   yaml: "yaml",
   yml: "yaml",
+  lua: "lua",
+  php: "php",
+  r: "r",
+  dart: "dart",
+  ruby: "ruby",
+  rb: "ruby",
+  toml: "toml",
+  dockerfile: "dockerfile",
+  docker: "dockerfile",
 };
 
 const LANGUAGE_LOADERS = {
@@ -123,6 +181,13 @@ const LANGUAGE_LOADERS = {
   xml: () => import("@shikijs/langs/xml"),
   html: () => import("@shikijs/langs/html"),
   yaml: () => import("@shikijs/langs/yaml"),
+  lua: () => import("@shikijs/langs/lua"),
+  php: () => import("@shikijs/langs/php"),
+  r: () => import("@shikijs/langs/r"),
+  dart: () => import("@shikijs/langs/dart"),
+  ruby: () => import("@shikijs/langs/ruby"),
+  toml: () => import("@shikijs/langs/toml"),
+  dockerfile: () => import("@shikijs/langs/dockerfile"),
 } satisfies Record<string, LanguageInput>;
 
 let highlighterPromise: ReturnType<typeof createHighlighterCore> | undefined;

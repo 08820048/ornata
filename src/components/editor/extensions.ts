@@ -10,6 +10,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
+import { BlockPlus } from "./blockPlus";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
@@ -118,6 +119,7 @@ export function createExtensions(assetRoot: string) {
     WikiLink,
     BrokenLinks,
     HeadingFold,
+    BlockPlus,
     FindReplace,
   ];
 }

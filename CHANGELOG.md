@@ -16,6 +16,9 @@ All notable changes to Ornata are documented in this file.
 - Search finds titles from shorthand: `prjroad` matches "project roadmap". Exact matches still rank first.
 - A shortcut bar along the bottom shows the keys that matter for the current view. Hide or show it from the command palette.
 - The sidebar has quick rows for daily notes and tasks.
+- A + appears in the left margin of an empty line, while the caret is on it or the pointer is over it. Click it to open the same suggestion menu as typing `/`.
+- Type `/code` to pick a code block by language — C, C++, C#, CSS, Dart, Go, Lua, PHP, Python, R, Ruby, Rust, SQL, TypeScript, Mermaid, and more. The menu now shows what typing at a line's start would do, such as `#` for a heading.
+- Syntax highlighting for Lua, PHP, R, Dart, Ruby, TOML, and Dockerfile, plus HTML in the language list.
 - Let any AI agent work on your vault without opening Ornata. `ornata mcp` is an MCP server over stdio (Claude Code, Codex, Gemini CLI, Cursor, and others), and the same tools are available as commands: `ornata search`, `read`, `tasks`, `backlinks`, `daily`, `journal add`, `capture`, `create`, `append`, `done`. Text can be piped in.
 - Ornata can serve MCP itself on a local port. Connect and Disconnect from MCP Settings, then add it to an agent with one line, e.g. `claude mcp add ornata --transport http http://127.0.0.1:13200/mcp` — no command line tool to install. Requests from web pages are refused, and the port only listens on 127.0.0.1.
 - The plug in the status bar turns green while the server is on or an agent is connected over stdio, and opens MCP Settings. Settings has a matching Agents page with setup commands for Claude Code, Codex, Gemini CLI, Cursor, and Claude Desktop, and an optional install of `ornata` into `~/.local/bin`.
