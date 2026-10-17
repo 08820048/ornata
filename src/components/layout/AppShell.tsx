@@ -1,5 +1,5 @@
 import {
-  CalendarDays, ClipboardType, Code2, Copy, Download, FileCode, FilePlus, MoreVertical, PanelLeft, Pilcrow, Printer, Search, Trash2 } from "lucide-react";
+  CalendarDays, ChevronLeft, ChevronRight, ClipboardType, Code2, Copy, Download, FileCode, FilePlus, MoreVertical, Pilcrow, Printer, Search, Trash2 } from "lucide-react";
 import { LayoutGroup, motion } from "motion/react";
 import { useState } from "react";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
@@ -50,7 +50,7 @@ export function AppShell() {
   const path = viewPath(root, view);
 
   return (
-    <div className="flex h-full bg-bg">
+    <div className="relative flex h-full bg-bg">
       {/* Collapse by animating width (spring) with the panel clipped at a
           fixed inner width — slides cleanly, no content reflow-jitter. */}
       <motion.div
@@ -64,6 +64,12 @@ export function AppShell() {
         </div>
       </motion.div>
 
+      <SidebarEdgeToggle
+        hidden={sidebarHidden}
+        label={`${t("editor.toggleSidebar")} ⌘\\`}
+        onClick={toggleSidebar}
+      />
+
       <main className="relative flex min-w-0 flex-1 flex-col">
         {/* Row 1 — titlebar: sidebar toggle + open-note tabs. The strip shares
             the sidebar's panel tone; the active tab takes the content bg so it
@@ -75,17 +81,6 @@ export function AppShell() {
           initial={false}
           transition={SPRING_PANEL}
         >
-          <div className="flex shrink-0 items-center">
-            <Tooltip label={t("editor.toggleSidebar")} side="right">
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="grid h-7 w-7 place-items-center rounded-md text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
-              >
-                <PanelLeft size={15.5} strokeWidth={1.75} />
-              </button>
-            </Tooltip>
-          </div>
           <TabBar />
         </motion.div>
 
@@ -226,6 +221,39 @@ export function AppShell() {
         <ShortcutBar />
       </main>
     </div>
+  );
+}
+
+/** Round chevron straddling the sidebar's edge; rides the sidebar's width
+ *  spring so it stays glued to the divider while collapsing. */
+function SidebarEdgeToggle({
+  hidden,
+  label,
+  onClick,
+}: {
+  hidden: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const Icon = hidden ? ChevronRight : ChevronLeft;
+  return (
+    <motion.div
+      className="absolute top-1/2 z-20 -translate-y-1/2"
+      animate={{ left: hidden ? 6 : SIDEBAR_WIDTH - 11 }}
+      initial={false}
+      transition={SPRING_PANEL}
+    >
+      <Tooltip label={label} side="right">
+        <button
+          type="button"
+          aria-label={label}
+          onClick={onClick}
+          className="grid size-[22px] place-items-center rounded-full border border-line bg-bg text-faint opacity-70 shadow-sm transition-[opacity,color,transform] duration-100 hover:text-ink hover:opacity-100 active:scale-[0.94]"
+        >
+          <Icon size={13} strokeWidth={2} />
+        </button>
+      </Tooltip>
+    </motion.div>
   );
 }
 
