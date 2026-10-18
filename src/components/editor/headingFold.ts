@@ -73,7 +73,9 @@ function build(doc: ProseMirrorNode, folded: Set<number>): DecorationSet {
     decorations.push(
       Decoration.widget(
         block.pos + 1,
-        (view) => {
+        // No position in the key: typing above reuses this DOM, so the click
+        // reads the widget's current position (it sits just inside the heading).
+        (view, getPos) => {
           const el = document.createElement("span");
           el.className = "heading-fold";
           el.contentEditable = "false";
@@ -81,11 +83,12 @@ function build(doc: ProseMirrorNode, folded: Set<number>): DecorationSet {
           el.setAttribute("aria-expanded", String(!isFolded));
           el.addEventListener("mousedown", (event) => {
             event.preventDefault();
-            view.dispatch(view.state.tr.setMeta(headingFoldKey, { toggle: block.pos }));
+            const at = getPos();
+            if (typeof at === "number") view.dispatch(view.state.tr.setMeta(headingFoldKey, { toggle: at - 1 }));
           });
           return el;
         },
-        { side: -1, key: `fold-${block.pos}-${isFolded}`, ignoreSelection: true },
+        { side: -1, key: `heading-fold-${isFolded}`, ignoreSelection: true },
       ),
     );
   }

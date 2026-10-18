@@ -45,7 +45,9 @@ export const BlockPlus = Extension.create({
                     });
                     return button;
                   },
-                  { side: -1, key: `block-plus-${pos}`, ignoreSelection: true },
+                  // No position in the key, so edits above reuse the DOM; the
+                  // click reads the current position via getPos.
+                  { side: -1, key: "block-plus", ignoreSelection: true },
                 ),
               );
             });

@@ -254,6 +254,23 @@ describe("AppShell smoke", () => {
       toggle.click();
     });
     expect(document.querySelector(".code-collapsed")).toBeNull();
+
+    // type above the block: the arrow's DOM is reused, and a click must still
+    // fold the right lines (it reads its position when clicked)
+    const codeEditor = (document.querySelector(".code-fold")!.closest(".ProseMirror") as unknown as {
+      editor: import("@tiptap/core").Editor;
+    }).editor;
+    const arrowBefore = document.querySelector(".code-fold");
+    await act(async () => {
+      codeEditor.commands.insertContentAt(2, "longer title ");
+    });
+    expect(document.querySelector(".code-fold")).toBe(arrowBefore);
+    await act(async () => {
+      document.querySelector(".code-fold")!.dispatchEvent(new window.MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    });
+    const hiddenAfter = [...document.querySelectorAll(".code-hidden")].map((el) => el.textContent).join("");
+    expect(hiddenAfter).toContain("one();");
+    expect(hiddenAfter).not.toContain("fn a()");
     note.body = "# Hello\n\nbody text";
   });
 

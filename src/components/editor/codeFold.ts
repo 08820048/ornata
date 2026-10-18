@@ -22,15 +22,34 @@ export type FoldMeta = { fold: number } | { collapse: number };
 const foldable = (node: ProseMirrorNode) =>
   node.type.name === "codeBlock" && String(node.attrs.language ?? "").toLowerCase() !== "mermaid";
 
-function ellipsis(label: string, dispatch: (view: import("@tiptap/pm/view").EditorView) => void) {
-  return (view: import("@tiptap/pm/view").EditorView) => {
+type View = import("@tiptap/pm/view").EditorView;
+
+/** End of the code line that contains `pos` (inside a code block). */
+function lineEndAt(doc: ProseMirrorNode, pos: number) {
+  const $pos = doc.resolve(pos);
+  const text = $pos.parent.textContent;
+  const newline = text.indexOf("\n", $pos.parentOffset);
+  return $pos.start() + (newline === -1 ? text.length : newline);
+}
+
+/*
+ * Widget keys never contain document positions, so typing above a block
+ * keeps the same widgets and ProseMirror reuses their DOM instead of
+ * rebuilding every arrow on each keystroke. Because a widget's DOM outlives
+ * the position it was built at, click handlers read the widget's *current*
+ * position (`getPos`) rather than one captured when it was created.
+ */
+
+function ellipsis(label: string, meta: (view: View, at: number) => FoldMeta) {
+  return (view: View, getPos: () => number | undefined) => {
     const el = document.createElement("span");
     el.className = "code-fold-ellipsis";
     el.contentEditable = "false";
     el.textContent = label;
     el.addEventListener("mousedown", (event) => {
       event.preventDefault();
-      dispatch(view);
+      const at = getPos();
+      if (typeof at === "number") view.dispatch(view.state.tr.setMeta(codeFoldKey, meta(view, at)));
     });
     return el;
   };
@@ -56,23 +75,21 @@ function build(doc: ProseMirrorNode, folded: Set<number>, collapsed: Set<number>
       decorations.push(
         Decoration.widget(
           base + range.from,
-          ellipsis(`… ${range.lines}`, (view) =>
-            view.dispatch(view.state.tr.setMeta(codeFoldKey, { collapse: pos } satisfies FoldMeta)),
-          ),
-          { side: -1, key: `collapsed-${pos}-${range.lines}` },
+          ellipsis(`… ${range.lines}`, (view, at) => ({ collapse: view.state.doc.resolve(at).before() })),
+          { side: -1, key: `collapsed-${range.lines}` },
         ),
       );
       return false;
     }
 
-    for (const fold of foldRanges(text)) {
+    foldRanges(text).forEach((fold, line) => {
       const anchor = base + fold.from;
       const isFolded = folded.has(anchor);
       if (isFolded) keptFolds.add(anchor);
       decorations.push(
         Decoration.widget(
           base + fold.lineStart,
-          (view) => {
+          (view, getPos) => {
             const el = document.createElement("span");
             el.className = "code-fold";
             el.contentEditable = "false";
@@ -81,11 +98,14 @@ function build(doc: ProseMirrorNode, folded: Set<number>, collapsed: Set<number>
             el.dataset.folded = String(isFolded);
             el.addEventListener("mousedown", (event) => {
               event.preventDefault();
-              view.dispatch(view.state.tr.setMeta(codeFoldKey, { fold: anchor } satisfies FoldMeta));
+              const at = getPos();
+              if (typeof at !== "number") return;
+              const fold: FoldMeta = { fold: lineEndAt(view.state.doc, at) };
+              view.dispatch(view.state.tr.setMeta(codeFoldKey, fold));
             });
             return el;
           },
-          { side: -1, key: `code-fold-${anchor}-${isFolded}`, ignoreSelection: true },
+          { side: -1, key: `code-fold-${line}-${isFolded}`, ignoreSelection: true },
         ),
       );
       if (isFolded) {
@@ -94,14 +114,12 @@ function build(doc: ProseMirrorNode, folded: Set<number>, collapsed: Set<number>
         decorations.push(
           Decoration.widget(
             anchor,
-            ellipsis(`⋯ ${fold.lines}`, (view) =>
-              view.dispatch(view.state.tr.setMeta(codeFoldKey, { fold: anchor } satisfies FoldMeta)),
-            ),
-            { side: -1, key: `code-ellipsis-${anchor}-${fold.lines}` },
+            ellipsis(`⋯ ${fold.lines}`, (_view, at) => ({ fold: at })),
+            { side: -1, key: `code-ellipsis-${line}-${fold.lines}` },
           ),
         );
       }
-    }
+    });
     return false;
   });
 
