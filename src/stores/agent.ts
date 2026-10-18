@@ -1,4 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { notifyNotesChanged } from "@/lib/vaultEvents";
 import { create } from "zustand";
 import { ipc, IpcError } from "@/lib/ipc";
 import { viewOfTab } from "@/lib/noteRef";
@@ -188,7 +189,7 @@ async function refreshAfterMutation(
       const next = remaining[remaining.length - 1] ?? null;
       useVault.getState().setView(next ? viewOfTab(next) : null);
     }
-    window.dispatchEvent(new Event("ornata-agent-notes-changed"));
+    notifyNotesChanged();
   }
 }
 

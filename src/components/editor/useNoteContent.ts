@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/react";
+import { NOTES_CHANGED } from "@/lib/vaultEvents";
 import type { SlashMenuState } from "./SlashMenu";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -525,10 +526,10 @@ export function useNoteContentEffects({
       }
     };
     window.addEventListener("focus", refreshOrDefer);
-    window.addEventListener("ornata-agent-notes-changed", refreshOrDefer);
+    window.addEventListener(NOTES_CHANGED, refreshOrDefer);
     return () => {
       window.removeEventListener("focus", refreshOrDefer);
-      window.removeEventListener("ornata-agent-notes-changed", refreshOrDefer);
+      window.removeEventListener(NOTES_CHANGED, refreshOrDefer);
     };
   }, [reloadIfChanged]);
 

@@ -17,6 +17,7 @@ import { useUpdater } from "@/stores/updater";
 import { t as translate, useLocale, useT } from "@/stores/locale";
 import { writeRich } from "@/lib/clipboard";
 import { goBack, goForward } from "@/lib/navigate";
+import { handleVaultChanged } from "@/lib/vaultEvents";
 import { focusNextPane, focusPaneNumber } from "@/lib/panes";
 import { McpDialog } from "@/components/mcp/McpDialog";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
@@ -183,7 +184,7 @@ export default function App() {
     let stop: (() => void) | undefined;
     let cancelled = false;
     listen("ornata-vault-changed", () => {
-      useVault.getState().refreshTree();
+      handleVaultChanged();
     })
       .then((unlisten) => {
         if (cancelled) unlisten();

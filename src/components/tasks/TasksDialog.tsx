@@ -1,4 +1,5 @@
 import { Circle, CircleCheck, FileText } from "lucide-react";
+import { notifyNotesChanged } from "@/lib/vaultEvents";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
@@ -67,7 +68,7 @@ export function TasksDialog() {
     setDone((prev) => new Set(prev).add(key));
     try {
       await ipc.completeTask(task.rel, task.line, task.text);
-      window.dispatchEvent(new Event("ornata-agent-notes-changed"));
+      notifyNotesChanged();
     } catch (err) {
       setDone((prev) => {
         const next = new Set(prev);

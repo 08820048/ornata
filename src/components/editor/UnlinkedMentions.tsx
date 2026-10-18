@@ -1,4 +1,5 @@
 import { Link2 } from "lucide-react";
+import { notifyNotesChanged } from "@/lib/vaultEvents";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ export function UnlinkedMentions({
       try {
         await ipc.linkMention(mention.rel, line.line, line.text, rel, relToHref(rel));
         // Let a clean open editor of that note pick up the new link.
-        window.dispatchEvent(new Event("ornata-agent-notes-changed"));
+        notifyNotesChanged();
         toast.success(t("toast.mentionLinked", { title: mention.title }));
         onLinked();
       } catch {

@@ -20,6 +20,9 @@ mock.module("@tauri-apps/api/core", () => ({
   invoke: async (command: string) => {
     if (command === "read_note") return note.body;
     if (command === "mcp_status") return mcp.status;
+    if (command === "load_tree") {
+      return NOTES.map((rel) => ({ name: rel.replace(".md", ""), rel, kind: "note", modifiedMs: 0 }));
+    }
     if (/(backlinks|mentions|history|templates|search|list_|tasks)/.test(command)) return [];
     if (command === "link_graph") return { nodes: [], edges: [] };
     return null;
@@ -370,5 +373,42 @@ describe("AppShell smoke", () => {
     expect(useTabs.getState().split!.panes.map((p) => (p.kind === "vault" ? p.rel : "?"))).toEqual(["b.md", "c.md"]);
     expect(useTabs.getState().split!.histories[0].entries).toHaveLength(2);
     localStorage.removeItem("ornata:session:/vault");
+  });
+
+  test("an agent's change on disk shows up in the open note, but never over unsaved typing", async () => {
+    note.body = "# Inbox\n\nfirst line";
+    const { act, useVault, vaultNote } = await mountShell();
+    await act(async () => {
+      useVault.setState({ view: null });
+      useVault.getState().setView({ type: "note", note: vaultNote("inbox-sync.md") });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    });
+    const pane = () => document.querySelector<HTMLElement>('[data-pane="vault:inbox-sync.md"] .ProseMirror')!;
+    expect(pane().textContent).toContain("first line");
+
+    // an agent appends over MCP; the vault watcher fires
+    const { handleVaultChanged } = await import("../src/lib/vaultEvents");
+    note.body = "# Inbox\n\nfirst line\n\nadded by an agent";
+    await act(async () => {
+      handleVaultChanged();
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    });
+    expect(pane().textContent).toContain("added by an agent");
+
+    // with unsaved typing in the note, the disk version does not replace it
+    const editor = (pane() as unknown as { editor: import("@tiptap/core").Editor }).editor;
+    await act(async () => {
+      editor.commands.insertContentAt(editor.state.doc.content.size - 1, " typing");
+    });
+    note.body = "# Inbox\n\nsomething else entirely";
+    await act(async () => {
+      handleVaultChanged();
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    });
+    expect(pane().textContent).toContain("typing");
+    expect(pane().textContent).not.toContain("something else entirely");
+    note.body = "# Hello\n\nbody text";
   });
 });
