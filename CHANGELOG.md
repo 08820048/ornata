@@ -2,7 +2,7 @@
 
 All notable changes to Ornata are documented in this file.
 
-## [Unreleased]
+## [0.9.0] - 2026-10-18
 
 ### Removed
 

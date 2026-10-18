@@ -10,6 +10,27 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.0",
+    zh: {
+      summary:
+        "内置助手退场 —— Ornata 把这份工作交给你的智能体，应用也因此轻了 67 MB。",
+      changes: [
+        "内置的 AssistantPi 助手，以及它附带的 Pi 运行时已经移除，应用体积因此减少约 67 MB。你的笔记库没有任何变化，Markdown 文件还是原来的位置。",
+        "继续用你已经在用的智能体：MCP 和 ornata 命令行提供同样的能力 —— 搜索、读取、创建、追加、勾选待办 —— 每个笔记库的访问级别仍然由你在设置里决定。",
+        "选中文字上的「Ask AI」按钮随之消失。AssistantPi 保存的模型连接不再读取；它存进 macOS 钥匙串的 API Key 会留在那里，直到你在「钥匙串访问」里删除。",
+      ],
+    },
+    date: "October 18, 2026",
+    dateTime: "2026-10-18",
+    summary:
+      "The built-in assistant is gone — Ornata hands the work to your own agent, and the app is 67 MB lighter.",
+    changes: [
+      "AssistantPi and the Pi runtime it shipped with are removed, making the app about 67 MB smaller. Your vault is untouched — the Markdown files stay exactly where they are.",
+      "Keep using the agent you already have: MCP and the ornata command line do the same work — search, read, create, append, tick tasks — with the access level you set per vault.",
+      "The Ask AI button on selected text is gone with it. Model connections saved by AssistantPi are no longer read; any API keys it stored in the macOS Keychain stay there until you delete them in Keychain Access.",
+    ],
+  },
+  {
     version: "0.8.1",
     zh: {
       summary: "修复了打开含多个代码块的笔记时会崩溃的问题。",
