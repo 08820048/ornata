@@ -22,8 +22,6 @@ jobs:
         with:
           workspaces: src-tauri
       - run: bun install --frozen-lockfile
-      # tauri-build requires the sidecar binary to exist.
-      - run: bun run agent:build
       - run: bunx tsc --noEmit
       - run: bun test
       - run: cd src-tauri && cargo clippy --all-targets -- -D warnings

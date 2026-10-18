@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
-use crate::agent_connection::AgentConnectionConfig;
 use crate::error::AppResult;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,12 +24,6 @@ pub struct AppConfig {
     pub image_upload: ImageUpload,
     #[serde(default)]
     pub pdf: PdfSettings,
-    #[serde(default)]
-    pub agent_connections: Vec<AgentConnectionConfig>,
-    #[serde(default)]
-    pub active_agent_connection: Option<String>,
-    #[serde(default, skip_serializing)]
-    pub agent_connection: Option<AgentConnectionConfig>,
     /// What external agents (the `ornata` command line / MCP server) may do,
     /// per vault root. Chosen in Settings, never by the agent's own launch
     /// arguments; a vault with no entry is read-only.
@@ -176,9 +169,6 @@ impl Default for AppConfig {
             cursor_animation: default_cursor_animation(),
             image_upload: ImageUpload::default(),
             pdf: PdfSettings::default(),
-            agent_connections: Vec::new(),
-            active_agent_connection: None,
-            agent_connection: None,
             cli_access: HashMap::new(),
             mcp_server: McpServerConfig::default(),
         }
@@ -216,28 +206,10 @@ pub fn load(app: &tauri::AppHandle) -> AppConfig {
     let Ok(path) = config_file(app) else {
         return AppConfig::default();
     };
-    let mut config: AppConfig = fs::read_to_string(path)
+    fs::read_to_string(path)
         .ok()
         .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default();
-    if config.agent_connections.is_empty() {
-        if let Some(connection) = config.agent_connection.take() {
-            config.active_agent_connection = Some(connection.slug.clone());
-            config.agent_connections.push(connection);
-        }
-    }
-    if config.active_agent_connection.as_ref().is_none_or(|slug| {
-        !config
-            .agent_connections
-            .iter()
-            .any(|item| &item.slug == slug)
-    }) {
-        config.active_agent_connection = config
-            .agent_connections
-            .first()
-            .map(|item| item.slug.clone());
-    }
-    config
+        .unwrap_or_default()
 }
 
 pub fn save(app: &tauri::AppHandle, config: &AppConfig) -> AppResult<()> {

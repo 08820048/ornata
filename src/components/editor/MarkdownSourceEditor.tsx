@@ -55,19 +55,15 @@ const ornataHighlight = HighlightStyle.define([
 export function MarkdownSourceEditor({
   value,
   onChange,
-  onSelectionChange,
 }: {
   value: string;
   onChange: (value: string) => void;
-  onSelectionChange?: (value: string) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const syncingRef = useRef(false);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-  const onSelectionChangeRef = useRef(onSelectionChange);
-  onSelectionChangeRef.current = onSelectionChange;
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -90,12 +86,6 @@ export function MarkdownSourceEditor({
             if (update.docChanged && !syncingRef.current) {
               onChangeRef.current(update.state.doc.toString());
             }
-            if (update.selectionSet) {
-              const { from, to, empty } = update.state.selection.main;
-              onSelectionChangeRef.current?.(
-                empty ? "" : update.state.doc.sliceString(from, to),
-              );
-            }
           }),
         ],
       }),
@@ -104,7 +94,6 @@ export function MarkdownSourceEditor({
     view.focus();
 
     return () => {
-      onSelectionChangeRef.current?.("");
       view.destroy();
       viewRef.current = null;
     };

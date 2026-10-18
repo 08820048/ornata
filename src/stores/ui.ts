@@ -23,7 +23,6 @@ interface UiState {
   tagsOpen: boolean;
   saveTemplateOpen: boolean;
   unusedAssetsOpen: boolean;
-  agentOpen: boolean;
   sidebarHidden: boolean;
   shortcutBarHidden: boolean;
   focusMode: boolean;
@@ -36,7 +35,6 @@ interface UiState {
   setTagsOpen: (open: boolean) => void;
   setSaveTemplateOpen: (open: boolean) => void;
   setUnusedAssetsOpen: (open: boolean) => void;
-  setAgentOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   toggleShortcutBar: () => void;
   /** Hide the sidebar and fade the chrome; leaving restores the sidebar. */
@@ -53,7 +51,6 @@ export const useUi = create<UiState>((set, get) => ({
   tagsOpen: false,
   saveTemplateOpen: false,
   unusedAssetsOpen: false,
-  agentOpen: false,
   sidebarHidden: false,
   shortcutBarHidden: readShortcutBarHidden(),
   focusMode: false,
@@ -66,7 +63,6 @@ export const useUi = create<UiState>((set, get) => ({
   setTagsOpen: (tagsOpen) => set({ tagsOpen }),
   setSaveTemplateOpen: (saveTemplateOpen) => set({ saveTemplateOpen }),
   setUnusedAssetsOpen: (unusedAssetsOpen) => set({ unusedAssetsOpen }),
-  setAgentOpen: (agentOpen) => set({ agentOpen }),
   toggleSidebar: () => set({ sidebarHidden: !get().sidebarHidden }),
   toggleShortcutBar: () => {
     const shortcutBarHidden = !get().shortcutBarHidden;

@@ -4,9 +4,9 @@
   "version": "0.8.1",
   "identifier": "app.ornata",
   "build": {
-    "beforeDevCommand": "bun run agent:build && bun run dev",
+    "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run agent:build && bun run build",
+    "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -36,9 +36,6 @@
   "bundle": {
     "createUpdaterArtifacts": true,
     "active": true,
-    "externalBin": [
-      "binaries/ornata-agent"
-    ],
     "targets": "all",
     "fileAssociations": [
       {

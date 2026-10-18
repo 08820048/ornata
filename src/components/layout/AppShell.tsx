@@ -13,7 +13,6 @@ import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
-import { AgentPanel } from "@/components/agent/AgentPanel";
 
 const SIDEBAR_WIDTH = 240;
 
@@ -82,7 +81,6 @@ export function AppShell() {
               tabs keep their live editors, so returning to notes is instant. */}
           <NotesWorkspace visible={view !== null} />
           {!view && <EmptyState />}
-          <AgentPanel />
         </div>
         <ShortcutBar />
       </main>

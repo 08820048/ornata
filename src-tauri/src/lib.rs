@@ -1,9 +1,6 @@
-mod agent;
 mod app_data;
-mod agent_connection;
 mod agent_docs;
 mod agent_tools;
-mod agent_undo;
 mod assets;
 mod backlinks;
 mod cli;
@@ -62,7 +59,6 @@ pub fn run() {
         }).build())
         .manage(AppState::default())
         .manage(cli::app_api::McpServer::default())
-        .manage(agent::AgentState::default())
         .manage(print_export::PrintState::default())
         .manage(reveal::ExportedFiles::default())
         .invoke_handler(tauri::generate_handler![
@@ -73,27 +69,6 @@ pub fn run() {
             cli::app_api::mcp_rotate_token,
             cli::app_api::mcp_install_cli,
             cli::app_api::mcp_uninstall_cli,
-            agent::agent_status,
-            agent::agent_start,
-            agent::agent_send,
-            agent::agent_set_permission,
-            agent::agent_abort,
-            agent::agent_new_chat,
-            agent::agent_list_chats,
-            agent::agent_open_chat,
-            agent::agent_undo,
-            agent::agent_respond_approval,
-            agent::agent_providers_list,
-            agent::agent_models_list,
-            agent::agent_oauth_start,
-            agent::agent_oauth_respond,
-            agent::agent_oauth_cancel,
-            agent::agent_stop,
-            agent_connection::agent_connections_list,
-            agent_connection::agent_connection_get,
-            agent_connection::agent_connection_save,
-            agent_connection::agent_connection_activate,
-            agent_connection::agent_connection_delete,
             commands::startup,
             commands::choose_vault,
             commands::create_vault,

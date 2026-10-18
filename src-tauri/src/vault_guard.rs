@@ -1,4 +1,4 @@
-//! Keeps agents (MCP, the `ornata` command line, AssistantPi's note tools)
+//! Keeps agents (MCP and the `ornata` command line)
 //! inside the vault. Paths are already checked for `..`, but a symlink in
 //! `notes/` can still point anywhere — `notes/x.md -> ~/.ssh/id_rsa` — and
 //! reads and writes follow it. Agent-facing calls go through here so the

@@ -22,7 +22,6 @@ import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { SlashMenu } from "./SlashMenu";
 import { usePaneLinkClicks, usePaneRequests } from "./usePaneRequests";
-import { useAgentBridge, useAgentSelectionSync } from "./useAgentBridge";
 import {
   countWords,
   useNoteContentEffects,
@@ -50,7 +49,7 @@ const MarkdownSourceEditor = lazy(() =>
  * toggle — no parse, remount, or layout rebuild.
  *
  * This component is a composition shell: the content pipeline lives in
- * useNoteContent, the agent bridge in useAgentBridge, navigation side
+ * useNoteContent, navigation side
  * effects in usePaneRequests, and dialogs in their own components.
  */
 export const NoteEditor = memo(function NoteEditor({
@@ -77,7 +76,6 @@ export const NoteEditor = memo(function NoteEditor({
     setWords,
     noteRef,
     currentKey,
-    activeRef,
     languageRef,
     frontmatter,
     pending,
@@ -100,11 +98,6 @@ export const NoteEditor = memo(function NoteEditor({
   const backlinks = useBacklinks(backlinkRel, active);
 
 
-  const { publishAgentSelection, askAIAboutSelection } = useAgentBridge({
-    noteRef,
-    activeRef,
-    vaultRoot,
-  });
   const { editor } = useNoteEditor({
     note,
     active,
@@ -112,7 +105,6 @@ export const NoteEditor = memo(function NoteEditor({
     missing: content.missing,
     cursorAnimation,
     content,
-    publishAgentSelection,
     vaultRoot,
     scrollRef,
     pageRef,
@@ -128,14 +120,6 @@ export const NoteEditor = memo(function NoteEditor({
     markdownSource,
     scrollRef,
     content,
-  });
-
-  useAgentSelectionSync({
-    editor,
-    note,
-    active,
-    markdownSource,
-    publishAgentSelection,
   });
 
   const titleFocusReq = useTabs((s) => s.titleFocusReq);
@@ -240,7 +224,6 @@ export const NoteEditor = memo(function NoteEditor({
             <Suspense fallback={null}>
               <MarkdownSourceEditor
                 value={content.rawText}
-                onSelectionChange={publishAgentSelection}
                 onChange={(text) => {
                   content.setRawText(text);
                   const { frontmatter: fm, body } = splitFrontmatter(text);
@@ -274,7 +257,7 @@ export const NoteEditor = memo(function NoteEditor({
             </footer>
           )}
           {active && editor && !markdownSource && (
-            <SelectionMenu editor={editor} onAskAI={askAIAboutSelection} />
+            <SelectionMenu editor={editor} />
           )}
         {active && !markdownSource && (
           <SlashMenu

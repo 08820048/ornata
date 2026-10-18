@@ -1,17 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { OutlineEntry } from "./pdfOutline";
 import type {
-  AgentPermission,
   ExternalNote,
   ImageUpload,
   PdfSettings,
   Language,
-  AgentStatus,
-  AgentConnection,
-  AgentConnectionConfig,
-  AgentConnections,
-  AgentModel,
-  AgentProvider,
   SearchHit,
   Backlink,
   CliAccess,
@@ -56,43 +49,6 @@ async function call<T>(command: string, args?: Record<string, unknown>) {
 }
 
 export const ipc = {
-  agentStatus: () => call<AgentStatus>("agent_status"),
-  agentStart: () => call<AgentStatus>("agent_start"),
-  agentSend: (message: string) => call<void>("agent_send", { message }),
-  agentAbort: () => call<void>("agent_abort"),
-  /** Conversation controls; results arrive as `history` / `chats` agent events. */
-  agentNewChat: () => call<void>("agent_new_chat"),
-  agentListChats: () => call<void>("agent_list_chats"),
-  agentOpenChat: (path: string) => call<void>("agent_open_chat", { path }),
-  agentUndo: (id: string) => call<void>("agent_undo", { id }),
-  agentRespondApproval: (id: string, allow: boolean) =>
-    call<void>("agent_respond_approval", { id, allow }),
-  agentStop: () => call<void>("agent_stop"),
-  agentSetPermission: (permission: AgentPermission) =>
-    call<void>("agent_set_permission", { permission }),
-  agentConnectionGet: () =>
-    call<AgentConnection | null>("agent_connection_get"),
-  agentConnectionsList: () =>
-    call<AgentConnections>("agent_connections_list"),
-  agentConnectionSave: (
-    connection: AgentConnectionConfig,
-    apiKey?: string,
-    activate = true,
-  ) =>
-    call<AgentConnections>("agent_connection_save", { connection, apiKey, activate }),
-  agentConnectionActivate: (slug: string) =>
-    call<AgentConnections>("agent_connection_activate", { slug }),
-  agentConnectionDelete: (slug: string) =>
-    call<AgentConnections>("agent_connection_delete", { slug }),
-  agentProvidersList: () => call<AgentProvider[]>("agent_providers_list"),
-  agentModelsList: (provider: string) =>
-    call<AgentModel[]>("agent_models_list", { provider }),
-  agentOAuthStart: (provider: string, slug: string) =>
-    call<string>("agent_oauth_start", { provider, slug }),
-  agentOAuthRespond: (requestId: string, value?: string, error?: string) =>
-    call<void>("agent_oauth_respond", { requestId, value, error }),
-  agentOAuthCancel: () => call<void>("agent_oauth_cancel"),
-
   startup: () => call<VaultSnapshot | null>("startup"),
   chooseVault: () => call<VaultSnapshot | null>("choose_vault"),
   createVault: () => call<VaultSnapshot | null>("create_vault"),

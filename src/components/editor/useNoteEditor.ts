@@ -40,7 +40,6 @@ export function useNoteEditor({
   missing,
   cursorAnimation,
   content,
-  publishAgentSelection,
   vaultRoot,
   scrollRef,
   pageRef,
@@ -53,7 +52,6 @@ export function useNoteEditor({
   missing: boolean;
   cursorAnimation: boolean;
   content: NoteContent;
-  publishAgentSelection: (text: string) => void;
   vaultRoot: string;
   scrollRef: RefObject<HTMLDivElement | null>;
   pageRef: RefObject<HTMLDivElement | null>;
@@ -62,7 +60,6 @@ export function useNoteEditor({
 }) {
   const {
     noteRef,
-    activeRef,
     languageRef,
     pending,
     swapping,
@@ -216,11 +213,6 @@ export function useNoteEditor({
       },
       onSelectionUpdate({ editor: updated }) {
         updateSlashMenu(updated);
-        if (!activeRef.current) return;
-        const { from, to, empty } = updated.state.selection;
-        publishAgentSelection(
-          empty ? "" : updated.state.doc.textBetween(from, to, "\n", "\n"),
-        );
       },
     },
     [extensions, syncOutline],
