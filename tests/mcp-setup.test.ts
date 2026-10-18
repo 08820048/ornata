@@ -17,34 +17,38 @@ const status = (over: Partial<McpStatus> = {}, server: Partial<McpStatus["server
   executable: APP,
   installedAt: null,
   ...over,
-  server: { running: false, port: 13200, activity: null, ...server },
+  server: { running: false, port: 13200, activity: null, token: "t", ...server },
 });
 const session = { pid: 1, vault: "/v", client: "claude-code", startedMs: 1 };
 
 describe("setup commands", () => {
-  test("HTTP agents point at the local server URL", () => {
-    const by = Object.fromEntries(setupCommands(APP, false, 13200).map((c) => [c.id, c.text]));
-    expect(by.claude).toBe("claude mcp add ornata --transport http http://127.0.0.1:13200/mcp");
-    expect(by.codex).toBe("codex mcp add ornata --url http://127.0.0.1:13200/mcp");
-    expect(by.gemini).toBe("gemini mcp add --transport http ornata http://127.0.0.1:13200/mcp");
-    expect(JSON.parse(by.json)).toEqual({ mcpServers: { ornata: { url: "http://127.0.0.1:13200/mcp" } } });
+  const T = "tok123";
+  const by = (installed = false, port = 13200, exe = APP) =>
+    Object.fromEntries(setupCommands(exe, installed, port, T).map((c) => [c.id, c.text]));
+
+  test("HTTP agents point at the local server and send the token", () => {
+    const c = by();
+    expect(c.claude).toBe('claude mcp add ornata --transport http http://127.0.0.1:13200/mcp --header "Authorization: Bearer tok123"');
+    expect(c.gemini).toBe('gemini mcp add --transport http --header "Authorization: Bearer tok123" ornata http://127.0.0.1:13200/mcp');
+    expect(JSON.parse(c.json)).toEqual({
+      mcpServers: { ornata: { url: "http://127.0.0.1:13200/mcp", headers: { Authorization: "Bearer tok123" } } },
+    });
+    expect(JSON.parse(c.vscode)).toEqual({
+      servers: { ornata: { type: "http", url: "http://127.0.0.1:13200/mcp", headers: { Authorization: "Bearer tok123" } } },
+    });
+    expect(c.other).toBe("http://127.0.0.1:13200/mcp\nAuthorization: Bearer tok123");
   });
 
-  test("VS Code uses its own shape, and any other client just gets the URL", () => {
-    const by = Object.fromEntries(setupCommands(APP, false, 13200).map((c) => [c.id, c.text]));
-    expect(JSON.parse(by.vscode)).toEqual({
-      servers: { ornata: { type: "http", url: "http://127.0.0.1:13200/mcp" } },
-    });
-    expect(by.other).toBe("http://127.0.0.1:13200/mcp");
+  test("Codex and Claude Desktop run Ornata over stdio: no port, no token", () => {
+    const c = by(true);
+    expect(c.codex).toBe("codex mcp add ornata -- ornata mcp");
+    expect(c.codex).not.toContain("tok123");
+    expect(JSON.parse(c.desktop)).toEqual({ mcpServers: { ornata: { command: "ornata", args: ["mcp"] } } });
+    expect(JSON.parse(by(false, 1, "/Users/me/My Apps/Ornata").desktop).mcpServers.ornata.command).toBe("/Users/me/My Apps/Ornata");
   });
 
-  test("the port follows the server, and Claude Desktop uses stdio", () => {
-    const commands = setupCommands("/Users/me/My Apps/Ornata", false, 13205);
-    expect(commands.find((c) => c.id === "claude")!.text).toContain(":13205/mcp");
-    expect(JSON.parse(commands.find((c) => c.id === "desktop")!.text)).toEqual({
-      mcpServers: { ornata: { command: "/Users/me/My Apps/Ornata", args: ["mcp"] } },
-    });
-    expect(JSON.parse(setupCommands(APP, true, 1).find((c) => c.id === "desktop")!.text).mcpServers.ornata.command).toBe("ornata");
+  test("the port follows the server", () => {
+    expect(by(false, 13205).claude).toContain(":13205/mcp");
   });
 
   test("the no-server alternative uses ornata once installed, else the quoted path", () => {

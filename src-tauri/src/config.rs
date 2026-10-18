@@ -41,13 +41,17 @@ pub struct AppConfig {
     pub mcp_server: McpServerConfig,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct McpServerConfig {
     #[serde(default)]
     pub enabled: bool,
     #[serde(default = "default_mcp_port")]
     pub port: u16,
+    /// Agents must send `Authorization: Bearer <token>`; generated on first
+    /// start, replaced from the MCP panel.
+    #[serde(default)]
+    pub token: String,
 }
 
 pub const DEFAULT_MCP_PORT: u16 = 13200;
@@ -58,7 +62,7 @@ fn default_mcp_port() -> u16 {
 
 impl Default for McpServerConfig {
     fn default() -> Self {
-        Self { enabled: false, port: DEFAULT_MCP_PORT }
+        Self { enabled: false, port: DEFAULT_MCP_PORT, token: String::new() }
     }
 }
 

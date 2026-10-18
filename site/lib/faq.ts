@@ -37,7 +37,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I use Claude Code, Codex, or Cursor with my notes?",
-    a: "Yes. Ornata speaks MCP. Open MCP Settings from the plug in the status bar, press Connect, and add it to your agent with one line, for example claude mcp add ornata --transport http http://127.0.0.1:13200/mcp. Agents that only run commands can start ornata mcp instead, which works even when Ornata is closed. The same tools are available in a terminal as ornata search, ornata journal add, ornata tasks, and more.",
+    a: "Yes. Ornata speaks MCP. Open MCP Settings from the plug in the status bar, press Connect, and add it to your agent with the one line shown there — it includes the access token the server requires. Agents that only run commands can start ornata mcp instead, which works even when Ornata is closed. The same tools are available in a terminal as ornata search, ornata journal add, ornata tasks, and more.",
   },
   {
     q: "What can an outside agent do to my notes?",

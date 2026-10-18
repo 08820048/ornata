@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
    reduced motion gets the finished frame. */
 
 const LOOP = 11400;
-const COMMAND = "claude mcp add ornata --transport http http://127.0.0.1:13200/mcp";
+const COMMAND = 'claude mcp add ornata --transport http http://127.0.0.1:13200/mcp --header "Authorization: Bearer 9f3c…"';
 const PROMPT = `add "call Ada back" to today's note`;
 
 const typed = (text: string, t: number, from: number, to: number) =>

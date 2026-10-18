@@ -39,7 +39,9 @@ export function McpPanel() {
   const state = mcpState(status);
   const connected = state === "server" || state === "stdio";
   const installed = status.installedAt !== null;
-  const commands = setupCommands(status.executable, installed, status.server.port);
+  // Before the first Connect there is no token yet; say so instead of a blank.
+  const token = status.server.token || t("mcp.token.pending");
+  const commands = setupCommands(status.executable, installed, status.server.port, token);
   const current = commands.find((command) => command.id === agent) ?? commands[0];
   const vaultName = status.vaultPath.split("/").filter(Boolean).pop() ?? status.vaultPath;
 
@@ -49,6 +51,8 @@ export function McpPanel() {
       ? t("mcp.connect.json")
       : current.id === "vscode"
         ? t("mcp.connect.vscode")
+        : current.id === "codex"
+          ? t("mcp.connect.codex")
         : current.id === "desktop"
           ? t("mcp.connect.desktop")
           : current.id === "other"
@@ -184,12 +188,35 @@ export function McpPanel() {
           </span>
         </div>
         {hint && <p className="mt-1.5 text-[11px] leading-4 text-faint">{hint}</p>}
-        {current.id !== "desktop" && current.id !== "other" && (
+        {!["desktop", "other", "codex"].includes(current.id) && (
           <p className="mt-2 break-all text-[11px] leading-4 text-faint">
             {t("mcp.connect.stdioNote")}{" "}
             <code className="font-mono text-muted">{stdioCommand(status.executable, installed)}</code>
           </p>
         )}
+      </section>
+
+      <section className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-[13px] font-semibold text-ink">{t("mcp.token.title")}</h3>
+          <p className="mt-0.5 text-[11.5px] leading-4 text-faint">{t("mcp.token.detail")}</p>
+        </div>
+        <button
+          type="button"
+          disabled={busy || !status.server.token}
+          onClick={() => {
+            setBusy(true);
+            useMcp
+              .getState()
+              .rotateToken()
+              .then(() => toast(t("mcp.token.rotated")))
+              .catch(report)
+              .finally(() => setBusy(false));
+          }}
+          className="h-8 shrink-0 rounded-lg border border-line bg-hover px-3 text-[12px] font-medium text-ink transition-colors duration-100 hover:bg-active disabled:opacity-60"
+        >
+          {t("mcp.token.rotate")}
+        </button>
       </section>
 
       <section className="flex items-center justify-between gap-4">

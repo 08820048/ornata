@@ -163,7 +163,7 @@ describe("AppShell smoke", () => {
       sessions: [{ pid: 1, vault: "/vault", client: "claude-code", startedMs: 1 }],
       executable: "/Applications/Ornata.app/Contents/MacOS/Ornata",
       installedAt: null,
-      server: { running: false, port: 13200, activity: null },
+      server: { running: false, port: 13200, activity: null, token: "tok" },
     };
     const { act, useUi } = await mountShell();
     const plug = () => container.querySelector<HTMLElement>("footer[aria-label] button");
@@ -194,7 +194,7 @@ describe("AppShell smoke", () => {
     mcp.status = {
       ...(mcp.status as object),
       sessions: [],
-      server: { running: true, port: 13200, activity: { lastClient: "claude-code", lastSeenMs: 1, sessions: 1 } },
+      server: { running: true, port: 13200, activity: { lastClient: "claude-code", lastSeenMs: 1, sessions: 1 }, token: "tok" },
     };
     const { useMcp: store } = await import("../src/stores/mcp");
     await act(async () => {

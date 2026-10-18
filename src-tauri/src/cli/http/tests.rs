@@ -24,6 +24,7 @@ fn send(port: u16, method: &str, path: &str, extra: &[(&str, &str)], body: &str)
         ("Content-Type".to_string(), "application/json".to_string()),
         ("Content-Length".to_string(), body.len().to_string()),
         ("Connection".to_string(), "close".to_string()),
+        ("Authorization".to_string(), format!("Bearer {TOKEN}")),
     ];
     for (name, value) in extra {
         headers.retain(|(n, _)| !n.eq_ignore_ascii_case(name));
@@ -41,6 +42,12 @@ fn send(port: u16, method: &str, path: &str, extra: &[(&str, &str)], body: &str)
     Reply { status, session, body: body.to_string() }
 }
 
+const TOKEN: &str = "test-token-1234";
+
+fn token() -> TokenSource {
+    Arc::new(|| TOKEN.to_string())
+}
+
 fn rpc(id: u64, method: &str, params: Value) -> String {
     json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }).to_string()
 }
@@ -52,7 +59,7 @@ fn serve(level: Level) -> (ServerHandle, tempfile::TempDir) {
     write_note(dir.path(), &note, "# Hello\n- [ ] ship it\n").unwrap();
     let root = dir.path().to_path_buf();
     let provider: Provider = Arc::new(move || Some(Target { root: root.clone(), level }));
-    (start(0, provider).unwrap(), dir)
+    (start(0, token(), provider).unwrap(), dir)
 }
 
 fn initialize(port: u16) -> String {
@@ -133,7 +140,7 @@ fn access_is_read_per_request_so_settings_apply_at_once() {
             Some(Target { root: root.clone(), level })
         })
     };
-    let server = start(0, provider).unwrap();
+    let server = start(0, token(), provider).unwrap();
     let port = server.port();
     let capture = rpc(2, "tools/call", json!({ "name": "capture", "arguments": { "text": "x" } }));
     assert!(send(port, "POST", "/mcp", &[], &capture).body.contains("\"isError\":true"));
@@ -151,7 +158,7 @@ fn stopping_releases_the_port_and_busy_ports_fall_through() {
     let port = first.port();
     // the preferred port is taken, so the next one is used
     let provider: Provider = Arc::new(|| None);
-    let second = start(port, provider.clone()).unwrap();
+    let second = start(port, token(), provider.clone()).unwrap();
     assert_ne!(second.port(), port);
     let bare = send(second.port(), "POST", "/mcp", &[], &rpc(1, "tools/list", json!({})));
     assert!(bare.body.contains("open a vault"), "no vault open: a clear error, not a crash");
@@ -161,7 +168,7 @@ fn stopping_releases_the_port_and_busy_ports_fall_through() {
     // parallel and another one may grab the same ephemeral port for a moment,
     // so allow a few tries rather than asserting "nothing listens".)
     let again = (0..50).find_map(|_| {
-        let attempt = start(port, Arc::new(|| None)).ok().filter(|s| s.port() == port);
+        let attempt = start(port, token(), Arc::new(|| None)).ok().filter(|s| s.port() == port);
         if attempt.is_none() {
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
@@ -169,4 +176,52 @@ fn stopping_releases_the_port_and_busy_ports_fall_through() {
     });
     assert!(again.is_some(), "port {port} was not released");
     again.unwrap().stop();
+}
+
+#[test]
+fn requests_without_the_right_token_are_refused() {
+    let (server, _dir) = serve(Level::Destructive);
+    let port = server.port();
+    let list = rpc(1, "tools/list", json!({}));
+    let missing = send(port, "POST", "/mcp", &[("Authorization", "")], &list);
+    assert_eq!(missing.status, 401);
+    assert!(!missing.body.contains("search_notes"));
+    assert_eq!(send(port, "POST", "/mcp", &[("Authorization", "Bearer wrong")], &list).status, 401);
+    assert_eq!(send(port, "POST", "/mcp", &[("Authorization", TOKEN)], &list).status, 401, "needs the Bearer scheme");
+    assert_eq!(send(port, "POST", "/mcp", &[("Authorization", "Bearer test-token-12345")], &list).status, 401, "a longer guess");
+    assert_eq!(send(port, "POST", "/mcp", &[], &list).status, 200);
+    server.stop();
+}
+
+#[test]
+fn a_new_token_takes_effect_at_once_and_an_empty_one_admits_nobody() {
+    let dir = tempdir().unwrap();
+    ensure_layout(dir.path()).unwrap();
+    let current = Arc::new(std::sync::Mutex::new(TOKEN.to_string()));
+    let source: TokenSource = {
+        let current = current.clone();
+        Arc::new(move || current.lock().unwrap().clone())
+    };
+    let root = dir.path().to_path_buf();
+    let server = start(0, source, Arc::new(move || Some(Target { root: root.clone(), level: Level::ReadOnly }))).unwrap();
+    let port = server.port();
+    let list = rpc(1, "tools/list", json!({}));
+    assert_eq!(send(port, "POST", "/mcp", &[], &list).status, 200);
+    *current.lock().unwrap() = "rotated".into();
+    assert_eq!(send(port, "POST", "/mcp", &[], &list).status, 401, "the old token stops working");
+    assert_eq!(send(port, "POST", "/mcp", &[("Authorization", "Bearer rotated")], &list).status, 200);
+    *current.lock().unwrap() = String::new();
+    assert_eq!(send(port, "POST", "/mcp", &[("Authorization", "Bearer ")], &list).status, 401);
+    server.stop();
+}
+
+#[test]
+fn sessions_are_capped() {
+    let (server, _dir) = serve(Level::ReadOnly);
+    let port = server.port();
+    for _ in 0..(MAX_SESSIONS + 10) {
+        initialize(port);
+    }
+    assert_eq!(server.activity().sessions, MAX_SESSIONS);
+    server.stop();
 }

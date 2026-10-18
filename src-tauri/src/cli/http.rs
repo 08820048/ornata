@@ -3,11 +3,14 @@
 //! reply). Same tools and permissions as `ornata mcp`; the app starts and
 //! stops it from the MCP panel.
 //!
-//! A local port can be reached by web pages too, so every request is checked:
-//! `Host` must name this server (DNS rebinding) and any `Origin` must be a
-//! localhost one (cross-site requests). Access levels are read per request.
+//! A local port can be reached by web pages, other programs, and other user
+//! accounts on the Mac, so every request is checked: `Host` must name this
+//! server (DNS rebinding), any `Origin` must be a localhost one (cross-site
+//! requests), and it must carry the bearer token from the app's settings.
+//! The token and the access level are read per request, so changes in the
+//! panel apply at once.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::io::Read;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -28,9 +31,13 @@ const MAX_BODY: u64 = 2 * 1024 * 1024;
 const SESSION_HEADER: &str = "Mcp-Session-Id";
 /// How many ports above the preferred one to try when it is taken.
 const PORT_TRIES: u16 = 10;
+/// Sessions kept; past this the oldest is forgotten (it can initialize again).
+const MAX_SESSIONS: usize = 64;
 
 /// Where the served vault and its access level come from, asked per request.
 pub type Provider = Arc<dyn Fn() -> Option<Target> + Send + Sync>;
+/// The bearer token requests must carry, asked per request.
+pub type TokenSource = Arc<dyn Fn() -> String + Send + Sync>;
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -44,7 +51,25 @@ pub struct Activity {
 #[derive(Default)]
 struct Sessions {
     clients: HashMap<String, String>,
+    order: VecDeque<String>,
     activity: Activity,
+}
+
+impl Sessions {
+    fn add(&mut self, id: String, client: String) {
+        while self.order.len() >= MAX_SESSIONS {
+            if let Some(old) = self.order.pop_front() {
+                self.clients.remove(&old);
+            }
+        }
+        self.order.push_back(id.clone());
+        self.clients.insert(id, client);
+    }
+
+    fn remove(&mut self, id: &str) {
+        self.clients.remove(id);
+        self.order.retain(|known| known != id);
+    }
 }
 
 pub struct ServerHandle {
@@ -83,7 +108,7 @@ fn now_ms() -> u64 {
 }
 
 /// Listen on `preferred` (or the next free port). Port 0 picks any free one.
-pub fn start(preferred: u16, provider: Provider) -> AppResult<ServerHandle> {
+pub fn start(preferred: u16, token: TokenSource, provider: Provider) -> AppResult<ServerHandle> {
     let (server, port) = bind(preferred)?;
     let stop = Arc::new(AtomicBool::new(false));
     let state = Arc::new(Mutex::new(Sessions::default()));
@@ -92,7 +117,7 @@ pub fn start(preferred: u16, provider: Provider) -> AppResult<ServerHandle> {
         std::thread::spawn(move || {
             while !stop.load(Ordering::SeqCst) {
                 match server.recv_timeout(Duration::from_millis(200)) {
-                    Ok(Some(request)) => handle(request, port, &provider, &state),
+                    Ok(Some(request)) => handle(request, port, &token, &provider, &state),
                     Ok(None) => {}
                     Err(_) => break,
                 }
@@ -165,9 +190,32 @@ fn allowed(host: Option<&str>, origin: Option<&str>, port: u16) -> bool {
     }
 }
 
-fn handle(mut request: Request, port: u16, provider: &Provider, state: &Arc<Mutex<Sessions>>) {
+/// Compare without an early exit, so timing doesn't reveal how much matched.
+fn same_secret(given: &str, expected: &str) -> bool {
+    let (a, b) = (given.as_bytes(), expected.as_bytes());
+    let mut diff = a.len() ^ b.len();
+    for i in 0..a.len().max(b.len()) {
+        diff |= (a.get(i).copied().unwrap_or(0) ^ b.get(i).copied().unwrap_or(0)) as usize;
+    }
+    diff == 0
+}
+
+fn authorized(header: Option<&str>, token: &str) -> bool {
+    !token.is_empty() && header.and_then(|h| h.strip_prefix("Bearer ")).is_some_and(|given| same_secret(given.trim(), token))
+}
+
+fn handle(mut request: Request, port: u16, token: &TokenSource, provider: &Provider, state: &Arc<Mutex<Sessions>>) {
     if !allowed(field(&request, "host").as_deref(), field(&request, "origin").as_deref(), port) {
         return reply(request, 403, Some(error_body(-32000, "forbidden")), None);
+    }
+    if !authorized(field(&request, "authorization").as_deref(), &token()) {
+        let _ = request.respond(
+            Response::from_string(error_body(-32001, "missing or wrong token — copy the setup command from Ornata's MCP settings"))
+                .with_status_code(401)
+                .with_header(header("Content-Type", "application/json"))
+                .with_header(header("WWW-Authenticate", "Bearer")),
+        );
+        return;
     }
     if request.url().split('?').next() != Some(ENDPOINT) {
         return reply(request, 404, Some(error_body(-32000, "not found")), None);
@@ -176,7 +224,7 @@ fn handle(mut request: Request, port: u16, provider: &Provider, state: &Arc<Mute
     match request.method() {
         Method::Delete => {
             if let (Some(id), Ok(mut state)) = (&session, state.lock()) {
-                state.clients.remove(id);
+                state.remove(id);
                 state.activity.sessions = state.clients.len();
             }
             return reply(request, 204, None, None);
@@ -216,7 +264,7 @@ fn handle(mut request: Request, port: u16, provider: &Provider, state: &Arc<Mute
                 .unwrap_or("unknown")
                 .to_string();
             state.activity.last_client = client.clone();
-            state.clients.insert(id.clone(), client);
+            state.add(id.clone(), client);
             issued = Some(id);
         } else if session.as_ref().is_some_and(|id| !state.clients.contains_key(id)) {
             drop(state);

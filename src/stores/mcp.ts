@@ -9,6 +9,8 @@ interface McpState {
   setAccess: (access: CliAccess) => Promise<void>;
   /** Start or stop the in-app server. */
   setServer: (on: boolean) => Promise<void>;
+  /** New token: agents set up with the old one must be set up again. */
+  rotateToken: () => Promise<void>;
   install: () => Promise<McpInstallOutcome>;
   uninstall: () => Promise<void>;
 }
@@ -28,6 +30,10 @@ export const useMcp = create<McpState>((set, get) => ({
   },
   setServer: async (on) => {
     await (on ? ipc.mcpServerStart() : ipc.mcpServerStop());
+    await get().refresh();
+  },
+  rotateToken: async () => {
+    await ipc.mcpRotateToken();
     await get().refresh();
   },
   install: async () => {

@@ -70,6 +70,7 @@ pub fn run() {
             cli::app_api::mcp_set_access,
             cli::app_api::mcp_server_start,
             cli::app_api::mcp_server_stop,
+            cli::app_api::mcp_rotate_token,
             cli::app_api::mcp_install_cli,
             cli::app_api::mcp_uninstall_cli,
             agent::agent_status,

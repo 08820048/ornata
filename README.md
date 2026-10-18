@@ -51,10 +51,10 @@ Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes
 
 Ornata can be driven by any AI agent that speaks [MCP](https://modelcontextprotocol.io) (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Claude Desktop, …) and from a terminal. The tools are the same either way: list, read, and search notes, backlinks, open tasks, daily notes, capture to `Inbox.md`; and, if you allow it, create, update, append, tick tasks, rename, move, and delete.
 
-**Connect an agent.** Click the plug in the status bar (or ⌘K → "MCP settings"), press **Connect**, and copy the line for your agent, for example:
+**Connect an agent.** Click the plug in the status bar (or ⌘K → "MCP settings"), press **Connect**, and copy the line for your agent. It carries the access token the server requires, for example:
 
 ```bash
-claude mcp add ornata --transport http http://127.0.0.1:13200/mcp
+claude mcp add ornata --transport http http://127.0.0.1:13200/mcp --header "Authorization: Bearer <token>"
 ```
 
 The server runs inside the app on `127.0.0.1` only, so Ornata has to be open. To work with Ornata closed, let the agent start it over stdio instead — the executable is the app itself:
@@ -63,7 +63,7 @@ The server runs inside the app on `127.0.0.1` only, so Ornata has to be open. To
 claude mcp add ornata -- "/Applications/Ornata.app/Contents/MacOS/Ornata" mcp
 ```
 
-**What an agent may do** is set per vault in Settings → Agents (or the MCP panel): *off*, *read only* (the default), *read & write*, or *full access* (adds rename, move, delete). An agent can't raise it, and launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the OS trash. Web pages can't reach the server: every request's `Host` and `Origin` are checked.
+**What an agent may do** is set per vault in Settings → Agents (or the MCP panel): *off*, *read only* (the default), *read & write*, or *full access* (adds rename, move, delete). An agent can't raise it, and launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the OS trash. Every request must carry the token (regenerate it from the panel if it leaks), and its `Host` and `Origin` are checked so web pages can't reach the server. Agents only ever see notes that really live in the vault: a symlink in `notes/` that points elsewhere is refused.
 
 **From a terminal**, install the `ornata` command from the MCP panel (it links to `~/.local/bin`), then:
 

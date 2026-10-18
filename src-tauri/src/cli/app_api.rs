@@ -11,7 +11,7 @@ use tauri::{AppHandle, Manager, State};
 use crate::config::{self, CliAccess};
 use crate::error::{AppError, AppResult};
 
-use super::http::{self, Activity, Provider, ServerHandle};
+use super::http::{self, Activity, Provider, ServerHandle, TokenSource};
 use super::presence::{live_sessions, sessions_dir, Session};
 use super::vault_path;
 
@@ -25,6 +25,8 @@ pub struct ServerStatus {
     running: bool,
     port: u16,
     activity: Option<Activity>,
+    /// What agents send as `Authorization: Bearer …`; empty until first start.
+    token: String,
 }
 
 #[derive(Serialize)]
@@ -108,6 +110,26 @@ fn provider(app: &AppHandle) -> Provider {
     Arc::new(move || vault_path::target_from(&config::load(&app)))
 }
 
+fn token_source(app: &AppHandle) -> TokenSource {
+    let app = app.clone();
+    Arc::new(move || config::load(&app).mcp_server.token)
+}
+
+/// 256 random bits, hex.
+fn new_token() -> String {
+    format!("{}{}", uuid::Uuid::new_v4().simple(), uuid::Uuid::new_v4().simple())
+}
+
+/// Make sure there is a token before the server first starts.
+fn ensure_token(app: &AppHandle) -> AppResult<()> {
+    let mut config = config::load(app);
+    if config.mcp_server.token.is_empty() {
+        config.mcp_server.token = new_token();
+        config::save(app, &config)?;
+    }
+    Ok(())
+}
+
 fn set_enabled(app: &AppHandle, enabled: bool, port: Option<u16>) -> AppResult<()> {
     let mut config = config::load(app);
     config.mcp_server.enabled = enabled;
@@ -124,7 +146,10 @@ pub fn autostart(app: &AppHandle) {
     if !config.mcp_server.enabled {
         return;
     }
-    if let Ok(handle) = http::start(config.mcp_server.port, provider(app)) {
+    if ensure_token(app).is_err() {
+        return;
+    }
+    if let Ok(handle) = http::start(config.mcp_server.port, token_source(app), provider(app)) {
         let _ = set_enabled(app, true, Some(handle.port()));
         if let Ok(mut slot) = app.state::<McpServer>().0.lock() {
             *slot = Some(handle);
@@ -138,7 +163,8 @@ pub fn mcp_server_start(app: AppHandle, server: State<'_, McpServer>) -> AppResu
     if slot.is_some() {
         return Ok(());
     }
-    let handle = http::start(config::load(&app).mcp_server.port, provider(&app))?;
+    ensure_token(&app)?;
+    let handle = http::start(config::load(&app).mcp_server.port, token_source(&app), provider(&app))?;
     set_enabled(&app, true, Some(handle.port()))?;
     *slot = Some(handle);
     Ok(())
@@ -151,6 +177,15 @@ pub fn mcp_server_stop(app: AppHandle, server: State<'_, McpServer>) -> AppResul
         handle.stop();
     }
     set_enabled(&app, false, None)
+}
+
+/// Replace the token: every agent set up with the old one stops working until
+/// it gets the new setup command. Takes effect on the next request.
+#[tauri::command]
+pub fn mcp_rotate_token(app: AppHandle) -> AppResult<()> {
+    let mut config = config::load(&app);
+    config.mcp_server.token = new_token();
+    config::save(&app, &config)
 }
 
 #[tauri::command]
@@ -175,7 +210,7 @@ pub fn mcp_status(app: AppHandle, server: State<'_, McpServer>) -> AppResult<Mcp
         sessions,
         executable: exe.display().to_string(),
         installed_at,
-        server: ServerStatus { running, port, activity },
+        server: ServerStatus { running, port, activity, token: config.mcp_server.token.clone() },
     })
 }
 

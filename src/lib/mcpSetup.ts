@@ -17,32 +17,35 @@ export function serverCommand(executable: string, installed: boolean): string {
 
 export const serverUrl = (port: number) => `http://127.0.0.1:${port}/mcp`;
 
-/** Setup for each agent. The first three connect to the app's local server
- *  (HTTP); Claude Desktop only speaks stdio, so it starts `ornata mcp`. */
-export function setupCommands(executable: string, installed: boolean, port: number): SetupCommand[] {
+/** Setup for each agent. Claude Code, Gemini, Cursor, and VS Code connect to
+ *  the app's local server and send the token; Codex and Claude Desktop start
+ *  `ornata mcp` themselves over stdio, which needs no port and no token. */
+export function setupCommands(executable: string, installed: boolean, port: number, token: string): SetupCommand[] {
   const url = serverUrl(port);
   const raw = installed ? "ornata" : executable;
+  const bin = serverCommand(executable, installed);
+  const auth = `Bearer ${token}`;
   return [
-    { id: "claude", label: "Claude Code", text: `claude mcp add ornata --transport http ${url}` },
-    { id: "codex", label: "Codex CLI", text: `codex mcp add ornata --url ${url}` },
-    { id: "gemini", label: "Gemini CLI", text: `gemini mcp add --transport http ornata ${url}` },
+    { id: "claude", label: "Claude Code", text: `claude mcp add ornata --transport http ${url} --header "Authorization: ${auth}"` },
+    { id: "codex", label: "Codex CLI", text: `codex mcp add ornata -- ${bin} mcp` },
+    { id: "gemini", label: "Gemini CLI", text: `gemini mcp add --transport http --header "Authorization: ${auth}" ornata ${url}` },
     {
       id: "json",
       label: "Cursor",
-      text: JSON.stringify({ mcpServers: { ornata: { url } } }, null, 2),
+      text: JSON.stringify({ mcpServers: { ornata: { url, headers: { Authorization: auth } } } }, null, 2),
     },
     {
       id: "vscode",
       label: "VS Code",
-      text: JSON.stringify({ servers: { ornata: { type: "http", url } } }, null, 2),
+      text: JSON.stringify({ servers: { ornata: { type: "http", url, headers: { Authorization: auth } } } }, null, 2),
     },
     {
       id: "desktop",
       label: "Claude Desktop",
       text: JSON.stringify({ mcpServers: { ornata: { command: raw, args: ["mcp"] } } }, null, 2),
     },
-    // Any other MCP client: the URL is all it needs.
-    { id: "other", label: "Other", text: url },
+    // Any other MCP client: the URL and the header it must send.
+    { id: "other", label: "Other", text: `${url}\nAuthorization: ${auth}` },
   ];
 }
 

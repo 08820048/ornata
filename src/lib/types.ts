@@ -225,6 +225,8 @@ export interface McpServerStatus {
   running: boolean;
   port: number;
   activity: { lastClient: string; lastSeenMs: number; sessions: number } | null;
+  /** Agents send `Authorization: Bearer <token>`; empty until the server first starts. */
+  token: string;
 }
 
 export interface McpStatus {
