@@ -4,8 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { McpDemo } from "@/components/McpDemo";
 import { EASE_OUT } from "@/lib/ease";
 
-/** "Bring your own agent": MCP and the command line. Follows AssistantPi,
- *  the assistant built into the app. */
+/** "Bring your own agent": MCP and the command line. */
 export function AgentBridge() {
   const reduce = useReducedMotion();
   return (
@@ -14,7 +13,7 @@ export function AgentBridge() {
         <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
           <aside className="hidden border-r border-border px-8 py-14 lg:block">
             <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
-              09 / MCP
+              08 / MCP
             </span>
           </aside>
           <div className="grid items-center gap-12 px-5 py-16 sm:px-10 sm:py-20 lg:px-16 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] xl:gap-16">

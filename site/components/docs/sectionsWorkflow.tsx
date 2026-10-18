@@ -138,43 +138,6 @@ export const WORKFLOW: DocSection[] = [
     ),
   },
   {
-    id: "assistant",
-    title: "AssistantPi",
-    lead: "An assistant that waits to be asked.",
-    body: (
-      <>
-        <P>
-          AssistantPi connects to Pi, an agent runtime you install and configure on your Mac, and uses the model and
-          provider you set up there. Open it with the AssistantPi button at the bottom right.
-        </P>
-        <Ul>
-          <Li>
-            It starts <strong className="font-medium text-foreground">read only</strong>. Choose a mode before sending:
-            Read only (read, search, browse the web), Ask to edit (every change and shell command waits for your
-            approval, with the command or a before-and-after diff shown), or Auto.
-          </Li>
-          <Li>
-            The open note is attached automatically, and selected text can be included. Type <Code>@</Code> to attach
-            other notes, or include the notes the current one links to and from.
-          </Li>
-          <Li>
-            With a note attached and an empty box, Summarize, Suggest links, and Extract tasks are one tap away; the
-            last two only propose changes.
-          </Li>
-          <Li>
-            Each reply lists the notes it edited, each with an Undo. Undo refuses if you changed the note since, and
-            points you at the note&apos;s history instead.
-          </Li>
-          <Li>Conversations are kept per vault; start a new chat or reopen an earlier one from the panel.</Li>
-        </Ul>
-        <Note>
-          If the model you configured in Pi is remote, your prompt and the attached notes are sent to that provider
-          under its terms. AssistantPi itself keeps nothing outside your Mac.
-        </Note>
-      </>
-    ),
-  },
-  {
     id: "agents",
     title: "Other agents: MCP and the command line",
     lead: "Let Claude Code, Codex, Cursor, or a script work on your notes.",

@@ -252,8 +252,8 @@ function NotePane({ typed, still }: { typed: number; still: boolean }) {
         </div>
         <div className="mt-4 space-y-4 text-[15.5px] leading-[1.7] text-foreground/85">
           <p>
-            The quarter is about speed and focus — make writing feel instant, then let
-            AssistantPi help only when it is invited.
+            The quarter is about speed and focus — make writing feel instant, then connect
+            the agents you already use.
           </p>
           <div role="presentation" className="pt-1 text-[20px] font-[580] tracking-[-0.012em] text-foreground">
             Milestones

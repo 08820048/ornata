@@ -4,6 +4,10 @@ All notable changes to Ornata are documented in this file.
 
 ## [Unreleased]
 
+### Removed
+
+- AssistantPi, the built-in assistant, and the Pi runtime it shipped with (about 67 MB). Use any AI agent you like through MCP or the `ornata` command line instead — Claude Code, Codex, Gemini CLI, Cursor, and others work on the same vault with the access you set per vault. The Ask AI button on selected text is gone with it. Model connections saved by AssistantPi are no longer read; any API keys it stored in the macOS Keychain stay there until you delete them in Keychain Access.
+
 ## [0.8.1] - 2026-10-18
 
 ### Fixed

@@ -11,7 +11,7 @@ const SECTIONS = [...BASICS, ...WORKFLOW, ...REFERENCE];
 export const metadata: Metadata = {
   title: "Docs",
   description:
-    "How to use Ornata: vaults, writing, links, split view, search, daily notes, export, AssistantPi, MCP and the command line, shortcuts, and troubleshooting.",
+    "How to use Ornata: vaults, writing, links, split view, search, daily notes, export, MCP and the command line, shortcuts, and troubleshooting.",
   alternates: { canonical: "/docs" },
 };
 

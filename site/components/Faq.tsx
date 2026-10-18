@@ -37,8 +37,8 @@ export function Faq() {
               The practical questions.
             </h2>
             <p className="mt-5 max-w-xs text-pretty text-[14px] leading-7 text-muted-foreground">
-              Storage, compatibility, updates, and exactly what AssistantPi can
-              access.
+              Storage, compatibility, updates, and exactly what an outside
+              agent can do.
             </p>
           </div>
 

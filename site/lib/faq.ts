@@ -44,18 +44,6 @@ export const FAQS: { q: string; a: string }[] = [
     a: "Only what you allow, per vault, in Settings: off, read only (the default), read & write, or full access. Read only lists, reads, and searches. Read & write can also create, edit, append, and tick tasks, and every edit keeps the previous version in the note's history. Full access adds rename, move, and delete, and deleted notes go to the Trash. It is set only in Ornata — an agent's own configuration can only lower it — and the server only listens on your Mac's localhost and requires an access token. An agent that can also run shell commands has your file access anyway, so give those the level you'd trust them with.",
   },
   {
-    q: "How does AssistantPi work?",
-    a: "Install and configure Pi on your Mac, then Ornata connects to that local Pi process. You keep control of the model and provider in Pi, while Ornata supplies permission-controlled tools for your notes. The open note is attached automatically, and selected note text can be included for precise context.",
-  },
-  {
-    q: "What can AssistantPi access?",
-    a: "Read only is the default: AssistantPi can read and search, and browse the web. Ask to edit lets it propose any change — edits, deletes, or a shell command — and each one waits for your approval. Auto runs note and shell operations, including delete, without asking. You choose the mode in the composer before sending.",
-  },
-  {
-    q: "Does AssistantPi keep everything on my Mac?",
-    a: "The Pi process and your Ornata files run locally. If the model configured in Pi is remote, the prompt and attached context are sent to that model provider under its terms. Fully local or offline behavior depends on the model setup you choose in Pi.",
-  },
-  {
     q: "How do updates work?",
     a: "Ornata automatically checks its signed update feed. When a release is available, you can download it with visible progress and restart to install it. Production builds are Developer ID signed and notarized by Apple.",
   },

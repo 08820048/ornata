@@ -135,7 +135,7 @@ export default function Image() {
                 color: COLORS.muted,
               }}
             >
-              Plain files, real folders, and AssistantPi only when you invite it.
+              Plain files, real folders, and any AI agent you invite.
             </div>
           </div>
 

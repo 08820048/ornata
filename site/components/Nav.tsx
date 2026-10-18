@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { label: "Why Ornata", href: "/#principles" },
   { label: "Inside the app", href: "/#features" },
-  { label: "AssistantPi", href: "/#agent" },
+  { label: "Agents", href: "/#mcp" },
   { label: "Docs", href: "/docs" },
   { label: "Updates", href: "/updates" },
 ];

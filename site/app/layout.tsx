@@ -29,7 +29,7 @@ const noteSans = Space_Grotesk({
 
 const TITLE = "Ornata — local-first Markdown notes for macOS";
 const DESCRIPTION =
-  "Ornata is a free, local-first Markdown notes app for macOS. Notes stay as plain .md files in a folder you own, with a link graph, backlinks, and an assistant that only acts when you allow it.";
+  "Ornata is a free, local-first Markdown notes app for macOS. Notes stay as plain .md files in a folder you own, with a link graph, backlinks, and an MCP server so the AI agents you already use can work on your notes only as far as you allow.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ornata.app"),
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
     "markdown editor mac",
     "Obsidian alternative",
     "AI notes app",
-    "AssistantPi",
-    "Pi coding agent",
+    "MCP server for notes",
+    "Claude Code notes",
     "note taking app",
     "plain text notes",
   ],
@@ -117,7 +117,6 @@ const JSON_LD = {
         "PDF export with a heading outline, and standalone HTML",
         "LaTeX math (KaTeX) and Mermaid diagrams",
         "Full-text search across titles and content",
-        "AssistantPi: local AI assistant with permission-gated tools",
         "MCP server and command line: let any AI agent search and edit your vault, with per-vault access levels",
         "Split view, focus mode, and a bottom status bar with keyboard shortcuts",
         "Signed and notarized builds with an auto-update feed",
