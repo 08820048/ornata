@@ -59,7 +59,7 @@ pub fn open_settings_window(app: AppHandle) -> AppResult<()> {
         return Ok(());
     }
 
-    let mut builder = tauri::WebviewWindowBuilder::new(
+    let builder = tauri::WebviewWindowBuilder::new(
         &app,
         SETTINGS_WINDOW_LABEL,
         tauri::WebviewUrl::App("index.html".into()),
@@ -73,11 +73,9 @@ pub fn open_settings_window(app: AppHandle) -> AppResult<()> {
     // Match the main window chrome on macOS: transparent title bar with the
     // traffic lights floating over the sidebar, hidden title text.
     #[cfg(target_os = "macos")]
-    {
-        builder = builder
-            .title_bar_style(tauri::TitleBarStyle::Overlay)
-            .hidden_title(true);
-    }
+    let builder = builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true);
 
     builder
         .build()

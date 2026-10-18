@@ -96,11 +96,13 @@ mod tests {
 
     fn config_with(dir: &Path, vault: &Path, access: Option<&str>) -> PathBuf {
         let path = dir.join("config.json");
-        let key = vault.to_string_lossy();
+        // JSON-encode the path: Windows separators would otherwise break the
+        // hand-rolled config JSON.
+        let key = serde_json::to_string(&vault.to_string_lossy()).unwrap();
         let access = access
-            .map(|a| format!(r#","cliAccess":{{"{key}":"{a}"}}"#))
+            .map(|a| format!(r#","cliAccess":{{{key}:"{a}"}}"#))
             .unwrap_or_default();
-        std::fs::write(&path, format!(r#"{{"vaultPath":"{key}"{access}}}"#)).unwrap();
+        std::fs::write(&path, format!(r#"{{"vaultPath":{key}{access}}}"#)).unwrap();
         path
     }
 

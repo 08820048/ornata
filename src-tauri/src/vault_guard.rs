@@ -64,13 +64,13 @@ pub fn retain_tree(root: &Path, nodes: Vec<TreeNode>) -> Vec<TreeNode> {
         .collect()
 }
 
-#[cfg(test)]
+/// Only unix builds exercise the symlink fixtures (`escape()` relies on
+/// `std::os::unix::fs::symlink`), so the whole module is gated.
+#[cfg(all(test, unix))]
 pub(crate) mod fixture {
     use std::path::PathBuf;
 
     use tempfile::TempDir;
-
-    use crate::vault::ensure_layout;
 
     /// A vault with a normal note, a link to an outside secret, a link to an
     /// outside folder, a dangling link, and a link that stays inside.
@@ -82,6 +82,7 @@ pub(crate) mod fixture {
 
     #[cfg(unix)]
     pub fn escape() -> Escape {
+        use crate::vault::ensure_layout;
         use std::os::unix::fs::symlink;
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path().join("vault");
