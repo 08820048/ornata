@@ -25,7 +25,7 @@ All notable changes to Ornata are documented in this file.
 - Ornata can serve MCP itself on a local port. Connect and Disconnect from MCP Settings, then add it to an agent with the one line shown there — no command line tool to install. The port only listens on 127.0.0.1, every request must carry an access token (regenerate it from the panel), and requests from web pages are refused.
 - Agents only see notes that really live in the vault: a symlink in `notes/` pointing outside it is refused, and left out of lists, search, and tasks.
 - The plug in the status bar turns green while the server is on or an agent is connected over stdio, and opens MCP Settings. Settings has a matching Agents page with setup commands for Claude Code, Codex, Gemini CLI, Cursor, and Claude Desktop, and an optional install of `ornata` into `~/.local/bin`.
-- Agent access is set per vault in Settings — off, read only, read & write, or full access — and defaults to read only. An agent can't raise it, and launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the Trash.
+- Agent access is set per vault in Settings — off, read only, read & write, or full access — and defaults to read only. It is set only in Ornata, and an agent's launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the Trash.
 - Type `* ` at the start of a line to start a to-do. `- ` and `+ ` still make bullets, and inside a list nothing changes.
 
 ### Changed

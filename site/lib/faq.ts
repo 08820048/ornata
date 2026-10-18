@@ -41,7 +41,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What can an outside agent do to my notes?",
-    a: "Only what you allow, per vault, in Settings: off, read only (the default), read & write, or full access. Read only lists, reads, and searches. Read & write can also create, edit, append, and tick tasks, and every edit keeps the previous version in the note's history. Full access adds rename, move, and delete, and deleted notes go to the Trash. An agent can't change its own access, and the server only listens on your Mac's localhost.",
+    a: "Only what you allow, per vault, in Settings: off, read only (the default), read & write, or full access. Read only lists, reads, and searches. Read & write can also create, edit, append, and tick tasks, and every edit keeps the previous version in the note's history. Full access adds rename, move, and delete, and deleted notes go to the Trash. It is set only in Ornata — an agent's own configuration can only lower it — and the server only listens on your Mac's localhost and requires an access token. An agent that can also run shell commands has your file access anyway, so give those the level you'd trust them with.",
   },
   {
     q: "How does AssistantPi work?",

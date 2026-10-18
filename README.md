@@ -63,7 +63,7 @@ The server runs inside the app on `127.0.0.1` only, so Ornata has to be open. To
 claude mcp add ornata -- "/Applications/Ornata.app/Contents/MacOS/Ornata" mcp
 ```
 
-**What an agent may do** is set per vault in Settings → Agents (or the MCP panel): *off*, *read only* (the default), *read & write*, or *full access* (adds rename, move, delete). An agent can't raise it, and launch options can only lower it. Edits keep the previous version in the note's history; deletes go to the OS trash. Every request must carry the token (regenerate it from the panel if it leaks), and its `Host` and `Origin` are checked so web pages can't reach the server. Agents only ever see notes that really live in the vault: a symlink in `notes/` that points elsewhere is refused.
+**What an agent may do** is set per vault in Settings → Agents (or the MCP panel): *off*, *read only* (the default), *read & write*, or *full access* (adds rename, move, delete). It is set only in Ornata — an agent's launch options can only lower it. (An agent that can run shell commands can edit any of your files, Ornata's settings included; the level is a boundary for agents that work only through these tools.) Edits keep the previous version in the note's history; deletes go to the OS trash. Every request must carry the token (regenerate it from the panel if it leaks), and its `Host` and `Origin` are checked so web pages can't reach the server. Agents only ever see notes that really live in the vault: a symlink in `notes/` that points elsewhere is refused.
 
 **From a terminal**, install the `ornata` command from the MCP panel (it links to `~/.local/bin`), then:
 
