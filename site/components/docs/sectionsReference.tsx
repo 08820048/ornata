@@ -29,7 +29,7 @@ export const REFERENCE: DocSection[] = [
     body: (
       <>
         <Table head={["Keys", "Does"]} rows={SHORTCUTS.map(([keys, does]) => [<Kbd key={keys}>{keys}</Kbd>, does])} />
-        <P>The same list is in Settings → Shortcuts.</P>
+        <P>The same list is in Settings → Shortcuts. On Windows, ⌘ is Ctrl and ⌥ is Alt.</P>
       </>
     ),
   },
@@ -79,7 +79,7 @@ export const REFERENCE: DocSection[] = [
         <H3>A link is gray and dashed</H3>
         <P>
           Its target note doesn&apos;t exist. Click it to create the note, or fix the link. Renaming a note from inside
-          Ornata rewrites links for you; renaming the file in Finder doesn&apos;t.
+          Ornata rewrites links for you; renaming the file in Finder or File Explorer doesn&apos;t.
         </P>
         <H3>Everything seems to be in the wrong place after a restart</H3>
         <P>

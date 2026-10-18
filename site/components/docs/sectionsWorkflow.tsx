@@ -124,7 +124,7 @@ export const WORKFLOW: DocSection[] = [
           <Li>
             <strong className="font-medium text-foreground">PDF</strong> — with a bookmark outline built from the
             headings. Choose the paper size (A4, Letter, A5) and margins in Settings → Export. When it is done, Show in
-            Finder takes you to the file.
+            Finder (File Explorer on Windows) takes you to the file.
           </Li>
           <Li>
             <strong className="font-medium text-foreground">HTML</strong> — a standalone page.
@@ -155,7 +155,7 @@ export const WORKFLOW: DocSection[] = [
             agent is connected.
           </Li>
           <Li>
-            Press <strong className="font-medium text-foreground">Connect</strong> to start the server on your Mac. Pick
+            Press <strong className="font-medium text-foreground">Connect</strong> to start the server on your computer. Pick
             your agent&apos;s tab and copy its line, for example:
             <Pre>{`claude mcp add ornata --transport http http://127.0.0.1:13200/mcp \\
   --header "Authorization: Bearer <your token>"`}</Pre>

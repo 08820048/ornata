@@ -46,7 +46,7 @@ export default function Image() {
             <br />
             Markdown
             <br />
-            for macOS
+            Mac &amp; Windows
           </div>
           <div style={{ display: "flex", fontSize: 15 }}>ornata.app</div>
         </div>
@@ -151,7 +151,7 @@ export default function Image() {
             }}
           >
             <span>Focused writing instrument</span>
-            <span>Apple Silicon · macOS 12+</span>
+            <span>macOS 12+ · Windows 10+</span>
           </div>
         </div>
       </div>

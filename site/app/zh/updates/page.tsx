@@ -3,7 +3,7 @@ import { UpdatesView } from "@/components/UpdatesView";
 import { RELEASES } from "@/lib/releases";
 
 const LATEST = RELEASES[0];
-const DESCRIPTION = `Ornata macOS 版更新日志。版本 ${LATEST.version}:${LATEST.zh?.summary ?? LATEST.summary}`;
+const DESCRIPTION = `Ornata（macOS / Windows）更新日志。版本 ${LATEST.version}:${LATEST.zh?.summary ?? LATEST.summary}`;
 
 export const metadata: Metadata = {
   title: "更新日志",

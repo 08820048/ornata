@@ -8,7 +8,7 @@ export const BASICS: DocSection[] = [
     body: (
       <>
         <P>
-          Ornata runs on macOS 12 or later (Apple Silicon). Download the app from the home page and open it. The
+          Ornata runs on macOS 12 or later (Apple Silicon) and on 64-bit Windows 10 or later. On Windows, read ⌘ as Ctrl and ⌥ as Alt in these docs. Download the app from the home page and open it. The
           first time, choose <strong className="font-medium text-foreground">Create new vault</strong> to make a new
           folder for your notes, or <strong className="font-medium text-foreground">Open existing</strong> to use a folder
           of Markdown files you already have — including one from Obsidian.

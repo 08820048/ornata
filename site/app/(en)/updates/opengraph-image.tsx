@@ -46,7 +46,7 @@ export default function Image() {
             <br />
             Markdown
             <br />
-            for macOS
+            Mac &amp; Windows
           </div>
           <div style={{ display: "flex", fontSize: 15 }}>ornata.app</div>
         </div>

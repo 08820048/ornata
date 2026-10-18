@@ -33,7 +33,7 @@ export const REFERENCE_ZH: DocSection[] = [
     body: (
       <>
         <Table head={["按键", "作用"]} rows={SHORTCUTS.map(([keys, does]) => [<Kbd key={keys}>{keys}</Kbd>, does])} />
-        <P>同样的列表也在「设置 → 快捷键」里。</P>
+        <P>同样的列表也在「设置 → 快捷键」里。在 Windows 上，⌘ 对应 Ctrl，⌥ 对应 Alt。</P>
       </>
     ),
   },
@@ -75,7 +75,7 @@ export const REFERENCE_ZH: DocSection[] = [
         </Ul>
         <H3>某个链接是灰色虚线</H3>
         <P>
-          它指向的笔记不存在。点击它会创建这篇笔记，或者修正链接。在 Ornata 内重命名笔记会替你改写链接；在 Finder 里重命名文件则不会。
+          它指向的笔记不存在。点击它会创建这篇笔记，或者修正链接。在 Ornata 内重命名笔记会替你改写链接；在 Finder 或文件资源管理器里重命名文件则不会。
         </P>
         <H3>重启后一切似乎都不在原来的位置</H3>
         <P>

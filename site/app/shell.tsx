@@ -35,6 +35,7 @@ const KEYWORDS: Record<Locale, string[]> = {
   en: [
     "markdown notes app",
     "notes app for macOS",
+    "markdown notes app for Windows",
     "local-first notes",
     "markdown editor mac",
     "Obsidian alternative",
@@ -44,7 +45,7 @@ const KEYWORDS: Record<Locale, string[]> = {
     "note taking app",
     "plain text notes",
   ],
-  zh: ["Markdown 笔记", "macOS 笔记应用", "本地优先笔记", "Obsidian 替代", "MCP 笔记", "纯文本笔记", "AI 智能体 笔记"],
+  zh: ["Markdown 笔记", "macOS 笔记应用", "Windows 笔记应用", "本地优先笔记", "Obsidian 替代", "MCP 笔记", "纯文本笔记", "AI 智能体 笔记"],
 };
 
 /** Site-wide metadata; each root layout calls this with its language. */
@@ -101,7 +102,7 @@ function jsonLd(locale: Locale, DESCRIPTION: string) {
       publisher: { "@id": "https://ornata.app/#org" },
       featureList: [
         "Plain Markdown files in real folders",
-        "Local-first: notes stay on your Mac",
+        "Local-first: notes stay on your computer",
         "No account required",
         "Opens the same plain-Markdown folder as Obsidian, and preserves frontmatter",
         "Backlinks and unlinked mentions",

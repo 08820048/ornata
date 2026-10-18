@@ -8,9 +8,9 @@ export const dynamic = "force-static";
 export function GET() {
   const body = `# Ornata
 
-> Ornata is a free, local-first Markdown notes app for macOS. Notes are plain .md files in a folder you own — no account, no proprietary database — and an MCP server and command line so the AI agents you already use can work on the vault, only as far as you allow.
+> Ornata is a free, local-first Markdown notes app for macOS and Windows. Notes are plain .md files in a folder you own — no account, no proprietary database — and an MCP server and command line so the AI agents you already use can work on the vault, only as far as you allow.
 
-Ornata is built on the principle that notes should outlive the app: plain Markdown files, real folders, and frontmatter preserved verbatim. The vault can be opened in Finder, edited in any text editor, and shared with tools like Obsidian and git.
+Ornata is built on the principle that notes should outlive the app: plain Markdown files, real folders, and frontmatter preserved verbatim. The vault can be opened in Finder or File Explorer, edited in any text editor, and shared with tools like Obsidian and git.
 
 ## Pages
 
@@ -25,7 +25,7 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 
 - Platform: macOS 12+ (Apple Silicon), Windows 10+ (64-bit; Ctrl replaces ⌘)
 - Format: plain .md files in real folders; wikilinks are stored as standard Markdown links
-- Storage: any folder the user chooses, on their Mac; syncs via iCloud Drive, Dropbox, or git
+- Storage: any folder the user chooses, on their computer; syncs via iCloud Drive, Dropbox, or git
 - Pricing: free
 - Account: not required
 - AI: Ornata has no built-in model or cloud service; bring your own agent through MCP or the command line
@@ -36,7 +36,7 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - Agents: Ornata serves MCP, so outside agents (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Claude Desktop) can search, read, and edit notes. Connect from MCP Settings; HTTP on localhost (http://127.0.0.1:13200/mcp, with a bearer token shown in MCP Settings) or stdio (the command "ornata mcp", works with the app closed). Access is set per vault in Settings (off, read only, read & write, full) and the agent cannot raise it. The same tools are a command line: ornata search, read, tasks, backlinks, daily, journal add, capture, create, append
 - Export: PDF with a heading bookmark outline and paper/margin settings, standalone HTML, or the Markdown file itself
 - Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search, vault-wide open tasks
-- Updates: signed update feed; Developer ID signed and notarized builds
+- Updates: signed update feed; the macOS build is Developer ID signed and notarized (the Windows installer is not yet code-signed)
 - Languages: English, Simplified Chinese
 - License: MIT
 

@@ -3,11 +3,11 @@ export type Faq = { q: string; a: string };
 export const FAQS_EN: Faq[] = [
   {
     q: "How much does Ornata cost?",
-    a: "Ornata is free to download and use — no account, no subscription. Production builds are signed with an Apple Developer ID certificate and notarized by Apple.",
+    a: "Ornata is free to download and use — no account, no subscription. The macOS build is signed with an Apple Developer ID certificate and notarized by Apple.",
   },
   {
     q: "Where are my notes stored?",
-    a: "On your Mac, as plain Markdown files in a folder you choose. The core editor needs no account or proprietary database, and you can open the folder in Finder at any time.",
+    a: "On your computer, as plain Markdown files in a folder you choose. The core editor needs no account or proprietary database, and you can open the folder in Finder or File Explorer at any time.",
   },
   {
     q: "Is there sync?",
@@ -43,11 +43,11 @@ export const FAQS_EN: Faq[] = [
   },
   {
     q: "What can an outside agent do to my notes?",
-    a: "Only what you allow, per vault, in Settings: off, read only (the default), read & write, or full access. Read only lists, reads, and searches. Read & write can also create, edit, append, and tick tasks, and every edit keeps the previous version in the note's history. Full access adds rename, move, and delete, and deleted notes go to the Trash. It is set only in Ornata — an agent's own configuration can only lower it — and the server only listens on your Mac's localhost and requires an access token. An agent that can also run shell commands has your file access anyway, so give those the level you'd trust them with.",
+    a: "Only what you allow, per vault, in Settings: off, read only (the default), read & write, or full access. Read only lists, reads, and searches. Read & write can also create, edit, append, and tick tasks, and every edit keeps the previous version in the note's history. Full access adds rename, move, and delete, and deleted notes go to the Trash. It is set only in Ornata — an agent's own configuration can only lower it — and the server only listens on your computer’s localhost and requires an access token. An agent that can also run shell commands has your file access anyway, so give those the level you'd trust them with.",
   },
   {
     q: "How do updates work?",
-    a: "Ornata automatically checks its signed update feed. When a release is available, you can download it with visible progress and restart to install it. Production builds are Developer ID signed and notarized by Apple.",
+    a: "Ornata automatically checks its signed update feed. When a release is available, you can download it with visible progress and restart to install it. The macOS build is Developer ID signed and notarized by Apple.",
   },
   {
     q: "Which interface languages are supported?",
@@ -61,11 +61,11 @@ export const FAQS = FAQS_EN;
 export const FAQS_ZH: Faq[] = [
   {
     q: "Ornata 要花多少钱？",
-    a: "Ornata 可免费下载和使用 —— 无需账号，没有订阅。正式版使用 Apple Developer ID 证书签名，并经过 Apple 公证。",
+    a: "Ornata 可免费下载和使用 —— 无需账号，没有订阅。macOS 版使用 Apple Developer ID 证书签名，并经过 Apple 公证。",
   },
   {
     q: "我的笔记存在哪里？",
-    a: "存在你的 Mac 上，是你所选文件夹里的普通 Markdown 文件。核心编辑器不需要账号，也没有私有数据库，你随时可以在 Finder 里打开这个文件夹。",
+    a: "存在你的电脑上，是你所选文件夹里的普通 Markdown 文件。核心编辑器不需要账号，也没有私有数据库，你随时可以在 Finder 或文件资源管理器里打开这个文件夹。",
   },
   {
     q: "有同步功能吗？",
@@ -101,11 +101,11 @@ export const FAQS_ZH: Faq[] = [
   },
   {
     q: "外部智能体能对我的笔记做什么？",
-    a: "只有你允许的事，并且按笔记库在设置里分别设定：关闭、只读（默认）、读写或完全访问。只读只能列出、读取和搜索。读写还能新建、编辑、追加和勾选待办，每次编辑都会把旧版本留在笔记的历史里。完全访问再加上重命名、移动和删除，被删除的笔记会进入废纸篓。这个级别只能在 Ornata 里设置 —— 智能体自己的配置只能把它调低 —— 并且服务只监听你 Mac 的本机地址，每个请求都要带访问令牌。能运行 shell 命令的智能体本来就拥有你的文件访问权限，所以请按你信任它的程度来授权。",
+    a: "只有你允许的事，并且按笔记库在设置里分别设定：关闭、只读（默认）、读写或完全访问。只读只能列出、读取和搜索。读写还能新建、编辑、追加和勾选待办，每次编辑都会把旧版本留在笔记的历史里。完全访问再加上重命名、移动和删除，被删除的笔记会进入废纸篓。这个级别只能在 Ornata 里设置 —— 智能体自己的配置只能把它调低 —— 并且服务只监听你电脑的本机地址，每个请求都要带访问令牌。能运行 shell 命令的智能体本来就拥有你的文件访问权限，所以请按你信任它的程度来授权。",
   },
   {
     q: "更新是怎么进行的？",
-    a: "Ornata 会自动检查它的签名更新源。有新版本时，你可以在看得见进度的情况下下载，然后重启安装。正式版经过 Developer ID 签名，并由 Apple 公证。",
+    a: "Ornata 会自动检查它的签名更新源。有新版本时，你可以在看得见进度的情况下下载，然后重启安装。macOS 版经过 Developer ID 签名，并由 Apple 公证。",
   },
   {
     q: "支持哪些界面语言？",

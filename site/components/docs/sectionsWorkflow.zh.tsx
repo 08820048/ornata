@@ -94,7 +94,7 @@ export const WORKFLOW_ZH: DocSection[] = [
         <P>笔记右上角的 ··· 菜单里有：</P>
         <Ul>
           <Li>
-            <B>PDF</B> —— 带由标题生成的书签目录。纸张大小（A4、Letter、A5）和页边距在「设置 → 导出」里选。完成后，「在 Finder 中显示」会带你到该文件。
+            <B>PDF</B> —— 带由标题生成的书签目录。纸张大小（A4、Letter、A5）和页边距在「设置 → 导出」里选。完成后，「在 Finder 中显示」（Windows 上是文件资源管理器）会带你到该文件。
           </Li>
           <Li>
             <B>HTML</B> —— 一个独立的页面。
@@ -121,7 +121,7 @@ export const WORKFLOW_ZH: DocSection[] = [
             点击状态栏的插头图标（或 <Kbd>⌘K</Kbd> → MCP 设置）。服务开启或有智能体连接时它是绿色的。
           </Li>
           <Li>
-            点 <B>连接</B> 在你的 Mac 上启动服务。选择你的智能体对应的标签页并复制那一行，例如：
+            点 <B>连接</B> 在你的电脑上启动服务。选择你的智能体对应的标签页并复制那一行，例如：
             <Pre>{`claude mcp add ornata --transport http http://127.0.0.1:13200/mcp \\
   --header "Authorization: Bearer <你的令牌>"`}</Pre>
           </Li>

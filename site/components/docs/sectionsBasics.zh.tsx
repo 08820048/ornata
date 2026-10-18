@@ -12,7 +12,7 @@ export const BASICS_ZH: DocSection[] = [
     body: (
       <>
         <P>
-          Ornata 需要 macOS 12 或更高版本（Apple 芯片）。从首页下载并打开应用。第一次启动时，选择 <B>创建新仓库</B>{" "}
+          Ornata 支持 macOS 12 或更高版本（Apple 芯片）和 64 位 Windows 10 或更高版本。在 Windows 上，文档里的 ⌘ 对应 Ctrl，⌥ 对应 Alt。从首页下载并打开应用。第一次启动时，选择 <B>创建新仓库</B>{" "}
           为笔记新建一个文件夹，或选择 <B>打开现有仓库</B> 使用你已有的 Markdown 文件夹 —— 包括 Obsidian 的。
         </P>
         <P>
