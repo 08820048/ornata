@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
+// `act` only exists in React's development build, and it is imported below
+// after this runs — a globally exported NODE_ENV=production would otherwise
+// fail every test here with "act is not a function".
+process.env.NODE_ENV = "development";
+
 /**
  * Mounts the real AppShell in a DOM and drives the layout states that have
  * crashed at startup before (render loops, orphaned panes). It catches the
