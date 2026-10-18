@@ -4,6 +4,8 @@ All notable changes to Ornata are documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-18
+
 ### Added
 
 - Split view: open notes side by side, up to four panes. Each pane has its own header with history arrows, breadcrumb, and actions. Drag the dividers to resize; adding or closing a pane shares the width evenly again.
@@ -12,7 +14,7 @@ All notable changes to Ornata are documented in this file.
 - Split layouts survive a restart: the panes, their widths, and each pane's back/forward trail come back. Panes whose note was deleted meanwhile are dropped.
 - Focus mode (⌘⇧F) hides the sidebar and fades the tab strip and header until you point at them.
 - Fold a heading's section with the arrow beside it.
-- Move the current block or list item up and down with ⌥↑ and ⌥↓. In a list or task list it moves that item among its siblings; elsewhere it moves the whole block. One undo puts it back. In a list or task list it moves that item among its siblings; elsewhere it moves the whole block. One undo puts it back.
+- Move the current block or list item up and down with ⌥↑ and ⌥↓. In a list or task list it moves that item among its siblings; elsewhere it moves the whole block. One undo puts it back.
 - Code blocks fold by indentation: hover a block and use the arrow in its gutter to hide a function or branch, and the block's own arrow collapses it to its first line. Folding only changes what you see; copying still copies everything. Click the language label for a menu to select the block, copy it, collapse it, or change its syntax highlighting.
 - Type `@` to insert a link to today's, tomorrow's, or yesterday's daily note. A daily note that doesn't exist yet is created from your daily template when you open the link.
 - Search finds titles from shorthand: `prjroad` matches "project roadmap". Exact matches still rank first.
@@ -35,6 +37,11 @@ All notable changes to Ornata are documented in this file.
 - The sidebar toggle is a round arrow on the sidebar's edge instead of a button in the tab strip.
 - The note's top-right buttons share one quiet style. Copy path moved into the ··· menu, which also has Focus mode.
 - The shortcut list in Settings is complete.
+
+### Fixed
+
+- A note that is open when an agent or another program changes it on disk now reloads, unless you have unsaved typing in it. Before, the next autosave could write over what had just been added.
+- The + in the margin is no longer clipped in narrow windows.
 
 ## [0.7.0] - 2026-09-28
 

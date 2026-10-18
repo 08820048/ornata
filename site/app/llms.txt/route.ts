@@ -15,6 +15,7 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 ## Pages
 
 - [Home](https://ornata.app): Product overview, feature walkthroughs, and FAQ
+- [Docs](https://ornata.app/docs): How to use every part of the app, including MCP, the command line, and shortcuts
 - [Updates](https://ornata.app/updates): Release notes for every version
 - [Download ${VERSION} (Apple Silicon DMG)](${DMG}): Latest signed and notarized build
 

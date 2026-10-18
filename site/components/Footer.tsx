@@ -13,6 +13,7 @@ const LINKS = [
   { label: "Why Ornata", href: "/#principles" },
   { label: "Inside the app", href: "/#features" },
   { label: "AssistantPi", href: "/#agent" },
+  { label: "Docs", href: "/docs" },
   { label: "Updates", href: "/updates" },
   { label: "FAQ", href: "/#faq" },
   { label: "Direct download", href: DMG },

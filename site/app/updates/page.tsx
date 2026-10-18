@@ -14,6 +14,24 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.8.0",
+    date: "October 18, 2026",
+    dateTime: "2026-10-18",
+    summary:
+      "Split view, and any AI agent can work on your notes through MCP — plus a calmer editor.",
+    changes: [
+      "Open notes side by side, up to four panes, each with its own header and its own back and forward trail. ⌘-click a link, press ⌘↵ in the command palette, or choose Open to the side. Drag a divider to resize; the layout comes back after a restart.",
+      "Bring the agent you already use. Ornata speaks MCP over a local port you switch on and off from MCP Settings, or over stdio when Ornata is closed. Claude Code, Codex, Gemini CLI, Cursor, VS Code, and Claude Desktop connect with one line.",
+      "The same tools are a command line: ornata search, tasks, journal add, capture, create, append. Text can be piped in.",
+      "You set what an agent may do per vault — off, read only (the default), read & write, or full access. Every request carries an access token, requests from web pages are refused, edits keep the previous version in the note's history, and agents only see notes that really live in the vault.",
+      "Fold a heading's section, or a function in a code block, with the arrow in the margin. A block's own arrow collapses it to its first line, and the language label opens a menu to select, copy, collapse, or change the highlighting. Lua, PHP, R, Dart, Ruby, TOML, and Dockerfile are highlighted too.",
+      "Type + or / for the suggestion menu: a + appears on an empty line, and /code lists code blocks by language. Type * and a space for a to-do, @ for today, tomorrow, or yesterday's daily note, and press ⌥↑ or ⌥↓ to move a block or list item.",
+      "Search finds titles from shorthand, so prjroad matches project roadmap. Back and forward, focus mode, and a status bar with the keys that matter for the current view round out the keyboard.",
+      "A single teal accent marks links, checked tasks, the caret, the selection, and the quote bar; everything else stays monochrome. Notes are set in Space Grotesk.",
+      "A note that is open when something else changes it on disk now reloads, unless you have unsaved typing in it.",
+    ],
+  },
+  {
     version: "0.7.0",
     date: "September 28, 2026",
     dateTime: "2026-09-28",

@@ -10,6 +10,7 @@ const LINKS = [
   { label: "Why Ornata", href: "/#principles" },
   { label: "Inside the app", href: "/#features" },
   { label: "AssistantPi", href: "/#agent" },
+  { label: "Docs", href: "/docs" },
   { label: "Updates", href: "/updates" },
 ];
 
@@ -37,8 +38,8 @@ export function Nav() {
         <nav className="hidden items-center gap-0.5 md:flex">
           {LINKS.map((link) => {
             const active =
-              link.href === "/updates"
-                ? pathname === "/updates"
+              link.href === "/updates" || link.href === "/docs"
+                ? pathname === link.href
                 : pathname === "/" && link.href === "/#principles";
             return (
               <a
