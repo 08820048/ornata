@@ -35,6 +35,7 @@ pub struct PrintJob {
     pub kind: ExportKind,
     pub markdown: String,
     pub vault_root: String,
+    /// Suggested output filename; only the macOS silent-PDF path reads it.
     #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub default_name: String,
     /// File destination, picked before rendering (HTML, and PDF on macOS).
@@ -45,6 +46,7 @@ pub struct PrintJob {
 
 /// One PDF bookmark: a heading's text and the index of its parent entry
 /// (-1 for top level), computed by the print view (see lib/pdfOutline.ts).
+/// Only macOS's silent-PDF path consumes these fields.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct OutlineEntry {
@@ -234,7 +236,7 @@ pub async fn print_view_ready(
     id: u64,
     body_html: String,
     page_css: String,
-    #[cfg_attr(not(target_os = "macos"), allow(unused_variables))] headings: Vec<OutlineEntry>,
+    headings: Vec<OutlineEntry>,
 ) -> AppResult<()> {
     let job = take_job_if(&app, id)?;
     match job.kind {
@@ -265,6 +267,7 @@ pub async fn print_view_ready(
             // Show only once the note is in the DOM, then open the system
             // print sheet (the user chooses "Save as PDF"). The sheet may
             // outlive this call, so the window hides itself via `afterprint`.
+            let _ = headings;
             let _ = window.show();
             let _ = window.set_focus();
             window.print().map_err(|e| AppError::Other(e.to_string()))?;

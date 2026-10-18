@@ -360,6 +360,8 @@ mod tests {
         assert_eq!(names, vec!["five.png"]);
     }
 
+    // Relies on chmod-style permissions; Windows ACLs can't express the
+    // same "unreadable file" setup in one call.
     #[cfg(unix)]
     #[test]
     fn read_failure_fails_the_scan() {
