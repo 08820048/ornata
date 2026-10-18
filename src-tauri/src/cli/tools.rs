@@ -115,10 +115,23 @@ fn opt<'a>(args: &'a Value, key: &str) -> &'a str {
 }
 
 /// `date` with a format; the local time zone needs no extra dependency.
+/// `format` is a strftime pattern with a leading `+`.
 fn local(format: &str) -> String {
-    Command::new("date")
-        .arg(format)
-        .output()
+    #[cfg(windows)]
+    let out = {
+        use std::os::windows::process::CommandExt;
+        let net = format
+            .trim_start_matches('+')
+            .replace("%Y", "yyyy").replace("%m", "MM").replace("%d", "dd")
+            .replace("%H", "HH").replace("%M", "mm");
+        Command::new("powershell")
+            .args(["-NoProfile", "-Command", &format!("Get-Date -Format '{net}'")])
+            .creation_flags(0x0800_0000)
+            .output()
+    };
+    #[cfg(not(windows))]
+    let out = Command::new("date").arg(format).output();
+    out
         .ok()
         .and_then(|out| String::from_utf8(out.stdout).ok())
         .map(|s| s.trim().to_string())

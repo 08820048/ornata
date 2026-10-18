@@ -17,9 +17,7 @@ pub struct ExternalNote {
 }
 
 fn markdown_path(path: impl AsRef<Path>) -> AppResult<PathBuf> {
-    let canonical = path
-        .as_ref()
-        .canonicalize()
+    let canonical = dunce::canonicalize(path.as_ref())
         .map_err(|_| AppError::NotFound(path.as_ref().display().to_string()))?;
     if !canonical.is_file() {
         return Err(AppError::InvalidPath(canonical.display().to_string()));
@@ -63,7 +61,7 @@ fn available_rename_path(source: &Path, name: &str) -> AppResult<PathBuf> {
     if target == source {
         return Ok(target);
     }
-    if target.exists() && target.canonicalize().ok().as_deref() == Some(source) {
+    if target.exists() && dunce::canonicalize(&target).ok().as_deref() == Some(source) {
         // Case-only rename on a case-insensitive filesystem.
         return Ok(target);
     }
@@ -170,7 +168,7 @@ pub fn rename_external_note(
     let target = available_rename_path(&source, &name)?;
     if target != source {
         std::fs::rename(&source, &target)?;
-        let target = target.canonicalize()?;
+        let target = dunce::canonicalize(&target)?;
         state.replace_external(&source, target.clone())?;
         return Ok(descriptor(&target));
     }
@@ -265,7 +263,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("note.MARKDOWN");
         std::fs::write(&path, "hello").unwrap();
-        assert_eq!(markdown_path(&path).unwrap(), path.canonicalize().unwrap());
+        assert_eq!(markdown_path(&path).unwrap(), dunce::canonicalize(&path).unwrap());
     }
 
     #[test]

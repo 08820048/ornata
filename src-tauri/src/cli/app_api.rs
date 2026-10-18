@@ -55,20 +55,38 @@ fn exe() -> AppResult<PathBuf> {
     Ok(std::env::current_exe()?)
 }
 
-/// `~/.local/bin/ornata`: no administrator rights needed.
+/// `~/.local/bin/ornata`: no administrator rights needed. On Windows a small
+/// `ornata.cmd` shim under `~/.local/bin` plays the same role.
+#[cfg(not(windows))]
 fn link_in(home: &Path) -> PathBuf {
     home.join(".local/bin/ornata")
 }
 
-fn link_path() -> AppResult<PathBuf> {
-    std::env::var_os("HOME")
-        .map(|home| link_in(Path::new(&home)))
-        .ok_or_else(|| AppError::Other("HOME is not set".into()))
+#[cfg(windows)]
+fn link_in(home: &Path) -> PathBuf {
+    home.join(".local/bin/ornata.cmd")
 }
 
-/// True when `link` is a symlink to `target`.
+fn link_path() -> AppResult<PathBuf> {
+    vault_path::home_dir()
+        .map(|home| link_in(&home))
+        .ok_or_else(|| AppError::Other("home folder is not set".into()))
+}
+
+#[cfg(windows)]
+fn shim(target: &Path) -> String {
+    format!("@echo off\r\n\"{}\" %*\r\n", target.display())
+}
+
+/// True when `link` is a symlink to `target` (a shim that runs it on Windows).
+#[cfg(not(windows))]
 fn points_to(link: &Path, target: &Path) -> bool {
     std::fs::read_link(link).map(|dest| dest == target).unwrap_or(false)
+}
+
+#[cfg(windows)]
+fn points_to(link: &Path, target: &Path) -> bool {
+    std::fs::read_to_string(link).is_ok_and(|body| body == shim(target))
 }
 
 fn install_link(link: &Path, target: &Path) -> AppResult<()> {
@@ -76,7 +94,9 @@ fn install_link(link: &Path, target: &Path) -> AppResult<()> {
         std::fs::create_dir_all(dir)?;
     }
     match std::fs::symlink_metadata(link) {
-        Ok(meta) if meta.file_type().is_symlink() => std::fs::remove_file(link)?,
+        Ok(meta) if meta.file_type().is_symlink() || (cfg!(windows) && is_our_shim(link)) => {
+            std::fs::remove_file(link)?
+        }
         Ok(_) => {
             return Err(AppError::InvalidInput(format!(
                 "{} already exists and isn't a link; remove it first",
@@ -87,9 +107,20 @@ fn install_link(link: &Path, target: &Path) -> AppResult<()> {
     }
     #[cfg(unix)]
     std::os::unix::fs::symlink(target, link)?;
-    #[cfg(not(unix))]
-    return Err(AppError::Other("installing the command line tool is only supported on macOS and Linux".into()));
+    #[cfg(windows)]
+    std::fs::write(link, shim(target))?;
     Ok(())
+}
+
+/// A `.cmd` shim this app wrote (possibly pointing at an older location).
+#[cfg(windows)]
+fn is_our_shim(link: &Path) -> bool {
+    std::fs::read_to_string(link).is_ok_and(|body| body.starts_with("@echo off\r\n\"") && body.ends_with("\" %*\r\n"))
+}
+
+#[cfg(not(windows))]
+fn is_our_shim(_link: &Path) -> bool {
+    false
 }
 
 /// Only removes a link that points at `target`, never someone else's file.

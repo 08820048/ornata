@@ -1,4 +1,5 @@
 import type { Language } from "@/lib/types";
+import { keyLabel } from "@/lib/utils";
 
 const en = {
   "common.cancel": "Cancel",
@@ -704,7 +705,9 @@ export function translate(
   key: MessageKey,
   params: MessageParams = {},
 ) {
-  return messages[language][key].replace(/\{(\w+)\}/g, (_, name: string) =>
-    String(params[name] ?? `{${name}}`),
+  return keyLabel(
+    messages[language][key].replace(/\{(\w+)\}/g, (_, name: string) =>
+      String(params[name] ?? `{${name}}`),
+    ),
   );
 }

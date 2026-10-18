@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::mpsc;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{mpsc, Arc};
 use std::time::Duration;
 
 use crate::assets;
@@ -12,11 +13,59 @@ use crate::error::{AppError, AppResult};
 const UPLOAD_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_OUTPUT_CHARS: usize = 20_000;
 
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+#[cfg(not(windows))]
+fn quote_path(path: &std::path::Path) -> String {
+    format!("'{}'", path.display())
+}
+
+#[cfg(windows)]
+fn quote_path(path: &std::path::Path) -> String {
+    format!("\"{}\"", path.display())
+}
+
+#[cfg(not(windows))]
+fn shell(script: &str) -> Command {
+    let mut cmd = Command::new("/bin/zsh");
+    cmd.args(["-l", "-c", script]);
+    cmd
+}
+
+#[cfg(windows)]
+fn shell(script: &str) -> Command {
+    use std::os::windows::process::CommandExt;
+    let mut cmd = Command::new("cmd");
+    cmd.raw_arg(format!("/D /S /C \"{script}\"")).creation_flags(CREATE_NO_WINDOW);
+    cmd
+}
+
+#[cfg(not(windows))]
+fn kill_tree(_pid: u32, staged: &std::path::Path) {
+    let _ = Command::new("/usr/bin/pkill")
+        .args(["-f", &staged.to_string_lossy()])
+        .stdin(Stdio::null())
+        .status();
+}
+
+#[cfg(windows)]
+fn kill_tree(pid: u32, _staged: &std::path::Path) {
+    use std::os::windows::process::CommandExt;
+    if pid != 0 {
+        let _ = Command::new("taskkill")
+            .args(["/F", "/T", "/PID", &pid.to_string()])
+            .creation_flags(CREATE_NO_WINDOW)
+            .stdin(Stdio::null())
+            .status();
+    }
+}
+
 /// Upload image bytes through the user's custom command and return the
 /// hosted URL. The image is staged as a temp file (the usual convention for
 /// uploader CLIs like PicGo) and passed as the single argument:
 ///
-///   sh -l -c "<user command> '<temp file>'"
+///   sh -l -c "<user command> '<temp file>'"   (cmd /C on Windows)
 ///
 /// URL extraction takes the last output line that parses as an absolute
 /// http(s) URL — that keeps `[PicGo SUCCESS]: url` prefixes and progress
@@ -31,18 +80,22 @@ pub fn upload_image(data: &str, extension: &str, command: &str) -> AppResult<Str
     let bytes = assets::decode_base64_image(data)?;
     let staged = stage_image(&bytes, extension)?;
     let _staged_guard = TempImage(&staged);
-    let full = format!("{trimmed} '{}'", staged.display());
+    let full = format!("{trimmed} {}", quote_path(&staged));
 
     let (tx, rx) = mpsc::channel();
     let script = full.clone();
+    let pid = Arc::new(AtomicU32::new(0));
+    let thread_pid = pid.clone();
     std::thread::spawn(move || {
-        let output = Command::new("/bin/zsh")
-            .args(["-l", "-c", &script])
+        let output = shell(&script)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .and_then(|child| child.wait_with_output());
+            .and_then(|child| {
+                thread_pid.store(child.id(), Ordering::SeqCst);
+                child.wait_with_output()
+            });
         let _ = tx.send(output);
     });
 
@@ -51,10 +104,7 @@ pub fn upload_image(data: &str, extension: &str, command: &str) -> AppResult<Str
         // timeout means the process tree is still alive. Kill by staged-file
         // path: unique per invocation and regex-safe (unlike the full script,
         // which may contain regex metacharacters).
-        let _ = Command::new("/usr/bin/pkill")
-            .args(["-f", &staged.to_string_lossy()])
-            .stdin(Stdio::null())
-            .status();
+        kill_tree(pid.load(Ordering::SeqCst), &staged);
         AppError::Network("upload timed out after 60s".into())
     })?;
     let output =

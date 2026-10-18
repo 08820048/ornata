@@ -1,4 +1,5 @@
 import { barShortcuts, type BarContext } from "@/lib/shortcuts";
+import { isMac } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
@@ -27,7 +28,7 @@ export function ShortcutBar() {
         {!hintsHidden &&
           barShortcuts(context).map((shortcut) => (
             <span key={shortcut.label} className="flex items-center gap-1.5">
-              <kbd className="font-mono text-[10px] text-muted">{shortcut.keys.join("")}</kbd>
+              <kbd className="font-mono text-[10px] text-muted">{shortcut.keys.join(isMac() ? "" : "+")}</kbd>
               {t(shortcut.label)}
             </span>
           ))}

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { MessageKey } from "@/lib/i18n";
 import { EASE_OUT } from "@/lib/ease";
-import { cx } from "@/lib/utils";
+import { cx, isMac } from "@/lib/utils";
 import { useSettingsBridge } from "@/lib/useSettingsBridge";
 import { McpSection } from "@/components/settings/McpSection";
 import { AppToaster } from "@/components/ui/AppToaster";
@@ -164,7 +164,7 @@ export function SettingsWindow() {
     <div className="flex h-full bg-bg text-ink">
       <aside className="flex w-[212px] shrink-0 flex-col border-r border-line-soft bg-panel">
         {/* drag region + traffic-light clearance (overlay title bar) */}
-        <div data-tauri-drag-region className="h-12 shrink-0" />
+        <div data-tauri-drag-region className={isMac() ? "h-12 shrink-0" : "h-3 shrink-0"} />
 
         <div className="px-3 pb-2">
           <label className="relative block">
@@ -217,7 +217,7 @@ export function SettingsWindow() {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <div data-tauri-drag-region className="h-12 shrink-0" />
+        <div data-tauri-drag-region className={isMac() ? "h-12 shrink-0" : "h-3 shrink-0"} />
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[560px] px-8 pb-14">
             <motion.div

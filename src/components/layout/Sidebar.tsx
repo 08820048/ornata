@@ -23,6 +23,7 @@ import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { vaultNote } from "@/lib/noteRef";
 import type { TreeSort } from "@/lib/types";
+import { cx, isMac, keyLabel } from "@/lib/utils";
 import { activeDir, useVault } from "@/stores/vault";
 import { useT } from "@/stores/locale";
 
@@ -43,7 +44,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel">
       {/* drag region + traffic-light clearance */}
-      <div data-tauri-drag-region className="flex h-12 items-end px-3 pb-1" />
+      <div data-tauri-drag-region className={cx("flex items-end px-3 pb-1", isMac() ? "h-12" : "h-3")} />
 
       <div className="px-2 pb-2">
         <button
@@ -54,14 +55,14 @@ export function Sidebar() {
           <Search size={14} strokeWidth={2} className="shrink-0" />
           <span>{t("sidebar.search")}</span>
           <kbd className="ml-auto rounded border border-line bg-panel px-1 font-mono text-[10px] leading-4 text-faint">
-            ⌘K
+            {keyLabel("⌘K")}
           </kbd>
         </button>
         <div className="mt-1.5 flex flex-col gap-px">
           <QuickRow
             icon={<CalendarDays size={14} strokeWidth={1.75} />}
             label={t("daily.new")}
-            keys="⌘J"
+            keys={keyLabel("⌘J")}
             onClick={() => void useVault.getState().openDailyNote()}
           />
           <QuickRow
@@ -175,7 +176,7 @@ export function Sidebar() {
           <Settings size={15} strokeWidth={1.75} />
           <span>{t("common.settings")}</span>
           <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">
-            ⌘,
+            {keyLabel("⌘,")}
           </kbd>
         </button>
       </div>

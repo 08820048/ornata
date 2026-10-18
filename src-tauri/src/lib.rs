@@ -44,7 +44,14 @@ pub fn try_cli() -> Option<i32> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // A second launch (e.g. double-clicking another .md) hands its files to
+    // the running window instead of starting another app. Must be first.
+    #[cfg(windows)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+        open_external(app, launch_paths(args));
+    }));
+    let app = builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
@@ -142,9 +149,12 @@ pub fn run() {
             // conflict or missing permission, and the app stays fully usable
             // (the capture window remains reachable in-app if we add one).
             use tauri_plugin_global_shortcut::GlobalShortcutExt;
-            if let Err(err) = app.global_shortcut().register("cmd+alt+j") {
-                eprintln!("global shortcut cmd+alt+j unavailable: {err}");
+            let shortcut = if cfg!(target_os = "macos") { "cmd+alt+j" } else { "ctrl+alt+j" };
+            if let Err(err) = app.global_shortcut().register(shortcut) {
+                eprintln!("global shortcut {shortcut} unavailable: {err}");
             }
+            #[cfg(windows)]
+            open_external(app.handle(), launch_paths(std::env::args()));
             // The MCP server comes back up if it was left on.
             cli::app_api::autostart(app.handle());
             Ok(())
@@ -164,21 +174,35 @@ pub fn run() {
     app.run(|app, event| {
         #[cfg(target_os = "macos")]
         if let tauri::RunEvent::Opened { urls } = event {
-            let state = app.state::<AppState>();
-            let notes = urls
-                .into_iter()
-                .filter_map(|url| url.to_file_path().ok())
-                .filter_map(|path| external_notes::authorize(app, &state, path).ok())
-                .collect::<Vec<_>>();
-            if notes.is_empty() {
-                return;
-            }
-            let _ = state.queue_opened(notes.clone());
-            let _ = app.emit("open-markdown", notes);
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            open_external(app, urls.into_iter().filter_map(|url| url.to_file_path().ok()).collect());
         }
+        #[cfg(not(target_os = "macos"))]
+        let _ = (app, event);
     });
+}
+
+/// Authorize markdown files handed to the app by the OS (macOS open events,
+/// Windows launch arguments) and bring them up in the main window.
+#[cfg(any(target_os = "macos", windows))]
+fn open_external(app: &tauri::AppHandle, paths: Vec<std::path::PathBuf>) {
+    let state = app.state::<AppState>();
+    let notes = paths
+        .into_iter()
+        .filter_map(|path| external_notes::authorize(app, &state, path).ok())
+        .collect::<Vec<_>>();
+    if notes.is_empty() {
+        return;
+    }
+    let _ = state.queue_opened(notes.clone());
+    let _ = app.emit("open-markdown", notes);
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+#[cfg(windows)]
+fn launch_paths(args: impl IntoIterator<Item = String>) -> Vec<std::path::PathBuf> {
+    args.into_iter().skip(1).map(std::path::PathBuf::from).collect()
 }

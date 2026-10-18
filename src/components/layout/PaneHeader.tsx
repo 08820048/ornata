@@ -14,7 +14,7 @@ import { closePaneAndRefocus } from "@/lib/closePane";
 import { focusNextPane, focusPane } from "@/lib/panes";
 import { isNoteTab, noteDisplayPath, noteTitle, tabKey } from "@/lib/noteRef";
 import type { TabRef } from "@/lib/types";
-import { cx } from "@/lib/utils";
+import { cx, keyLabel } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
@@ -125,7 +125,7 @@ export function PaneHeader({
                   <NoteMenuButton
                     icon={Focus}
                     label={t("palette.toggleFocus")}
-                    keys="⌘⇧F"
+                    keys={keyLabel("⌘⇧F")}
                     onClick={() => {
                       setNoteMenuOpen(false);
                       useUi.getState().toggleFocusMode();
@@ -218,7 +218,7 @@ export function PaneHeader({
                   <NoteMenuButton
                     icon={Columns2}
                     label={t("split.splitPane")}
-                    keys="⌘⇧\\"
+                    keys={keyLabel("⌘⇧\\")}
                     onClick={() => {
                       setPaneMenuOpen(false);
                       useUi.getState().openPaletteAside();
@@ -237,7 +237,7 @@ export function PaneHeader({
                       <NoteMenuButton
                         icon={Repeat}
                         label={t("split.switcher")}
-                        keys="⌘."
+                        keys={keyLabel("⌘.")}
                         onClick={() => {
                           setPaneMenuOpen(false);
                           focusNextPane();
@@ -252,7 +252,7 @@ export function PaneHeader({
                           key={tabKey(pane)}
                           icon={FileText}
                           label={isNoteTab(pane) ? noteTitle(pane) : ""}
-                          keys={`⌘${index + 1}`}
+                          keys={keyLabel(`⌘${index + 1}`)}
                           onClick={() => {
                             setPaneMenuOpen(false);
                             focusPane(pane);

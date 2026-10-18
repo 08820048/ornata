@@ -4,7 +4,7 @@ import { NotesWorkspace } from "@/components/editor/NotesWorkspace";
 import { TabBar } from "@/components/editor/TabBar";
 import { SPRING_PANEL } from "@/lib/ease";
 import { tabOfView } from "@/lib/noteRef";
-import { cx } from "@/lib/utils";
+import { cx, isMac, keyLabel } from "@/lib/utils";
 import { PaneHeader } from "./PaneHeader";
 import { Sidebar } from "./Sidebar";
 import { ShortcutBar } from "./ShortcutBar";
@@ -42,7 +42,7 @@ export function AppShell() {
 
       {!focusMode && <SidebarEdgeToggle
         hidden={sidebarHidden}
-        label={`${t("editor.toggleSidebar")} ⌘\\`}
+        label={`${t("editor.toggleSidebar")} ${keyLabel("⌘\\")}`}
         onClick={toggleSidebar}
       />}
 
@@ -56,7 +56,7 @@ export function AppShell() {
             "flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pr-3 transition-opacity duration-150",
             focusMode && "opacity-0 hover:opacity-100",
           )}
-          animate={{ paddingLeft: sidebarHidden ? 84 : 10 }}
+          animate={{ paddingLeft: sidebarHidden && isMac() ? 84 : 10 }}
           initial={false}
           transition={SPRING_PANEL}
         >
@@ -180,19 +180,19 @@ function EmptyState() {
         <EmptyAction
           icon={<Search size={14} strokeWidth={2} />}
           label={t("common.search")}
-          keys="⌘K"
+          keys={keyLabel("⌘K")}
           onClick={() => setPaletteOpen(true)}
         />
         <EmptyAction
           icon={<FilePlus size={14} strokeWidth={2} />}
           label={t("common.newNote")}
-          keys="⌘N"
+          keys={keyLabel("⌘N")}
           onClick={() => createNote("")}
         />
         <EmptyAction
           icon={<CalendarDays size={14} strokeWidth={2} />}
           label={t("daily.new")}
-          keys="⌘J"
+          keys={keyLabel("⌘J")}
           onClick={() => void useVault.getState().openDailyNote()}
         />
       </div>

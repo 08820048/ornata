@@ -58,3 +58,12 @@ export function hostOf(url: string) {
 export function isMac() {
   return navigator.platform.toLowerCase().includes("mac");
 }
+
+const MODIFIERS: Record<string, string> = { "⌘": "Ctrl", "⌥": "Alt", "⇧": "Shift", "⌃": "Ctrl" };
+
+/** Shortcut text written with Mac symbols, shown the way the platform names
+ *  them: "⌘⇧F" stays as is on a Mac and reads "Ctrl+Shift+F" elsewhere. */
+export function keyLabel(text: string, mac = isMac()) {
+  if (mac) return text;
+  return text.replace(/[⌘⌥⇧⌃](?=.)/gu, (m) => `${MODIFIERS[m]}+`).replace(/[⌘⌥⇧⌃]/gu, (m) => MODIFIERS[m]);
+}

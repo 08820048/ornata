@@ -8,7 +8,10 @@ use super::tools::Level;
 /// Where the app keeps `config.json` (Tauri's app config dir for the bundle
 /// identifier `app.ornata`).
 pub fn config_dir() -> Option<PathBuf> {
-    let home = PathBuf::from(std::env::var_os("HOME")?);
+    if cfg!(windows) {
+        return std::env::var_os("APPDATA").map(|dir| PathBuf::from(dir).join("app.ornata"));
+    }
+    let home = home_dir()?;
     let dir = if cfg!(target_os = "macos") {
         home.join("Library/Application Support/app.ornata")
     } else {
@@ -18,6 +21,13 @@ pub fn config_dir() -> Option<PathBuf> {
             .join("app.ornata")
     };
     Some(dir)
+}
+
+/// `$HOME`, or the profile folder on Windows.
+pub fn home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
 }
 
 fn config_path() -> Option<PathBuf> {

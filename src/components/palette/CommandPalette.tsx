@@ -26,7 +26,7 @@ import { openRelAside } from "@/lib/openAside";
 import { vaultNote } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
 import type { SearchHit, TreeNode } from "@/lib/types";
-import { cx, parentDir } from "@/lib/utils";
+import { cx, keyLabel, parentDir } from "@/lib/utils";
 import { Modal } from "@/components/ui/Modal";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
@@ -121,7 +121,7 @@ export function CommandPalette() {
       {
         id: "new-note",
         label: t("common.newNote"),
-        hint: "⌘N",
+        hint: keyLabel("⌘N"),
         icon: FilePlus,
         run: () => vault.createNote(activeDir(vault)),
       },
@@ -162,7 +162,7 @@ export function CommandPalette() {
       {
         id: "daily-note",
         label: t("daily.new"),
-        hint: "⌘J",
+        hint: keyLabel("⌘J"),
         icon: CalendarDays,
         run: () => void vault.openDailyNote(),
       },
@@ -177,7 +177,7 @@ export function CommandPalette() {
       {
         id: "open-markdown",
         label: t("palette.openMarkdown"),
-        hint: "⌘O",
+        hint: keyLabel("⌘O"),
         icon: FolderOpen,
         run: () => vault.chooseExternalNotes(),
       },
@@ -214,7 +214,7 @@ export function CommandPalette() {
       {
         id: "toggle-focus-mode",
         label: t("palette.toggleFocus"),
-        hint: "⌘⇧F",
+        hint: keyLabel("⌘⇧F"),
         icon: Focus,
         run: () => useUi.getState().toggleFocusMode(),
       },
@@ -227,7 +227,7 @@ export function CommandPalette() {
       {
         id: "settings",
         label: t("common.settings"),
-        hint: "⌘,",
+        hint: keyLabel("⌘,"),
         icon: Settings,
         run: () => void ipc.openSettingsWindow(),
       },

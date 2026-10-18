@@ -3,7 +3,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { canStep } from "@/lib/split";
 import { goBack, goForward } from "@/lib/navigate";
 import type { TabRef } from "@/lib/types";
-import { cx } from "@/lib/utils";
+import { cx, keyLabel } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 import { useTabs } from "@/stores/tabs";
 
@@ -17,10 +17,10 @@ export function NavButtons({ tab }: { tab: TabRef | null }) {
 
   return (
     <div className="mr-2 flex shrink-0 items-center gap-0.5">
-      <NavButton label={`${t("settings.shortcut.back")} ⌘[`} disabled={!canBack} onClick={goBack}>
+      <NavButton label={`${t("settings.shortcut.back")} ${keyLabel("⌘[")}`} disabled={!canBack} onClick={goBack}>
         <ArrowLeft size={15} strokeWidth={1.9} />
       </NavButton>
-      <NavButton label={`${t("settings.shortcut.forward")} ⌘]`} disabled={!canForward} onClick={goForward}>
+      <NavButton label={`${t("settings.shortcut.forward")} ${keyLabel("⌘]")}`} disabled={!canForward} onClick={goForward}>
         <ArrowRight size={15} strokeWidth={1.9} />
       </NavButton>
     </div>

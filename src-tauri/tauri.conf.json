@@ -52,13 +52,14 @@
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
-      "icons/256x256.png",
+      "icons/128x128@2x.png",
       "icons/icon.icns",
+      "icons/icon.ico",
       "icons/icon.png"
     ],
     "category": "Productivity",
     "shortDescription": "A fast, local-first notes app for developers and content creators",
-    "longDescription": "Ornata is a macOS-first, local-only, ultra high-performance notes app designed for developers and content creators who care deeply about speed, privacy, and data ownership.",
+    "longDescription": "Ornata is a local-only, ultra high-performance notes app designed for developers and content creators who care deeply about speed, privacy, and data ownership.",
     "macOS": {
       "entitlements": "./Entitlements.plist",
       "dmg": {
@@ -78,6 +79,19 @@
           "x": 480,
           "y": 220
         }
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "SimpChinese",
+          "English"
+        ],
+        "displayLanguageSelector": true
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
       }
     }
   },

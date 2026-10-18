@@ -44,7 +44,7 @@
        CJK falls back to the system PingFang. */
     --font-note:
         "Space Grotesk Variable", -apple-system, BlinkMacSystemFont,
-        "PingFang SC", "Segoe UI", sans-serif;
+        "PingFang SC", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
     /* Serif reading stack (Kami-style). Charter carries Latin; the bundled
        LXGW WenKai Screen (OFL, see assets/fonts/LXGWWenKaiScreen-OFL.txt)
        carries CJK; Songti SC is the system fallback. */

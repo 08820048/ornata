@@ -19,6 +19,7 @@ import { ImageUploadSettings } from "@/components/settings/ImageUploadSettings";
 import { PdfExportSettings } from "@/components/settings/PdfExportSettings";
 import { UpdateControl } from "@/components/settings/UpdateControl";
 import { SHORTCUTS } from "@/lib/shortcuts";
+import { keyLabel } from "@/lib/utils";
 import { useLocale, useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 import packageInfo from "../../../package.json";
@@ -77,7 +78,7 @@ export function AppearanceSection() {
   return (
     <SettingGroup
       title={t("settings.appearance")}
-      hint={`⌘⇧D ${t("settings.toCycle")}`}
+      hint={`${keyLabel("⌘⇧D")} ${t("settings.toCycle")}`}
     >
       <SettingRow label={t("settings.theme")}>
         <Segmented
