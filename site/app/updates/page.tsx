@@ -14,6 +14,15 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "0.8.1",
+    date: "October 18, 2026",
+    dateTime: "2026-10-18",
+    summary: "Fixes a crash when opening notes with several code blocks.",
+    changes: [
+      "A note with several code blocks could crash Ornata as it opened, and again on every launch because the note was restored. It now opens normally. If you are stuck on 0.8.0, update from the download page.",
+    ],
+  },
+  {
     version: "0.8.0",
     date: "October 18, 2026",
     dateTime: "2026-10-18",

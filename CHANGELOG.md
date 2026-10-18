@@ -4,6 +4,12 @@ All notable changes to Ornata are documented in this file.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-18
+
+### Fixed
+
+- A note with several code blocks could crash Ornata the moment it opened ("undefined is not an object"), and kept crashing on every launch because the note was restored. Code blocks now wait for the document to finish building.
+
 ## [0.8.0] - 2026-10-18
 
 ### Added
