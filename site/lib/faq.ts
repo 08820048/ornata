@@ -1,4 +1,6 @@
-export const FAQS: { q: string; a: string }[] = [
+export type Faq = { q: string; a: string };
+
+export const FAQS_EN: Faq[] = [
   {
     q: "How much does Ornata cost?",
     a: "Ornata is free to download and use — no account, no subscription. Production builds are signed with an Apple Developer ID certificate and notarized by Apple.",
@@ -50,5 +52,63 @@ export const FAQS: { q: string; a: string }[] = [
   {
     q: "Which interface languages are supported?",
     a: "English and Simplified Chinese are built in. You can switch languages from Settings without changing the language of your notes.",
+  },
+];
+
+/** Kept for callers that only need the English list (llms.txt). */
+export const FAQS = FAQS_EN;
+
+export const FAQS_ZH: Faq[] = [
+  {
+    q: "Ornata 要花多少钱？",
+    a: "Ornata 可免费下载和使用 —— 无需账号，没有订阅。正式版使用 Apple Developer ID 证书签名，并经过 Apple 公证。",
+  },
+  {
+    q: "我的笔记存在哪里？",
+    a: "存在你的 Mac 上，是你所选文件夹里的普通 Markdown 文件。核心编辑器不需要账号，也没有私有数据库，你随时可以在 Finder 里打开这个文件夹。",
+  },
+  {
+    q: "有同步功能吗？",
+    a: "目前还没有内置同步。因为笔记就是文件夹里的文件，今天就可以用 iCloud 云盘、Dropbox 或 git 来同步。原生同步在计划中。",
+  },
+  {
+    q: "能和 Obsidian 一起用吗？",
+    a: "可以。Ornata 使用同样的纯 Markdown 笔记库和真实文件夹，并保留其他工具写入的 frontmatter。让 Ornata 和 Obsidian 指向同一个文件夹，两边都能正常工作。",
+  },
+  {
+    q: "有图谱视图吗？",
+    a: "有。链接图谱作为标签页在笔记旁边打开：文件夹形成柔和的彩色区域，悬停一篇笔记会描出它的链接和方向，还能搜索、拖动和缩放。任何一篇笔记也可以在正文下方显示它自己的局部图谱。",
+  },
+  {
+    q: "可以并排查看两篇笔记吗？",
+    a: "可以。⌘ 点击链接，在命令面板的结果上按 ⌘↵，或在标签页或文件的菜单里选择「在侧边打开」。最多可以有四个窗格，每个都有自己的标题栏和前进后退箭头。拖动分隔条调整大小，用完关掉即可。",
+  },
+  {
+    q: "可以导出笔记吗？",
+    a: "它们本来就是 Markdown 文件，想留住它们无需导出。要分享时，可以把笔记导出为 PDF —— 带有由标题生成的书签目录，纸张大小和页边距可选 —— 或导出为独立的 HTML。每次导出完成后都可以「在 Finder 中显示」。",
+  },
+  {
+    q: "macOS 版下载包有签名吗？",
+    a: "有。正式下载包使用 Apple Developer ID 证书签名，经 Apple 公证，并通过 Ornata 的签名更新源分发。",
+  },
+  {
+    q: "有 Windows 或 Linux 版吗？",
+    a: "先做 macOS。Ornata 基于跨平台的 Tauri 构建，所以以后可能支持其他平台 —— 但目前 macOS 是打磨得最好的平台。",
+  },
+  {
+    q: "能用 Claude Code、Codex 或 Cursor 处理我的笔记吗？",
+    a: "能。Ornata 支持 MCP。点击状态栏的插头图标打开 MCP 设置，点「连接」，再把那里给出的一行命令加到你的智能体里 —— 其中带有服务所需的访问令牌。只会运行命令的智能体可以改用 ornata mcp，这样即使 Ornata 没打开也能工作。同样的工具在终端里也可用，如 ornata search、ornata journal add、ornata tasks 等。",
+  },
+  {
+    q: "外部智能体能对我的笔记做什么？",
+    a: "只有你允许的事，并且按笔记库在设置里分别设定：关闭、只读（默认）、读写或完全访问。只读只能列出、读取和搜索。读写还能新建、编辑、追加和勾选待办，每次编辑都会把旧版本留在笔记的历史里。完全访问再加上重命名、移动和删除，被删除的笔记会进入废纸篓。这个级别只能在 Ornata 里设置 —— 智能体自己的配置只能把它调低 —— 并且服务只监听你 Mac 的本机地址，每个请求都要带访问令牌。能运行 shell 命令的智能体本来就拥有你的文件访问权限，所以请按你信任它的程度来授权。",
+  },
+  {
+    q: "更新是怎么进行的？",
+    a: "Ornata 会自动检查它的签名更新源。有新版本时，你可以在看得见进度的情况下下载，然后重启安装。正式版经过 Developer ID 签名，并由 Apple 公证。",
+  },
+  {
+    q: "支持哪些界面语言？",
+    a: "内置英文和简体中文。你可以在设置里切换语言，这不会改变你笔记本身的语言。",
   },
 ];

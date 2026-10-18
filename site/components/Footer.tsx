@@ -8,16 +8,7 @@ import { ButtonLink } from "./ui/button";
 import { LogoMark } from "./Logo";
 import { EASE_OUT } from "@/lib/ease";
 import { DMG, VERSION } from "@/lib/config";
-
-const LINKS = [
-  { label: "Why Ornata", href: "/#principles" },
-  { label: "Inside the app", href: "/#features" },
-  { label: "Agents", href: "/#mcp" },
-  { label: "Docs", href: "/docs" },
-  { label: "Updates", href: "/updates" },
-  { label: "FAQ", href: "/#faq" },
-  { label: "Direct download", href: DMG },
-] as const;
+import { useCopy, useHref } from "@/lib/locale";
 
 const MORE_PRODUCTS = [
   { label: "hoolo.cc", href: "https://hoolo.cc" },
@@ -28,6 +19,17 @@ const MORE_PRODUCTS = [
 
 export function Footer() {
   const reduce = useReducedMotion();
+  const copy = useCopy().footer;
+  const href = useHref();
+  const links = [
+    { label: copy.links.why, href: href("/#principles") },
+    { label: copy.links.inside, href: href("/#features") },
+    { label: copy.links.agents, href: href("/#mcp") },
+    { label: copy.links.docs, href: href("/docs") },
+    { label: copy.links.updates, href: href("/updates") },
+    { label: copy.links.faq, href: href("/#faq") },
+    { label: copy.links.direct, href: DMG },
+  ];
 
   return (
     <footer className="px-3 pb-3 sm:px-6 sm:pb-6">
@@ -36,7 +38,7 @@ export function Footer() {
           <aside className="hidden border-r border-night-line px-8 py-14 lg:flex lg:flex-col lg:justify-between">
             <LogoMark size={30} />
             <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-night-muted">
-              Made for macOS
+              {copy.madeFor}
             </span>
           </aside>
 
@@ -56,7 +58,7 @@ export function Footer() {
               transition={{ duration: 0.5, ease: EASE_OUT }}
               className="font-mono text-[10px] uppercase tracking-[0.15em] text-night-muted"
             >
-              Start with a folder
+              {copy.start}
             </motion.p>
             <motion.h2
               initial={reduce ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
@@ -67,7 +69,7 @@ export function Footer() {
               transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.06 }}
               className="mt-6 max-w-4xl text-balance font-serif text-[50px] leading-[0.94] tracking-[-0.045em] sm:text-[74px] lg:text-[88px]"
             >
-              Give your notes less software.
+              {copy.title}
             </motion.h2>
             <motion.p
               initial={reduce ? false : { opacity: 0, y: 14 }}
@@ -76,8 +78,7 @@ export function Footer() {
               transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.14 }}
               className="mt-7 max-w-md text-pretty text-[15px] leading-7 text-night-muted"
             >
-              Download Ornata, choose a folder, and keep writing in files that
-              never stop being yours.
+              {copy.body}
             </motion.p>
             <motion.div
               initial={reduce ? false : { opacity: 0, y: 14 }}
@@ -91,12 +92,12 @@ export function Footer() {
                 className="bg-night-ink text-night hover:bg-paper"
               />
               <ButtonLink
-                href="/updates"
+                href={href("/updates")}
                 variant="outline"
                 size="lg"
                 className="border-night-line text-night-ink hover:bg-night-line"
               >
-                Read the updates
+                {copy.updates}
               </ButtonLink>
             </motion.div>
           </div>
@@ -107,7 +108,7 @@ export function Footer() {
           <div className="px-5 py-10 sm:px-10 lg:px-16">
             <div className="grid gap-12 md:grid-cols-[1fr_1fr]">
               <nav className="grid grid-cols-2 gap-x-8 gap-y-1">
-                {LINKS.map((link) => (
+                {links.map((link) => (
                   <a
                     key={link.label}
                     href={link.href}
@@ -119,7 +120,7 @@ export function Footer() {
               </nav>
               <div>
                 <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-night-muted">
-                  More products
+                  {copy.more}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-x-5">
                   {MORE_PRODUCTS.map((product) => (
@@ -139,8 +140,8 @@ export function Footer() {
             </div>
 
             <div className="mt-10 flex flex-col gap-2 border-t border-night-line pt-5 font-mono text-[9px] uppercase tracking-[0.12em] text-night-muted sm:flex-row sm:items-center sm:justify-between">
-              <span>© Ornata · version {VERSION}</span>
-              <span>Plain Markdown · no required account</span>
+              <span>{copy.version(VERSION)}</span>
+              <span>{copy.tagline}</span>
             </div>
           </div>
         </div>

@@ -5,17 +5,24 @@ import { usePathname } from "next/navigation";
 import { Wordmark } from "./Logo";
 import { DownloadButton } from "./ui/download-button";
 import { cn } from "@/lib/utils";
-
-const LINKS = [
-  { label: "Why Ornata", href: "/#principles" },
-  { label: "Inside the app", href: "/#features" },
-  { label: "Agents", href: "/#mcp" },
-  { label: "Docs", href: "/docs" },
-  { label: "Updates", href: "/updates" },
-];
+import { useCopy, useHref, useLocale } from "@/lib/locale";
 
 export function Nav() {
   const pathname = usePathname();
+  const copy = useCopy().nav;
+  const locale = useLocale();
+  const href = useHref();
+  const links = [
+    { label: copy.why, href: href("/#principles"), key: "/#principles" },
+    { label: copy.inside, href: href("/#features"), key: "/#features" },
+    { label: copy.agents, href: href("/#mcp"), key: "/#mcp" },
+    { label: copy.docs, href: href("/docs"), key: "/docs" },
+    { label: copy.updates, href: href("/updates"), key: "/updates" },
+  ];
+  // The same page in the other language.
+  const bare = locale === "zh" ? pathname.replace(/^\/zh/, "") || "/" : pathname;
+  const otherHref = locale === "zh" ? bare : bare === "/" ? "/zh" : `/zh${bare}`;
+  const here = pathname.replace(/^\/zh/, "") || "/";
 
   return (
     <motion.header
@@ -26,8 +33,8 @@ export function Nav() {
     >
       <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-paper/85 p-1.5 pl-3 shadow-[0_1px_2px_rgba(22,23,20,0.06),0_16px_40px_-20px_rgba(22,23,20,0.3)] backdrop-blur-xl">
         <a
-          href="/"
-          aria-label="Ornata home"
+          href={href("/")}
+          aria-label="Ornata"
           className="inline-flex min-h-9 items-center rounded-full pr-1.5"
         >
           <Wordmark size={22} priority />
@@ -36,14 +43,14 @@ export function Nav() {
         <div className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
 
         <nav className="hidden items-center gap-0.5 md:flex">
-          {LINKS.map((link) => {
+          {links.map((link) => {
             const active =
-              link.href === "/updates" || link.href === "/docs"
-                ? pathname === link.href
-                : pathname === "/" && link.href === "/#principles";
+              link.key === "/updates" || link.key === "/docs"
+                ? here === link.key
+                : here === "/" && link.key === "/#principles";
             return (
               <a
-                key={link.label}
+                key={link.key}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
@@ -59,8 +66,17 @@ export function Nav() {
           })}
         </nav>
 
+        <a
+          href={otherHref}
+          hrefLang={locale === "zh" ? "en" : "zh-CN"}
+          aria-label={copy.switchTo}
+          className="inline-flex min-h-9 items-center rounded-full px-2.5 font-mono text-[11px] text-muted-foreground transition-colors duration-150 hover:bg-hover hover:text-foreground"
+        >
+          {copy.langLabel}
+        </a>
+
         <DownloadButton
-          label="Download"
+          label={copy.download}
           size="sm"
           className="ml-1 h-9 rounded-full px-4"
         />

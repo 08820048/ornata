@@ -3,10 +3,12 @@
 import { motion, useReducedMotion } from "motion/react";
 import { McpDemo } from "@/components/McpDemo";
 import { EASE_OUT } from "@/lib/ease";
+import { useCopy } from "@/lib/locale";
 
 /** "Bring your own agent": MCP and the command line. */
 export function AgentBridge() {
   const reduce = useReducedMotion();
+  const copy = useCopy().agents;
   return (
     <section id="mcp" className="section-contain scroll-mt-16 px-3 sm:px-6">
       <div className="mx-auto w-full max-w-[1440px] border-x border-border bg-background">
@@ -25,19 +27,16 @@ export function AgentBridge() {
               className="max-w-xl"
             >
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
-                Any agent, one vault
+                {copy.eyebrow}
               </p>
               <h2 className="mt-5 text-balance font-serif text-[42px] leading-[0.98] tracking-[-0.035em] text-foreground sm:text-[56px]">
-                Bring the agent you already use.
+                {copy.title}
               </h2>
               <p className="mt-6 max-w-md text-pretty text-[15px] leading-7 text-muted-foreground">
-                Ornata speaks MCP, so Claude Code, Codex, Cursor, and the rest can
-                search your notes, add to today&rsquo;s page, and tick off tasks. You
-                decide per vault what an agent may do — off, read only, or read &amp;
-                write — and every edit keeps the old version in the note&rsquo;s history.
+                {copy.body}
               </p>
               <p className="mt-5 font-mono text-[11px] leading-6 text-faint">
-                Or from any terminal:
+                {copy.terminal}
                 <br />
                 ornata search &ldquo;roadmap&rdquo;
                 <br />

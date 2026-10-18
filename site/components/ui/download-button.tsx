@@ -4,6 +4,7 @@ import { ButtonLink, type ButtonSize } from "./button";
 import { DOWNLOAD_EVENT } from "../DownloadModal";
 import { track } from "@/lib/analytics";
 import { DMG, VERSION } from "@/lib/config";
+import { useCopy } from "@/lib/locale";
 
 function AppleLogo() {
   return (
@@ -14,7 +15,7 @@ function AppleLogo() {
 }
 
 export function DownloadButton({
-  label = "Download for macOS",
+  label,
   size = "lg",
   className,
 }: {
@@ -22,6 +23,7 @@ export function DownloadButton({
   size?: ButtonSize;
   className?: string;
 }) {
+  const copy = useCopy();
   return (
     <ButtonLink
       href={DMG}
@@ -33,7 +35,7 @@ export function DownloadButton({
       }}
     >
       <AppleLogo />
-      {label}
+      {label ?? copy.downloadButton}
     </ButtonLink>
   );
 }

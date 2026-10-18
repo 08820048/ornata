@@ -13,6 +13,7 @@ import {
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EASE_OUT } from "@/lib/ease";
+import { useCopy, useLocale } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import { BacklinksDemo } from "@/components/BacklinksDemo";
 import { GraphDemo } from "@/components/GraphDemo";
@@ -360,11 +361,12 @@ function CommandDemo() {
 /** Editorial chapter opener: groups the stories into a short narrative. */
 function Chapter({ number, word, line }: { number: string; word: string; line: string }) {
   const reduce = useReducedMotion();
+  const locale = useLocale();
   return (
     <div className="grid border-b border-border bg-paper lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="hidden border-r border-border px-8 py-10 lg:block">
         <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-          Chapter {number}
+          {locale === "zh" ? `第 ${number} 章` : `Chapter ${number}`}
         </span>
       </aside>
       <motion.div
@@ -427,6 +429,7 @@ function Pair({
 
 export function FeaturesBento() {
   const reduce = useReducedMotion();
+  const f = useCopy().features;
   return (
     <section className="section-contain px-3 sm:px-6">
       <div className="mx-auto w-full max-w-[1440px] border-x border-border bg-background">
@@ -437,7 +440,7 @@ export function FeaturesBento() {
         >
           <aside className="hidden border-r border-border px-8 py-16 lg:block">
             <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-              The position
+              {f.position}
             </p>
           </aside>
           <div className="grid items-center gap-12 px-5 py-20 sm:px-10 lg:px-16 lg:py-24 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-20">
@@ -448,13 +451,10 @@ export function FeaturesBento() {
               transition={{ duration: 0.55, ease: EASE_OUT }}
             >
               <h2 className="text-balance font-serif text-[44px] leading-[0.98] tracking-[-0.04em] text-foreground sm:text-[60px]">
-                Notes should outlive the app.
+                {f.positionTitle}
               </h2>
               <p className="mt-7 max-w-md text-pretty text-[16px] leading-7 text-muted-foreground">
-                Most notes apps grow into systems you have to maintain — plugins,
-                sync layers, a private database. Ornata stays an instrument: quick
-                to open, quiet while you write, and honest about where your files
-                live.
+                {f.positionBody}
               </p>
             </motion.div>
             <MachineryDemo />
@@ -462,39 +462,39 @@ export function FeaturesBento() {
         </div>
 
         <div id="features" className="scroll-mt-16">
-          <Chapter number="01" word="Write." line="Plain files underneath, a precise editor on top." />
+          <Chapter number="01" word={f.chapters.write[0]} line={f.chapters.write[1]} />
           <Story
             index="01 / 07"
-            eyebrow="Plain files, real folders"
-            title="Your notes are already exported."
-            body="Pick any folder. Ornata writes ordinary Markdown into real directories, keeps frontmatter from other tools, and notices edits made elsewhere. When you need to share, export a PDF with a bookmark outline, or standalone HTML."
+            eyebrow={f.files.eyebrow}
+            title={f.files.title}
+            body={f.files.body}
           >
             <FilesDemo />
           </Story>
           <Story
             index="02 / 07"
-            eyebrow="A professional editor"
-            title="Rich where it helps. Plain underneath."
-            body="Clean typography, language-aware code, pasted images, and a magnetic outline for long notes — while the file on disk stays readable anywhere."
+            eyebrow={f.editor.eyebrow}
+            title={f.editor.title}
+            body={f.editor.body}
             reverse
           >
             <WritingDemo />
           </Story>
 
-          <Chapter number="02" word="Connect." line="Links become context, and the context becomes a map." />
+          <Chapter number="02" word={f.chapters.connect[0]} line={f.chapters.connect[1]} />
           <Story
             index="03 / 07"
-            eyebrow="Linked mentions"
-            title="See what links here."
-            body="Every note lists the notes that reference it, with the linking line as context — and surfaces plain mentions that should become links."
+            eyebrow={f.backlinks.eyebrow}
+            title={f.backlinks.title}
+            body={f.backlinks.body}
           >
             <BacklinksDemo />
           </Story>
           <Story
             index="04 / 07"
-            eyebrow="The link graph"
-            title="See how your ideas connect."
-            body="Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text."
+            eyebrow={f.graph.eyebrow}
+            title={f.graph.title}
+            body={f.graph.body}
             reverse
           >
             <GraphDemo />
@@ -502,28 +502,28 @@ export function FeaturesBento() {
 
           <Story
             index="05 / 07"
-            eyebrow="Side by side"
-            title="Read one note while you write another."
-            body="⌘-click a link, or press ⌘↵ in the palette, and the note opens beside this one. Up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done."
+            eyebrow={f.split.eyebrow}
+            title={f.split.title}
+            body={f.split.body}
           >
             <SplitDemo />
           </Story>
 
-          <Chapter number="03" word="Find." line="Everything important is one keystroke away." />
+          <Chapter number="03" word={f.chapters.find[0]} line={f.chapters.find[1]} />
           <Pair
             items={[
               {
                 index: "06 / 07",
-                eyebrow: "Command palette",
-                title: "One keystroke to anywhere.",
-                body: "Search titles and content, jump between notes, or run any action from ⌘K.",
+                eyebrow: f.palette.eyebrow,
+                title: f.palette.title,
+                body: f.palette.body,
                 demo: <CommandDemo />,
               },
               {
                 index: "07 / 07",
-                eyebrow: "Vault-wide tasks",
-                title: "Every open task, in one list.",
-                body: "Checkboxes from across the vault, with counts and folder context. Tick one here and it's done in its note.",
+                eyebrow: f.tasks.eyebrow,
+                title: f.tasks.title,
+                body: f.tasks.body,
                 demo: <TasksDemo />,
               },
             ]}

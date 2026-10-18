@@ -1,17 +1,18 @@
 import { Plus } from "lucide-react";
-import { FAQS } from "@/lib/faq";
+import { COPY, type Locale } from "@/lib/copy";
 
-const JSON_LD = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQS.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.a },
-  })),
-};
-
-export function Faq() {
+export function Faq({ locale = "en" }: { locale?: Locale }) {
+  const copy = COPY[locale].faq;
+  const JSON_LD = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    inLanguage: COPY[locale].htmlLang,
+    mainEntity: copy.items.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
   return (
     <section
       id="faq"
@@ -25,7 +26,7 @@ export function Faq() {
       <div className="mx-auto grid w-full max-w-[1440px] border-x border-b border-border bg-paper lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden border-r border-border px-8 py-20 lg:block">
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-            Details
+            {copy.aside}
           </p>
         </aside>
         <div className="grid gap-12 px-5 py-20 sm:px-10 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-16 lg:py-28">
@@ -34,16 +35,15 @@ export function Faq() {
               FAQ
             </p>
             <h2 className="mt-5 text-balance font-serif text-[42px] leading-[1] tracking-[-0.035em] text-foreground sm:text-[54px]">
-              The practical questions.
+              {copy.title}
             </h2>
             <p className="mt-5 max-w-xs text-pretty text-[14px] leading-7 text-muted-foreground">
-              Storage, compatibility, updates, and exactly what an outside
-              agent can do.
+              {copy.lead}
             </p>
           </div>
 
           <div className="border-t border-border">
-            {FAQS.map((f, index) => (
+            {copy.items.map((f, index) => (
               <details
                 key={f.q}
                 className="group border-b border-border py-5"

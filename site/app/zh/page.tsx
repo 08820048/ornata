@@ -8,8 +8,8 @@ import { Footer } from "@/components/Footer";
 import { DownloadModal } from "@/components/DownloadModal";
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/" },
-  openGraph: { url: "https://ornata.app" },
+  alternates: { canonical: "/zh", languages: { en: "/", "zh-CN": "/zh" } },
+  openGraph: { url: "https://ornata.app/zh" },
 };
 
 export default function Home() {
@@ -20,7 +20,7 @@ export default function Home() {
         <Hero />
         <FeaturesBento />
         <AgentBridge />
-        <Faq />
+        <Faq locale="zh" />
       </main>
       <Footer />
       <DownloadModal />

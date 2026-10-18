@@ -5,7 +5,8 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { UMAMI_SRC, UMAMI_WEBSITE_ID } from "@/lib/analytics";
 import { DMG, VERSION } from "@/lib/config";
-import "./globals.css";
+import { COPY, type Locale } from "@/lib/copy";
+import { LocaleProvider } from "@/lib/locale";
 
 const serif = Newsreader({
   subsets: ["latin"],
@@ -27,19 +28,11 @@ const noteSans = Space_Grotesk({
   display: "swap",
 });
 
-const TITLE = "Ornata — local-first Markdown notes for macOS";
-const DESCRIPTION =
-  "Ornata is a free, local-first Markdown notes app for macOS. Notes stay as plain .md files in a folder you own, with a link graph, backlinks, and an MCP server so the AI agents you already use can work on your notes only as far as you allow.";
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://ornata.app"),
-  title: {
-    default: TITLE,
-    template: "%s — Ornata",
-  },
-  description: DESCRIPTION,
-  applicationName: "Ornata",
-  keywords: [
+export const viewport: Viewport = { themeColor: "#fcfcfb" };
+
+const KEYWORDS: Record<Locale, string[]> = {
+  en: [
     "markdown notes app",
     "notes app for macOS",
     "local-first notes",
@@ -51,28 +44,28 @@ export const metadata: Metadata = {
     "note taking app",
     "plain text notes",
   ],
-  icons: {
-    icon: "/ornata-mark-2026.png",
-    apple: "/ornata-mark-2026.png",
-  },
-  authors: [{ name: "Ornata" }],
-  openGraph: {
-    title: TITLE,
-    description: DESCRIPTION,
-    url: "https://ornata.app",
-    siteName: "Ornata",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-  },
+  zh: ["Markdown 笔记", "macOS 笔记应用", "本地优先笔记", "Obsidian 替代", "MCP 笔记", "纯文本笔记", "AI 智能体 笔记"],
 };
 
-export const viewport: Viewport = { themeColor: "#fcfcfb" };
+/** Site-wide metadata; each root layout calls this with its language. */
+export function siteMetadata(locale: Locale): Metadata {
+  const { title, description } = COPY[locale].meta;
+  const url = locale === "en" ? "https://ornata.app" : "https://ornata.app/zh";
+  return {
+    metadataBase: new URL("https://ornata.app"),
+    title: { default: title, template: "%s — Ornata" },
+    description,
+    applicationName: "Ornata",
+    keywords: KEYWORDS[locale],
+    icons: { icon: "/ornata-mark-2026.png", apple: "/ornata-mark-2026.png" },
+    authors: [{ name: "Ornata" }],
+    openGraph: { title, description, url, siteName: "Ornata", type: "website", locale: locale === "en" ? "en_US" : "zh_CN" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
-const JSON_LD = {
+function jsonLd(locale: Locale, DESCRIPTION: string) {
+  return {
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -89,7 +82,7 @@ const JSON_LD = {
       url: "https://ornata.app",
       name: "Ornata",
       description: DESCRIPTION,
-      inLanguage: "en",
+      inLanguage: COPY[locale].htmlLang,
       publisher: { "@id": "https://ornata.app/#org" },
     },
     {
@@ -132,11 +125,14 @@ const JSON_LD = {
     },
   ],
 };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function RootShell({ locale, children }: { locale: Locale; children: React.ReactNode }) {
+  const DESCRIPTION = COPY[locale].meta.description;
+  const JSON_LD = jsonLd(locale, DESCRIPTION);
   return (
     <html
-      lang="en"
+      lang={COPY[locale].htmlLang}
       className={`${GeistSans.variable} ${GeistMono.variable} ${serif.variable} ${appSans.variable} ${noteSans.variable}`}
     >
       <head>
@@ -161,7 +157,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             strategy="afterInteractive"
           />
         ) : null}
-        {children}
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
       </body>
     </html>
   );

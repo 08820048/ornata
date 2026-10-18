@@ -6,13 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { AppDemo } from "./AppDemo";
 import { DownloadButton } from "./ui/download-button";
 import { EASE_OUT } from "@/lib/ease";
-
-const FACTS = [
-  ["Format", "Plain .md"],
-  ["Storage", "Your folder"],
-  ["Account", "Not required"],
-  ["Build", "Signed & notarized"],
-] as const;
+import { useCopy } from "@/lib/locale";
 
 function WindowsMark() {
   return (
@@ -30,6 +24,7 @@ function WindowsMark() {
 
 export function Hero() {
   const reduce = useReducedMotion();
+  const copy = useCopy().hero;
   const rise = (delay: number) =>
     reduce
       ? { initial: false as const }
@@ -45,17 +40,17 @@ export function Hero() {
         <div className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
           <aside className="hidden border-r border-border px-8 py-12 lg:flex lg:flex-col lg:justify-between">
             <p className="font-mono text-[10px] uppercase leading-5 tracking-[0.16em] text-faint">
-              Local-first
+              {copy.aside[0]}
               <br />
-              Markdown
+              {copy.aside[1]}
               <br />
-              for macOS
+              {copy.aside[2]}
             </p>
             <a
               href="#principles"
               className="group inline-flex min-h-11 items-center gap-2 text-[12px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
             >
-              Read the position
+              {copy.readPosition}
               <ArrowDownRight
                 size={14}
                 className="transition-transform duration-150 group-hover:translate-x-0.5 group-hover:translate-y-0.5"
@@ -77,7 +72,7 @@ export function Hero() {
             <motion.div {...rise(0)} className="flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-foreground" />
               <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                A focused writing instrument
+                {copy.badge}
               </span>
             </motion.div>
 
@@ -86,11 +81,11 @@ export function Hero() {
                 {...rise(0.06)}
                 className="max-w-[860px] text-balance font-serif text-[54px] font-normal leading-[0.92] tracking-[-0.045em] text-foreground sm:text-[78px] lg:text-[98px]"
               >
-                Markdown,
+                {copy.headline[0]}
                 <br />
-                without the
+                {copy.headline[1]}
                 <br />
-                machinery.
+                {copy.headline[2]}
               </motion.h1>
 
               <div className="max-w-md xl:pb-2">
@@ -98,11 +93,7 @@ export function Hero() {
                   {...rise(0.13)}
                   className="text-pretty text-[16px] leading-7 text-muted-foreground sm:text-[17px]"
                 >
-                  Ornata is a local-first Markdown notes app for macOS. It
-                  keeps the editor fast, the interface quiet, and every note
-                  as a plain .md file in a folder you own. No proprietary
-                  database. No account required. Just a precise place to
-                  write.
+                  {copy.body}
                 </motion.p>
                 <motion.div
                   {...rise(0.2)}
@@ -112,11 +103,11 @@ export function Hero() {
                   <button
                     type="button"
                     disabled
-                    aria-label="Windows download coming soon"
+                    aria-label={copy.windowsLabel}
                     className="inline-flex h-12 w-full select-none items-center justify-center gap-2 whitespace-nowrap rounded-[11px] border border-border bg-panel px-6 text-[14px] font-medium text-muted-foreground opacity-70 sm:w-auto"
                   >
                     <WindowsMark />
-                    Coming Soon
+                    {copy.windowsSoon}
                   </button>
                 </motion.div>
                 <motion.p
@@ -124,7 +115,7 @@ export function Hero() {
                   className="mt-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.11em] text-faint"
                 >
                   <ShieldCheck size={12} />
-                  Apple Silicon · macOS 12+
+                  {copy.platform}
                 </motion.p>
               </div>
             </div>
@@ -133,7 +124,7 @@ export function Hero() {
 
         <div className="paper-grid relative border-b border-border px-3 py-12 sm:px-8 sm:py-16 lg:px-16 lg:py-20">
           <div className="pointer-events-none absolute left-4 top-4 font-mono text-[9px] uppercase tracking-[0.14em] text-faint sm:left-8">
-            The workbench / 01
+            {copy.workbench}
           </div>
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 28 }}
@@ -147,7 +138,7 @@ export function Hero() {
         </div>
 
         <dl className="grid grid-cols-2 lg:grid-cols-4">
-          {FACTS.map(([term, detail], index) => (
+          {copy.facts.map(([term, detail], index) => (
             <div
               key={term}
               className={`px-5 py-5 sm:px-8 ${

@@ -62,6 +62,8 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 - No autocorrect anywhere: global `focusin` hook in `main.tsx` handles inputs; editor sets its own attrs.
 - Website feature additions must use the animated product-behavior demos established in `site/components/FeaturesBento.tsx` (for example, “Link ideas together”). Do not add static feature-card/checklist grids, and do not promote small release details as standalone homepage features.
 
+- Website languages: English at the root, 简体中文 under `/zh` (`site/app/(en)` and `site/app/zh` are two root layouts sharing `app/shell.tsx`). Page copy lives in `site/lib/copy.ts` (+ `faq.ts`, `releases.ts` with optional `zh`, and `components/docs/*.zh.tsx`); components read it with `useCopy()`. A new user-facing string needs both languages. The product-demo mock UIs stay English.
+
 ## Adding beui components
 
 Animated components come from the beui registry (the user's own library). A compatibility layer is already in place so pulled components inherit our monochrome theme unchanged:
