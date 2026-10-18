@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use crate::error::{AppError, AppResult};
-use crate::{notes, search, vault};
+use crate::{notes, search, vault, vault_guard};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -230,8 +230,20 @@ fn execute_notes(
     action: &str,
     args: &Value,
 ) -> AppResult<BridgeOutcome> {
+    // Agents only ever touch notes that really live in the vault: a symlink in
+    // notes/ pointing elsewhere is refused (see vault_guard).
+    if let Some(path) = args.get("path").and_then(Value::as_str) {
+        vault_guard::contained_rel(root, path)?;
+    }
+    let directory = optional_string(args, "directory");
+    if !directory.is_empty() {
+        vault_guard::contained_rel(root, directory)?;
+    }
     let (value, mutation) = match action {
-        "list" => (serde_json::to_value(vault::scan_tree(root))?, None),
+        "list" => (
+            serde_json::to_value(vault_guard::retain_tree(root, vault::scan_tree(root)?))?,
+            None,
+        ),
         "search" => {
             let query = required_string(args, "query")?;
             let limit = args
@@ -239,10 +251,11 @@ fn execute_notes(
                 .and_then(Value::as_u64)
                 .unwrap_or(20)
                 .min(100) as usize;
-            (
-                serde_json::to_value(search::search_notes(root, query, limit)?)?,
-                None,
-            )
+            let hits: Vec<_> = search::search_notes(root, query, limit)?
+                .into_iter()
+                .filter(|hit| vault_guard::rel_inside(root, &hit.rel))
+                .collect();
+            (serde_json::to_value(hits)?, None)
         }
         "read" => (
             json!({ "content": notes::read_note(root, required_string(args, "path")?)? }),

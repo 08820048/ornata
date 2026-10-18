@@ -33,6 +33,7 @@ mod settings_window;
 mod upload;
 mod util;
 mod vault;
+mod vault_guard;
 mod watcher;
 
 use commands::AppState;

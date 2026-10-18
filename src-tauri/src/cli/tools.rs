@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use crate::agent_tools::{self, AgentPermission, BridgeRequest};
 use crate::config::CliAccess;
 use crate::error::{AppError, AppResult};
-use crate::{backlinks, notes, tasks, templates, vault};
+use crate::{backlinks, notes, tasks, templates, vault, vault_guard};
 
 /// What a connection may do, lowest to highest. A tool needs a level and is
 /// refused below it.
@@ -196,6 +196,10 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
             level.label()
         )));
     }
+    // Only notes that really live in the vault (not symlinks pointing out).
+    if let Some(path) = args.get("path").and_then(Value::as_str) {
+        vault_guard::contained_rel(root, path)?;
+    }
     match name {
         "vault_info" => Ok(json!({
             "root": root,
@@ -204,15 +208,29 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
         })),
         "list_notes" => {
             let mut out = Vec::new();
-            flatten(&vault::scan_tree(root)?, opt(args, "folder").trim_matches('/'), &mut out);
+            let tree = vault_guard::retain_tree(root, vault::scan_tree(root)?);
+            flatten(&tree, opt(args, "folder").trim_matches('/'), &mut out);
             Ok(Value::Array(out))
         }
         "read_note" => bridge(root, level, "read", json!({ "path": arg(args, "path")? })),
         "search_notes" => bridge(root, level, "search", args.clone()),
-        "get_backlinks" => Ok(serde_json::to_value(backlinks::backlinks(root, arg(args, "path")?)?)?),
-        "list_tasks" => Ok(serde_json::to_value(tasks::open_tasks(root)?)?),
+        "get_backlinks" => {
+            let links: Vec<_> = backlinks::backlinks(root, arg(args, "path")?)?
+                .into_iter()
+                .filter(|link| vault_guard::rel_inside(root, &link.rel))
+                .collect();
+            Ok(serde_json::to_value(links)?)
+        }
+        "list_tasks" => {
+            let open: Vec<_> = tasks::open_tasks(root)?
+                .into_iter()
+                .filter(|task| vault_guard::rel_inside(root, &task.rel))
+                .collect();
+            Ok(serde_json::to_value(open)?)
+        }
         "get_daily_note" => {
             let rel = format!("journal/{}.md", day(args)?);
+            vault_guard::contained_rel(root, &rel)?;
             Ok(match notes::read_note(root, &rel) {
                 Ok(content) => json!({ "path": rel, "exists": true, "content": content }),
                 Err(_) => json!({ "path": rel, "exists": false }),
@@ -231,6 +249,7 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
         }
         "add_to_daily_note" => {
             let date = day(args)?;
+            vault_guard::contained_rel(root, &format!("journal/{date}.md"))?;
             let template = templates::read_template(root, "daily").unwrap_or_default();
             let rel = ensure_note(root, "journal", &date, &template)?;
             append(root, &rel, arg(args, "text")?)?;
@@ -238,6 +257,7 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
         }
         "capture" => {
             let text = arg(args, "text")?.split_whitespace().collect::<Vec<_>>().join(" ");
+            vault_guard::contained_rel(root, "Inbox.md")?;
             let rel = ensure_note(root, "", "Inbox", "")?;
             append(root, &rel, &format!("- [{}] {text}", local("+%Y-%m-%d %H:%M")))?;
             Ok(json!({ "path": rel }))
@@ -251,5 +271,43 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
             Ok(json!({ "completed": true }))
         }
         _ => Err(AppError::InvalidInput(format!("unknown tool: {name}"))),
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use crate::vault_guard::fixture::escape;
+
+    fn text(value: &Value) -> String {
+        value.to_string()
+    }
+
+    #[test]
+    fn agents_cannot_read_or_write_through_links_out_of_the_vault() {
+        let v = escape();
+        let all = Level::Destructive;
+        assert!(call(&v.root, all, "read_note", &json!({ "path": "ok.md" })).is_ok());
+        assert!(call(&v.root, all, "read_note", &json!({ "path": "alias.md" })).is_ok());
+        for path in ["evil.md", "linked/secret.md", "dangling.md"] {
+            assert!(call(&v.root, all, "read_note", &json!({ "path": path })).is_err(), "{path}");
+            assert!(call(&v.root, all, "append_to_note", &json!({ "path": path, "content": "x" })).is_err(), "{path}");
+            assert!(call(&v.root, all, "update_note", &json!({ "path": path, "content": "x" })).is_err(), "{path}");
+            assert!(call(&v.root, all, "delete_note", &json!({ "path": path })).is_err(), "{path}");
+        }
+        assert!(call(&v.root, all, "create_note", &json!({ "title": "x", "directory": "linked" })).is_err());
+        assert_eq!(std::fs::read_to_string(&v.secret).unwrap(), "TOP SECRET\n- [ ] outside task");
+    }
+
+    #[test]
+    fn lists_search_tasks_and_links_leave_out_what_points_outside() {
+        let v = escape();
+        let r = Level::ReadOnly;
+        let listed = text(&call(&v.root, r, "list_notes", &json!({})).unwrap());
+        assert!(listed.contains("ok.md") && !listed.contains("evil") && !listed.contains("linked"));
+        let found = text(&call(&v.root, r, "search_notes", &json!({ "query": "secret" })).unwrap());
+        assert!(found.contains("ok.md") && !found.contains("TOP SECRET") && !found.contains("evil"));
+        let tasks = text(&call(&v.root, r, "list_tasks", &json!({})).unwrap());
+        assert!(tasks.contains("inside task") && !tasks.contains("outside task"));
     }
 }

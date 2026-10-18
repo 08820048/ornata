@@ -157,5 +157,16 @@ fn stopping_releases_the_port_and_busy_ports_fall_through() {
     assert!(bare.body.contains("open a vault"), "no vault open: a clear error, not a crash");
     second.stop();
     first.stop();
-    assert!(TcpStream::connect(("127.0.0.1", port)).is_err());
+    // The port is free again: this server can be started on it. (Tests run in
+    // parallel and another one may grab the same ephemeral port for a moment,
+    // so allow a few tries rather than asserting "nothing listens".)
+    let again = (0..50).find_map(|_| {
+        let attempt = start(port, Arc::new(|| None)).ok().filter(|s| s.port() == port);
+        if attempt.is_none() {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        attempt
+    });
+    assert!(again.is_some(), "port {port} was not released");
+    again.unwrap().stop();
 }
