@@ -16,8 +16,15 @@ export function normalizeArch(value = process.arch) {
   throw new Error(`Unsupported release architecture: ${value}`);
 }
 
-export function platformKey(arch) {
-  return `darwin-${normalizeArch(arch)}`;
+export function releasePlatform(value = process.env.RELEASE_PLATFORM) {
+  if (!value || value === "darwin") return "darwin";
+  if (value === "windows" || value === "win32") return "windows";
+  if (value === "linux") return "linux";
+  throw new Error(`Unsupported release platform: ${value}`);
+}
+
+export function platformKey(arch, platform = releasePlatform()) {
+  return `${platform}-${normalizeArch(arch)}`;
 }
 
 export function releaseObjectKey(version, arch, filePath) {

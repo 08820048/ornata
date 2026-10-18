@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import {
+  existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -12,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import {
   normalizeArch,
   platformKey,
+  releasePlatform,
   releaseUrl,
 } from "./release-config.js";
 
@@ -30,15 +32,20 @@ if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
 }
 
 const arch = normalizeArch(process.env.RELEASE_ARCH);
-const macosDir = join(projectRoot, "src-tauri", "target", "release", "bundle", "macos");
-const signatureFiles = readdirSync(macosDir)
-  .filter((name) => name.endsWith(".app.tar.gz.sig"))
-  .map((name) => join(macosDir, name))
+const platform = releasePlatform();
+// Updater signatures land next to the bundles: macos/*.app.tar.gz.sig,
+// windows nsis/*.exe.sig, windows msi not used for updates.
+const bundleSubdir = platform === "windows" ? "nsis" : "macos";
+const sigSuffix = platform === "windows" ? ".exe.sig" : ".app.tar.gz.sig";
+const bundleDir = join(projectRoot, "src-tauri", "target", "release", "bundle", bundleSubdir);
+const signatureFiles = readdirSync(bundleDir)
+  .filter((name) => name.endsWith(sigSuffix))
+  .map((name) => join(bundleDir, name))
   .filter((path) => statSync(path).size > 0);
 
 if (signatureFiles.length !== 1) {
   console.error(
-    `Expected exactly one macOS updater signature in ${macosDir}, found ${signatureFiles.length}.`,
+    `Expected exactly one ${platform} updater signature in ${bundleDir}, found ${signatureFiles.length}.`,
   );
   console.error("Remove stale release artifacts and rebuild before generating the manifest.");
   process.exit(1);
@@ -58,7 +65,7 @@ const manifest = {
   notes,
   pub_date: new Date().toISOString(),
   platforms: {
-    [platformKey(arch)]: {
+    [platformKey(arch, platform)]: {
       signature: readFileSync(signaturePath, "utf8").trim(),
       url: releaseUrl(version, arch, bundlePath),
     },
@@ -67,6 +74,15 @@ const manifest = {
 
 const outputDir = join(projectRoot, "release", version);
 const outputPath = join(outputDir, "latest.json");
+
+// Merge into an existing manifest so each platform adds its entry without
+// dropping entries built on other machines.
+if (existsSync(outputPath)) {
+  const existing = JSON.parse(readFileSync(outputPath, "utf8"));
+  if (existing.version === version && existing.platforms) {
+    manifest.platforms = { ...existing.platforms, ...manifest.platforms };
+  }
+}
 mkdirSync(outputDir, { recursive: true });
 writeFileSync(outputPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 

@@ -13,6 +13,7 @@ import {
   normalizeArch,
   platformKey,
   releaseObjectKey,
+  releasePlatform,
 } from "./release-config.js";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -26,8 +27,9 @@ if (!version) {
 }
 
 const arch = normalizeArch(process.env.RELEASE_ARCH);
+const platform = releasePlatform();
 const releaseDir = join(projectRoot, "release", version);
-const platformDir = join(releaseDir, platformKey(arch));
+const platformDir = join(releaseDir, platformKey(arch, platform));
 const manifestPath = join(releaseDir, "latest.json");
 
 if (!existsSync(manifestPath) || !existsSync(platformDir)) {
@@ -39,7 +41,10 @@ if (!existsSync(manifestPath) || !existsSync(platformDir)) {
 const stagedFiles = readdirSync(platformDir)
   .map((name) => join(platformDir, name))
   .filter((path) => statSync(path).isFile());
-const requiredSuffixes = [".app.tar.gz", ".app.tar.gz.sig", ".dmg"];
+const requiredSuffixes =
+  platform === "windows"
+    ? [".exe", ".exe.sig"]
+    : [".app.tar.gz", ".app.tar.gz.sig", ".dmg"];
 for (const suffix of requiredSuffixes) {
   if (!stagedFiles.some((path) => path.endsWith(suffix))) {
     console.error(`Missing staged ${suffix} artifact in ${platformDir}`);
@@ -48,7 +53,7 @@ for (const suffix of requiredSuffixes) {
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-if (manifest.version !== version || !manifest.platforms?.[platformKey(arch)]) {
+if (manifest.version !== version || !manifest.platforms?.[platformKey(arch, platform)]) {
   console.error("Staged latest.json does not match the requested version and platform.");
   process.exit(1);
 }
@@ -145,7 +150,7 @@ if (confirmed) {
   if (published.version !== version) {
     throw new Error(`Published manifest reports ${published.version}, expected ${version}`);
   }
-  const bundleResponse = await fetch(manifest.platforms[platformKey(arch)].url, {
+  const bundleResponse = await fetch(manifest.platforms[platformKey(arch, platform)].url, {
     method: "HEAD",
     cache: "no-store",
   });
