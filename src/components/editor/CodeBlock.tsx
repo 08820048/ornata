@@ -22,6 +22,7 @@ import {
   normalizeSyntaxLanguage,
   SHIKI_THEMES,
 } from "@/lib/syntaxHighlighter";
+import { nodePos } from "@/lib/nodePos";
 import { useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 
@@ -150,10 +151,7 @@ function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps
     [],
   );
 
-  const position = () => {
-    const pos = getPos();
-    return typeof pos === "number" ? pos : null;
-  };
+  const position = () => nodePos(getPos);
   const multiLine = node.textContent.includes("\n");
   const isCollapsed = () => codeFoldKey.getState(editor.state)?.collapsed.has(position() ?? -1) ?? false;
   const collapsed = isCollapsed();
