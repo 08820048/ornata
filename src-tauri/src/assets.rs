@@ -316,6 +316,7 @@ fn decode_base64_bytes(input: &str) -> Option<Vec<u8>> {
 mod tests {
     use super::*;
     use crate::notes::{create_note, write_note};
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
 
     /// Files are written "just now"; scanning from an hour later ages them
@@ -359,6 +360,7 @@ mod tests {
         assert_eq!(names, vec!["five.png"]);
     }
 
+    #[cfg(unix)]
     #[test]
     fn read_failure_fails_the_scan() {
         let dir = tempdir().unwrap();

@@ -59,6 +59,7 @@ pub fn open_settings_window(app: AppHandle) -> AppResult<()> {
         return Ok(());
     }
 
+    #[allow(unused_mut)]
     let mut builder = tauri::WebviewWindowBuilder::new(
         &app,
         SETTINGS_WINDOW_LABEL,

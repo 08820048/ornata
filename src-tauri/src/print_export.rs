@@ -35,6 +35,7 @@ pub struct PrintJob {
     pub kind: ExportKind,
     pub markdown: String,
     pub vault_root: String,
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub default_name: String,
     /// File destination, picked before rendering (HTML, and PDF on macOS).
     pub path: Option<PathBuf>,
@@ -44,6 +45,7 @@ pub struct PrintJob {
 
 /// One PDF bookmark: a heading's text and the index of its parent entry
 /// (-1 for top level), computed by the print view (see lib/pdfOutline.ts).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct OutlineEntry {
     pub text: String,
@@ -232,7 +234,7 @@ pub async fn print_view_ready(
     id: u64,
     body_html: String,
     page_css: String,
-    headings: Vec<OutlineEntry>,
+    #[cfg_attr(not(target_os = "macos"), allow(unused_variables))] headings: Vec<OutlineEntry>,
 ) -> AppResult<()> {
     let job = take_job_if(&app, id)?;
     match job.kind {

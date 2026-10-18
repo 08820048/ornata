@@ -70,6 +70,7 @@ pub(crate) mod fixture {
 
     use tempfile::TempDir;
 
+    #[cfg(unix)]
     use crate::vault::ensure_layout;
 
     /// A vault with a normal note, a link to an outside secret, a link to an

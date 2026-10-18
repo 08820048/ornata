@@ -116,6 +116,7 @@ pub enum PaperSize {
 
 impl PaperSize {
     /// Width × height in PDF points (1/72 in); None follows the system.
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub fn points(self) -> Option<(f64, f64)> {
         match self {
             Self::System => None,
@@ -147,6 +148,7 @@ impl PageMargins {
     }
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn mm_to_points(mm: f64) -> f64 {
     mm / 25.4 * 72.0
 }
