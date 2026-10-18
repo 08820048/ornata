@@ -90,7 +90,7 @@ function jsonLd(locale: Locale, DESCRIPTION: string) {
       "@id": "https://ornata.app/#app",
       name: "Ornata",
       applicationCategory: "ProductivityApplication",
-      operatingSystem: "macOS 12+",
+      operatingSystem: "macOS 12+, Windows 10+",
       description: DESCRIPTION,
       url: "https://ornata.app",
       image: "https://ornata.app/ornata-mark-2026.png",

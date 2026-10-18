@@ -5,6 +5,9 @@ import { ArrowDownRight, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { AppDemo } from "./AppDemo";
 import { DownloadButton } from "./ui/download-button";
+import { ButtonLink } from "./ui/button";
+import { track } from "@/lib/analytics";
+import { EXE, VERSION } from "@/lib/config";
 import { EASE_OUT } from "@/lib/ease";
 import { useCopy } from "@/lib/locale";
 
@@ -100,15 +103,17 @@ export function Hero() {
                   className="mt-7 flex flex-col gap-3 sm:flex-row"
                 >
                   <DownloadButton className="w-full whitespace-nowrap sm:w-auto" />
-                  <button
-                    type="button"
-                    disabled
+                  <ButtonLink
+                    href={EXE}
+                    variant="secondary"
+                    size="lg"
                     aria-label={copy.windowsLabel}
-                    className="inline-flex h-12 w-full select-none items-center justify-center gap-2 whitespace-nowrap rounded-[11px] border border-border bg-panel px-6 text-[14px] font-medium text-muted-foreground opacity-70 sm:w-auto"
+                    onClick={() => track("Download", { version: VERSION, platform: "windows" })}
+                    className="w-full whitespace-nowrap sm:w-auto"
                   >
                     <WindowsMark />
-                    {copy.windowsSoon}
-                  </button>
+                    {copy.windowsDownload}
+                  </ButtonLink>
                 </motion.div>
                 <motion.p
                   {...rise(0.26)}

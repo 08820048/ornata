@@ -34,8 +34,8 @@ export const FAQS_EN: Faq[] = [
     a: "Yes. Production downloads are signed with an Apple Developer ID certificate, notarized by Apple, and distributed through Ornata’s signed update feed.",
   },
   {
-    q: "Windows or Linux?",
-    a: "macOS first. Ornata is built on Tauri, which is cross-platform, so other platforms may follow — but macOS is where it's polished today.",
+    q: "Is there a Windows version?",
+    a: "Yes — a 64-bit installer for Windows 10 and later, with the same plain-Markdown vaults and the same update feed. It is newer than the Mac app, so expect rougher edges, and the installer is not yet code-signed: Windows SmartScreen may warn on first run (choose More info, then Run anyway). On Windows, Ctrl takes the place of ⌘, and PDF export goes through the system print dialog. Linux is not available yet.",
   },
   {
     q: "Can I use Claude Code, Codex, or Cursor with my notes?",
@@ -92,8 +92,8 @@ export const FAQS_ZH: Faq[] = [
     a: "有。正式下载包使用 Apple Developer ID 证书签名，经 Apple 公证，并通过 Ornata 的签名更新源分发。",
   },
   {
-    q: "有 Windows 或 Linux 版吗？",
-    a: "先做 macOS。Ornata 基于跨平台的 Tauri 构建，所以以后可能支持其他平台 —— 但目前 macOS 是打磨得最好的平台。",
+    q: "有 Windows 版吗？",
+    a: "有。提供适用于 Windows 10 及以上的 64 位安装包，使用同样的纯 Markdown 笔记库和同一个更新源。它比 Mac 版更新，细节上会更粗糙一些，而且安装包暂时还没有代码签名：首次运行时 Windows SmartScreen 可能会提示（选择「更多信息」，再点「仍要运行」）。在 Windows 上用 Ctrl 代替 ⌘，PDF 导出走系统打印对话框。Linux 版暂时没有。",
   },
   {
     q: "能用 Claude Code、Codex 或 Cursor 处理我的笔记吗？",

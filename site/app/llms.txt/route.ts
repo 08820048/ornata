@@ -1,4 +1,4 @@
-import { DMG, VERSION } from "@/lib/config";
+import { DMG, EXE, VERSION } from "@/lib/config";
 import { FAQS } from "@/lib/faq";
 
 // llms.txt — a plain index for AI crawlers and answer engines.
@@ -19,10 +19,11 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - [简体中文 / Chinese](https://ornata.app/zh): 中文首页、文档(/zh/docs)与更新日志(/zh/updates)
 - [Updates](https://ornata.app/updates): Release notes for every version
 - [Download ${VERSION} (Apple Silicon DMG)](${DMG}): Latest signed and notarized build
+- [Download ${VERSION} (Windows 64-bit installer)](${EXE}): Not yet code-signed; SmartScreen may warn
 
 ## Key facts
 
-- Platform: macOS 12+, Apple Silicon
+- Platform: macOS 12+ (Apple Silicon), Windows 10+ (64-bit; Ctrl replaces ⌘)
 - Format: plain .md files in real folders; wikilinks are stored as standard Markdown links
 - Storage: any folder the user chooses, on their Mac; syncs via iCloud Drive, Dropbox, or git
 - Pricing: free
