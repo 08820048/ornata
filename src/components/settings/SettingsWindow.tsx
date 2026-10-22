@@ -57,7 +57,7 @@ const SECTIONS: Section[] = [
     id: "general",
     icon: SlidersHorizontal,
     labelKey: "settings.section.general",
-    keywords: ["language", "about", "version", "语言", "关于", "版本"],
+    keywords: ["language", "语言"],
     render: () => <GeneralSection />,
   },
   {
@@ -113,7 +113,7 @@ const SECTIONS: Section[] = [
     id: "updates",
     icon: Download,
     labelKey: "settings.section.updates",
-    keywords: ["update", "upgrade", "更新", "升级"],
+    keywords: ["about", "version", "update", "upgrade", "关于", "版本", "更新", "升级"],
     render: () => <UpdatesSection />,
   },
 ];
@@ -228,9 +228,6 @@ export function SettingsWindow() {
             >
               {current.render()}
             </motion.div>
-            <p className="mt-10 text-center text-[11px] text-faint">
-              {t("settings.footer")}
-            </p>
           </div>
         </div>
       </main>

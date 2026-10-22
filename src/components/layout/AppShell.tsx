@@ -1,4 +1,10 @@
-import { CalendarDays, ChevronLeft, ChevronRight, FilePlus, Search } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  FilePlus,
+  Search,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { NotesWorkspace } from "@/components/editor/NotesWorkspace";
 import { TabBar } from "@/components/editor/TabBar";
@@ -24,66 +30,69 @@ export function AppShell() {
   const toggleSidebar = useUi((s) => s.toggleSidebar);
   const t = useT();
 
-
   return (
-    <div className="relative flex h-full bg-bg">
-      {/* Collapse by animating width (spring) with the panel clipped at a
+    <div className="flex h-full flex-col bg-bg">
+      <div className="relative flex min-h-0 flex-1">
+        {/* Collapse by animating width (spring) with the panel clipped at a
           fixed inner width — slides cleanly, no content reflow-jitter. */}
-      <motion.div
-        animate={{ width: sidebarHidden ? 0 : SIDEBAR_WIDTH }}
-        initial={false}
-        transition={SPRING_PANEL}
-        className="h-full shrink-0 overflow-hidden"
-      >
-        <div style={{ width: SIDEBAR_WIDTH }} className="h-full">
-          <Sidebar />
-        </div>
-      </motion.div>
-
-      {!focusMode && <SidebarEdgeToggle
-        hidden={sidebarHidden}
-        label={`${t("editor.toggleSidebar")} ${keyLabel("⌘\\")}`}
-        onClick={toggleSidebar}
-      />}
-
-      <main className="relative flex min-w-0 flex-1 flex-col">
-        {/* Row 1 — titlebar: sidebar toggle + open-note tabs. The strip shares
-            the sidebar's panel tone; the active tab takes the content bg so it
-            reads as merged with the pane below, code-editor style. */}
         <motion.div
-          data-tauri-drag-region
-          className={cx(
-            "flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pr-3 transition-opacity duration-150",
-            focusMode && "opacity-0 hover:opacity-100",
-          )}
-          animate={{ paddingLeft: sidebarHidden && isMac() ? 84 : 10 }}
+          animate={{ width: sidebarHidden ? 0 : SIDEBAR_WIDTH }}
           initial={false}
           transition={SPRING_PANEL}
+          className="h-full shrink-0 overflow-hidden"
         >
-          <TabBar />
+          <div style={{ width: SIDEBAR_WIDTH }} className="h-full">
+            <Sidebar />
+          </div>
         </motion.div>
 
-        {/* Row 2 — the focused note's header. With a split open, every pane
-            carries its own header instead (see NotesWorkspace). */}
-        {!split && (
-          <div
-            className={cx(
-              "flex h-10 bg-transparent shrink-0 items-center px-3 transition-opacity duration-150",
-              focusMode && "opacity-0 hover:opacity-100",
-            )}
-          >
-            <PaneHeader tab={view ? tabOfView(view) : null} focused />
-          </div>
+        {!focusMode && (
+          <SidebarEdgeToggle
+            hidden={sidebarHidden}
+            label={`${t("editor.toggleSidebar")} ${keyLabel("⌘\\")}`}
+            onClick={toggleSidebar}
+          />
         )}
 
-        <div className="relative min-h-0 flex-1">
-          {/* Workspace stays mounted (hidden) across view switches — open
+        <main className="relative flex min-w-0 flex-1 flex-col">
+          {/* Row 1 — titlebar: sidebar toggle + open-note tabs. The strip shares
+            the sidebar's panel tone; the active tab takes the content bg so it
+            reads as merged with the pane below, code-editor style. */}
+          <motion.div
+            data-tauri-drag-region
+            className={cx(
+              "flex h-11 shrink-0 items-stretch gap-1.5 bg-panel pr-3 transition-opacity duration-150",
+              focusMode && "opacity-0 hover:opacity-100",
+            )}
+            animate={{ paddingLeft: sidebarHidden && isMac() ? 84 : 10 }}
+            initial={false}
+            transition={SPRING_PANEL}
+          >
+            <TabBar />
+          </motion.div>
+
+          {/* Row 2 — the focused note's header. With a split open, every pane
+            carries its own header instead (see NotesWorkspace). */}
+          {!split && (
+            <div
+              className={cx(
+                "flex h-10 bg-transparent shrink-0 items-center px-3 transition-opacity duration-150",
+                focusMode && "opacity-0 hover:opacity-100",
+              )}
+            >
+              <PaneHeader tab={view ? tabOfView(view) : null} focused />
+            </div>
+          )}
+
+          <div className="relative min-h-0 flex-1">
+            {/* Workspace stays mounted (hidden) across view switches — open
               tabs keep their live editors, so returning to notes is instant. */}
-          <NotesWorkspace visible={view !== null} />
-          {!view && <EmptyState />}
-        </div>
-        <ShortcutBar />
-      </main>
+            <NotesWorkspace visible={view !== null} />
+            {!view && <EmptyState />}
+          </div>
+        </main>
+      </div>
+      <ShortcutBar />
     </div>
   );
 }
@@ -172,9 +181,7 @@ function EmptyState() {
         <p className="text-[16px] font-semibold tracking-[-0.01em] text-ink">
           {t("editor.emptyTitle")}
         </p>
-        <p className="mt-1 text-[13px] text-faint">
-          {t("editor.emptyDetail")}
-        </p>
+        <p className="mt-1 text-[13px] text-faint">{t("editor.emptyDetail")}</p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <EmptyAction

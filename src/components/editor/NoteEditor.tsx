@@ -319,8 +319,8 @@ export const NoteEditor = memo(function NoteEditor({
         <div
           className={cx(
             "pointer-events-none fixed flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
-            // Sit inside the status bar's h-7 strip, left of the MCP plug.
-            focusMode ? "bottom-3 right-4" : "bottom-0 h-7 right-11",
+            // Sit inside the status bar's h-7 strip, left of the MCP plug and settings icons.
+            focusMode ? "bottom-3 right-4" : "bottom-0 h-7 right-[72px]",
             (content.words === 0 || content.missing) && "opacity-0",
           )}
         >

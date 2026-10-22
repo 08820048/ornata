@@ -11,14 +11,12 @@ import {
   Pin,
   RefreshCw,
   Search,
-  Settings,
   X,
 } from "lucide-react";
 import { ActionSwapButton } from "@/components/motion/action-swap";
 import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { ipc } from "@/lib/ipc";
 import { useUi } from "@/stores/ui";
 import { useUpdater } from "@/stores/updater";
 import { vaultNote } from "@/lib/noteRef";
@@ -166,20 +164,6 @@ export function Sidebar() {
       <FileTree />
 
       <UpdateRow />
-
-      <div className="border-t border-line-soft px-2 py-1.5">
-        <button
-          type="button"
-          onClick={() => void ipc.openSettingsWindow()}
-          className="flex h-[30px] w-full items-center gap-2.5 rounded-md px-2 text-[13px] font-medium text-muted transition-colors duration-100 hover:bg-hover hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ink"
-        >
-          <Settings size={15} strokeWidth={1.75} />
-          <span>{t("common.settings")}</span>
-          <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">
-            {keyLabel("⌘,")}
-          </kbd>
-        </button>
-      </div>
     </aside>
   );
 }

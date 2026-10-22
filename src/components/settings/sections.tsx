@@ -22,7 +22,6 @@ import { SHORTCUTS } from "@/lib/shortcuts";
 import { keyLabel } from "@/lib/utils";
 import { useLocale, useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
-import packageInfo from "../../../package.json";
 
 const THEMES: Array<{ value: Theme; label: MessageKey; icon: typeof Sun }> = [
   { value: "system", label: "settings.theme.system", icon: Monitor },
@@ -56,14 +55,6 @@ export function GeneralSection() {
             onChange={(value) => void setLanguage(value)}
             className="w-[248px]"
           />
-        </SettingRow>
-      </SettingGroup>
-
-      <SettingGroup title={t("settings.about")}>
-        <SettingRow label={t("settings.version")}>
-          <span className="font-mono text-[12px] tabular-nums text-muted">
-            {packageInfo.version}
-          </span>
         </SettingRow>
       </SettingGroup>
     </>
