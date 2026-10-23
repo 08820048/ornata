@@ -1,21 +1,20 @@
 import {
-  CalendarDays,
-  FilePlus,
-  FilePlus2,
-  FileText,
-  Focus,
-  PanelRight,
-  Plug,
-  FolderOpen,
-  ImageOff,
-  Keyboard,
-  ListChecks,
-  Share2,
-  Search,
-  Settings,
-  Zap,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  IconBolt,
+  IconCalendar,
+  IconFilePlus,
+  IconFileText,
+  IconFocus,
+  IconFolderOpen,
+  IconKeyboard,
+  IconLayoutSidebarRight,
+  IconListCheck,
+  IconPhotoOff,
+  IconPlug,
+  IconSearch,
+  IconSettings,
+  IconShare2,
+} from "@tabler/icons-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { motion } from "motion/react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -39,7 +38,7 @@ interface PaletteItem {
   /** Dim breadcrumb of the containing folder, e.g. "projects / research". */
   path?: string;
   hint?: string;
-  icon: LucideIcon;
+  icon: TablerIcon;
   run: () => void;
   /** ⌘↵: open beside the focused note (notes only). */
   runAside?: () => void;
@@ -122,7 +121,7 @@ export function CommandPalette() {
         id: "new-note",
         label: t("common.newNote"),
         hint: keyLabel("⌘N"),
-        icon: FilePlus,
+        icon: IconFilePlus,
         run: () => vault.createNote(activeDir(vault)),
       },
       ...(vault.view?.type === "note"
@@ -130,7 +129,7 @@ export function CommandPalette() {
             {
               id: "save-template",
               label: t("templates.save"),
-              icon: FilePlus2,
+              icon: IconFilePlus,
               run: () => useUi.getState().setSaveTemplateOpen(true),
             },
           ]
@@ -138,39 +137,39 @@ export function CommandPalette() {
       {
         id: "reveal-templates",
         label: t("templates.reveal"),
-        icon: FolderOpen,
+        icon: IconFolderOpen,
         run: () => void ipc.revealTemplates(),
       },
       {
         id: "quick-capture",
         label: t("daily.quickCapture"),
-        icon: Zap,
+        icon: IconBolt,
         run: () => void ipc.toggleQuickCapture(),
       },
       {
         id: "link-graph",
         label: t("graph.title"),
-        icon: Share2,
+        icon: IconShare2,
         run: () => useVault.getState().setView({ type: "graph" }),
       },
       {
         id: "cleanup-assets",
         label: t("assets.cleanup"),
-        icon: ImageOff,
+        icon: IconPhotoOff,
         run: () => useUi.getState().setUnusedAssetsOpen(true),
       },
       {
         id: "daily-note",
         label: t("daily.new"),
         hint: keyLabel("⌘J"),
-        icon: CalendarDays,
+        icon: IconCalendar,
         run: () => void vault.openDailyNote(),
       },
       ...templates.map(
         (name): PaletteItem => ({
           id: `template-${name}`,
           label: t("templates.newFrom", { name }),
-          icon: FilePlus2,
+          icon: IconFilePlus,
           run: () => void vault.createNoteFromTemplate(name),
         }),
       ),
@@ -178,19 +177,19 @@ export function CommandPalette() {
         id: "open-markdown",
         label: t("palette.openMarkdown"),
         hint: keyLabel("⌘O"),
-        icon: FolderOpen,
+        icon: IconFolderOpen,
         run: () => vault.chooseExternalNotes(),
       },
       {
         id: "open-tasks",
         label: t("tasks.title"),
-        icon: ListChecks,
+        icon: IconListCheck,
         run: () => useUi.getState().setTasksOpen(true),
       },
       {
         id: "reveal-vault",
         label: t("palette.revealVault"),
-        icon: FolderOpen,
+        icon: IconFolderOpen,
         run: () => {
           if (vault.root) void openPath(vault.root);
         },
@@ -200,7 +199,7 @@ export function CommandPalette() {
             {
               id: "close-split",
               label: t("split.close"),
-              icon: PanelRight,
+              icon: IconLayoutSidebarRight,
               run: () => closeSplitKeepingFocus(),
             },
           ]
@@ -208,27 +207,27 @@ export function CommandPalette() {
       {
         id: "open-mcp",
         label: t("palette.openMcp"),
-        icon: Plug,
+        icon: IconPlug,
         run: () => useUi.getState().setMcpOpen(true),
       },
       {
         id: "toggle-focus-mode",
         label: t("palette.toggleFocus"),
         hint: keyLabel("⌘⇧F"),
-        icon: Focus,
+        icon: IconFocus,
         run: () => useUi.getState().toggleFocusMode(),
       },
       {
         id: "toggle-shortcut-bar",
         label: t("palette.toggleShortcutBar"),
-        icon: Keyboard,
+        icon: IconKeyboard,
         run: () => useUi.getState().toggleShortcutBar(),
       },
       {
         id: "settings",
         label: t("common.settings"),
         hint: keyLabel("⌘,"),
-        icon: Settings,
+        icon: IconSettings,
         run: () => void ipc.openSettingsWindow(),
       },
     ].filter((a) => !q || a.label.toLowerCase().includes(q));
@@ -239,7 +238,7 @@ export function CommandPalette() {
           label: hit.title,
           path: folderRoute(hit.rel),
           hint: hit.titleMatch ? undefined : hit.snippet,
-          icon: FileText,
+          icon: IconFileText,
           runAside: () => openRelAside(hit.rel),
           run: () => {
             vault.expandTo(hit.rel);
@@ -262,7 +261,7 @@ export function CommandPalette() {
               id: `note-${node.rel}`,
               label: node.name,
               path: folderRoute(node.rel),
-              icon: FileText,
+              icon: IconFileText,
               runAside: () => openRelAside(node.rel),
               run: () => {
                 vault.expandTo(node.rel);
@@ -313,7 +312,7 @@ export function CommandPalette() {
     >
       <div>
         <div className="flex items-center gap-2.5 border-b border-line-soft px-4">
-              <Search size={15} strokeWidth={2} className="shrink-0 text-faint" />
+              <IconSearch size={15} stroke={2} className="shrink-0 text-faint" />
               <input
                 ref={inputRef}
                 value={query}
@@ -379,7 +378,7 @@ export function CommandPalette() {
                     )}
                     <item.icon
                       size={15}
-                      strokeWidth={1.75}
+                      stroke={1.75}
                       className="relative z-10 shrink-0"
                     />
                     <span className="relative z-10 max-w-[55%] shrink-0 truncate text-[13.5px] font-medium leading-normal">

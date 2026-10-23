@@ -11,16 +11,16 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  PanelRight,
-  Pin,
-  FilePlus,
-  FileText,
-  Folder,
-  FolderOpen,
-  FolderPlus,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+  IconFilePlus,
+  IconFileText,
+  IconFolder,
+  IconFolderOpen,
+  IconFolderPlus,
+  IconLayoutSidebarRight,
+  IconPencil,
+  IconPin,
+  IconTrash,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   createContext,
@@ -152,12 +152,12 @@ export function FileTree() {
     if (node.kind === "note") {
       items.push({
         label: t("split.openAside"),
-        icon: PanelRight,
+        icon: IconLayoutSidebarRight,
         onSelect: () => openRelAside(node.rel),
       });
       items.push({
         label: vault.pinned.includes(node.rel) ? t("pinned.remove") : t("pinned.add"),
-        icon: Pin,
+        icon: IconPin,
         onSelect: () => void vault.togglePin(node.rel),
       });
     }
@@ -165,12 +165,12 @@ export function FileTree() {
       items.push(
         {
           label: t("common.newNote"),
-          icon: FilePlus,
+          icon: IconFilePlus,
           onSelect: () => vault.createNote(node.rel),
         },
         {
           label: t("common.newFolder"),
-          icon: FolderPlus,
+          icon: IconFolderPlus,
           onSelect: async () => {
             const rel = await vault.createFolder(
               node.rel,
@@ -184,7 +184,7 @@ export function FileTree() {
     items.push(
       {
         label: t("tree.revealInFinder"),
-        icon: FolderOpen,
+        icon: IconFolderOpen,
         onSelect: () => {
           void ipc.revealEntry(node.rel).catch((error) => {
             toast.error(error instanceof Error ? error.message : String(error));
@@ -193,12 +193,12 @@ export function FileTree() {
       },
       {
         label: t("tree.rename"),
-        icon: Pencil,
+        icon: IconPencil,
         onSelect: () => setRenaming(node.rel),
       },
       {
         label: t("tree.trash"),
-        icon: Trash2,
+        icon: IconTrash,
         danger: true,
         onSelect: () => vault.deleteEntry(node.rel),
       },
@@ -221,9 +221,9 @@ function DragPreview({ node }: { node: TreeNode }) {
   return (
     <div className="flex h-[30px] w-[208px] items-center rounded-md border border-line bg-panel px-2 text-[13px] text-ink shadow-lg shadow-black/10">
       {isFolder ? (
-        <Folder size={14} strokeWidth={1.75} className="mr-2 text-faint" />
+        <IconFolder size={14} stroke={1.75} className="mr-2 text-faint" />
       ) : (
-        <FileText size={14} strokeWidth={1.75} className="mr-2 text-faint" />
+        <IconFileText size={14} stroke={1.75} className="mr-2 text-faint" />
       )}
       <span className={cx("truncate", isFolder && "font-medium")}>
         {node.name}
@@ -400,15 +400,15 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
             )}
           >
             {isOpen ? (
-              <FolderOpen size={14} strokeWidth={1.75} />
+              <IconFolderOpen size={14} stroke={1.75} />
             ) : (
-              <Folder size={14} strokeWidth={1.75} />
+              <IconFolder size={14} stroke={1.75} />
             )}
           </ActionSwapIcon>
         ) : (
-          <FileText
+          <IconFileText
             size={14}
-            strokeWidth={1.75}
+            stroke={1.75}
             className={cx("mr-2 shrink-0", isActive ? "text-ink" : "text-faint")}
           />
         )}

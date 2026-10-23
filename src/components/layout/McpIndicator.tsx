@@ -1,4 +1,6 @@
-import { Plug } from "lucide-react";
+import {
+  IconPlug,
+} from "@tabler/icons-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { connectedClients, mcpState } from "@/lib/mcpSetup";
 import { cx } from "@/lib/utils";
@@ -35,7 +37,7 @@ export function McpIndicator() {
             connected ? "text-success" : "text-faint hover:text-muted",
           )}
         >
-          <Plug size={13.5} strokeWidth={2} />
+          <IconPlug size={13.5} stroke={2} />
         </button>
       </Tooltip>
     </div>

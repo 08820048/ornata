@@ -1,5 +1,7 @@
 import { forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation } from "d3-force";
-import { Maximize2 } from "lucide-react";
+import {
+  IconArrowsDiagonal,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SectionHeader, openNoteAt } from "@/components/editor/NoteBacklinks";
@@ -121,7 +123,7 @@ export function LocalGraph({ rel, active }: { rel: string; active: boolean }) {
               title={t("graph.openFull")}
               className="ml-1 grid h-5 w-5 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-muted"
             >
-              <Maximize2 size={12} strokeWidth={2} />
+              <IconArrowsDiagonal size={12} stroke={2} />
             </button>
           </div>
         )}

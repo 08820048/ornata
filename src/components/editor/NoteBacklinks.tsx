@@ -1,4 +1,8 @@
-import { ArrowUpRight, ChevronRight, CornerUpLeft } from "lucide-react";
+import {
+  IconArrowUpRight,
+  IconChevronRight,
+  IconCornerUpLeft,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, type Ref, useCallback, useEffect, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
@@ -81,7 +85,7 @@ export function BacklinksBadge({
       onClick={onClick}
       className="press mb-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-[11.5px] text-muted transition-colors duration-100 hover:bg-hover hover:text-ink"
     >
-      <CornerUpLeft size={12} strokeWidth={2} />
+      <IconCornerUpLeft size={12} stroke={2} />
       {t(count === 1 ? "editor.backlinkCount" : "editor.backlinksCount", { count })}
     </button>
   );
@@ -166,9 +170,9 @@ export function SectionHeader({
       onClick={onToggle}
       className="mb-2 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint transition-colors hover:text-muted"
     >
-      <ChevronRight
+      <IconChevronRight
         size={12}
-        strokeWidth={2.5}
+        stroke={2.5}
         className={cx("transition-transform duration-150", open && "rotate-90")}
       />
       {children}
@@ -204,9 +208,9 @@ export function NoteRow({
           ×{count}
         </span>
       )}
-      <ArrowUpRight
+      <IconArrowUpRight
         size={12}
-        strokeWidth={2}
+        stroke={2}
         className="shrink-0 text-faint opacity-0 transition-opacity duration-100 group-hover:opacity-100"
       />
     </button>

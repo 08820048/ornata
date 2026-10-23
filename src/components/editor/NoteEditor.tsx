@@ -1,5 +1,7 @@
 import { EditorContent } from "@tiptap/react";
-import { History } from "lucide-react";
+import {
+  IconHistory,
+} from "@tabler/icons-react";
 import { lazy, memo, Suspense, useRef, useState } from "react";
 import {
   joinFrontmatter,
@@ -337,7 +339,7 @@ export const NoteEditor = memo(function NoteEditor({
                 title={t("history.title")}
                 className="pointer-events-auto rounded p-1 transition-colors duration-100 hover:text-muted"
               >
-                <History size={13} strokeWidth={2} />
+                <IconHistory size={13} stroke={2} />
               </button>
             )}
             <span>{t(content.words === 1 ? "editor.word" : "editor.words", { count: content.words })}</span>

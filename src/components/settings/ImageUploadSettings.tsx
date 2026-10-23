@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { LoaderCircle, ImageUp } from "lucide-react";
+import {
+  IconLoader2,
+  IconPhotoUp,
+} from "@tabler/icons-react";
 import { ipc } from "@/lib/ipc";
 import type { ImageUploadMode } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -62,7 +65,7 @@ export function ImageUploadSettings() {
     <div className="rounded-xl border border-line-soft px-3 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2 text-[13px] text-muted">
-          <ImageUp size={13.5} strokeWidth={1.75} className="shrink-0" />
+          <IconPhotoUp size={13.5} stroke={1.75} className="shrink-0" />
           <span>{t("settings.imageUpload")}</span>
         </div>
         <div
@@ -123,7 +126,7 @@ export function ImageUploadSettings() {
               className="shrink-0"
             >
               {verifying ? (
-                <LoaderCircle size={13.5} strokeWidth={1.75} className="animate-spin" />
+                <IconLoader2 size={13.5} stroke={1.75} className="animate-spin" />
               ) : null}
               {verifying
                 ? t("settings.imageUpload.verifying")

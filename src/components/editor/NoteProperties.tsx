@@ -1,4 +1,6 @@
-import { ChevronRight } from "lucide-react";
+import {
+  IconChevronRight,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import type { Property } from "@/lib/frontmatter";
@@ -23,9 +25,9 @@ export function NoteProperties({ properties }: { properties: Property[] }) {
         onClick={() => setOpen((v) => !v)}
         className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint transition-colors hover:text-muted"
       >
-        <ChevronRight
+        <IconChevronRight
           size={12}
-          strokeWidth={2.5}
+          stroke={2.5}
           className={cx("transition-transform duration-150", open && "rotate-90")}
         />
         {t("editor.properties")}

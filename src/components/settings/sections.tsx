@@ -1,10 +1,10 @@
 import {
-  FolderOpen,
-  Languages,
-  Monitor,
-  Moon,
-  Sun,
-} from "lucide-react";
+  IconDeviceDesktop,
+  IconFolderOpen,
+  IconLanguage,
+  IconMoon,
+  IconSun,
+} from "@tabler/icons-react";
 import type { MessageKey } from "@/lib/i18n";
 import type { Language, Theme } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
@@ -23,10 +23,10 @@ import { keyLabel } from "@/lib/utils";
 import { useLocale, useT } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 
-const THEMES: Array<{ value: Theme; label: MessageKey; icon: typeof Sun }> = [
-  { value: "system", label: "settings.theme.system", icon: Monitor },
-  { value: "light", label: "settings.theme.light", icon: Sun },
-  { value: "dark", label: "settings.theme.dark", icon: Moon },
+const THEMES: Array<{ value: Theme; label: MessageKey; icon: typeof IconSun }> = [
+  { value: "system", label: "settings.theme.system", icon: IconDeviceDesktop },
+  { value: "light", label: "settings.theme.light", icon: IconSun },
+  { value: "dark", label: "settings.theme.dark", icon: IconMoon },
 ];
 
 const LANGUAGES: Array<{ value: Language; label: MessageKey }> = [
@@ -50,7 +50,7 @@ export function GeneralSection() {
             options={LANGUAGES.map(({ value, label }) => ({
               value,
               label: t(label),
-              icon: Languages,
+              icon: IconLanguage,
             }))}
             onChange={(value) => void setLanguage(value)}
             className="w-[248px]"
@@ -160,7 +160,7 @@ export function VaultSection() {
           onClick={() => void chooseVault()}
           className="shrink-0"
         >
-          <FolderOpen size={13.5} strokeWidth={1.75} />
+          <IconFolderOpen size={13.5} stroke={1.75} />
           {t("settings.change")}
         </Button>
       </div>

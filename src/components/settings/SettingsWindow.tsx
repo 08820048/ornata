@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import {
-  Command,
-  Download,
-  FileDown,
-  FolderClosed,
-  Image as ImageIcon,
-  Palette,
-  PencilLine,
-  Plug,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+  IconAdjustmentsHorizontal,
+  IconCommand,
+  IconDownload,
+  IconFileDownload,
+  IconFolder,
+  IconPalette,
+  IconPencil,
+  IconPhoto,
+  IconPlug,
+  IconSearch,
+} from "@tabler/icons-react";
 import type { MessageKey } from "@/lib/i18n";
 import { EASE_OUT } from "@/lib/ease";
 import { cx, isMac } from "@/lib/utils";
@@ -45,7 +45,7 @@ type SectionId =
 
 interface Section {
   id: SectionId;
-  icon: LucideIcon;
+  icon: TablerIcon;
   labelKey: MessageKey;
   /** Extra search terms (both languages) beyond the translated label. */
   keywords: string[];
@@ -55,63 +55,63 @@ interface Section {
 const SECTIONS: Section[] = [
   {
     id: "general",
-    icon: SlidersHorizontal,
+    icon: IconAdjustmentsHorizontal,
     labelKey: "settings.section.general",
     keywords: ["language", "语言"],
     render: () => <GeneralSection />,
   },
   {
     id: "appearance",
-    icon: Palette,
+    icon: IconPalette,
     labelKey: "settings.section.appearance",
     keywords: ["theme", "dark", "light", "system", "主题", "外观", "深色", "浅色"],
     render: () => <AppearanceSection />,
   },
   {
     id: "editor",
-    icon: PencilLine,
+    icon: IconPencil,
     labelKey: "settings.section.editor",
     keywords: ["sound", "outline", "音效", "目录", "编辑器"],
     render: () => <EditorSection />,
   },
   {
     id: "image",
-    icon: ImageIcon,
+    icon: IconPhoto,
     labelKey: "settings.section.image",
     keywords: ["image", "upload", "picgo", "图片", "上传", "图床"],
     render: () => <ImageSection />,
   },
   {
     id: "export",
-    icon: FileDown,
+    icon: IconFileDownload,
     labelKey: "settings.section.export",
     keywords: ["pdf", "export", "paper", "margin", "a4", "letter", "导出", "纸张", "页边距"],
     render: () => <ExportSection />,
   },
   {
     id: "vault",
-    icon: FolderClosed,
+    icon: IconFolder,
     labelKey: "settings.section.vault",
     keywords: ["vault", "folder", "path", "仓库", "文件夹", "路径"],
     render: () => <VaultSection />,
   },
   {
     id: "agents",
-    icon: Plug,
+    icon: IconPlug,
     labelKey: "settings.section.agents",
     keywords: ["mcp", "agent", "claude", "codex", "cli", "command line", "智能体", "命令行", "权限"],
     render: () => <McpSection />,
   },
   {
     id: "shortcuts",
-    icon: Command,
+    icon: IconCommand,
     labelKey: "settings.section.shortcuts",
     keywords: ["keyboard", "keys", "快捷键", "按键"],
     render: () => <ShortcutsSection />,
   },
   {
     id: "updates",
-    icon: Download,
+    icon: IconDownload,
     labelKey: "settings.section.updates",
     keywords: ["about", "version", "update", "upgrade", "关于", "版本", "更新", "升级"],
     render: () => <UpdatesSection />,
@@ -168,9 +168,9 @@ export function SettingsWindow() {
 
         <div className="px-3 pb-2">
           <label className="relative block">
-            <Search
+            <IconSearch
               size={13}
-              strokeWidth={2}
+              stroke={2}
               className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint"
             />
             <input
@@ -207,7 +207,7 @@ export function SettingsWindow() {
                       : "text-muted hover:bg-hover hover:text-ink",
                   )}
                 >
-                  <Icon size={15} strokeWidth={1.75} className="shrink-0" />
+                  <Icon size={15} stroke={1.75} className="shrink-0" />
                   <span className="truncate">{t(section.labelKey)}</span>
                 </button>
               );

@@ -1,4 +1,7 @@
-import { FileText, Hash } from "lucide-react";
+import {
+  IconFileText,
+  IconHash,
+} from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flattenNotes } from "@/lib/tree";
@@ -149,10 +152,10 @@ export function NoteLinkPicker({
       <div className="max-h-[240px] overflow-y-auto">
         {headings
           ? [
-              { key: "whole", icon: <FileText size={14} strokeWidth={1.75} className="shrink-0" />, label: t("editor.wholeNote") },
+              { key: "whole", icon: <IconFileText size={14} stroke={1.75} className="shrink-0" />, label: t("editor.wholeNote") },
               ...headings.headings.map((heading, i) => ({
                 key: `h-${i}`,
-                icon: <Hash size={14} strokeWidth={1.75} className="shrink-0" />,
+                icon: <IconHash size={14} stroke={1.75} className="shrink-0" />,
                 label: heading,
               })),
             ].map((item, index) => (
@@ -190,7 +193,7 @@ export function NoteLinkPicker({
                   }}
                   onMouseEnter={() => setSelected(index)}
                 >
-                  <FileText size={14} strokeWidth={1.75} className="shrink-0" />
+                  <IconFileText size={14} stroke={1.75} className="shrink-0" />
                   <span className="truncate">{noteTitle(note.rel)}</span>
                   {route && (
                     <span className="ml-auto shrink-0 truncate pl-2 text-[11px] text-faint">

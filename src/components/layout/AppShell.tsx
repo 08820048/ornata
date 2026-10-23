@@ -1,10 +1,10 @@
 import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  FilePlus,
-  Search,
-} from "lucide-react";
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight,
+  IconFilePlus,
+  IconSearch,
+} from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { NotesWorkspace } from "@/components/editor/NotesWorkspace";
 import { TabBar } from "@/components/editor/TabBar";
@@ -108,7 +108,7 @@ function SidebarEdgeToggle({
   label: string;
   onClick: () => void;
 }) {
-  const Icon = hidden ? ChevronRight : ChevronLeft;
+  const Icon = hidden ? IconChevronRight : IconChevronLeft;
   return (
     <motion.div
       className="absolute top-1/2 z-20 -translate-y-1/2"
@@ -123,7 +123,7 @@ function SidebarEdgeToggle({
           onClick={onClick}
           className="grid size-[22px] place-items-center rounded-full border border-line bg-bg text-faint opacity-70 shadow-sm transition-[opacity,color,transform] duration-100 hover:text-ink hover:opacity-100 active:scale-[0.94]"
         >
-          <Icon size={13} strokeWidth={2} />
+          <Icon size={13} stroke={2} />
         </button>
       </Tooltip>
     </motion.div>
@@ -185,19 +185,19 @@ function EmptyState() {
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <EmptyAction
-          icon={<Search size={14} strokeWidth={2} />}
+          icon={<IconSearch size={14} stroke={2} />}
           label={t("common.search")}
           keys={keyLabel("⌘K")}
           onClick={() => setPaletteOpen(true)}
         />
         <EmptyAction
-          icon={<FilePlus size={14} strokeWidth={2} />}
+          icon={<IconFilePlus size={14} stroke={2} />}
           label={t("common.newNote")}
           keys={keyLabel("⌘N")}
           onClick={() => createNote("")}
         />
         <EmptyAction
-          icon={<CalendarDays size={14} strokeWidth={2} />}
+          icon={<IconCalendar size={14} stroke={2} />}
           label={t("daily.new")}
           keys={keyLabel("⌘J")}
           onClick={() => void useVault.getState().openDailyNote()}

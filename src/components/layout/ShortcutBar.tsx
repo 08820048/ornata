@@ -1,4 +1,6 @@
-import { Settings } from "lucide-react";
+import {
+  IconSettings,
+} from "@tabler/icons-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { ipc } from "@/lib/ipc";
 import { keyLabel } from "@/lib/utils";
@@ -50,7 +52,7 @@ export function ShortcutBar() {
             onClick={() => void ipc.openSettingsWindow()}
             className="grid h-5 w-6 cursor-pointer place-items-center rounded text-faint transition-[color,background-color,transform] duration-100 hover:bg-hover hover:text-muted active:scale-[0.96]"
           >
-            <Settings size={13.5} strokeWidth={2} />
+            <IconSettings size={13.5} stroke={2} />
           </button>
         </Tooltip>
       </div>

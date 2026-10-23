@@ -1,4 +1,6 @@
-import { ImageOff } from "lucide-react";
+import {
+  IconPhotoOff,
+} from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
@@ -108,7 +110,7 @@ export function UnusedAssetsDialog() {
               key={asset.name}
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px]"
             >
-              <ImageOff size={13} strokeWidth={1.75} className="shrink-0 text-faint" />
+              <IconPhotoOff size={13} stroke={1.75} className="shrink-0 text-faint" />
               <span className="min-w-0 flex-1 truncate font-mono text-ink">{asset.name}</span>
               <span className="shrink-0 text-[11px] tabular-nums text-faint">
                 {(asset.size / 1024).toFixed(1)} KB

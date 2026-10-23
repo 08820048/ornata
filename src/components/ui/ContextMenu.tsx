@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { cx } from "@/lib/utils";
 
 export interface MenuItem {
   label: string;
-  icon?: LucideIcon;
+  icon?: TablerIcon;
   danger?: boolean;
   onSelect: () => void;
 }
@@ -96,7 +96,7 @@ export function ContextMenu({
             item.onSelect();
           }}
         >
-          {item.icon && <item.icon size={14} strokeWidth={1.75} />}
+          {item.icon && <item.icon size={14} stroke={1.75} />}
           {item.label}
         </button>
       ))}

@@ -1,18 +1,18 @@
 import {
-  ArrowDownAZ,
-  ArrowDownToLine,
-  CalendarDays,
-  Clock,
-  FilePlus,
-  FolderPlus,
-  Hash,
-  ListChecks,
-  Loader2,
-  Pin,
-  RefreshCw,
-  Search,
-  X,
-} from "lucide-react";
+  IconArrowBarDown,
+  IconCalendar,
+  IconClock,
+  IconFilePlus,
+  IconFolderPlus,
+  IconHash,
+  IconListCheck,
+  IconLoader2,
+  IconPin,
+  IconRefresh,
+  IconSearch,
+  IconSortAZ,
+  IconX,
+} from "@tabler/icons-react";
 import { ActionSwapButton } from "@/components/motion/action-swap";
 import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
@@ -50,7 +50,7 @@ export function Sidebar() {
           onClick={() => setPaletteOpen(true)}
           className="flex w-full items-center gap-2 rounded-md border border-line-soft bg-bg px-2.5 py-1.5 text-[12.5px] text-faint transition-colors duration-100 hover:border-line hover:text-muted"
         >
-          <Search size={14} strokeWidth={2} className="shrink-0" />
+          <IconSearch size={14} stroke={2} className="shrink-0" />
           <span>{t("sidebar.search")}</span>
           <kbd className="ml-auto rounded border border-line bg-panel px-1 font-mono text-[10px] leading-4 text-faint">
             {keyLabel("⌘K")}
@@ -58,13 +58,13 @@ export function Sidebar() {
         </button>
         <div className="mt-1.5 flex flex-col gap-px">
           <QuickRow
-            icon={<CalendarDays size={14} strokeWidth={1.75} />}
+            icon={<IconCalendar size={14} stroke={1.75} />}
             label={t("daily.new")}
             keys={keyLabel("⌘J")}
             onClick={() => void useVault.getState().openDailyNote()}
           />
           <QuickRow
-            icon={<ListChecks size={14} strokeWidth={1.75} />}
+            icon={<IconListCheck size={14} stroke={1.75} />}
             label={t("tasks.title")}
             onClick={() => setTasksOpen(true)}
           />
@@ -106,7 +106,7 @@ export function Sidebar() {
                 }}
                 className="group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
               >
-                <Pin size={12} strokeWidth={2} className="shrink-0 text-faint" />
+                <IconPin size={12} stroke={2} className="shrink-0 text-faint" />
                 <span className="min-w-0 flex-1 truncate">
                   {node?.name ?? rel.replace(/\.md$/i, "")}
                 </span>
@@ -119,7 +119,7 @@ export function Sidebar() {
                   }}
                   className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity duration-100 hover:text-ink group-hover:opacity-100"
                 >
-                  <X size={12} strokeWidth={2} />
+                  <IconX size={12} stroke={2} />
                 </button>
               </div>
             );
@@ -134,8 +134,8 @@ export function Sidebar() {
         <div className="flex items-center gap-0.5">
           <ActionSwapButton
             items={[
-              { id: "name", label: t("tree.sortName"), icon: <ArrowDownAZ size={14.5} strokeWidth={1.75} />, ariaLabel: t("tree.sortName") },
-              { id: "modified", label: t("tree.sortModified"), icon: <Clock size={14.5} strokeWidth={1.75} />, ariaLabel: t("tree.sortModified") },
+              { id: "name", label: t("tree.sortName"), icon: <IconSortAZ size={14.5} stroke={1.75} />, ariaLabel: t("tree.sortName") },
+              { id: "modified", label: t("tree.sortModified"), icon: <IconClock size={14.5} stroke={1.75} />, ariaLabel: t("tree.sortModified") },
             ]}
             value={treeSort}
             onValueChange={(value) => setTreeSort(value as TreeSort)}
@@ -144,19 +144,19 @@ export function Sidebar() {
             className="h-7 w-7 rounded-md text-faint hover:text-muted"
           />
           <IconAction label={t("tags.title")} onClick={() => setTagsOpen(true)}>
-            <Hash size={14.5} strokeWidth={1.75} />
+            <IconHash size={14.5} stroke={1.75} />
           </IconAction>
           <IconAction
             label={t("common.newNote")}
             onClick={() => createNote(activeDir(useVault.getState()))}
           >
-            <FilePlus size={14.5} strokeWidth={1.75} />
+            <IconFilePlus size={14.5} stroke={1.75} />
           </IconAction>
           <IconAction
             label={t("common.newFolder")}
             onClick={() => createFolder("", t("common.untitled"))}
           >
-            <FolderPlus size={14.5} strokeWidth={1.75} />
+            <IconFolderPlus size={14.5} stroke={1.75} />
           </IconAction>
         </div>
       </div>
@@ -244,15 +244,15 @@ function UpdateRow() {
         className="flex w-full items-center gap-2 rounded-md bg-hover px-2.5 py-1.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-active disabled:cursor-default disabled:hover:bg-hover"
       >
         {busy ? (
-          <Loader2
+          <IconLoader2
             size={14}
-            strokeWidth={2}
+            stroke={2}
             className="shrink-0 animate-spin text-faint"
           />
         ) : ready ? (
-          <RefreshCw size={14} strokeWidth={2} className="shrink-0" />
+          <IconRefresh size={14} stroke={2} className="shrink-0" />
         ) : (
-          <ArrowDownToLine size={14} strokeWidth={2} className="shrink-0" />
+          <IconArrowBarDown size={14} stroke={2} className="shrink-0" />
         )}
         <span className="truncate">
           {status === "downloading"

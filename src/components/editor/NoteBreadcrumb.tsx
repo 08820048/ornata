@@ -1,4 +1,6 @@
-import { ChevronRight } from "lucide-react";
+import {
+  IconChevronRight,
+} from "@tabler/icons-react";
 import { Fragment } from "react";
 import { ActionSwapText } from "@/components/motion/action-swap";
 import { noteKey, noteTitle } from "@/lib/noteRef";
@@ -26,9 +28,9 @@ export function NoteBreadcrumb({ note }: { note: NoteRef }) {
       {folders.length > visibleFolders.length && (
         <>
           <span className="shrink-0 text-faint">…</span>
-          <ChevronRight
+          <IconChevronRight
             size={13}
-            strokeWidth={2}
+            stroke={2}
             className="shrink-0 text-faint"
           />
         </>
@@ -38,9 +40,9 @@ export function NoteBreadcrumb({ note }: { note: NoteRef }) {
           <span className="max-w-[140px] shrink-0 truncate text-muted">
             {folder}
           </span>
-          <ChevronRight
+          <IconChevronRight
             size={13}
-            strokeWidth={2}
+            stroke={2}
             className="shrink-0 text-faint"
           />
         </Fragment>

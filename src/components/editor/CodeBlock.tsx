@@ -5,7 +5,16 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from "@tiptap/react";
-import { Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Copy, Languages, TextSelect } from "lucide-react";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconChevronRight,
+  IconCopy,
+  IconFoldUp,
+  IconLanguage,
+  IconSelectAll,
+  IconSelector,
+} from "@tabler/icons-react";
 import {
   createHighlightPlugin,
   type Parser,
@@ -188,23 +197,23 @@ function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps
     if (menu?.languages) {
       return SUPPORTED_LANGUAGES.map((name) => ({
         label: name,
-        icon: name === language ? Check : undefined,
+        icon: name === language ? IconCheck : undefined,
         onSelect: () => updateAttributes({ language: name === "plaintext" ? null : name }),
       }));
     }
     return [
-      { label: t("code.selectBlock"), icon: TextSelect, onSelect: selectBlock },
-      { label: t("editor.copyCode"), icon: Copy, onSelect: () => void copy() },
+      { label: t("code.selectBlock"), icon: IconSelectAll, onSelect: selectBlock },
+      { label: t("editor.copyCode"), icon: IconCopy, onSelect: () => void copy() },
       ...(multiLine
         ? [
             {
               label: collapsed ? t("code.expand") : t("code.collapse"),
-              icon: collapsed ? ChevronsUpDown : ChevronsDownUp,
+              icon: collapsed ? IconSelector : IconFoldUp,
               onSelect: toggleCollapsed,
             },
           ]
         : []),
-      { label: t("code.setLanguage"), icon: Languages, onSelect: () => openLanguages() },
+      { label: t("code.setLanguage"), icon: IconLanguage, onSelect: () => openLanguages() },
     ];
   };
 
@@ -234,7 +243,7 @@ function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps
               onClick={toggleCollapsed}
               className="code-block-toggle press"
             >
-              {collapsed ? <ChevronRight size={14} strokeWidth={2} /> : <ChevronDown size={14} strokeWidth={2} />}
+              {collapsed ? <IconChevronRight size={14} stroke={2} /> : <IconChevronDown size={14} stroke={2} />}
             </button>
           )}
           <button
@@ -264,9 +273,9 @@ function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps
             className="h-[13px] w-[13px]"
           >
             {copied ? (
-              <Check size={13} strokeWidth={2} />
+              <IconCheck size={13} stroke={2} />
             ) : (
-              <Copy size={13} strokeWidth={2} />
+              <IconCopy size={13} stroke={2} />
             )}
           </ActionSwapIcon>
           <span>{copied ? t("common.copied") : t("common.copy")}</span>

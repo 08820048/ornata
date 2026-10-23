@@ -1,4 +1,7 @@
-import { FolderOpen, FolderPlus } from "lucide-react";
+import {
+  IconFolderOpen,
+  IconFolderPlus,
+} from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVault } from "@/stores/vault";
@@ -42,11 +45,11 @@ export function Welcome() {
 
         <div className="mt-12 flex items-center gap-3">
           <Button variant="primary" size="lg" onClick={createVault}>
-            <FolderPlus size={16} strokeWidth={1.75} />
+            <IconFolderPlus size={16} stroke={1.75} />
             {t("welcome.create")}
           </Button>
           <Button variant="outline" size="lg" onClick={chooseVault}>
-            <FolderOpen size={16} strokeWidth={1.75} />
+            <IconFolderOpen size={16} stroke={1.75} />
             {t("welcome.open")}
           </Button>
         </div>

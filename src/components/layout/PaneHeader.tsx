@@ -1,5 +1,21 @@
 import {
-  ArrowLeftRight, ClipboardType, Code2, Columns2, FileText, Repeat, Copy, Download, FileCode, Focus, Link2, MoreHorizontal, Pilcrow, Printer, Trash2, X } from "lucide-react";
+  IconArrowsLeftRight,
+  IconClipboardText,
+  IconCode,
+  IconColumns2,
+  IconCopy,
+  IconDots,
+  IconDownload,
+  IconFileCode,
+  IconFileText,
+  IconFocus,
+  IconLink,
+  IconPilcrow,
+  IconPrinter,
+  IconRepeat,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { NoteBreadcrumb } from "@/components/editor/NoteBreadcrumb";
@@ -94,9 +110,9 @@ export function PaneHeader({
                     className="h-[15px] w-[15px]"
                   >
                     {markdownSource ? (
-                      <Pilcrow size={15} strokeWidth={1.75} />
+                      <IconPilcrow size={15} stroke={1.75} />
                     ) : (
-                      <Code2 size={15} strokeWidth={1.75} />
+                      <IconCode size={15} stroke={1.75} />
                     )}
                   </ActionSwapIcon>
                 </button>
@@ -113,7 +129,7 @@ export function PaneHeader({
                       "text-muted hover:bg-hover hover:text-ink",
                     )}
                   >
-                    <MoreHorizontal size={16} strokeWidth={1.75} />
+                    <IconDots size={16} stroke={1.75} />
                   </button>
                 </MorphPopoverTrigger>
                 <MorphPopoverContent
@@ -123,7 +139,7 @@ export function PaneHeader({
                   className="w-56 bg-menu p-1"
                 >
                   <NoteMenuButton
-                    icon={Focus}
+                    icon={IconFocus}
                     label={t("palette.toggleFocus")}
                     keys={keyLabel("⌘⇧F")}
                     onClick={() => {
@@ -134,7 +150,7 @@ export function PaneHeader({
                   />
                   <div className="mx-1 my-1 border-t border-line-soft" />
                   <NoteMenuButton
-                    icon={Download}
+                    icon={IconDownload}
                     label={t("editor.exportMarkdown")}
                     onClick={() => {
                       setNoteMenuOpen(false);
@@ -142,7 +158,7 @@ export function PaneHeader({
                     }}
                   />
                   <NoteMenuButton
-                    icon={Printer}
+                    icon={IconPrinter}
                     label={t("editor.exportPdf")}
                     onClick={() => {
                       setNoteMenuOpen(false);
@@ -150,7 +166,7 @@ export function PaneHeader({
                     }}
                   />
                   <NoteMenuButton
-                    icon={FileCode}
+                    icon={IconFileCode}
                     label={t("editor.exportHtml")}
                     onClick={() => {
                       setNoteMenuOpen(false);
@@ -159,7 +175,7 @@ export function PaneHeader({
                   />
                   <div className="mx-1 my-1 border-t border-line-soft" />
                   <NoteMenuButton
-                    icon={ClipboardType}
+                    icon={IconClipboardText}
                     label={t("editor.copyRich")}
                     onClick={() => {
                       setNoteMenuOpen(false);
@@ -167,7 +183,7 @@ export function PaneHeader({
                     }}
                   />
                   <NoteMenuButton
-                    icon={Copy}
+                    icon={IconCopy}
                     label={t("editor.copyMarkdown")}
                     onClick={() => {
                       setNoteMenuOpen(false);
@@ -176,7 +192,7 @@ export function PaneHeader({
                   />
                   {path && (
                     <NoteMenuButton
-                      icon={Link2}
+                      icon={IconLink}
                       label={t("editor.copyPath")}
                       onClick={() => {
                         setNoteMenuOpen(false);
@@ -187,7 +203,7 @@ export function PaneHeader({
                   )}
                   <div className="mx-1 my-1 border-t border-line-soft" />
                   <NoteMenuButton
-                    icon={Trash2}
+                    icon={IconTrash}
                     label={t("editor.deleteNote")}
                     danger
                     onClick={() => {
@@ -206,7 +222,7 @@ export function PaneHeader({
                     aria-label={t("split.options")}
                     className={cx(HEADER_BUTTON, "text-muted hover:bg-hover hover:text-ink")}
                   >
-                    <Columns2 size={15} strokeWidth={1.75} />
+                    <IconColumns2 size={15} stroke={1.75} />
                   </button>
                 </MorphPopoverTrigger>
                 <MorphPopoverContent
@@ -216,7 +232,7 @@ export function PaneHeader({
                   className="w-64 bg-menu p-1"
                 >
                   <NoteMenuButton
-                    icon={Columns2}
+                    icon={IconColumns2}
                     label={t("split.splitPane")}
                     keys={keyLabel("⌘⇧\\")}
                     onClick={() => {
@@ -227,7 +243,7 @@ export function PaneHeader({
                   {panes.length > 1 && (
                     <>
                       <NoteMenuButton
-                        icon={ArrowLeftRight}
+                        icon={IconArrowsLeftRight}
                         label={t("split.swap")}
                         onClick={() => {
                           setPaneMenuOpen(false);
@@ -235,7 +251,7 @@ export function PaneHeader({
                         }}
                       />
                       <NoteMenuButton
-                        icon={Repeat}
+                        icon={IconRepeat}
                         label={t("split.switcher")}
                         keys={keyLabel("⌘.")}
                         onClick={() => {
@@ -250,7 +266,7 @@ export function PaneHeader({
                       {panes.map((pane, index) => (
                         <NoteMenuButton
                           key={tabKey(pane)}
-                          icon={FileText}
+                          icon={IconFileText}
                           label={isNoteTab(pane) ? noteTitle(pane) : ""}
                           keys={keyLabel(`⌘${index + 1}`)}
                           onClick={() => {
@@ -272,7 +288,7 @@ export function PaneHeader({
                   onClick={() => tab && closePaneAndRefocus(tab)}
                   className={cx(HEADER_BUTTON, "text-muted hover:bg-hover hover:text-ink")}
                 >
-                  <X size={15} strokeWidth={1.75} />
+                  <IconX size={15} stroke={1.75} />
                 </button>
               </Tooltip>
             )}
@@ -296,7 +312,7 @@ function NoteMenuButton({
   danger = false,
   onClick,
 }: {
-  icon: typeof Download;
+  icon: typeof IconDownload;
   label: string;
   keys?: string;
   danger?: boolean;
@@ -314,7 +330,7 @@ function NoteMenuButton({
           : "text-ink hover:bg-hover",
       )}
     >
-      <Icon size={14} strokeWidth={1.75} />
+      <Icon size={14} stroke={1.75} />
       {label}
       {keys && (
         <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">{keys}</kbd>

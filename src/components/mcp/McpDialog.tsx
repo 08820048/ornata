@@ -1,4 +1,6 @@
-import { Plug } from "lucide-react";
+import {
+  IconPlug,
+} from "@tabler/icons-react";
 import { McpPanel } from "@/components/mcp/McpPanel";
 import { Modal } from "@/components/ui/Modal";
 import { useT } from "@/stores/locale";
@@ -17,7 +19,7 @@ export function McpDialog() {
       className="w-[640px] max-w-[92vw]"
     >
       <div className="flex items-center gap-2 px-6 pt-5 text-[15px] font-semibold text-ink">
-        <Plug size={16} strokeWidth={2} className="text-muted" />
+        <IconPlug size={16} stroke={2} className="text-muted" />
         {t("mcp.title")}
       </div>
       <div className="px-6 pb-2 pt-4">{open && <McpPanel />}</div>

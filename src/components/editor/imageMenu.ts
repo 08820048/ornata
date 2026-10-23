@@ -1,6 +1,11 @@
 import type { Editor } from "@tiptap/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Copy, Download, ExternalLink, CloudUpload } from "lucide-react";
+import {
+  IconCloudUpload,
+  IconCopy,
+  IconDownload,
+  IconExternalLink,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { MenuItem } from "@/components/ui/ContextMenu";
 import { ipc } from "@/lib/ipc";
@@ -38,26 +43,26 @@ export function imageMenuItems(editor: Editor, target: ImageTarget): MenuItem[] 
   const items: MenuItem[] = [
     {
       label: t("editor.image.upload"),
-      icon: CloudUpload,
+      icon: IconCloudUpload,
       onSelect: () => void reuploadImage(editor, target.src, target.source),
     },
   ];
   if (target.kind !== "data") {
     items.push({
       label: t("editor.image.open"),
-      icon: ExternalLink,
+      icon: IconExternalLink,
       onSelect: () => void guard(openImage(target)),
     });
   }
   items.push(
     {
       label: t("editor.image.copy"),
-      icon: Copy,
+      icon: IconCopy,
       onSelect: () => copyImage(target),
     },
     {
       label: t("editor.image.saveAs"),
-      icon: Download,
+      icon: IconDownload,
       onSelect: () =>
         void guard(
           ipc.saveImageAs(target.source).then((path) => {

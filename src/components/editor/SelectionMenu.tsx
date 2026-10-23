@@ -2,13 +2,13 @@ import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { NodeSelection } from "@tiptap/pm/state";
 import {
-  Bold,
-  Code,
-  Italic,
-  Link as LinkIcon,
-  Strikethrough,
-  Underline,
-} from "lucide-react";
+  IconBold,
+  IconCode,
+  IconItalic,
+  IconLink,
+  IconStrikethrough,
+  IconUnderline,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cx } from "@/lib/utils";
@@ -94,35 +94,35 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
                 label={t("editor.bold")}
                 onClick={() => editor.chain().focus().toggleBold().run()}
               >
-                <Bold size={14} strokeWidth={2} />
+                <IconBold size={14} stroke={2} />
               </MarkButton>
               <MarkButton
                 active={editor.isActive("italic")}
                 label={t("editor.italic")}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
               >
-                <Italic size={14} strokeWidth={2} />
+                <IconItalic size={14} stroke={2} />
               </MarkButton>
               <MarkButton
                 active={editor.isActive("underline")}
                 label={t("editor.underline")}
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
               >
-                <Underline size={14} strokeWidth={2} />
+                <IconUnderline size={14} stroke={2} />
               </MarkButton>
               <MarkButton
                 active={editor.isActive("strike")}
                 label={t("editor.strikethrough")}
                 onClick={() => editor.chain().focus().toggleStrike().run()}
               >
-                <Strikethrough size={14} strokeWidth={2} />
+                <IconStrikethrough size={14} stroke={2} />
               </MarkButton>
               <MarkButton
                 active={editor.isActive("code")}
                 label={t("editor.code")}
                 onClick={() => editor.chain().focus().toggleCode().run()}
               >
-                <Code size={14} strokeWidth={2} />
+                <IconCode size={14} stroke={2} />
               </MarkButton>
               <div className="mx-0.5 h-4 w-px bg-line" />
               <MarkButton
@@ -130,7 +130,7 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
                 label={t("editor.link")}
                 onClick={() => setLinkOpen(true)}
               >
-                <LinkIcon size={14} strokeWidth={2} />
+                <IconLink size={14} stroke={2} />
               </MarkButton>
             </>
           )}

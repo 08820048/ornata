@@ -1,4 +1,7 @@
-import { Check, Copy } from "lucide-react";
+import {
+  IconCheck,
+  IconCopy,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import {
   ActionSwapIcon,
@@ -59,9 +62,9 @@ export function CopyButton({
       className="h-[13px] w-[13px]"
     >
       {copied ? (
-        <Check size={13} strokeWidth={2} />
+        <IconCheck size={13} stroke={2} />
       ) : (
-        <Copy size={13} strokeWidth={2} />
+        <IconCopy size={13} stroke={2} />
       )}
     </ActionSwapIcon>
   );

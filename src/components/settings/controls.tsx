@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { SPRING_LAYOUT } from "@/lib/ease";
 import { cx } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function SettingRow({
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
-  icon?: LucideIcon;
+  icon?: TablerIcon;
 }
 
 /** Inverted-pill segmented control (the app's signature active style). */
@@ -98,7 +98,7 @@ export function Segmented<T extends string>({
                 className="segment-active absolute inset-0 -z-10 rounded-md bg-invert"
               />
             )}
-            {Icon && <Icon size={13} strokeWidth={1.75} />}
+            {Icon && <Icon size={13} stroke={1.75} />}
             <span>{option.label}</span>
           </button>
         );

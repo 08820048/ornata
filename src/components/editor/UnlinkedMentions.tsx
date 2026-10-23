@@ -1,4 +1,6 @@
-import { Link2 } from "lucide-react";
+import {
+  IconLink,
+} from "@tabler/icons-react";
 import { notifyNotesChanged } from "@/lib/vaultEvents";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
@@ -129,7 +131,7 @@ export function UnlinkedMentions({
                         onClick={() => void link(mention, line)}
                         className="press flex shrink-0 items-center gap-1 rounded-[5px] border border-line px-1.5 py-px text-[11px] text-muted opacity-0 transition-[opacity,background-color,color] duration-100 hover:bg-active hover:text-ink focus-visible:opacity-100 disabled:cursor-progress group-hover/line:opacity-100"
                       >
-                        <Link2 size={11} strokeWidth={2} />
+                        <IconLink size={11} stroke={2} />
                         {t("editor.linkMention")}
                       </button>
                     </div>

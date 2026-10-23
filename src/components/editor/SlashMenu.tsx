@@ -1,20 +1,20 @@
 import type { Editor } from "@tiptap/react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import {
-  CalendarDays,
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Link2,
-  List,
-  ListOrdered,
-  ListTodo,
-  Minus,
-  Pilcrow,
-  Table,
-  TextQuote,
-} from "lucide-react";
+  IconBlockquote,
+  IconCalendar,
+  IconChecklist,
+  IconCode,
+  IconH1,
+  IconH2,
+  IconH3,
+  IconLink,
+  IconList,
+  IconListNumbers,
+  IconMinus,
+  IconPilcrow,
+  IconTable,
+} from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, dailyRel, dateStamp, DATE_MENTIONS } from "@/lib/dateLinks";
@@ -38,7 +38,7 @@ interface SlashCommand {
   /** Translated name; `text` overrides it for generated entries. */
   label: MessageKey;
   text?: (t: (key: MessageKey) => string) => string;
-  icon: LucideIcon;
+  icon: TablerIcon;
   keywords: string;
   /** What typing at a line's start does the same thing, e.g. `#`. */
   shortcut?: string;
@@ -67,7 +67,7 @@ function insertDateLink(editor: Editor, date: Date) {
 const dateCommands: SlashCommand[] = DATE_MENTIONS.map((mention) => ({
   id: `date-${mention.id}`,
   label: `slash.${mention.id}` as const,
-  icon: CalendarDays,
+  icon: IconCalendar,
   keywords: mention.keywords,
   hint: () => dateStamp(addDays(new Date(), mention.offset)),
   run: (editor: Editor) => insertDateLink(editor, addDays(new Date(), mention.offset)),
@@ -78,7 +78,7 @@ const codeCommands: SlashCommand[] = CODE_BLOCK_VARIANTS.map((variant) => ({
   id: variant.language ? `code-${variant.language}` : "code",
   label: "slash.code" as const,
   text: (t) => (variant.name ? `${t("slash.code")}: ${variant.name}` : t("slash.code")),
-  icon: Code,
+  icon: IconCode,
   keywords: `snippet pre fence ${variant.language ?? ""} ${variant.name}`,
   shortcut: variant.language ? undefined : "```",
   searchOnly: Boolean(variant.language),
@@ -108,20 +108,20 @@ const commands: SlashCommand[] = [
   {
     id: "note-link",
     label: "slash.noteLink",
-    icon: Link2,
+    icon: IconLink,
     keywords: "page link reference mention connect",
   },
   {
     id: "text",
     label: "slash.text",
-    icon: Pilcrow,
+    icon: IconPilcrow,
     keywords: "paragraph plain",
     run: (e) => e.chain().focus().setParagraph().run(),
   },
   {
     id: "h1",
     label: "slash.h1",
-    icon: Heading1,
+    icon: IconH1,
     keywords: "title big",
     shortcut: "#",
     run: (e) => e.chain().focus().setHeading({ level: 1 }).run(),
@@ -129,7 +129,7 @@ const commands: SlashCommand[] = [
   {
     id: "h2",
     label: "slash.h2",
-    icon: Heading2,
+    icon: IconH2,
     keywords: "subtitle section",
     shortcut: "##",
     run: (e) => e.chain().focus().setHeading({ level: 2 }).run(),
@@ -137,7 +137,7 @@ const commands: SlashCommand[] = [
   {
     id: "h3",
     label: "slash.h3",
-    icon: Heading3,
+    icon: IconH3,
     keywords: "subheading",
     shortcut: "###",
     run: (e) => e.chain().focus().setHeading({ level: 3 }).run(),
@@ -145,7 +145,7 @@ const commands: SlashCommand[] = [
   {
     id: "bullet",
     label: "slash.bullet",
-    icon: List,
+    icon: IconList,
     keywords: "unordered ul",
     shortcut: "-",
     run: (e) => e.chain().focus().toggleBulletList().run(),
@@ -153,7 +153,7 @@ const commands: SlashCommand[] = [
   {
     id: "numbered",
     label: "slash.numbered",
-    icon: ListOrdered,
+    icon: IconListNumbers,
     keywords: "ordered ol",
     shortcut: "1.",
     run: (e) => e.chain().focus().toggleOrderedList().run(),
@@ -161,7 +161,7 @@ const commands: SlashCommand[] = [
   {
     id: "task",
     label: "slash.task",
-    icon: ListTodo,
+    icon: IconChecklist,
     keywords: "todo checkbox check",
     shortcut: "*",
     run: (e) => e.chain().focus().toggleTaskList().run(),
@@ -169,7 +169,7 @@ const commands: SlashCommand[] = [
   {
     id: "quote",
     label: "slash.quote",
-    icon: TextQuote,
+    icon: IconBlockquote,
     keywords: "blockquote",
     shortcut: ">",
     run: (e) => e.chain().focus().toggleBlockquote().run(),
@@ -178,7 +178,7 @@ const commands: SlashCommand[] = [
   {
     id: "divider",
     label: "slash.divider",
-    icon: Minus,
+    icon: IconMinus,
     keywords: "rule hr line separator",
     shortcut: "---",
     run: (e) => e.chain().focus().setHorizontalRule().run(),
@@ -186,7 +186,7 @@ const commands: SlashCommand[] = [
   {
     id: "table",
     label: "slash.table",
-    icon: Table,
+    icon: IconTable,
     keywords: "grid rows columns",
     run: (e) =>
       e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
@@ -305,7 +305,7 @@ export function SlashMenu({
             setSelected(index);
           }}
         >
-          <command.icon size={14.5} strokeWidth={1.75} className="shrink-0" />
+          <command.icon size={14.5} stroke={1.75} className="shrink-0" />
           <span className="min-w-0 truncate">{command.text ? command.text(t) : t(command.label)}</span>
           {command.shortcut && (
             <span className="ml-auto pl-2 font-mono text-[10.5px] text-faint">{command.shortcut}</span>

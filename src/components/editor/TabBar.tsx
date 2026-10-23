@@ -1,4 +1,7 @@
-import { Share2, X } from "lucide-react";
+import {
+  IconShare2,
+  IconX,
+} from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -255,7 +258,7 @@ function Tab({
         <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover/tab:bg-hover/60 group-hover/tab:opacity-100" />
       )}
       {!isNoteTab(tab) && (
-        <Share2 size={12} strokeWidth={2} className="relative z-10 shrink-0 text-faint" />
+        <IconShare2 size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
       )}
       <span className="relative z-10 truncate">{title}</span>
       <Tooltip label={t("editor.closeTab")} side="bottom">
@@ -273,7 +276,7 @@ function Tab({
             closeTab(tab);
           }}
         >
-          <X size={11} strokeWidth={2} />
+          <IconX size={11} stroke={2} />
         </button>
       </Tooltip>
     </div>

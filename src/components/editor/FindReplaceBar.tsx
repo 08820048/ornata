@@ -1,5 +1,12 @@
 import type { Editor } from "@tiptap/react";
-import { ArrowDown, ArrowUp, CaseSensitive, Replace, ReplaceAll, X } from "lucide-react";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconArrowsExchange,
+  IconLetterCase,
+  IconReplace,
+  IconX,
+} from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   currentMatch,
@@ -87,19 +94,19 @@ export function FindReplaceBar({
             : ""}
         </span>
         <IconButton label={t("find.case")} active={caseSensitive} onClick={() => setCaseSensitive((v) => !v)}>
-          <CaseSensitive size={14} strokeWidth={1.75} />
+          <IconLetterCase size={14} stroke={1.75} />
         </IconButton>
         <IconButton label={t("find.previous")} onClick={goPrev} disabled={!match.count}>
-          <ArrowUp size={14} strokeWidth={1.75} />
+          <IconArrowUp size={14} stroke={1.75} />
         </IconButton>
         <IconButton label={t("find.next")} onClick={goNext} disabled={!match.count}>
-          <ArrowDown size={14} strokeWidth={1.75} />
+          <IconArrowDown size={14} stroke={1.75} />
         </IconButton>
         <IconButton label={t("find.replaceMode")} active={showReplace} onClick={() => setShowReplace((v) => !v)}>
-          <Replace size={14} strokeWidth={1.75} />
+          <IconReplace size={14} stroke={1.75} />
         </IconButton>
         <IconButton label={t("common.close")} onClick={onClose}>
-          <X size={14} strokeWidth={1.75} />
+          <IconX size={14} stroke={1.75} />
         </IconButton>
       </div>
       {showReplace && (
@@ -117,14 +124,14 @@ export function FindReplaceBar({
             onClick={() => replaceCurrent(editor, replacement)}
             disabled={!match.count}
           >
-            <Replace size={14} strokeWidth={1.75} />
+            <IconReplace size={14} stroke={1.75} />
           </IconButton>
           <IconButton
             label={t("find.replaceAll")}
             onClick={() => replaceAll(editor, replacement)}
             disabled={!match.count}
           >
-            <ReplaceAll size={14} strokeWidth={1.75} />
+            <IconArrowsExchange size={14} stroke={1.75} />
           </IconButton>
         </div>
       )}

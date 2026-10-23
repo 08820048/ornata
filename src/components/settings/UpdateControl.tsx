@@ -1,4 +1,7 @@
-import { Loader2, RefreshCw } from "lucide-react";
+import {
+  IconLoader2,
+  IconRefresh,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { EASE_OUT } from "@/lib/ease";
@@ -112,7 +115,7 @@ export function UpdateControl() {
               transition={SWAP}
               className="flex h-8 items-center gap-1.5 px-2 text-[12px] font-medium text-success"
             >
-              <Loader2 size={13} strokeWidth={1.8} className="animate-spin" />
+              <IconLoader2 size={13} stroke={1.8} className="animate-spin" />
               {t("updates.restarting")}
             </motion.div>
           ) : (
@@ -128,9 +131,9 @@ export function UpdateControl() {
               transition={SWAP}
               className="relative after:absolute after:-inset-y-1.5 after:inset-x-0 after:content-['']"
             >
-              <RefreshCw
+              <IconRefresh
                 size={13}
-                strokeWidth={1.75}
+                stroke={1.75}
                 className={status === "checking" ? "animate-spin" : undefined}
               />
               {t("common.check")}

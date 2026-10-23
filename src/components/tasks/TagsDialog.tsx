@@ -1,4 +1,8 @@
-import { ArrowLeft, FileText, Hash } from "lucide-react";
+import {
+  IconArrowLeft,
+  IconFileText,
+  IconHash,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ipc } from "@/lib/ipc";
@@ -87,11 +91,11 @@ export function TagsDialog() {
             onClick={() => setActiveTag(null)}
             className="grid h-6 w-6 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
           >
-            <ArrowLeft size={13} strokeWidth={2} />
+            <IconArrowLeft size={13} stroke={2} />
           </button>
         )}
         <span className="flex min-w-0 items-center gap-1.5">
-          <Hash size={13} strokeWidth={2} className="shrink-0 text-faint" />
+          <IconHash size={13} stroke={2} className="shrink-0 text-faint" />
           <span className="truncate">{activeTag ?? t("tags.title")}</span>
         </span>
       </div>
@@ -111,7 +115,7 @@ export function TagsDialog() {
                 onClick={() => setActiveTag(tag.tag)}
                 className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
               >
-                <Hash size={13} strokeWidth={1.75} className="shrink-0 text-faint" />
+                <IconHash size={13} stroke={1.75} className="shrink-0 text-faint" />
                 <span className="min-w-0 flex-1 truncate">{tag.tag}</span>
                 <span className="shrink-0 text-[11px] tabular-nums text-faint">
                   {t("tags.notes", { count: tag.count })}
@@ -125,7 +129,7 @@ export function TagsDialog() {
                 onClick={() => openNote(rel)}
                 className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
               >
-                <FileText size={13} strokeWidth={1.75} className="shrink-0 text-faint" />
+                <IconFileText size={13} stroke={1.75} className="shrink-0 text-faint" />
                 <span className="min-w-0 flex-1 truncate">{rel.replace(/\.md$/i, "")}</span>
               </button>
             ))}

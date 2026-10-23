@@ -1,4 +1,7 @@
-import { Check, FileText } from "lucide-react";
+import {
+  IconCheck,
+  IconFileText,
+} from "@tabler/icons-react";
 import { notifyNotesChanged } from "@/lib/vaultEvents";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -115,7 +118,7 @@ export function TasksDialog() {
               onClick={() => openNote(group[0].rel)}
               className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[11.5px] font-medium text-faint transition-colors duration-100 hover:text-ink"
             >
-              <FileText size={12} strokeWidth={2} className="shrink-0" />
+              <IconFileText size={12} stroke={2} className="shrink-0" />
               <span className="truncate">{group[0].rel.replace(/\.md$/i, "")}</span>
             </button>
             <ul>
@@ -136,7 +139,7 @@ export function TasksDialog() {
                           checked ? "bg-todo text-[var(--accent-ink)]" : "bg-transparent group-hover:bg-todo/15",
                         )}
                       >
-                        {checked && <Check size={11} strokeWidth={3} />}
+                        {checked && <IconCheck size={11} stroke={3} />}
                       </span>
                     </button>
                     <button

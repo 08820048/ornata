@@ -6,7 +6,9 @@ import {
   forceManyBody,
   forceSimulation,
 } from "d3-force";
-import { Search } from "lucide-react";
+import {
+  IconSearch,
+} from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ipc } from "@/lib/ipc";
 import { vaultNote } from "@/lib/noteRef";
@@ -622,7 +624,7 @@ export function GraphView({ active }: { active: boolean }) {
           {graph && (
             <div className="absolute left-3 top-3 flex max-w-[calc(100%-24px)] items-center gap-1 rounded-[10px] border border-line-soft bg-panel/85 p-1 shadow-sm backdrop-blur-md">
               <label className="flex w-60 min-w-0 items-center gap-1.5 rounded-md px-2 py-1 transition-colors duration-100 focus-within:bg-bg">
-                <Search size={12} strokeWidth={2} className="shrink-0 text-faint" />
+                <IconSearch size={12} stroke={2} className="shrink-0 text-faint" />
                 <input
                   ref={searchRef}
                   value={query}
