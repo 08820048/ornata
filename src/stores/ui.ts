@@ -28,6 +28,9 @@ interface UiState {
   focusMode: boolean;
   markdownSource: boolean;
   saveState: SaveState;
+  /** Status-bar slot the active note portals its cursor / history / word info into. */
+  statusInfoEl: HTMLElement | null;
+  setStatusInfoEl: (el: HTMLElement | null) => void;
   setMcpOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   openPaletteAside: () => void;
@@ -44,6 +47,8 @@ interface UiState {
 }
 
 export const useUi = create<UiState>((set, get) => ({
+  statusInfoEl: null,
+  setStatusInfoEl: (statusInfoEl) => set({ statusInfoEl }),
   paletteOpen: false,
   paletteAside: false,
   mcpOpen: false,

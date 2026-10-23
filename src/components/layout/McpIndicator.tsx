@@ -31,6 +31,7 @@ export function McpIndicator() {
         <button
           type="button"
           aria-label={label}
+          data-mcp-plug
           onClick={() => useUi.getState().setMcpOpen(true)}
           className={cx(
             "grid h-5 w-6 place-items-center rounded transition-[color,background-color,transform] duration-100 hover:bg-hover active:scale-[0.96]",

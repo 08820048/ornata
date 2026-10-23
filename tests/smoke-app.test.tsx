@@ -171,7 +171,7 @@ describe("AppShell smoke", () => {
       server: { running: false, port: 13200, activity: null, token: "tok" },
     };
     const { act, useUi } = await mountShell();
-    const plug = () => container.querySelector<HTMLElement>("footer[aria-label] button");
+    const plug = () => container.querySelector<HTMLElement>("footer[aria-label] [data-mcp-plug]");
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });

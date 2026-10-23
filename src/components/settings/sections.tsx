@@ -59,6 +59,7 @@ export function GeneralSection() {
           />
         </SettingRow>
       </SettingGroup>
+      <VaultSection />
     </>
   );
 }
@@ -125,32 +126,35 @@ export function EditorSection() {
   const setCursorAnimation = useVault((s) => s.setCursorAnimation);
 
   return (
-    <SettingGroup title={t("settings.editor")}>
-      <SettingRow
-        label={t("settings.cursorAnimation")}
-        hint={t("settings.cursorAnimationDetail")}
-      >
-        <Toggle
-          checked={cursorAnimation}
-          onChange={(value) => void setCursorAnimation(value)}
+    <>
+      <SettingGroup title={t("settings.editor")}>
+        <SettingRow
           label={t("settings.cursorAnimation")}
-        />
-      </SettingRow>
-      <SettingRow
-        label={t("settings.outlineSound")}
-        hint={t("settings.outlineSoundDetail")}
-      >
-        <Toggle
-          checked={outlineSound}
-          onChange={(value) => void setOutlineSound(value)}
+          hint={t("settings.cursorAnimationDetail")}
+        >
+          <Toggle
+            checked={cursorAnimation}
+            onChange={(value) => void setCursorAnimation(value)}
+            label={t("settings.cursorAnimation")}
+          />
+        </SettingRow>
+        <SettingRow
           label={t("settings.outlineSound")}
-        />
-      </SettingRow>
-    </SettingGroup>
+          hint={t("settings.outlineSoundDetail")}
+        >
+          <Toggle
+            checked={outlineSound}
+            onChange={(value) => void setOutlineSound(value)}
+            label={t("settings.outlineSound")}
+          />
+        </SettingRow>
+      </SettingGroup>
+      <ImageSection />
+    </>
   );
 }
 
-export function ImageSection() {
+function ImageSection() {
   const t = useT();
   return (
     <SettingGroup title={t("settings.imageUpload")}>
@@ -168,7 +172,7 @@ export function ExportSection() {
   );
 }
 
-export function VaultSection() {
+function VaultSection() {
   const t = useT();
   const root = useVault((s) => s.root);
   const chooseVault = useVault((s) => s.chooseVault);

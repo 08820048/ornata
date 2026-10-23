@@ -6,10 +6,8 @@ import {
   IconCommand,
   IconDownload,
   IconFileDownload,
-  IconFolder,
   IconPalette,
   IconPencil,
-  IconPhoto,
   IconPlug,
   IconSearch,
 } from "@tabler/icons-react";
@@ -26,19 +24,15 @@ import {
   EditorSection,
   ExportSection,
   GeneralSection,
-  ImageSection,
   ShortcutsSection,
   UpdatesSection,
-  VaultSection,
 } from "@/components/settings/sections";
 
 type SectionId =
   | "general"
   | "appearance"
   | "editor"
-  | "image"
   | "export"
-  | "vault"
   | "agents"
   | "shortcuts"
   | "updates";
@@ -57,7 +51,7 @@ const SECTIONS: Section[] = [
     id: "general",
     icon: IconAdjustmentsHorizontal,
     labelKey: "settings.section.general",
-    keywords: ["language", "语言"],
+    keywords: ["language", "语言", "vault", "folder", "path", "仓库", "文件夹", "路径"],
     render: () => <GeneralSection />,
   },
   {
@@ -71,15 +65,8 @@ const SECTIONS: Section[] = [
     id: "editor",
     icon: IconPencil,
     labelKey: "settings.section.editor",
-    keywords: ["sound", "outline", "音效", "目录", "编辑器"],
+    keywords: ["sound", "outline", "音效", "目录", "编辑器", "image", "upload", "picgo", "图片", "上传", "图床"],
     render: () => <EditorSection />,
-  },
-  {
-    id: "image",
-    icon: IconPhoto,
-    labelKey: "settings.section.image",
-    keywords: ["image", "upload", "picgo", "图片", "上传", "图床"],
-    render: () => <ImageSection />,
   },
   {
     id: "export",
@@ -87,13 +74,6 @@ const SECTIONS: Section[] = [
     labelKey: "settings.section.export",
     keywords: ["pdf", "export", "paper", "margin", "a4", "letter", "导出", "纸张", "页边距"],
     render: () => <ExportSection />,
-  },
-  {
-    id: "vault",
-    icon: IconFolder,
-    labelKey: "settings.section.vault",
-    keywords: ["vault", "folder", "path", "仓库", "文件夹", "路径"],
-    render: () => <VaultSection />,
   },
   {
     id: "agents",

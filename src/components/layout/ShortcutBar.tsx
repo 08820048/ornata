@@ -11,6 +11,7 @@ import { useVault } from "@/stores/vault";
 import { KeyCap } from "./KeyCap";
 import { McpIndicator } from "./McpIndicator";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { UpdateHint } from "./UpdateHint";
 
 /**
  * The status bar along the bottom: the shortcuts that matter for the current
@@ -45,6 +46,9 @@ export function ShortcutBar() {
           ))}
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
+        <UpdateHint />
+        {/* The active note portals its cursor / history / word info in here. */}
+        <div ref={(el) => useUi.getState().setStatusInfoEl(el)} className="flex h-full items-center" />
         <McpIndicator />
         <ThemeSwitcher />
         <Tooltip label={`${t("common.settings")} ${keyLabel("⌘,")}`} side="top">

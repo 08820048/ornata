@@ -1,14 +1,11 @@
 import {
-  IconArrowBarDown,
   IconCalendar,
   IconClock,
   IconFilePlus,
   IconFolderPlus,
   IconHash,
   IconListCheck,
-  IconLoader2,
   IconPin,
-  IconRefresh,
   IconSearch,
   IconSortAZ,
   IconX,
@@ -18,7 +15,6 @@ import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useUi } from "@/stores/ui";
-import { useUpdater } from "@/stores/updater";
 import { vaultNote } from "@/lib/noteRef";
 import type { TreeSort } from "@/lib/types";
 import { cx, isMac, keyLabel } from "@/lib/utils";
@@ -163,7 +159,6 @@ export function Sidebar() {
 
       <FileTree />
 
-      <UpdateRow />
     </aside>
   );
 }
@@ -213,66 +208,5 @@ function IconAction({
         {children}
       </button>
     </Tooltip>
-  );
-}
-
-function UpdateRow() {
-  const t = useT();
-  const status = useUpdater((s) => s.status);
-  const version = useUpdater((s) => s.version);
-  const progress = useUpdater((s) => s.progress);
-  const download = useUpdater((s) => s.download);
-  const restartAndInstall = useUpdater((s) => s.restartAndInstall);
-
-  if (
-    status !== "available" &&
-    status !== "downloading" &&
-    status !== "ready" &&
-    status !== "installing"
-  ) {
-    return null;
-  }
-  const busy = status === "downloading" || status === "installing";
-  const ready = status === "ready";
-
-  return (
-    <div className="border-t border-line-soft px-2 py-1.5">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={ready ? restartAndInstall : download}
-        className="flex w-full items-center gap-2 rounded-md bg-hover px-2.5 py-1.5 text-[12.5px] font-medium text-ink transition-colors duration-100 hover:bg-active disabled:cursor-default disabled:hover:bg-hover"
-      >
-        {busy ? (
-          <IconLoader2
-            size={14}
-            stroke={2}
-            className="shrink-0 animate-spin text-faint"
-          />
-        ) : ready ? (
-          <IconRefresh size={14} stroke={2} className="shrink-0" />
-        ) : (
-          <IconArrowBarDown size={14} stroke={2} className="shrink-0" />
-        )}
-        <span className="truncate">
-          {status === "downloading"
-            ? progress == null
-              ? t("sidebar.update.downloading")
-              : t("sidebar.update.downloadingPercent", {
-                  progress: Math.round(progress),
-                })
-            : status === "installing"
-              ? t("sidebar.update.restarting")
-              : ready
-                ? t("sidebar.update.restart")
-                : t("sidebar.update.toVersion", { version: version ?? "" })}
-        </span>
-        {!busy && !ready && (
-          <span className="ml-auto shrink-0 text-[11px] text-faint">
-            {t("common.download")}
-          </span>
-        )}
-      </button>
-    </div>
   );
 }

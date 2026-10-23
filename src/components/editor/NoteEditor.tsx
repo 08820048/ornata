@@ -3,6 +3,7 @@ import {
   IconHistory,
 } from "@tabler/icons-react";
 import { lazy, memo, Suspense, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   joinFrontmatter,
   parseFrontmatter,
@@ -158,6 +159,40 @@ export const NoteEditor = memo(function NoteEditor({
 
   const saveTemplateOpen = useUi((s) => s.saveTemplateOpen);
   const cursor = useCursorPosition(editor, active && !markdownSource);
+
+  // Cursor position, history and word count. They live in the status bar: the
+  // bar's slot takes them as a portal, and in focus mode (no bar) they float
+  // at the window's bottom-right corner instead.
+  const statusInfoEl = useUi((s) => s.statusInfoEl);
+  const statusInfoBody = (
+    <>
+      {cursor && !markdownSource && (
+        <span className="mr-2">{t("editor.cursor", { line: cursor.line, col: cursor.col })}</span>
+      )}
+      <span className={cx("flex items-center gap-1", content.words === 0 && "opacity-0")}>
+        {note.kind === "vault" && !content.missing && (
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            title={t("history.title")}
+            className="rounded p-1 transition-colors duration-100 hover:text-muted"
+          >
+            <IconHistory size={13} stroke={2} />
+          </button>
+        )}
+        <span>{t(content.words === 1 ? "editor.word" : "editor.words", { count: content.words })}</span>
+      </span>
+    </>
+  );
+  const statusInfoClass = cx(
+    "flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
+    content.missing && "opacity-0",
+  );
+  const statusInfo = focusMode ? (
+    <div className={cx(statusInfoClass, "fixed bottom-3 right-4 z-10")}>{statusInfoBody}</div>
+  ) : statusInfoEl ? (
+    createPortal(<div className={cx(statusInfoClass, "mr-1")}>{statusInfoBody}</div>, statusInfoEl)
+  ) : null;
 
   /** Write an edited image source (Typora bar) back onto the node. */
   const applyImageSource = (
@@ -319,34 +354,7 @@ export const NoteEditor = memo(function NoteEditor({
         {/* Owned by CursorMotion (appended imperatively), kept empty by React. */}
         <div ref={pageRef} className="cursor-layer" aria-hidden="true" />
       </div>
-      {active && (
-        <div
-          className={cx(
-            "pointer-events-none fixed z-10 flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
-            // Sit inside the status bar's h-7 strip, left of the MCP plug and settings icons;
-            // z-10 keeps it above the (positioned) status bar, which paints its own background.
-            focusMode ? "bottom-3 right-4" : "bottom-0 h-7 right-[98px]",
-            content.missing && "opacity-0",
-          )}
-        >
-          {cursor && !markdownSource && (
-            <span className="mr-2">{t("editor.cursor", { line: cursor.line, col: cursor.col })}</span>
-          )}
-          <span className={cx("flex items-center gap-1", content.words === 0 && "opacity-0")}>
-            {note.kind === "vault" && !content.missing && (
-              <button
-                type="button"
-                onClick={() => setHistoryOpen(true)}
-                title={t("history.title")}
-                className="pointer-events-auto rounded p-1 transition-colors duration-100 hover:text-muted"
-              >
-                <IconHistory size={13} stroke={2} />
-              </button>
-            )}
-            <span>{t(content.words === 1 ? "editor.word" : "editor.words", { count: content.words })}</span>
-          </span>
-        </div>
-      )}
+      {active && statusInfo}
       {active && imageSource && !markdownSource && (
         <ImageSourcePopover
           top={imageSource.top}
