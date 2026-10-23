@@ -8,7 +8,7 @@ Local-first markdown notes app for macOS and Windows. Tauri 2 (Rust) + React 19 
 
 - Unchecked `- [ ]` items are the to-do list; sections are grouped by version or date, newest last. Re-read the note at the start of a planning task — the user edits it between sessions.
 - When an item ships, tick it (`- [x]`) in that note; add a short line under it if something notable was decided or left out. Never delete or reword the user's items.
-- `docs/功能规划.md` in this repo is a frozen archive of work up to 0.9.0 (10.18). Don't add to it or plan from it; it is history, not the roadmap.
+- The old in-repo `docs/功能规划.md` (work up to 0.9.0) was removed; it is only history now, still readable with `git show 9b16a0d:docs/功能规划.md`. Don't recreate a plan file in the repo.
 
 ## Commands
 
@@ -116,4 +116,5 @@ Our `Modal` (`components/ui/Modal.tsx`) is built on the same tokens; keep new di
 - Never add "Co-Authored-By" or any AI attribution to commits or PRs.
 - After finishing each discrete task (feature, fix, or reviewable unit of work): commit with a conventional message and `git push` to the remote tracking branch (usually `origin/main`). Do not leave completed work only on the local machine.
 - Commit messages: conventional commits, subject ≤50 chars where possible.
+- Block drag handles were tried and pulled (Tauri swallowed in-page HTML5 drag-and-drop, so drops did nothing). Keyboard moves (⌥↑/⌥↓) stay. If redone, don't rely on native HTML5 drag: drag with mouse events, draw the drop line, auto-scroll at edges, move a folded heading's whole section, and keep clear of the heading fold arrow and the empty-line “+”. Tiptap's collaboration packages drag in yjs (+163 kB).
 - Don't reintroduce: sticky notes, note IDs, plugin-fs, standalone todos/bookmarks. Don't *author* frontmatter (external frontmatter is preserved/rendered, not written by us). `[[wiki]]` is accepted as input but stored as standard markdown `[title](path.md)` links.
