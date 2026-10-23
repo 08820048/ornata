@@ -138,6 +138,7 @@ pub fn run() {
             commands::save_image_as,
             commands::open_local_image,
             commands::set_theme,
+            commands::set_palette,
             commands::set_outline_sound,
             commands::set_cursor_animation,
             commands::get_language,

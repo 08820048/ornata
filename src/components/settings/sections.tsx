@@ -6,7 +6,7 @@ import {
   IconSun,
 } from "@tabler/icons-react";
 import type { MessageKey } from "@/lib/i18n";
-import type { Language, Theme } from "@/lib/types";
+import type { Language, Palette, Theme } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import {
   Kbd,
@@ -27,6 +27,11 @@ const THEMES: Array<{ value: Theme; label: MessageKey; icon: typeof IconSun }> =
   { value: "system", label: "settings.theme.system", icon: IconDeviceDesktop },
   { value: "light", label: "settings.theme.light", icon: IconSun },
   { value: "dark", label: "settings.theme.dark", icon: IconMoon },
+];
+
+const PALETTES: Array<{ value: Palette; label: MessageKey }> = [
+  { value: "default", label: "settings.palette.default" },
+  { value: "paper-basalt", label: "settings.palette.paperBasalt" },
 ];
 
 const LANGUAGES: Array<{ value: Language; label: MessageKey }> = [
@@ -65,6 +70,8 @@ export function AppearanceSection() {
   const t = useT();
   const theme = useVault((s) => s.theme);
   const setTheme = useVault((s) => s.setTheme);
+  const palette = useVault((s) => s.palette);
+  const setPalette = useVault((s) => s.setPalette);
 
   return (
     <SettingGroup
@@ -82,6 +89,16 @@ export function AppearanceSection() {
             icon,
           }))}
           onChange={(value) => void setTheme(value)}
+          className="w-[268px]"
+        />
+      </SettingRow>
+      <SettingRow label={t("settings.palette")} hint={t("settings.palette.hint")}>
+        <Segmented
+          id="settings-palette"
+          value={palette}
+          ariaLabel={t("settings.palette")}
+          options={PALETTES.map(({ value, label }) => ({ value, label: t(label) }))}
+          onChange={(value) => void setPalette(value)}
           className="w-[268px]"
         />
       </SettingRow>

@@ -199,6 +199,92 @@
     --syntax-plain: #c9d1d9;
 }
 
+/* Paper (light) and Basalt (dark): the `paper-basalt` palette, selected with
+   `data-palette` on <html> and layered over the light/dark mode. Scales are
+   from the Light Paper and Basalt Bedrock themes; the light accent is
+   darkened to hold the contrast pinned by tests/accent-contrast.test.ts. */
+:root[data-palette="paper-basalt"] {
+    --bg: #fefae9;
+    --panel: #fdf5e5;
+    --sunken: #f3e7c8;
+    --statusbar: #f9f0dc;
+    --menu: #f9f0dc;
+    --ink: #2f2d26;
+    --note-ink: #3a372f;
+    --muted: #6e6a58;
+    --faint: #9a947b;
+    --line: #e7dbb9;
+    --line-soft: #f3e7c8;
+    --hover: rgba(42, 38, 31, 0.05);
+    --active: rgba(42, 38, 31, 0.09);
+    --invert: #2a261f;
+    --invert-ink: #fcf8ed;
+    --accent: #4f7b5e;
+    --accent-ink: #fffdf3;
+    --todo: #79aa88;
+
+    --code-surface: #f9f0dc;
+    --diagram-surface: #fdf5e5;
+    --diagram-node: #f3e7c8;
+    --code-shadow:
+        0 0 0 1px rgba(42, 38, 31, 0.06),
+        0 1px 2px -1px rgba(42, 38, 31, 0.06),
+        0 4px 12px -8px rgba(42, 38, 31, 0.14);
+
+    --syntax-plain: #4c483d;
+}
+
+:root[data-palette="paper-basalt"].dark {
+    --bg: #040608;
+    --panel: #090c0f;
+    --sunken: #010202;
+    --statusbar: #0f1318;
+    --menu: #0f1318;
+    --ink: #e6e9ed;
+    --note-ink: #c4cbd4;
+    --muted: #848f9e;
+    --faint: #5b6573;
+    --line: #1c222a;
+    --line-soft: #151a20;
+    --hover: rgba(230, 233, 237, 0.06);
+    --active: rgba(230, 233, 237, 0.1);
+    --invert: #e6e9ed;
+    --invert-ink: #040608;
+    --accent: #9aabbc;
+    --accent-ink: #040608;
+    --todo: var(--accent);
+
+    --code-surface: #0f1318;
+    --diagram-surface: #0c0f13;
+    --diagram-node: #151a20;
+    --code-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.4);
+
+    --syntax-plain: #c4cbd4;
+}
+
+/* Paper's tactile surface: a fixed, tiled, multiply-blended mottle + grain
+   over the whole window (generated here, not an image file). Light only —
+   Basalt stays flat — and never on print or export. */
+:root[data-palette="paper-basalt"]:not(.dark) body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22512%22%20height=%22512%22%3E%3Cfilter%20id=%22m%22%20x=%220%22%20y=%220%22%20width=%22100%25%22%20height=%22100%25%22%3E%3CfeTurbulence%20type=%22fractalNoise%22%20baseFrequency=%22.022%22%20numOctaves=%225%22%20seed=%227%22%20stitchTiles=%22stitch%22/%3E%3CfeColorMatrix%20values=%220%200%200%200%20.8%200%200%200%200%20.66%200%200%200%200%20.4%200%200%200%201.6%20-.34%22/%3E%3C/filter%3E%3Cfilter%20id=%22g%22%20x=%220%22%20y=%220%22%20width=%22100%25%22%20height=%22100%25%22%3E%3CfeTurbulence%20type=%22fractalNoise%22%20baseFrequency=%22.85%22%20numOctaves=%223%22%20seed=%222%22%20stitchTiles=%22stitch%22/%3E%3CfeColorMatrix%20values=%220%200%200%200%20.5%200%200%200%200%20.4%200%200%200%200%20.22%200%200%200%201.1%20-.4%22/%3E%3C/filter%3E%3Crect%20width=%22512%22%20height=%22512%22%20fill=%22%23f3e6c6%22/%3E%3Crect%20width=%22512%22%20height=%22512%22%20filter=%22url%28%23m%29%22/%3E%3Crect%20width=%22512%22%20height=%22512%22%20filter=%22url%28%23g%29%22/%3E%3C/svg%3E");
+    background-size: 512px 512px;
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+}
+
+@media print {
+    :root[data-palette="paper-basalt"] body::before {
+        display: none;
+    }
+}
+
 html,
 body,
 #root {

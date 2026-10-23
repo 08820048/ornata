@@ -3,6 +3,7 @@ import { emit, listen } from "@tauri-apps/api/event";
 import type {
   ImageUpload,
   Language,
+  Palette,
   Theme,
   VaultSnapshot,
 } from "@/lib/types";
@@ -26,6 +27,7 @@ export function currentWindowKind(): WindowKind {
 /** A partial settings update, mirrored across the two windows. */
 export interface SettingsPatch {
   theme?: Theme;
+  palette?: Palette;
   language?: Language;
   outlineSound?: boolean;
   cursorAnimation?: boolean;

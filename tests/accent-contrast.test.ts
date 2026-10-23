@@ -3,11 +3,25 @@ import { readFileSync } from "node:fs";
 
 const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
-/** Token values from the `:root` and `.dark` blocks. */
-function tokens(block: ":root" | ".dark") {
-  const start = css.indexOf(block === ":root" ? ":root {" : "\n.dark {");
+/** Token values from the block opened by `opener`. */
+function blockTokens(opener: string) {
+  const start = css.indexOf(opener);
   const body = css.slice(start, css.indexOf("\n}", start));
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)].map((m) => [m[1], m[2]]));
+}
+
+const PALETTE = ':root[data-palette="paper-basalt"]';
+const BLOCKS = {
+  light: ":root {",
+  dark: "\n.dark {",
+  "paper": `${PALETTE} {`,
+  "basalt": `${PALETTE}.dark {`,
+} as const;
+
+/** A mode's tokens; the palettes override the base light/dark ones. */
+function tokens(name: keyof typeof BLOCKS) {
+  const base = blockTokens(name === "paper" ? BLOCKS.light : name === "basalt" ? BLOCKS.dark : BLOCKS[name]);
+  return { ...base, ...blockTokens(BLOCKS[name]) };
 }
 
 function luminance(hex: string) {
@@ -22,8 +36,8 @@ function contrast(a: string, b: string) {
 }
 
 describe("accent colour", () => {
-  for (const [name, block] of [["light", ":root"], ["dark", ".dark"]] as const) {
-    const t = tokens(block);
+  for (const name of ["light", "dark", "paper", "basalt"] as const) {
+    const t = tokens(name);
 
     test(`${name}: links and the caret read clearly on the page`, () => {
       expect(t.accent).toBeTruthy();

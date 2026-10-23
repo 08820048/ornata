@@ -18,6 +18,7 @@ import type {
   TreeSort,
   ImageUpload,
   TabRef,
+  Palette,
   Theme,
   TreeNode,
   VaultSnapshot,
@@ -25,7 +26,7 @@ import type {
 } from "@/lib/types";
 import { flattenNotes } from "@/lib/tree";
 import { parentDir } from "@/lib/utils";
-import { applyTheme } from "@/lib/theme";
+import { applyPalette, applyTheme } from "@/lib/theme";
 import { broadcastSettings } from "@/lib/settingsSync";
 import { dailyRel } from "@/lib/dateLinks";
 import { useTabs } from "@/stores/tabs";
@@ -39,6 +40,7 @@ interface VaultState {
   name: string;
   tree: TreeNode[];
   theme: Theme;
+  palette: Palette;
   outlineSound: boolean;
   cursorAnimation: boolean;
   imageUpload: ImageUpload;
@@ -51,6 +53,7 @@ interface VaultState {
   /** Load scalar settings into a fresh (settings-window) store, no side effects. */
   hydrateSettings: () => Promise<void>;
   applyRemoteTheme: (theme: Theme) => void;
+  applyRemotePalette: (palette: Palette) => void;
   applyRemoteOutlineSound: (enabled: boolean) => void;
   applyRemoteCursorAnimation: (enabled: boolean) => void;
   applyRemoteImageUpload: (upload: ImageUpload) => void;
@@ -90,6 +93,7 @@ interface VaultState {
   deleteExternalNote: (path: string) => Promise<void>;
 
   setTheme: (theme: Theme) => Promise<void>;
+  setPalette: (palette: Palette) => Promise<void>;
   setOutlineSound: (enabled: boolean) => Promise<void>;
   setCursorAnimation: (enabled: boolean) => Promise<void>;
   setImageUpload: (upload: ImageUpload) => Promise<void>;
@@ -115,12 +119,14 @@ function openVaultSnapshot(
 ) {
   if (!snapshot) return;
   applyTheme(snapshot.theme);
+  applyPalette(snapshot.palette);
   set({
     status: "ready",
     root: snapshot.root,
     name: snapshot.name,
     tree: snapshot.tree,
     theme: snapshot.theme,
+    palette: snapshot.palette,
     outlineSound: snapshot.outlineSound,
     imageUpload: snapshot.imageUpload,
     cursorAnimation: snapshot.cursorAnimation,
@@ -213,6 +219,7 @@ export const useVault = create<VaultState>((set, get) => ({
   name: "",
   tree: [],
   theme: "system",
+  palette: "default",
   outlineSound: true,
   cursorAnimation: true,
   imageUpload: { mode: "local", command: "" },
@@ -230,12 +237,14 @@ export const useVault = create<VaultState>((set, get) => ({
         return;
       }
       applyTheme(snapshot.theme);
+      applyPalette(snapshot.palette);
       set({
         status: "ready",
         root: snapshot.root,
         name: snapshot.name,
         tree: snapshot.tree,
         theme: snapshot.theme,
+        palette: snapshot.palette,
         outlineSound: snapshot.outlineSound,
         imageUpload: snapshot.imageUpload,
         cursorAnimation: snapshot.cursorAnimation,
@@ -252,8 +261,10 @@ export const useVault = create<VaultState>((set, get) => ({
     try {
       const snapshot = await ipc.settingsSnapshot();
       applyTheme(snapshot.theme);
+      applyPalette(snapshot.palette);
       set({
         theme: snapshot.theme,
+        palette: snapshot.palette,
         outlineSound: snapshot.outlineSound,
         cursorAnimation: snapshot.cursorAnimation,
         imageUpload: snapshot.imageUpload,
@@ -269,6 +280,11 @@ export const useVault = create<VaultState>((set, get) => ({
   applyRemoteTheme: (theme) => {
     applyTheme(theme);
     set({ theme });
+  },
+
+  applyRemotePalette: (palette) => {
+    applyPalette(palette);
+    set({ palette });
   },
 
   applyRemoteOutlineSound: (outlineSound) => {
@@ -663,6 +679,17 @@ export const useVault = create<VaultState>((set, get) => ({
     broadcastSettings({ theme });
     try {
       await ipc.setTheme(theme);
+    } catch (err) {
+      oops(err);
+    }
+  },
+
+  setPalette: async (palette) => {
+    applyPalette(palette);
+    set({ palette });
+    broadcastSettings({ palette });
+    try {
+      await ipc.setPalette(palette);
     } catch (err) {
       oops(err);
     }

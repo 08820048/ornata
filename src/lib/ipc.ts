@@ -18,6 +18,7 @@ import type {
   UnusedAsset,
   OpenTask,
   SettingsSnapshot,
+  Palette,
   Theme,
   TreeNode,
   VaultSnapshot,
@@ -176,6 +177,7 @@ export const ipc = {
     call<string | null>("save_image_as", { source }),
   openLocalImage: (path: string) => call<void>("open_local_image", { path }),
   setTheme: (theme: Theme) => call<void>("set_theme", { theme }),
+  setPalette: (palette: Palette) => call<void>("set_palette", { palette }),
   setOutlineSound: (enabled: boolean) =>
     call<void>("set_outline_sound", { enabled }),
   setCursorAnimation: (enabled: boolean) =>

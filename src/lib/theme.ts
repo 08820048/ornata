@@ -1,6 +1,7 @@
-import type { Theme } from "@/lib/types";
+import type { Palette, Theme } from "@/lib/types";
 
 const STORAGE_KEY = "ornata:theme";
+const PALETTE_KEY = "ornata:palette";
 
 /**
  * Apply a theme to the document root and mirror it to localStorage. The
@@ -38,4 +39,26 @@ export function cachedTheme(): Theme {
     // ignore
   }
   return "system";
+}
+
+/** Apply a palette to the document root (`data-palette`, absent for the
+ *  default) and mirror it to localStorage for a flash-free first paint. */
+export function applyPalette(palette: Palette) {
+  if (palette === "default") delete document.documentElement.dataset.palette;
+  else document.documentElement.dataset.palette = palette;
+  try {
+    localStorage.setItem(PALETTE_KEY, palette);
+  } catch {
+    // storage disabled — the in-memory palette still applies
+  }
+}
+
+/** Last applied palette, for a flash-free first paint. */
+export function cachedPalette(): Palette {
+  try {
+    if (localStorage.getItem(PALETTE_KEY) === "paper-basalt") return "paper-basalt";
+  } catch {
+    // ignore
+  }
+  return "default";
 }

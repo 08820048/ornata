@@ -15,6 +15,8 @@ pub struct AppConfig {
     #[serde(default)]
     pub theme: Theme,
     #[serde(default)]
+    pub palette: Palette,
+    #[serde(default)]
     pub language: Language,
     #[serde(default = "default_outline_sound")]
     pub outline_sound: bool,
@@ -168,6 +170,7 @@ impl Default for AppConfig {
         Self {
             vault_path: None,
             theme: Theme::default(),
+            palette: Palette::default(),
             language: Language::default(),
             outline_sound: default_outline_sound(),
             cursor_animation: default_cursor_animation(),
@@ -186,6 +189,16 @@ pub enum Theme {
     System,
     Light,
     Dark,
+}
+
+/// Colour palette applied on top of the light/dark mode.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Palette {
+    #[default]
+    Default,
+    /// Paper (light) and Basalt (dark).
+    PaperBasalt,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
@@ -224,7 +237,16 @@ pub fn save(app: &tauri::AppHandle, config: &AppConfig) -> AppResult<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AppConfig, Language};
+    use super::{AppConfig, Language, Palette};
+
+    #[test]
+    fn palette_defaults_and_round_trips() {
+        let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(config.palette, Palette::Default);
+        let config: AppConfig = serde_json::from_str(r#"{"palette":"paper-basalt"}"#).unwrap();
+        assert_eq!(config.palette, Palette::PaperBasalt);
+        assert!(serde_json::to_string(&config).unwrap().contains("\"paper-basalt\""));
+    }
 
     #[test]
     fn old_config_defaults_to_english() {

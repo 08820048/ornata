@@ -1,4 +1,7 @@
 export type Theme = "system" | "light" | "dark";
+
+/** Colour palette applied on top of the light/dark mode. */
+export type Palette = "default" | "paper-basalt";
 export type Language = "en" | "zh-CN";
 export type ImageUploadMode = "local" | "custom";
 
@@ -31,6 +34,7 @@ export interface VaultSnapshot {
   name: string;
   tree: TreeNode[];
   theme: Theme;
+  palette: Palette;
   outlineSound: boolean;
   cursorAnimation: boolean;
   imageUpload: ImageUpload;
@@ -39,6 +43,7 @@ export interface VaultSnapshot {
 /** Scalar settings served to the standalone settings window. */
 export interface SettingsSnapshot {
   theme: Theme;
+  palette: Palette;
   language: Language;
   outlineSound: boolean;
   cursorAnimation: boolean;

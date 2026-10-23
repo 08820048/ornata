@@ -7,7 +7,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::backlinks::{self, Backlink};
-use crate::config::{self, ImageUpload, ImageUploadMode, Language, PdfSettings, Theme};
+use crate::config::{self, ImageUpload, ImageUploadMode, Language, Palette, PdfSettings, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::graph;
@@ -101,6 +101,7 @@ pub struct VaultSnapshot {
     pub name: String,
     pub tree: Vec<TreeNode>,
     pub theme: Theme,
+    pub palette: Palette,
     pub outline_sound: bool,
     pub cursor_animation: bool,
     pub image_upload: ImageUpload,
@@ -118,6 +119,7 @@ fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
         name,
         tree,
         theme: config.theme,
+        palette: config.palette,
         outline_sound: config.outline_sound,
         cursor_animation: config.cursor_animation,
         image_upload: config.image_upload,
@@ -575,6 +577,13 @@ pub fn open_local_image(path: String) -> AppResult<()> {
 pub fn set_theme(app: AppHandle, theme: Theme) -> AppResult<()> {
     let mut cfg = config::load(&app);
     cfg.theme = theme;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
+pub fn set_palette(app: AppHandle, palette: Palette) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.palette = palette;
     config::save(&app, &cfg)
 }
 

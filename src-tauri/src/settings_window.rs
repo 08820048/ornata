@@ -4,7 +4,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 
 use crate::commands::AppState;
-use crate::config::{self, ImageUpload, Language, Theme};
+use crate::config::{self, ImageUpload, Language, Palette, Theme};
 use crate::error::{AppError, AppResult};
 
 /// Label of the standalone settings window. The frontend branches on this
@@ -19,6 +19,7 @@ pub const SETTINGS_WINDOW_LABEL: &str = "settings";
 #[serde(rename_all = "camelCase")]
 pub struct SettingsSnapshot {
     pub theme: Theme,
+    pub palette: Palette,
     pub language: Language,
     pub outline_sound: bool,
     pub cursor_animation: bool,
@@ -38,6 +39,7 @@ pub fn get_settings(app: AppHandle, state: State<'_, AppState>) -> AppResult<Set
     let root = state.root().ok();
     Ok(SettingsSnapshot {
         theme: cfg.theme,
+        palette: cfg.palette,
         language: cfg.language,
         outline_sound: cfg.outline_sound,
         cursor_animation: cfg.cursor_animation,
