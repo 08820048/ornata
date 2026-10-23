@@ -169,7 +169,7 @@
     --statusbar: #1a1c20;
     --menu: #121417;
     --ink: #ebebe8;
-    --note-ink: #c7ccce;
+    --note-ink: #cbd0d2;
     --muted: #8f8f8a;
     --faint: #64645f;
     --line: #292927;
@@ -314,8 +314,9 @@ body {
     cursor: text;
     font-family: var(--font-note);
     font-feature-settings: "zero";
-    font-size: 16px;
-    line-height: 1.65;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.8;
     color: var(--note-ink);
     caret-color: var(--accent);
     outline: none;
@@ -372,7 +373,7 @@ body {
 }
 
 .prose-note p {
-    margin: 0.45em 0;
+    margin: 0;
     text-wrap: pretty;
 }
 
@@ -385,19 +386,19 @@ body {
     text-wrap: balance;
 }
 .prose-note h1 {
-    font-size: 1.6em;
+    font-size: 1.9em;
     font-weight: 620;
     letter-spacing: -0.018em;
     margin: 1.15em 0 0.4em;
 }
 .prose-note h2 {
-    font-size: 1.3em;
+    font-size: 1.6em;
     font-weight: 580;
     letter-spacing: -0.012em;
     margin: 1.1em 0 0.35em;
 }
 .prose-note h3 {
-    font-size: 1.1em;
+    font-size: 1.2em;
     font-weight: 560;
     letter-spacing: -0.006em;
     margin: 1.1em 0 0.3em;
@@ -548,7 +549,7 @@ body {
 }
 
 .prose-note strong {
-    font-weight: 650;
+    font-weight: 600;
     color: var(--ink);
 }
 
