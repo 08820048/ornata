@@ -26,7 +26,7 @@ Production downloads are signed with an Apple Developer ID certificate and notar
 - **Folders & subfolders** — organize notes in real, Finder-visible folders
 - **⌘K command palette** — jump to any note or folder instantly
 - **Instant search** — title + content, ranked, in milliseconds
-- **Quiet UI** — light, dark, or system theme; monochrome with a single teal accent for links, checked tasks, and the caret
+- **Quiet UI, your theme** — light, dark, or follow the system, with a colour scheme for each (Default, Paper, Paper Textured; Default, Basalt Bedrock, Tokyo Techno, Early Ember, Neon Noir), switchable from the status bar; one accent per theme for links, checked tasks, and the caret
 - **Portable vault** — plain files, no IDs, no frontmatter, no lock-in
 - **Split view** — up to four notes side by side, each with its own header; drag the dividers to resize
 - **Works with any AI agent** — an MCP server and a command line, with access you set per vault (see below)

@@ -33,6 +33,7 @@ export interface Copy {
     chapters: { write: [string, string]; connect: [string, string]; find: [string, string] };
     files: Story;
     editor: Story;
+    themes: Story;
     backlinks: Story;
     graph: Story;
     split: Story;
@@ -96,6 +97,7 @@ const en: Copy = {
     chapters: { write: ["Write.", "Plain files underneath, a precise editor on top."], connect: ["Connect.", "Links become context, and the context becomes a map."], find: ["Find.", "Everything important is one keystroke away."] },
     files: { eyebrow: "Plain files, real folders", title: "Your notes are already exported.", body: "Pick any folder. Ornata writes ordinary Markdown into real directories, keeps frontmatter from other tools, and notices edits made elsewhere. When you need to share, export a PDF with a bookmark outline, or standalone HTML." },
     editor: { eyebrow: "A professional editor", title: "Rich where it helps. Plain underneath.", body: "Clean typography, language-aware code, pasted images, and a magnetic outline for long notes — while the file on disk stays readable anywhere." },
+    themes: { eyebrow: "Themes", title: "One theme for the day, another for the night.", body: "Pick a colour scheme for light mode and another for dark — warm Paper with a hand-drawn touch, near-black Basalt, a neon-pink noir — and switch from the status bar without opening Settings." },
     backlinks: { eyebrow: "Linked mentions", title: "See what links here.", body: "Every note lists the notes that reference it, with the linking line as context — and surfaces plain mentions that should become links." },
     graph: { eyebrow: "The link graph", title: "See how your ideas connect.", body: "Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text." },
     split: { eyebrow: "Side by side", title: "Read one note while you write another.", body: "⌘-click a link, or press ⌘↵ in the palette, and the note opens beside this one. Up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done." },
@@ -171,6 +173,7 @@ const zh: Copy = {
     chapters: { write: ["写。", "底层是纯文件，上层是精准的编辑器。"], connect: ["连。", "链接成为上下文，上下文连成地图。"], find: ["找。", "重要的东西，一个快捷键就到。"] },
     files: { eyebrow: "纯文件，真文件夹", title: "你的笔记，本来就已经导出了。", body: "选任意一个文件夹。Ornata 把普通 Markdown 写进真实的目录，保留其他工具写的 frontmatter，并能发现别处所做的修改。要分享时，导出带书签目录的 PDF，或独立的 HTML。" },
     editor: { eyebrow: "专业的编辑器", title: "该丰富时丰富，底层始终朴素。", body: "清爽的排版、识别语言的代码块、粘贴图片，以及长笔记的磁吸大纲 —— 而磁盘上的文件在任何地方都能读。" },
+    themes: { eyebrow: "主题", title: "白天一套，夜里另一套。", body: "分别为浅色和深色模式选配色 —— 带手绘笔触的暖色纸张、近乎纯黑的玄武岩、霓虹粉的黑色电影 —— 在状态栏里就能切换，不用打开设置。" },
     backlinks: { eyebrow: "链接提及", title: "看看谁链接到这里。", body: "每篇笔记都会列出引用它的笔记，并附上链接所在的那一行作为上下文，还会找出本该变成链接的普通提及。" },
     graph: { eyebrow: "链接图谱", title: "看见想法如何相连。", body: "文件夹聚成柔和的区域，悬停一篇笔记会描出它的链接和方向，搜索可直接飞到你要找的笔记。任何一篇笔记也能在正文下方显示它自己的邻域。" },
     split: { eyebrow: "并排查看", title: "写这一篇时，读另一篇。", body: "⌘ 点击链接，或在命令面板里按 ⌘↵，笔记就在旁边打开。最多四个窗格，每个都有自己的标题栏和前进后退箭头。拖动分隔条调整大小，用完关掉即可。" },

@@ -34,19 +34,41 @@ export const REFERENCE: DocSection[] = [
     ),
   },
   {
+    id: "themes",
+    title: "Themes",
+    lead: "A colour scheme for light mode and another for dark mode.",
+    body: (
+      <>
+        <P>
+          Choose a theme for each mode in Settings → Appearance, or click the palette icon in the status bar: switch
+          between Auto, Light and Dark there, and pick the theme for the mode in use without opening Settings. Auto
+          follows the system and uses your light theme by day and your dark theme at night.
+        </P>
+        <Ul>
+          <Li><strong className="font-medium text-foreground">Light</strong> — Default, Paper, and Paper Textured.</Li>
+          <Li><strong className="font-medium text-foreground">Dark</strong> — Default, Basalt Bedrock, Tokyo Techno, Early Ember, and Neon Noir.</Li>
+        </Ul>
+        <P>
+          Paper swaps hairlines for hand-drawn rules and the caret for a soft block over the next character; Paper
+          Textured adds a paper grain on top. Basalt Bedrock and Neon Noir use the block caret too. Each theme has its own
+          link and caret colour, and ⌘⇧D still flips between light and dark. PDF and HTML exports always use the neutral
+          colours, whatever theme you write in.
+        </P>
+      </>
+    ),
+  },
+  {
     id: "settings",
     title: "Settings",
     lead: "Open with ⌘, — search the settings if you can't find one.",
     body: (
       <Ul>
-        <Li><strong className="font-medium text-foreground">General</strong> — interface language (English or 简体中文) and the app version.</Li>
-        <Li><strong className="font-medium text-foreground">Appearance</strong> — light, dark, or follow the system.</Li>
-        <Li><strong className="font-medium text-foreground">Editor</strong> — the outline sound and the animated cursor.</Li>
-        <Li><strong className="font-medium text-foreground">Image</strong> — keep pasted images in the vault, or run your own upload command.</Li>
+        <Li><strong className="font-medium text-foreground">General</strong> — interface language (English or 简体中文), and which vault folder is open.</Li>
+        <Li><strong className="font-medium text-foreground">Appearance</strong> — light, dark, or follow the system, and a theme for each of light and dark.</Li>
+        <Li><strong className="font-medium text-foreground">Editor</strong> — the outline sound, the animated cursor, and image upload: keep pasted images in the vault, or run your own upload command.</Li>
         <Li><strong className="font-medium text-foreground">Export</strong> — PDF paper size and margins.</Li>
-        <Li><strong className="font-medium text-foreground">Vault</strong> — which folder is open, and changing it.</Li>
         <Li><strong className="font-medium text-foreground">Agents (MCP)</strong> — what outside agents may do, and how to connect them.</Li>
-        <Li><strong className="font-medium text-foreground">Shortcuts</strong> and <strong className="font-medium text-foreground">Updates</strong> — the key list, and checking for a new version. Ornata updates itself from a signed feed; when one is ready the sidebar offers Restart to update.</Li>
+        <Li><strong className="font-medium text-foreground">Shortcuts</strong> and <strong className="font-medium text-foreground">About</strong> — the key list, and checking for a new version. Ornata updates itself from a signed feed; when one is ready, the status bar shows it beside the cursor position, and one click downloads it, then Restart to update.</Li>
       </Ul>
     ),
   },

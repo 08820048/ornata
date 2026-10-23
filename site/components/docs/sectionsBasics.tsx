@@ -54,7 +54,7 @@ export const BASICS: DocSection[] = [
             Open a Markdown file from anywhere with <Kbd>⌘O</Kbd>. It opens in a tab like any note, without being copied
             into the vault.
           </Li>
-          <Li>Change which vault is open in Settings → Vault.</Li>
+          <Li>Change which vault is open in Settings → General.</Li>
         </Ul>
       </>
     ),
@@ -101,7 +101,7 @@ export const BASICS: DocSection[] = [
             A link to a note that doesn&apos;t exist yet is shown gray and dashed; clicking it creates the note.
           </Li>
           <Li>
-            Paste or drag an image into a note. It is saved in <Code>.ornata/assets/</Code>. In Settings → Image you can
+            Paste or drag an image into a note. It is saved in <Code>.ornata/assets/</Code>. In Settings → Editor you can
             instead run your own upload command, such as PicGo.
           </Li>
         </Ul>

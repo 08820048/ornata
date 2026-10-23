@@ -18,7 +18,9 @@ import {
   History,
   ListChecks,
   MoreHorizontal,
+  Palette as PaletteIcon,
   Pin,
+  Plug,
   Search,
   Settings,
   Share2,
@@ -50,9 +52,9 @@ const TYPED_FULL = `${TYPED}[[${LINK}]]`;
 /* ── Sidebar ─────────────────────────────────────────────────────────── */
 
 /* Mirrors src/components/layout/Sidebar.tsx: traffic-light clearance, ⌘K
-   search, vault name, pinned notes, the Notes header with its tools, the
-   tree (selection is the light `active` fill, not an inverted pill), and
-   the Settings footer. */
+   search, vault name, pinned notes, the Notes header with its tools, and the
+   tree (selection is the light `active` fill, not an inverted pill).
+   Settings lives in the status bar now, not in a sidebar footer. */
 
 type TreeNode = { label: string; depth: number; kind: "folder" | "file"; open?: boolean };
 const PINNED = ["Q3 Roadmap", "Reading list"];
@@ -157,13 +159,6 @@ function Sidebar({ active }: { active: string | null }) {
             </div>
           );
         })}
-      </div>
-      <div className="border-t border-line-soft px-2 py-1.5">
-        <div className="flex h-[30px] items-center gap-2.5 rounded-md px-2 text-[13px] font-medium text-muted-foreground">
-          <Settings size={15} strokeWidth={1.75} />
-          Settings
-          <kbd className="ml-auto font-mono text-[10px] font-normal text-faint">⌘,</kbd>
-        </div>
       </div>
     </aside>
   );
@@ -400,8 +395,9 @@ function SplitPanes({ elapsed, still }: { elapsed: number; still: boolean }) {
 
 /* ── Shortcut bar ────────────────────────────────────────────────────── */
 
-/* The strip along the bottom of the window: the keys that matter for the
-   current view, and the note's word count at the far right. */
+/* The strip along the whole bottom of the window: the keys that matter for the
+   current view on the left; on the right the cursor position, history and word
+   count of the note, then the MCP plug, the theme switcher and Settings. */
 function ShortcutBar({ graph }: { graph: boolean }) {
   const keys = graph
     ? [["⌘K", "Command palette"], ["⌘N", "New note"], ["⌘[", "Back"], ["⌘\\", "Toggle sidebar"]]
@@ -414,12 +410,20 @@ function ShortcutBar({ graph }: { graph: boolean }) {
           {label}
         </span>
       ))}
-      {!graph && (
-        <span className="ml-auto flex items-center gap-1.5 tabular-nums">
-          <History size={12} strokeWidth={2} />
-          186 words
-        </span>
-      )}
+      <div className="ml-auto flex shrink-0 items-center gap-1 tabular-nums">
+        {!graph && (
+          <>
+            <span className="mr-2">Ln 2, Col 48</span>
+            <History size={12} strokeWidth={2} />
+            <span className="mr-2">186 words</span>
+          </>
+        )}
+        {[Plug, PaletteIcon, Settings].map((Icon, index) => (
+          <span key={index} className="grid h-5 w-6 place-items-center">
+            <Icon size={13.5} strokeWidth={2} />
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -557,8 +561,8 @@ export function AppDemo() {
   return (
     <div ref={ref}>
       {/* app-ui: the app's real palette and typeface inside the window. */}
-      <div className="app-ui overflow-hidden rounded-xl border border-black/10 bg-background shadow-workbench">
-        <div className="flex h-[480px] sm:aspect-[16/10] sm:h-auto">
+      <div className="app-ui flex h-[480px] flex-col overflow-hidden rounded-xl border border-black/10 bg-background shadow-workbench sm:aspect-[16/10] sm:h-auto">
+        <div className="flex min-h-0 flex-1">
           <Sidebar active={activeTab === "graph" ? null : activeTab} />
           <main className="flex min-w-0 flex-1 flex-col">
             <TabStrip scene={scene.id} activeTab={activeTab} />
@@ -574,9 +578,9 @@ export function AppDemo() {
                 {scene.id === "find" && <Palette key="palette" query={query} />}
               </AnimatePresence>
             </div>
-            <ShortcutBar graph={scene.id === "connect"} />
           </main>
         </div>
+        <ShortcutBar graph={scene.id === "connect"} />
       </div>
 
       {/* Chapter rail: where the tour is, and a way to jump. */}

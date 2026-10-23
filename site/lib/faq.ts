@@ -50,6 +50,10 @@ export const FAQS_EN: Faq[] = [
     a: "Ornata automatically checks its signed update feed. When a release is available, you can download it with visible progress and restart to install it. The macOS build is Developer ID signed and notarized by Apple.",
   },
   {
+    q: "Does Ornata have a dark mode and themes?",
+    a: "Yes. Choose light, dark, or follow the system, and pick a theme for each: Default, Paper, or Paper Textured in light; Default, Basalt Bedrock, Tokyo Techno, Early Ember, or Neon Noir in dark. The palette icon in the status bar switches them without opening Settings.",
+  },
+  {
     q: "Which interface languages are supported?",
     a: "English and Simplified Chinese are built in. You can switch languages from Settings without changing the language of your notes.",
   },
@@ -106,6 +110,10 @@ export const FAQS_ZH: Faq[] = [
   {
     q: "更新是怎么进行的？",
     a: "Ornata 会自动检查它的签名更新源。有新版本时，你可以在看得见进度的情况下下载，然后重启安装。macOS 版经过 Developer ID 签名，并由 Apple 公证。",
+  },
+  {
+    q: "有深色模式和主题吗？",
+    a: "有。可以选浅色、深色或跟随系统，并分别为它们选主题：浅色有默认、纸张、纸张纹理；深色有默认、玄武岩、东京科技、初燃余烬、霓虹暗夜。状态栏里的调色板图标不用打开设置就能切换。",
   },
   {
     q: "支持哪些界面语言？",

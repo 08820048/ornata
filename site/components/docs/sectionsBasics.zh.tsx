@@ -50,7 +50,7 @@ export const BASICS_ZH: DocSection[] = [
           <Li>
             用 <Kbd>⌘O</Kbd> 打开任意位置的 Markdown 文件。它像普通笔记一样在标签页里打开，但不会被复制进笔记库。
           </Li>
-          <Li>在「设置 → 仓库」里更换当前打开的笔记库。</Li>
+          <Li>在「设置 → 通用」里更换当前打开的笔记库。</Li>
         </Ul>
       </>
     ),
@@ -93,7 +93,7 @@ export const BASICS_ZH: DocSection[] = [
           </Li>
           <Li>指向尚不存在的笔记的链接显示为灰色虚线；点击它会创建这篇笔记。</Li>
           <Li>
-            把图片粘贴或拖进笔记，会保存到 <Code>.ornata/assets/</Code>。你也可以在「设置 → 图片」里改用自己的上传命令，例如 PicGo。
+            把图片粘贴或拖进笔记，会保存到 <Code>.ornata/assets/</Code>。你也可以在「设置 → 编辑器」里改用自己的上传命令，例如 PicGo。
           </Li>
         </Ul>
         <H3>代码、公式与图表</H3>
