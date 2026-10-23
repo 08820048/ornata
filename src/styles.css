@@ -307,6 +307,7 @@ body {
 .note-title {
     font-family: var(--font-note);
     font-feature-settings: "zero";
+    font-variant-numeric: slashed-zero;
 }
 
 .prose-note {
@@ -314,6 +315,7 @@ body {
     cursor: text;
     font-family: var(--font-note);
     font-feature-settings: "zero";
+    font-variant-numeric: slashed-zero;
     font-size: 15px;
     font-weight: 400;
     line-height: 1.8;
@@ -1295,4 +1297,5 @@ pre,
 kbd,
 .cm-editor {
     font-feature-settings: normal;
+    font-variant-numeric: normal;
 }
