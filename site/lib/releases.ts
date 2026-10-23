@@ -10,6 +10,34 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.0",
+    zh: {
+      summary: "浅色、深色各选一套主题，底部状态栏更完整，大笔记库里打字更顺。",
+      changes: [
+        "主题：在 设置 › 外观 里分别为浅色和深色模式选一套配色。浅色有 默认、纸张、纸张纹理；深色有 默认、玄武岩、东京科技、初燃余烬、霓虹暗夜。纸张带手绘线条和块状光标，纸张纹理再加一层纸质颗粒；玄武岩和霓虹暗夜同样使用块状光标。",
+        "状态栏新增调色板图标，不用打开设置就能切换 浅色 / 深色 / 自动 和当前模式下的配色。",
+        "状态栏里显示光标所在的行和列，位于历史按钮和字数的左边；有新版本时，更新提示也出现在状态栏、光标位置的左边，不再放在侧栏底部。",
+        "任务面板里可以直接勾选任务，也可以取消勾选。顶部页签的右键菜单加上了图标。",
+        "笔记使用 Cascadia Code（中文回退到苹方）并带斜线的 0，代码使用 Fira Code；界面图标换成 Tabler。浅色和深色的配色重新调过，侧栏、编辑区、状态栏和菜单各有自己的底色，深色下加粗的文字也更醒目。",
+        "设置页的分区更少了：仓库并入「通用」，图片上传并入「编辑器」。",
+        "性能：大笔记库里打字时，每次自动保存不再重新扫描所有笔记；反向链接、搜索、未链接提及和任务不再在运行时卡住窗口；很长的笔记里打字也不再每敲一个键就把全文转成 Markdown。应用体积小了约 10 MB。",
+      ],
+    },
+    date: "October 23, 2026",
+    dateTime: "2026-10-23",
+    summary:
+      "A colour scheme for light and another for dark, a fuller status bar, and smoother typing in big vaults.",
+    changes: [
+      "Themes: pick a colour scheme for light mode and another for dark mode in Settings › Appearance. Light: Default, Paper, Paper Textured. Dark: Default, Basalt Bedrock, Tokyo Techno, Early Ember, Neon Noir. Paper has hand-drawn rules and a block caret, Paper Textured adds a paper grain, and Basalt and Neon Noir use a block caret too.",
+      "A palette icon in the status bar switches light / dark / auto and the colour scheme without opening Settings.",
+      "The status bar shows the cursor's line and column, left of the history button and word count. A new version now announces itself there too, left of the cursor position, instead of at the bottom of the sidebar.",
+      "Tick off tasks from the Tasks panel, and untick them again. The tab context menu has icons.",
+      "Notes are set in Cascadia Code (CJK falls back to PingFang) with a slashed zero; code uses Fira Code. Interface icons are now Tabler icons. Light and dark colours were reworked: sidebar, editor, status bar and menus each have their own surface, and bold text stands out in dark mode.",
+      "Settings has fewer pages: the vault moved into General and image upload into Editor.",
+      "Faster: in a big vault, autosaving no longer re-scans every note, backlinks, search, mentions and tasks no longer freeze the window while they run, and typing in a very long note no longer converts the whole document to Markdown on every keystroke. The app is about 10 MB smaller.",
+    ],
+  },
+  {
     version: "0.9.0",
     zh: {
       summary:

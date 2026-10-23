@@ -2,6 +2,29 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.10.0] - 2026-10-23
+
+### Added
+
+- Themes: pick a colour scheme for light mode and another for dark mode in Settings › Appearance. Light: Default, Paper, Paper Textured. Dark: Default, Basalt Bedrock, Tokyo Techno, Early Ember, Neon Noir. Paper has hand-drawn rules and a block caret; Paper Textured adds a paper grain. Basalt and Neon Noir use a block caret too.
+- A palette icon in the status bar switches light / dark / auto and the colour scheme without opening Settings.
+- The status bar shows the cursor's line and column next to the history button and word count.
+- A new version now announces itself in the status bar, left of the cursor position, instead of at the bottom of the sidebar.
+- Tick off tasks from the Tasks panel, and untick them again.
+- Icons in the tab context menu.
+
+### Changed
+
+- Notes are set in Cascadia Code (CJK falls back to PingFang) with a slashed zero; code uses Fira Code. Interface icons are now Tabler icons.
+- Light and dark colours were reworked: sidebar, editor, status bar and menus each have their own surface, and bold text stands out in dark mode.
+- Settings has fewer pages: the vault moved into General and image upload into Editor.
+
+### Fixed
+
+- Typing in a large vault no longer re-scans every note on each autosave, and backlinks, search, mentions and tasks no longer freeze the window while they run.
+- Typing in a very long note no longer converts the whole document to Markdown on every keystroke.
+- The app is about 10 MB smaller.
+
 ## [0.9.0] - 2026-10-18
 
 ### Removed
