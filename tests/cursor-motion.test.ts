@@ -1,6 +1,7 @@
 import { expect, test, describe } from "bun:test";
 import {
   rankCorners,
+  roundedPath,
   stepSpring,
   type Spring,
 } from "../src/components/editor/cursorMotion";
@@ -69,5 +70,30 @@ describe("rankCorners", () => {
 
   test("no travel yields a stable permutation", () => {
     expect([...rankCorners(0, 0)].sort()).toEqual([0, 1, 2, 3]);
+  });
+});
+
+describe("roundedPath", () => {
+  const square = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+    { x: 0, y: 10 },
+  ];
+
+  test("closes through four quadratic corners", () => {
+    const d = roundedPath(square, 2);
+    expect(d.endsWith("Z")).toBe(true);
+    expect(d.match(/Q/g)).toHaveLength(4);
+    expect(d.startsWith("M0.00,2.00")).toBe(true);
+  });
+
+  test("never rounds past the midpoint of an edge", () => {
+    const d = roundedPath(square, 100);
+    expect(d.startsWith("M0.00,5.00")).toBe(true);
+  });
+
+  test("a zero radius keeps the corners sharp", () => {
+    expect(roundedPath(square, 0).startsWith("M0.00,0.00 Q0.00,0.00")).toBe(true);
   });
 });

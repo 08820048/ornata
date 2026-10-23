@@ -30,7 +30,9 @@ const CORNER_OFFSETS: ReadonlyArray<readonly [number, number]> = [
   [-0.5, 0.5],
 ];
 
-const CARET_WIDTH = 2;
+const BAR_WIDTH = 2;
+/** Corner radius of the block caret, px. */
+const BLOCK_RADIUS = 2;
 /** Horizontal travel (px) at or below which a move counts as "short". */
 const SHORT_MOVE_PX = 14;
 const LONG_LENGTH_SECONDS = 0.125;
@@ -123,6 +125,28 @@ interface CaretRect {
   x: number;
   y: number;
   h: number;
+  w: number;
+}
+
+/** Closed path through four points with each corner rounded to `radius`. */
+export function roundedPath(
+  points: ReadonlyArray<{ x: number; y: number }>,
+  radius: number,
+): string {
+  const n = points.length;
+  const at = (from: { x: number; y: number }, to: { x: number; y: number }) => {
+    const len = Math.hypot(to.x - from.x, to.y - from.y);
+    const t = len > 1e-6 ? Math.min(radius / len, 0.5) : 0;
+    return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+  };
+  let d = "";
+  for (let i = 0; i < n; i++) {
+    const p = points[i];
+    const a = at(p, points[(i + n - 1) % n]);
+    const b = at(p, points[(i + 1) % n]);
+    d += `${i === 0 ? "M" : "L"}${a.x.toFixed(2)},${a.y.toFixed(2)} Q${p.x.toFixed(2)},${p.y.toFixed(2)} ${b.x.toFixed(2)},${b.y.toFixed(2)} `;
+  }
+  return `${d}Z`;
 }
 
 export interface CursorMotionOptions {
@@ -133,7 +157,7 @@ export class CursorMotion {
   private readonly view: EditorView;
   private readonly container: HTMLElement;
   private readonly svg: SVGSVGElement;
-  private readonly polygon: SVGPolygonElement;
+  private readonly shape: SVGPathElement;
   private readonly corners: Corner[] = CORNER_OFFSETS.map(() => ({
     curX: 0,
     curY: 0,
@@ -145,6 +169,7 @@ export class CursorMotion {
   }));
 
   private enabled: boolean;
+  private radius = 0;
   private visible = false;
   private composing = false;
   private destroyed = false;
@@ -163,8 +188,8 @@ export class CursorMotion {
     this.svg = document.createElementNS(SVG_NS, "svg");
     this.svg.setAttribute("class", "cursor-motion");
     this.svg.setAttribute("aria-hidden", "true");
-    this.polygon = document.createElementNS(SVG_NS, "polygon");
-    this.svg.appendChild(this.polygon);
+    this.shape = document.createElementNS(SVG_NS, "path");
+    this.svg.appendChild(this.shape);
     this.container.appendChild(this.svg);
 
     view.dom.addEventListener("compositionstart", this.onCompositionStart);
@@ -214,10 +239,16 @@ export class CursorMotion {
       return;
     }
     const rect = this.container.getBoundingClientRect();
-    // Center the 2px bar on the caret boundary, like the native caret.
-    const x = coords.left - rect.left - CARET_WIDTH / 2;
-    const y = coords.top - rect.top;
     const h = coords.bottom - coords.top;
+    // A palette may ask for a block caret over the next character
+    // (`--caret-block: 1`); otherwise a 2px bar centred on the caret boundary,
+    // like the native caret.
+    const block =
+      getComputedStyle(this.container).getPropertyValue("--caret-block").trim() === "1";
+    this.radius = block ? BLOCK_RADIUS : 0;
+    const w = block ? this.blockWidth(head, coords, h) : BAR_WIDTH;
+    const x = coords.left - rect.left - (block ? 0 : w / 2);
+    const y = coords.top - rect.top;
     // Reject degenerate rects (e.g. coords inside an atom/leaf) rather than
     // drawing a caret with a nonsense shape.
     if (
@@ -232,7 +263,7 @@ export class CursorMotion {
     }
 
     const target = CORNER_OFFSETS.map(([cx, cy]) => ({
-      x: x + (0.5 + cx) * CARET_WIDTH,
+      x: x + (0.5 + cx) * w,
       y: y + (0.5 + cy) * h,
     }));
 
@@ -240,19 +271,20 @@ export class CursorMotion {
 
     const previousRect = this.lastRect;
     if (forceSnap || this.lastHead === null || previousRect === null) {
-      this.snapTo(target, head, { x, y, h });
+      this.snapTo(target, head, { x, y, h, w });
       return;
     }
 
     const geometryChanged =
       Math.abs(previousRect.x - x) > 0.01 ||
       Math.abs(previousRect.y - y) > 0.01 ||
-      Math.abs(previousRect.h - h) > 0.01;
+      Math.abs(previousRect.h - h) > 0.01 ||
+      Math.abs(previousRect.w - w) > 0.01;
 
     if (this.lastHead !== head) {
       this.retarget(target, x, y, previousRect);
       this.lastHead = head;
-      this.lastRect = { x, y, h };
+      this.lastRect = { x, y, h, w };
       this.start();
       return;
     }
@@ -260,7 +292,7 @@ export class CursorMotion {
     // Same logical position but the glyph box moved (reflow / font change):
     // animating would be misleading, so snap.
     if (geometryChanged) {
-      this.snapTo(target, head, { x, y, h });
+      this.snapTo(target, head, { x, y, h, w });
     }
   }
 
@@ -377,12 +409,34 @@ export class CursorMotion {
     }
   };
 
-  private render(moving: boolean) {
-    let points = "";
-    for (const corner of this.corners) {
-      points += `${corner.curX.toFixed(2)},${corner.curY.toFixed(2)} `;
+  /** Width of the character after `head` on the caret's line, for the block
+   *  caret; half an em at a line end or across a wrap. */
+  private blockWidth(
+    head: number,
+    coords: { left: number; top: number },
+    h: number,
+  ): number {
+    const fallback = Math.round(h * 0.55);
+    try {
+      const next = this.view.coordsAtPos(head + 1, -1);
+      const width = next.left - coords.left;
+      if (Math.abs(next.top - coords.top) < h / 2 && width > 1 && width < h * 2.5) {
+        return width;
+      }
+    } catch {
+      // head + 1 outside the document
     }
-    this.polygon.setAttribute("points", points.trimEnd());
+    return fallback;
+  }
+
+  private render(moving: boolean) {
+    this.shape.setAttribute(
+      "d",
+      roundedPath(
+        this.corners.map((c) => ({ x: c.curX, y: c.curY })),
+        this.radius,
+      ),
+    );
     this.svg.dataset.moving = moving ? "true" : "false";
   }
 

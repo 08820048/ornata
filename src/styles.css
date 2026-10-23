@@ -141,6 +141,12 @@
     --accent: #167a6e;
     --accent-ink: #ffffff;
     --todo: #7bc1c1;
+    /* The text caret: the accent as a bar by default; a palette may make it a
+       translucent glowing block (`--caret-block: 1`, read by cursorMotion). */
+    --caret: var(--accent);
+    --caret-opacity: 1;
+    --caret-glow: none;
+    --caret-block: 0;
 
     /* Link-graph folder colors — the one sanctioned exception to monochrome
        (see AGENTS.md). Fixed slot order; validated all-pairs for CVD and
@@ -222,6 +228,10 @@
     --accent: #4f7b5e;
     --accent-ink: #fffdf3;
     --todo: #79aa88;
+    --caret: #7db7a4;
+    --caret-opacity: 0.7;
+    --caret-glow: drop-shadow(0 0 2px #7db7a4);
+    --caret-block: 1;
 
     --code-surface: #f9f0dc;
     --diagram-surface: #fdf5e5;
@@ -253,6 +263,8 @@
     --accent: #9aabbc;
     --accent-ink: #040608;
     --todo: var(--accent);
+    --caret: #b8c5d4;
+    --caret-glow: drop-shadow(0 0 2px #b8c5d4);
 
     --code-surface: #0f1318;
     --diagram-surface: #0c0f13;
@@ -448,7 +460,7 @@ body {
     font-weight: 400;
     line-height: 1.8;
     color: var(--note-ink);
-    caret-color: var(--accent);
+    caret-color: var(--caret);
     outline: none;
     padding-bottom: 40vh;
     overflow-wrap: break-word;
@@ -478,12 +490,14 @@ body {
 .cursor-motion[data-visible="true"] {
     visibility: visible;
 }
-.cursor-motion polygon {
-    fill: var(--accent);
+.cursor-motion path {
+    fill: var(--caret);
+    fill-opacity: var(--caret-opacity);
+    filter: var(--caret-glow);
     animation: ornata-caret-blink 1.06s steps(1, end) infinite;
 }
 /* Solid while moving so the caret doesn't fade mid-flight. */
-.cursor-motion[data-moving="true"] polygon {
+.cursor-motion[data-moving="true"] path {
     animation: none;
     opacity: 1;
 }
@@ -497,7 +511,7 @@ body {
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .cursor-motion polygon {
+    .cursor-motion path {
         animation: none;
     }
 }
