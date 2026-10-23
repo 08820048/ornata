@@ -220,9 +220,20 @@ pub async fn create_vault(
     activate_vault(&app, &state, root).map(Some)
 }
 
+/// Run vault-wide work on the blocking pool. A sync command runs on the main
+/// thread, so reading every note there would stall the whole app.
+async fn off_main<T: Send + 'static>(
+    work: impl FnOnce() -> AppResult<T> + Send + 'static,
+) -> AppResult<T> {
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|e| AppError::Other(e.to_string()))?
+}
+
 #[tauri::command]
-pub fn load_tree(state: State<'_, AppState>) -> AppResult<Vec<TreeNode>> {
-    vault::scan_tree(&state.root()?)
+pub async fn load_tree(state: State<'_, AppState>) -> AppResult<Vec<TreeNode>> {
+    let root = state.root()?;
+    off_main(move || vault::scan_tree(&root)).await
 }
 
 // ---- notes ----
@@ -286,18 +297,23 @@ pub fn reveal_templates(app: AppHandle, state: State<'_, AppState>) -> AppResult
 }
 
 #[tauri::command]
-pub fn list_tags(state: State<'_, AppState>) -> AppResult<Vec<tags::TagCount>> {
-    tags::list_tags(&state.root()?)
+pub async fn list_tags(state: State<'_, AppState>) -> AppResult<Vec<tags::TagCount>> {
+    let root = state.root()?;
+    off_main(move || tags::list_tags(&root)).await
 }
 
 #[tauri::command]
-pub fn notes_with_tag(state: State<'_, AppState>, tag: String) -> AppResult<Vec<String>> {
-    tags::notes_with_tag(&state.root()?, &tag)
+pub async fn notes_with_tag(state: State<'_, AppState>, tag: String) -> AppResult<Vec<String>> {
+    let root = state.root()?;
+    off_main(move || tags::notes_with_tag(&root, &tag)).await
 }
 
 #[tauri::command]
-pub fn list_unused_assets(state: State<'_, AppState>) -> AppResult<Vec<assets::UnusedAsset>> {
-    assets::unreferenced_assets(&state.root()?)
+pub async fn list_unused_assets(
+    state: State<'_, AppState>,
+) -> AppResult<Vec<assets::UnusedAsset>> {
+    let root = state.root()?;
+    off_main(move || assets::unreferenced_assets(&root)).await
 }
 
 #[tauri::command]
@@ -308,9 +324,7 @@ pub fn trash_assets(state: State<'_, AppState>, names: Vec<String>) -> AppResult
 #[tauri::command]
 pub async fn link_graph(state: State<'_, AppState>) -> AppResult<graph::LinkGraph> {
     let root = state.root()?;
-    tauri::async_runtime::spawn_blocking(move || graph::link_graph(&root))
-        .await
-        .map_err(|e| AppError::Other(e.to_string()))?
+    off_main(move || graph::link_graph(&root)).await
 }
 
 #[tauri::command]
@@ -375,22 +389,25 @@ pub fn delete_entry(state: State<'_, AppState>, rel: String) -> AppResult<()> {
 }
 
 #[tauri::command]
-pub fn search_notes(
+pub async fn search_notes(
     state: State<'_, AppState>,
     query: String,
     limit: Option<usize>,
 ) -> AppResult<Vec<SearchHit>> {
-    search::search_notes(&state.root()?, &query, limit.unwrap_or(30))
+    let root = state.root()?;
+    off_main(move || search::search_notes(&root, &query, limit.unwrap_or(30))).await
 }
 
 #[tauri::command]
-pub fn note_backlinks(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Backlink>> {
-    backlinks::backlinks(&state.root()?, &rel)
+pub async fn note_backlinks(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Backlink>> {
+    let root = state.root()?;
+    off_main(move || backlinks::backlinks(&root, &rel)).await
 }
 
 #[tauri::command]
-pub fn unlinked_mentions(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Mention>> {
-    mentions::unlinked_mentions(&state.root()?, &rel)
+pub async fn unlinked_mentions(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Mention>> {
+    let root = state.root()?;
+    off_main(move || mentions::unlinked_mentions(&root, &rel)).await
 }
 
 /// Link the plain mention of `target` on `line` of note `rel` to `href`.
@@ -407,8 +424,9 @@ pub fn link_mention(
 }
 
 #[tauri::command]
-pub fn open_tasks(state: State<'_, AppState>) -> AppResult<Vec<OpenTask>> {
-    tasks::open_tasks(&state.root()?)
+pub async fn open_tasks(state: State<'_, AppState>) -> AppResult<Vec<OpenTask>> {
+    let root = state.root()?;
+    off_main(move || tasks::open_tasks(&root)).await
 }
 
 #[tauri::command]
