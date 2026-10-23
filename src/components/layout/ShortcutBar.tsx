@@ -10,6 +10,7 @@ import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { KeyCap } from "./KeyCap";
 import { McpIndicator } from "./McpIndicator";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 /**
  * The status bar along the bottom: the shortcuts that matter for the current
@@ -45,6 +46,7 @@ export function ShortcutBar() {
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         <McpIndicator />
+        <ThemeSwitcher />
         <Tooltip label={`${t("common.settings")} ${keyLabel("⌘,")}`} side="top">
           <button
             type="button"

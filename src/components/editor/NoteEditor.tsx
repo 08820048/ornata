@@ -325,7 +325,7 @@ export const NoteEditor = memo(function NoteEditor({
             "pointer-events-none fixed z-10 flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
             // Sit inside the status bar's h-7 strip, left of the MCP plug and settings icons;
             // z-10 keeps it above the (positioned) status bar, which paints its own background.
-            focusMode ? "bottom-3 right-4" : "bottom-0 h-7 right-[72px]",
+            focusMode ? "bottom-3 right-4" : "bottom-0 h-7 right-[98px]",
             content.missing && "opacity-0",
           )}
         >
