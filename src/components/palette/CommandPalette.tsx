@@ -359,7 +359,7 @@ export function CommandPalette() {
                     type="button"
                     data-selected={index === selected}
                     className={cx(
-                      "relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-75",
+                      "relative flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left transition-colors duration-75",
                       index === selected ? "text-ink" : "text-muted",
                     )}
                     onMouseMove={() => {
@@ -374,7 +374,7 @@ export function CommandPalette() {
                       <motion.div
                         layoutId="palette-active"
                         transition={SPRING_LAYOUT}
-                        className="absolute inset-0 rounded-lg bg-active"
+                        className="absolute inset-0 rounded bg-active"
                       />
                     )}
                     <item.icon

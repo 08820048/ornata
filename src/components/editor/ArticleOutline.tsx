@@ -84,7 +84,7 @@ export function ArticleOutline({
             <span
               aria-hidden="true"
               className={cx(
-                "pointer-events-none absolute right-9 top-1/2 w-56 -translate-y-1/2 rounded-xl bg-panel px-3 py-2.5 text-left shadow-xl shadow-black/10 transition-[opacity,scale,translate,filter] duration-150 [transition-timing-function:var(--ease-out)] dark:shadow-black/45",
+                "pointer-events-none absolute right-9 top-1/2 w-56 -translate-y-1/2 rounded-md bg-panel px-3 py-2.5 text-left shadow-xl shadow-black/10 transition-[opacity,scale,translate,filter] duration-150 [transition-timing-function:var(--ease-out)] dark:shadow-black/45",
                 focused
                   ? "translate-x-0 scale-100 opacity-100 blur-0"
                   : "translate-x-1.5 scale-[0.98] opacity-0 blur-[3px]",

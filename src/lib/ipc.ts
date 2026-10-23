@@ -153,6 +153,9 @@ export const ipc = {
   completeTask: (rel: string, line: number, text: string) =>
     call<void>("complete_task", { rel, line, text }),
 
+  reopenTask: (rel: string, line: number, text: string) =>
+    call<void>("reopen_task", { rel, line, text }),
+
   exportNote: (rel: string, content: string) =>
     call<string | null>("export_note", { rel, content }),
   exportExternalNote: (path: string, content: string) =>

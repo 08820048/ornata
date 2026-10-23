@@ -85,7 +85,7 @@ export function TagsDialog() {
             type="button"
             aria-label={t("tags.back")}
             onClick={() => setActiveTag(null)}
-            className="grid h-6 w-6 place-items-center rounded-md text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
+            className="grid h-6 w-6 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
           >
             <ArrowLeft size={13} strokeWidth={2} />
           </button>
@@ -109,7 +109,7 @@ export function TagsDialog() {
                 key={tag.tag}
                 type="button"
                 onClick={() => setActiveTag(tag.tag)}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
+                className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
               >
                 <Hash size={13} strokeWidth={1.75} className="shrink-0 text-faint" />
                 <span className="min-w-0 flex-1 truncate">{tag.tag}</span>
@@ -123,7 +123,7 @@ export function TagsDialog() {
                 key={rel}
                 type="button"
                 onClick={() => openNote(rel)}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
+                className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
               >
                 <FileText size={13} strokeWidth={1.75} className="shrink-0 text-faint" />
                 <span className="min-w-0 flex-1 truncate">{rel.replace(/\.md$/i, "")}</span>

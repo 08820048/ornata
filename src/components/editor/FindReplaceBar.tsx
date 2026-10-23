@@ -68,7 +68,7 @@ export function FindReplaceBar({
   };
 
   return (
-    <div className="pointer-events-auto fixed right-4 top-3 z-30 w-[300px] rounded-lg border border-line bg-panel p-1.5 shadow-sm">
+    <div className="pointer-events-auto fixed right-4 top-3 z-30 w-[300px] rounded-md border border-line bg-panel p-1.5 shadow-sm">
       <div className="flex items-center gap-1">
         <input
           ref={inputRef}

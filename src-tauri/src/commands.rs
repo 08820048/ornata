@@ -417,6 +417,16 @@ pub fn complete_task(
     tasks::complete_task(&state.root()?, &rel, line, &text)
 }
 
+#[tauri::command]
+pub fn reopen_task(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+) -> AppResult<()> {
+    tasks::reopen_task(&state.root()?, &rel, line, &text)
+}
+
 /// Export the current note contents to a markdown file chosen by the user.
 /// The frontend supplies its live editor contents so an in-flight autosave
 /// cannot make the exported copy stale.

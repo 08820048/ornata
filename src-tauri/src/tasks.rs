@@ -47,6 +47,22 @@ pub fn complete_task(root: &Path, rel: &str, line: usize, text: &str) -> AppResu
     write_note(root, rel, &lines.join("\n"))
 }
 
+/// Undo `complete_task`: turn the checked task at `line` back into an open
+/// one, provided it still reads `text`.
+pub fn reopen_task(root: &Path, rel: &str, line: usize, text: &str) -> AppResult<()> {
+    let content = read_note(root, rel)?;
+    let mut lines: Vec<&str> = content.split('\n').collect();
+    let Some(current) = lines.get(line).copied() else {
+        return Err(AppError::InvalidInput("task no longer exists".into()));
+    };
+    if checked_task_text(current) != Some(text) {
+        return Err(AppError::InvalidInput("task no longer exists".into()));
+    }
+    let open = current.replacen("[x]", "[ ]", 1).replacen("[X]", "[ ]", 1);
+    lines[line] = &open;
+    write_note(root, rel, &lines.join("\n"))
+}
+
 fn walk(root: &Path, dir: &Path, tasks: &mut Vec<OpenTask>) -> AppResult<()> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
@@ -94,12 +110,25 @@ fn walk(root: &Path, dir: &Path, tasks: &mut Vec<OpenTask>) -> AppResult<()> {
 
 /// `"  - [ ] Ship it"` → `Some("Ship it")`; anything else → `None`.
 fn open_task_text(line: &str) -> Option<&str> {
+    task_text(line, &["[ ] "])
+}
+
+/// Same as `open_task_text` for a ticked `[x]` / `[X]` item.
+fn checked_task_text(line: &str) -> Option<&str> {
+    task_text(line, &["[x] ", "[X] "])
+}
+
+fn task_text<'a>(line: &'a str, boxes: &[&str]) -> Option<&'a str> {
     let rest = line.trim_start().trim_start_matches('>').trim_start();
     let rest = rest
         .strip_prefix("- ")
         .or_else(|| rest.strip_prefix("* "))
         .or_else(|| rest.strip_prefix("+ "))?;
-    let text = rest.strip_prefix("[ ] ")?.trim_end_matches('\r').trim();
+    let text = boxes
+        .iter()
+        .find_map(|b| rest.strip_prefix(b))?
+        .trim_end_matches('\r')
+        .trim();
     (!text.is_empty()).then_some(text)
 }
 
@@ -142,5 +171,18 @@ mod tests {
             "- [x] Draft\r\n  - [x] Nested\n"
         );
         assert!(complete_task(root, &rel, 0, "Draft").is_err());
+    }
+
+    #[test]
+    fn reopens_checked_task_only() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let rel = create_note(root, "", "Plan").unwrap();
+        write_note(root, &rel, "- [x] Draft\n- [ ] Open\n").unwrap();
+        assert!(reopen_task(root, &rel, 0, "Other").is_err());
+        assert!(reopen_task(root, &rel, 1, "Open").is_err());
+        reopen_task(root, &rel, 0, "Draft").unwrap();
+        assert_eq!(read_note(root, &rel).unwrap(), "- [ ] Draft\n- [ ] Open\n");
     }
 }

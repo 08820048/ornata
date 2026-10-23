@@ -1,8 +1,9 @@
-import { Circle, CircleCheck, FileText } from "lucide-react";
+import { Check, FileText } from "lucide-react";
 import { notifyNotesChanged } from "@/lib/vaultEvents";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
+import { cx } from "@/lib/utils";
 import { vaultNote } from "@/lib/noteRef";
 import type { OpenTask } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
@@ -63,18 +64,22 @@ export function TasksDialog() {
     }, 0);
   };
 
-  const complete = async (task: OpenTask) => {
+  const toggle = async (task: OpenTask) => {
     const key = taskKey(task);
-    setDone((prev) => new Set(prev).add(key));
-    try {
-      await ipc.completeTask(task.rel, task.line, task.text);
-      notifyNotesChanged();
-    } catch (err) {
+    const checking = !done.has(key);
+    const flip = (on: boolean) =>
       setDone((prev) => {
         const next = new Set(prev);
-        next.delete(key);
+        if (on) next.add(key);
+        else next.delete(key);
         return next;
       });
+    flip(checking);
+    try {
+      await (checking ? ipc.completeTask : ipc.reopenTask)(task.rel, task.line, task.text);
+      notifyNotesChanged();
+    } catch (err) {
+      flip(!checking);
       toast.error(err instanceof Error ? err.message : String(err));
     }
   };
@@ -108,7 +113,7 @@ export function TasksDialog() {
             <button
               type="button"
               onClick={() => openNote(group[0].rel)}
-              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-[11.5px] font-medium text-faint transition-colors duration-100 hover:text-ink"
+              className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[11.5px] font-medium text-faint transition-colors duration-100 hover:text-ink"
             >
               <FileText size={12} strokeWidth={2} className="shrink-0" />
               <span className="truncate">{group[0].rel.replace(/\.md$/i, "")}</span>
@@ -120,21 +125,24 @@ export function TasksDialog() {
                   <li key={taskKey(task)} className="flex items-start gap-1">
                     <button
                       type="button"
-                      disabled={checked}
+                      aria-pressed={checked}
                       aria-label={t("tasks.complete", { text: task.text })}
-                      onClick={() => void complete(task)}
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-faint transition-colors duration-100 hover:text-ink disabled:text-muted"
+                      onClick={() => void toggle(task)}
+                      className="group grid h-7 w-7 shrink-0 place-items-center rounded"
                     >
-                      {checked ? (
-                        <CircleCheck size={15} strokeWidth={2} />
-                      ) : (
-                        <Circle size={15} strokeWidth={1.75} />
-                      )}
+                      <span
+                        className={cx(
+                          "grid size-4 place-items-center rounded-[2px] border-2 border-todo transition-colors duration-100",
+                          checked ? "bg-todo text-[var(--accent-ink)]" : "bg-transparent group-hover:bg-todo/15",
+                        )}
+                      >
+                        {checked && <Check size={11} strokeWidth={3} />}
+                      </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => openNote(task.rel)}
-                      className="min-w-0 flex-1 rounded-md px-1.5 py-1 text-left text-[13px] leading-5 text-ink transition-colors duration-100 hover:bg-hover"
+                      className="min-w-0 flex-1 rounded px-1.5 py-1 text-left text-[13px] leading-5 text-ink transition-colors duration-100 hover:bg-hover"
                     >
                       <span className={checked ? "text-faint line-through" : undefined}>
                         {task.text}

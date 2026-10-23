@@ -125,6 +125,7 @@ pub fn run() {
             commands::link_mention,
             commands::open_tasks,
             commands::complete_task,
+            commands::reopen_task,
             commands::export_note,
             external_notes::export_external_note,
             commands::save_image_asset,

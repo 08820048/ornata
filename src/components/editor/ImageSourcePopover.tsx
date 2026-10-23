@@ -50,7 +50,7 @@ export function ImageSourcePopover({
 
   return (
     <div
-      className="absolute z-40 rounded-lg border border-line-soft bg-panel px-2 py-1.5 shadow-lg shadow-black/10"
+      className="absolute z-40 rounded-md border border-line-soft bg-panel px-2 py-1.5 shadow-lg shadow-black/10"
       style={{
         top,
         left: Math.max(left, 0),

@@ -77,6 +77,7 @@
     --color-sunken: var(--sunken);
     --color-statusbar: var(--statusbar);
     --color-menu: var(--menu);
+    --color-todo: var(--todo);
     --color-ink: var(--ink);
     --color-muted: var(--muted);
     --color-faint: var(--faint);
