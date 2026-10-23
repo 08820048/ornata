@@ -277,7 +277,7 @@ export function SlashMenu({
       initial={{ opacity: 0, y: menu.side === "bottom" ? -4 : 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12, ease: "easeOut" }}
-      className="fixed z-90 max-h-[320px] w-[252px] overflow-y-auto rounded-lg border border-line bg-bg p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
+      className="fixed z-90 max-h-[320px] w-[252px] overflow-y-auto rounded-md border border-line bg-menu p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
       style={{ left: menu.position.left, top: menu.position.top }}
     >
       {filtered.map((command, index) => (
@@ -286,7 +286,7 @@ export function SlashMenu({
           type="button"
           data-selected={index === selected}
           className={cx(
-            "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
+            "flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
             index === selected ? "bg-hover text-ink" : "text-muted",
           )}
           onMouseDown={(event) => {

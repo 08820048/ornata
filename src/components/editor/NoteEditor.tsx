@@ -14,6 +14,7 @@ import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 import { useLocale, useT } from "@/stores/locale";
 import { ArticleOutline } from "./ArticleOutline";
+import { useCursorPosition } from "./cursorPosition";
 import { FindReplaceBar } from "./FindReplaceBar";
 import { NoteHistory } from "./NoteHistory";
 import { SaveTemplateDialog } from "./SaveTemplateDialog";
@@ -154,6 +155,7 @@ export const NoteEditor = memo(function NoteEditor({
     });
 
   const saveTemplateOpen = useUi((s) => s.saveTemplateOpen);
+  const cursor = useCursorPosition(editor, active && !markdownSource);
 
   /** Write an edited image source (Typora bar) back onto the node. */
   const applyImageSource = (
@@ -321,20 +323,25 @@ export const NoteEditor = memo(function NoteEditor({
             "pointer-events-none fixed flex items-center gap-1 text-[11px] tabular-nums text-faint transition-opacity duration-300",
             // Sit inside the status bar's h-7 strip, left of the MCP plug and settings icons.
             focusMode ? "bottom-3 right-4" : "bottom-0 h-7 right-[72px]",
-            (content.words === 0 || content.missing) && "opacity-0",
+            content.missing && "opacity-0",
           )}
         >
-          {note.kind === "vault" && !content.missing && (
-            <button
-              type="button"
-              onClick={() => setHistoryOpen(true)}
-              title={t("history.title")}
-              className="pointer-events-auto rounded p-1 transition-colors duration-100 hover:text-muted"
-            >
-              <History size={13} strokeWidth={2} />
-            </button>
+          {cursor && !markdownSource && (
+            <span className="mr-2">{t("editor.cursor", { line: cursor.line, col: cursor.col })}</span>
           )}
-          <span>{t(content.words === 1 ? "editor.word" : "editor.words", { count: content.words })}</span>
+          <span className={cx("flex items-center gap-1", content.words === 0 && "opacity-0")}>
+            {note.kind === "vault" && !content.missing && (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                title={t("history.title")}
+                className="pointer-events-auto rounded p-1 transition-colors duration-100 hover:text-muted"
+              >
+                <History size={13} strokeWidth={2} />
+              </button>
+            )}
+            <span>{t(content.words === 1 ? "editor.word" : "editor.words", { count: content.words })}</span>
+          </span>
         </div>
       )}
       {active && imageSource && !markdownSource && (

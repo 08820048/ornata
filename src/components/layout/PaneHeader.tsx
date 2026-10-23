@@ -119,8 +119,8 @@ export function PaneHeader({
                 <MorphPopoverContent
                   align="end"
                   sideOffset={6}
-                  radius={10}
-                  className="w-56 bg-bg p-1"
+                  radius={6}
+                  className="w-56 bg-menu p-1"
                 >
                   <NoteMenuButton
                     icon={Focus}
@@ -212,8 +212,8 @@ export function PaneHeader({
                 <MorphPopoverContent
                   align="end"
                   sideOffset={6}
-                  radius={10}
-                  className="w-64 bg-bg p-1"
+                  radius={6}
+                  className="w-64 bg-menu p-1"
                 >
                   <NoteMenuButton
                     icon={Columns2}
@@ -308,7 +308,7 @@ function NoteMenuButton({
       role="menuitem"
       onClick={onClick}
       className={cx(
-        "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] transition-colors duration-100",
+        "flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-[13px] transition-colors duration-100",
         danger
           ? "text-danger hover:bg-danger/8"
           : "text-ink hover:bg-hover",

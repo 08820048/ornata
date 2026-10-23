@@ -77,7 +77,7 @@ export function ContextMenu({
     <div
       ref={ref}
       role="menu"
-      className="fixed z-100 max-h-[calc(100vh-16px)] min-w-[168px] overflow-y-auto rounded-lg border border-line bg-bg p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
+      className="fixed z-100 max-h-[calc(100vh-16px)] min-w-[168px] overflow-y-auto rounded-md border border-line bg-menu p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
       style={{ left: adjusted.x, top: adjusted.y }}
     >
       {items.map((item) => (
@@ -86,7 +86,7 @@ export function ContextMenu({
           type="button"
           role="menuitem"
           className={cx(
-            "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors duration-100",
+            "flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[13px] transition-colors duration-100",
             item.danger
               ? "text-danger hover:bg-danger/8"
               : "text-ink hover:bg-hover",

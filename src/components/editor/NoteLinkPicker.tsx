@@ -117,7 +117,7 @@ export function NoteLinkPicker({
       initial={{ opacity: 0, y: state.side === "bottom" ? -4 : 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12, ease: "easeOut" }}
-      className="fixed z-90 w-[268px] rounded-lg border border-line bg-bg p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
+      className="fixed z-90 w-[268px] rounded-md border border-line bg-menu p-1 shadow-lg shadow-black/8 dark:shadow-black/40"
       style={{ left: state.position.left, top: state.position.top }}
     >
       <input
@@ -160,7 +160,7 @@ export function NoteLinkPicker({
                 key={item.key}
                 type="button"
                 className={cx(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
+                  "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
                   index === selected ? "bg-hover text-ink" : "text-muted",
                 )}
                 onMouseDown={(event) => {
@@ -180,7 +180,7 @@ export function NoteLinkPicker({
                   key={note.rel}
                   type="button"
                   className={cx(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
+                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] transition-colors duration-75",
                     index === selected ? "bg-hover text-ink" : "text-muted",
                   )}
                   // mousedown (not click) so it fires before the input's blur closes us

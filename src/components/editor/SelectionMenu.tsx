@@ -62,7 +62,7 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
       options={{ placement: "top", offset: 8 }}
     >
       <div className="flex flex-col items-start gap-2">
-        <div className="flex items-center rounded-lg border border-line bg-bg p-0.5 shadow-lg shadow-black/8 dark:shadow-black/40">
+        <div className="flex items-center rounded-md border border-line bg-menu p-0.5 shadow-lg shadow-black/8 dark:shadow-black/40">
           {linkOpen ? (
             <div className="flex items-center gap-1 px-1">
               <input
@@ -78,7 +78,7 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
               />
               <button
                 type="button"
-                className="rounded-md px-2 py-1 text-[12px] font-medium text-ink hover:bg-hover"
+                className="rounded px-2 py-1 text-[12px] font-medium text-ink hover:bg-hover"
                 onMouseDown={(event) => {
                   event.preventDefault();
                   applyLink();
@@ -156,7 +156,7 @@ function MarkButton({
       <button
         type="button"
         className={cx(
-          "grid h-7 w-7 place-items-center rounded-md transition-colors duration-75",
+          "grid h-7 w-7 place-items-center rounded transition-colors duration-75",
           active ? "bg-invert text-invert-ink" : "text-muted hover:bg-hover hover:text-ink",
         )}
         onMouseDown={(event) => {
