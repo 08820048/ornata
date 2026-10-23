@@ -279,6 +279,48 @@
     opacity: 0.5;
 }
 
+/* Paper's hand-drawn rules: the straight hairlines become slightly bowed
+   strokes (note dividers, status bar top, sidebar edge). Light only. */
+:root[data-palette="paper-basalt"]:not(.dark) .prose-note hr {
+    height: 6px;
+    border: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='100%' height='6' viewBox='0 0 100 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 0 3 C 20 2 80 4 100 3' stroke='%23d9c298' fill='none' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    opacity: 0.55;
+}
+
+:root[data-palette="paper-basalt"]:not(.dark) .paper-status {
+    border-top-color: transparent;
+}
+
+:root[data-palette="paper-basalt"]:not(.dark) .paper-status::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='100%' height='6' viewBox='0 0 100 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 0 3 C 20 2 80 4 100 3' stroke='%23e0d3b0' fill='none' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+}
+
+:root[data-palette="paper-basalt"]:not(.dark) .paper-side {
+    border-right-color: transparent;
+}
+
+:root[data-palette="paper-basalt"]:not(.dark) .paper-side::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -1px;
+    width: 4px;
+    height: 100%;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='6' height='100' viewBox='0 0 6 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 3 0 C 4 20 2 80 3 100' stroke='%23e0d3b0' fill='none' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+    background-repeat: repeat-y;
+}
+
 @media print {
     :root[data-palette="paper-basalt"] body::before {
         display: none;

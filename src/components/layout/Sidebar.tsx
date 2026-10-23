@@ -40,7 +40,7 @@ export function Sidebar() {
   const t = useT();
 
   return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel">
+    <aside className="paper-side relative flex h-full w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel">
       {/* drag region + traffic-light clearance */}
       <div data-tauri-drag-region className={cx("flex items-end px-3 pb-1", isMac() ? "h-12" : "h-3")} />
 
