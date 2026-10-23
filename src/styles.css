@@ -1,7 +1,5 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
-@import "@fontsource-variable/jetbrains-mono";
-@import "@fontsource-variable/space-grotesk";
 
 /* Kai-style reading font, bundled for every install under the SIL OFL
    (license alongside the file). Converted to woff2 from the upstream
@@ -10,6 +8,28 @@
     font-family: "LXGW WenKai Screen";
     src: url("./assets/fonts/LXGWWenKaiScreen.woff2") format("woff2");
     font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Cascadia Code (SIL OFL, license alongside the file): the full upstream
+   variable font, kept whole because the npm subsets drop the slashed-zero
+   feature. */
+@font-face {
+    font-family: "Cascadia Code";
+    src: url("./assets/fonts/CascadiaCode.woff2") format("woff2");
+    font-weight: 200 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Fira Code (SIL OFL, license alongside the file): the full upstream
+   variable font, kept whole because the npm subsets drop the slashed-zero
+   feature. */
+@font-face {
+    font-family: "Fira Code";
+    src: url("./assets/fonts/FiraCode.woff2") format("woff2");
+    font-weight: 300 700;
     font-style: normal;
     font-display: swap;
 }
@@ -38,13 +58,14 @@
         "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI",
         sans-serif;
     --font-mono:
-        "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo,
+        "Fira Code", ui-monospace, SFMono-Regular, Menlo,
         monospace;
-    /* Editor writing stack: Space Grotesk (OFL, bundled) carries Latin;
+    /* Editor writing stack: Cascadia Code (OFL, bundled) carries Latin;
        CJK falls back to the system PingFang. */
     --font-note:
-        "Space Grotesk Variable", -apple-system, BlinkMacSystemFont,
-        "PingFang SC", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+        "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", "PingFang SC", "Microsoft YaHei UI",
+        "Microsoft YaHei", monospace;
     /* Serif reading stack (Kami-style). Charter carries Latin; the bundled
        LXGW WenKai Screen (OFL, see assets/fonts/LXGWWenKaiScreen-OFL.txt)
        carries CJK; Songti SC is the system fallback. */
@@ -279,12 +300,14 @@ body {
 
 .note-title {
     font-family: var(--font-note);
+    font-feature-settings: "zero";
 }
 
 .prose-note {
     user-select: text;
     cursor: text;
     font-family: var(--font-note);
+    font-feature-settings: "zero";
     font-size: 16px;
     line-height: 1.65;
     color: var(--note-ink);
@@ -1255,4 +1278,14 @@ body {
     outline: 2px solid color-mix(in srgb, var(--ink) 30%, transparent);
     outline-offset: 2px;
     border-radius: 4px;
+}
+
+/* Cascadia's slashed zero is its "zero" feature; Fira Code is slashed by
+   default and the same feature turns it dotted, so mono text opts out. */
+.font-mono,
+code,
+pre,
+kbd,
+.cm-editor {
+    font-feature-settings: normal;
 }

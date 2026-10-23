@@ -20,7 +20,7 @@ const ornataTheme = EditorView.theme({
     height: "100%",
     backgroundColor: "transparent",
     color: "var(--ink)",
-    fontFamily: '"JetBrains Mono Variable", monospace',
+    fontFamily: '"Fira Code", monospace',
     fontSize: "13px",
   },
   "&.cm-focused": { outline: "none" },

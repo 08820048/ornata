@@ -58,7 +58,7 @@ Blocking dialogs (`blocking_pick_folder`) must run in async commands via `spawn_
 - The green `success` token is for state that is literally "on": the MCP plug in the status bar while the MCP server is running or an agent is on stdio (gray otherwise).
 - Dark mode = `.dark` class on `<html>`; themes: system/light/dark.
 - Active/selected rows use inverted style (`bg-invert text-invert-ink`) — the signature look.
-- Motion: 100–160ms ease-out only. Fonts: Inter Variable (UI), Space Grotesk (editor body + titles, CJK falls back to PingFang), JetBrains Mono (code).
+- Motion: 100–160ms ease-out only. Fonts: Inter Variable (UI), Cascadia Code (editor body + titles, CJK falls back to PingFang), Fira Code (code).
 - No autocorrect anywhere: global `focusin` hook in `main.tsx` handles inputs; editor sets its own attrs.
 - Website feature additions must use the animated product-behavior demos established in `site/components/FeaturesBento.tsx` (for example, “Link ideas together”). Do not add static feature-card/checklist grids, and do not promote small release details as standalone homepage features.
 

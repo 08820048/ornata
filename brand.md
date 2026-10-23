@@ -42,10 +42,10 @@ Use the tokens defined in `src/styles.css`:
 Never hardcode colors in components. New beUI or shadcn components must use
 the compatibility mappings already defined in `src/styles.css`.
 
-## Typography: Inter and JetBrains Mono
+## Typography: Inter and Fira Code
 
 - **Interface and reading:** Inter Variable
-- **Code, paths, shortcuts, and raw Markdown:** JetBrains Mono Variable
+- **Code, paths, shortcuts, and raw Markdown:** Fira Code
 
 ### Type hierarchy
 
@@ -121,4 +121,4 @@ Examples:
 - Use long promotional copy in the application.
 - Use em dashes in product copy or documentation.
 
-_Last updated: 2026-07-12. Palette: Ornata Monochrome. Typography: Inter and JetBrains Mono. Gradients: none._
+_Last updated: 2026-07-12. Palette: Ornata Monochrome. Typography: Inter and Fira Code. Gradients: none._
