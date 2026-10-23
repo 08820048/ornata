@@ -1,4 +1,9 @@
 import {
+  IconArrowBarToLeft,
+  IconArrowBarToRight,
+  IconCircleX,
+  IconLayoutColumns,
+  IconLayoutSidebarRightCollapse,
   IconShare2,
   IconX,
 } from "@tabler/icons-react";
@@ -156,27 +161,42 @@ function tabMenuItems(
   const items: MenuItem[] = [];
   const focused = useVault.getState().view;
   if (isNoteTab(target) && !(focused && sameTab(tabOfView(focused), target))) {
-    items.push({ label: t("split.openAside"), onSelect: () => openNoteAside(target) });
+    items.push({
+      label: t("split.openAside"),
+      icon: IconLayoutColumns,
+      onSelect: () => openNoteAside(target),
+    });
   }
   if (useTabs.getState().split) {
-    items.push({ label: t("split.close"), onSelect: () => closeSplitKeepingFocus() });
+    items.push({
+      label: t("split.close"),
+      icon: IconLayoutSidebarRightCollapse,
+      onSelect: () => closeSplitKeepingFocus(),
+    });
   }
-  items.push({ label: t("editor.closeTabMenu"), onSelect: () => closeTab(target) });
+  items.push({
+    label: t("editor.closeTabMenu"),
+    icon: IconX,
+    onSelect: () => closeTab(target),
+  });
   if (tabs.length > 1) {
     items.push({
       label: t("editor.closeOtherTabs"),
+      icon: IconCircleX,
       onSelect: () => closeTabsAround(target, "others"),
     });
   }
   if (index > 0) {
     items.push({
       label: t("editor.closeTabsToLeft"),
+      icon: IconArrowBarToLeft,
       onSelect: () => closeTabsAround(target, "left"),
     });
   }
   if (index >= 0 && index < tabs.length - 1) {
     items.push({
       label: t("editor.closeTabsToRight"),
+      icon: IconArrowBarToRight,
       onSelect: () => closeTabsAround(target, "right"),
     });
   }
