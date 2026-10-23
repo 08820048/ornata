@@ -33,7 +33,7 @@ export function UnlinkedMentions({
   onLinked: () => void;
 }) {
   const t = useT();
-  const tree = useVault((s) => s.tree);
+  const vaultVersion = useVault((s) => s.vaultVersion);
   const [open, setOpen] = useState(false);
   const [mentions, setMentions] = useState<Mention[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export function UnlinkedMentions({
     return () => {
       cancelled = true;
     };
-  }, [open, rel, tree, nonce]);
+  }, [open, rel, vaultVersion, nonce]);
 
   const link = useCallback(
     async (mention: Mention, line: Mention["lines"][number]) => {

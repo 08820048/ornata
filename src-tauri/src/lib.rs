@@ -65,6 +65,7 @@ pub fn run() {
             }
         }).build())
         .manage(AppState::default())
+        .manage(watcher::SelfWrites::default())
         .manage(cli::app_api::McpServer::default())
         .manage(print_export::PrintState::default())
         .manage(reveal::ExportedFiles::default())

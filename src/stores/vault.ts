@@ -40,6 +40,11 @@ interface VaultState {
   root: string;
   name: string;
   tree: TreeNode[];
+  /** Bumped whenever the tree is (re)loaded from disk — i.e. something may
+   *  have changed in other notes. Vault-wide derived views (backlinks, graphs,
+   *  mentions) key off this rather than the tree's identity, so the app's own
+   *  autosaves (which only touch `modifiedMs`) don't re-scan the vault. */
+  vaultVersion: number;
   theme: Theme;
   lightPalette: LightPalette;
   darkPalette: DarkPalette;
@@ -65,6 +70,8 @@ interface VaultState {
   chooseExternalNotes: () => Promise<void>;
   openExternalNotes: (notes: ExternalNote[]) => void;
   refreshTree: () => Promise<void>;
+  /** Record the app's own save of `rel` (no disk re-scan). */
+  touchNote: (rel: string, modifiedMs: number, linksChanged: boolean) => void;
   /** `record: false` shows the view without adding it to back/forward history. */
   setView: (view: View | null, options?: { record?: boolean }) => void;
   pushRecent: (rel: string) => void;
@@ -128,6 +135,7 @@ function openVaultSnapshot(
     root: snapshot.root,
     name: snapshot.name,
     tree: snapshot.tree,
+    vaultVersion: Date.now(),
     theme: snapshot.theme,
     lightPalette: snapshot.lightPalette,
     darkPalette: snapshot.darkPalette,
@@ -197,6 +205,17 @@ function dropPinned(
 }
 
 /** True when the tree contains a folder at exactly `rel`. */
+/** `tree` with `rel`'s modified time replaced (other nodes shared). */
+function withModified(tree: TreeNode[], rel: string, modifiedMs: number): TreeNode[] {
+  return tree.map((node) => {
+    if (node.kind === "note") return node.rel === rel ? { ...node, modifiedMs } : node;
+    if (node.children && rel.startsWith(`${node.rel}/`)) {
+      return { ...node, children: withModified(node.children, rel, modifiedMs) };
+    }
+    return node;
+  });
+}
+
 function treeHasFolder(tree: TreeNode[], rel: string): boolean {
   for (const node of tree) {
     if (node.kind === "folder" && node.rel === rel) return true;
@@ -222,6 +241,7 @@ export const useVault = create<VaultState>((set, get) => ({
   root: "",
   name: "",
   tree: [],
+  vaultVersion: 0,
   theme: "system",
   lightPalette: "default",
   darkPalette: "default",
@@ -248,6 +268,7 @@ export const useVault = create<VaultState>((set, get) => ({
         root: snapshot.root,
         name: snapshot.name,
         tree: snapshot.tree,
+        vaultVersion: get().vaultVersion + 1,
         theme: snapshot.theme,
         lightPalette: snapshot.lightPalette,
     darkPalette: snapshot.darkPalette,
@@ -351,10 +372,20 @@ export const useVault = create<VaultState>((set, get) => ({
     }
   },
 
+  touchNote: (rel, modifiedMs, linksChanged) => {
+    // A save that adds or drops a link changes other notes' backlinks and the
+    // graphs, so those re-derive; a plain text edit doesn't.
+    if (linksChanged) set({ vaultVersion: get().vaultVersion + 1 });
+    // Only "sort by modified" reads this; leave the tree alone otherwise.
+    if (get().treeSort !== "modified") return;
+    set({ tree: withModified(get().tree, rel, modifiedMs) });
+  },
+
   refreshTree: async () => {
     if (get().status !== "ready") return;
     try {
-      set({ tree: await ipc.loadTree() });
+      const tree = await ipc.loadTree();
+      set({ tree, vaultVersion: get().vaultVersion + 1 });
     } catch {
       // transient (e.g. vault briefly unavailable) — next refresh wins
     }

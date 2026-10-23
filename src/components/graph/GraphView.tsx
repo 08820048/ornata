@@ -99,7 +99,7 @@ export function GraphView({ active }: { active: boolean }) {
   groupsRef.current = groups;
   // The note read last gets the "you are here" ring.
   const focus = useVault((s) => s.recentNotes[0] ?? null);
-  const tree = useVault((s) => s.tree);
+  const vaultVersion = useVault((s) => s.vaultVersion);
   const graphKeyRef = useRef("");
   const searchRef = useRef<HTMLInputElement | null>(null);
   const focusRef = useRef(focus);
@@ -129,7 +129,7 @@ export function GraphView({ active }: { active: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [active, tree]);
+  }, [active, vaultVersion]);
 
   // Arriving on the tab puts the cursor in search, as the dialog did.
   useEffect(() => {

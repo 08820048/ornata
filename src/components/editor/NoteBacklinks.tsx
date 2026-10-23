@@ -17,12 +17,12 @@ import { useVault } from "@/stores/vault";
 
 /**
  * Notes that link to `rel` (null = none, e.g. external notes). Re-queried
- * whenever the note becomes active or the vault tree changes, so edits made
+ * whenever the note becomes active or the vault changes on disk, so edits made
  * elsewhere show up on return. `refresh` forces a re-query (e.g. right after
  * linking a mention).
  */
 export function useBacklinks(rel: string | null, active: boolean) {
-  const tree = useVault((s) => s.tree);
+  const vaultVersion = useVault((s) => s.vaultVersion);
   const [links, setLinks] = useState<Backlink[]>([]);
   const [nonce, setNonce] = useState(0);
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
@@ -46,7 +46,7 @@ export function useBacklinks(rel: string | null, active: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [rel, active, tree, nonce]);
+  }, [rel, active, vaultVersion, nonce]);
 
   return { links, refresh };
 }

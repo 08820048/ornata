@@ -244,8 +244,16 @@ pub fn read_note(state: State<'_, AppState>, rel: String) -> AppResult<String> {
 }
 
 #[tauri::command]
-pub fn write_note(state: State<'_, AppState>, rel: String, content: String) -> AppResult<()> {
-    notes::write_note(&state.root()?, &rel, &content)
+pub fn write_note(
+    state: State<'_, AppState>,
+    own: State<'_, crate::watcher::SelfWrites>,
+    rel: String,
+    content: String,
+) -> AppResult<()> {
+    let root = state.root()?;
+    notes::write_note(&root, &rel, &content)?;
+    own.record(&vault::resolve_rel(&root, &rel)?);
+    Ok(())
 }
 
 #[tauri::command]

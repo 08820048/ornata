@@ -50,7 +50,7 @@ function writePref(key: string, value: string) {
  */
 export function LocalGraph({ rel, active }: { rel: string; active: boolean }) {
   const t = useT();
-  const tree = useVault((s) => s.tree);
+  const vaultVersion = useVault((s) => s.vaultVersion);
   const [open, setOpen] = useState(() => readPref(OPEN_KEY, "0", ["0", "1"]) === "1");
   const [depth, setDepth] = useState<1 | 2>(() =>
     readPref(DEPTH_KEY, "1", ["1", "2"]) === "2" ? 2 : 1,
@@ -75,7 +75,7 @@ export function LocalGraph({ rel, active }: { rel: string; active: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [open, active, rel, tree]);
+  }, [open, active, rel, vaultVersion]);
 
   const hood = useMemo(
     () => (graph ? neighborhood(graph, rel, depth) : null),

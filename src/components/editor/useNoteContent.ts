@@ -46,6 +46,16 @@ function sameOutline(current: OutlineItem[], next: OutlineItem[]) {
   );
 }
 
+/** The note's outgoing link targets, as one comparable string. */
+export function linkSignature(text: string | null): string {
+  if (!text) return "";
+  const targets = new Set<string>();
+  for (const match of text.matchAll(/\]\(([^)\s]+)\)|\[\[([^\]|]+)/g)) {
+    targets.add(match[1] ?? match[2]);
+  }
+  return [...targets].sort().join("\n");
+}
+
 export function countWords(markdown: string, language: "en" | "zh-CN") {
   const text = markdown.trim();
   if (!text) return 0;
@@ -124,6 +134,9 @@ export function useNoteContentState({
       try {
         if (target.kind === "vault") {
           await ipc.writeNote(target.rel, fullText);
+          useVault
+            .getState()
+            .touchNote(target.rel, Date.now(), linkSignature(fullText) !== linkSignature(lastSaved.current));
         } else {
           await ipc.writeExternalNote(target.path, fullText);
         }
