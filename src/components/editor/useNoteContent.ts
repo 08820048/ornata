@@ -56,6 +56,9 @@ export function linkSignature(text: string | null): string {
   return [...targets].sort().join("\n");
 }
 
+/** `pending` while a rich-text edit hasn't been serialised yet. */
+export const DIRTY = "\u0000ornata:dirty";
+
 export function countWords(markdown: string, language: "en" | "zh-CN") {
   const text = markdown.trim();
   if (!text) return 0;
@@ -104,6 +107,21 @@ export function useNoteContentState({
   const savedScroll = useRef(0);
   const lastSaved = useRef("");
   const pending = useRef<string | null>(null);
+  // Rich-text edits only mark the note dirty (`DIRTY`): turning the whole
+  // document into markdown costs ~18ms at 3,000 lines, far too much per
+  // keystroke. `takePending` serialises on demand — autosave, flush, note
+  // switch, unmount (the editor's "destroy" event, while it still has state).
+  const serialize = useRef<(() => string) | null>(null);
+  const takePending = useCallback((): string | null => {
+    if (pending.current === DIRTY) {
+      try {
+        pending.current = serialize.current ? serialize.current() : null;
+      } catch {
+        pending.current = null;
+      }
+    }
+    return pending.current;
+  }, []);
   const loadedKey = useRef<string | null>(null);
   // True only while we're programmatically replacing the document, so the
   // resulting onUpdate doesn't mark the fresh content as an unsaved edit.
@@ -157,9 +175,17 @@ export function useNoteContentState({
     [setSaveState, t],
   );
 
+  // Source-mode callers pass the text; rich-text edits pass nothing and the
+  // document is serialised here, once per pause, along with the word count.
   const debouncedPersist = useMemo(
-    () => debounce((markdown: string) => persist(markdown, noteRef.current), 500),
-    [persist],
+    () =>
+      debounce((markdown?: string) => {
+        const text = markdown ?? takePending();
+        if (text === null) return;
+        if (markdown === undefined) setWords(countWords(text, languageRef.current));
+        persist(text, noteRef.current);
+      }, 500),
+    [persist, takePending],
   );
 
   const updateSlashMenu = useCallback((instance: Editor) => {
@@ -206,19 +232,18 @@ export function useNoteContentState({
 
   const flushCurrent = useCallback(async () => {
     debouncedPersist.cancel();
-    if (pending.current !== null) {
-      const contentText = pending.current;
+    const contentText = takePending();
+    if (contentText !== null) {
       pending.current = null;
       await persist(contentText, noteRef.current);
     }
-  }, [debouncedPersist, persist, pending, noteRef]);
+  }, [debouncedPersist, persist, pending, noteRef, takePending]);
 
   const flushThen = (action: () => void) => {
     debouncedPersist.cancel();
+    const contentText = takePending();
     const flush =
-      pending.current !== null
-        ? persist(pending.current, noteRef.current)
-        : Promise.resolve();
+      contentText !== null ? persist(contentText, noteRef.current) : Promise.resolve();
     flush.then(action);
   };
 
@@ -247,6 +272,8 @@ export function useNoteContentState({
     savedScroll,
     lastSaved,
     pending,
+    serialize,
+    takePending,
     loadedKey,
     swapping,
     refreshWhenActive,
@@ -296,6 +323,7 @@ export function useNoteContentEffects({
     savedScroll,
     lastSaved,
     pending,
+    takePending,
     loadedKey,
     swapping,
     refreshWhenActive,
@@ -321,8 +349,9 @@ export function useNoteContentEffects({
     const prevKey = loadedKey.current;
     const previousNote = noteRef.current;
     debouncedPersist.cancel();
-    if (prevKey && prevKey !== currentKey && pending.current !== null) {
-      persist(pending.current, previousNote);
+    if (prevKey && prevKey !== currentKey) {
+      const previousText = takePending();
+      if (previousText !== null) persist(previousText, previousNote);
     }
     pending.current = null;
     noteRef.current = note;
@@ -403,7 +432,8 @@ export function useNoteContentEffects({
   useEffect(() => {
     return () => {
       debouncedPersist.cancel();
-      if (pending.current !== null) persist(pending.current, noteRef.current);
+      const contentText = takePending();
+      if (contentText !== null) persist(contentText, noteRef.current);
     };
   }, [debouncedPersist, persist]);
 
@@ -646,9 +676,8 @@ export function useNoteContentEffects({
         } else if (action === "delete") {
           const current = noteRef.current;
           debouncedPersist.cancel();
-          if (pending.current !== null) {
-            await persist(pending.current, current);
-          }
+          const contentText = takePending();
+          if (contentText !== null) await persist(contentText, current);
           if (current.kind === "vault") {
             await useVault.getState().deleteEntry(current.rel);
           } else {

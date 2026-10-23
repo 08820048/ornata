@@ -15,7 +15,7 @@ import { useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import type { MenuPosition } from "@/components/ui/ContextMenu";
 import type { NoteContent } from "./useNoteContent";
-import { countWords } from "./useNoteContent";
+import { DIRTY } from "./useNoteContent";
 
 export interface ImageSourceOverlay {
   pos: number;
@@ -60,13 +60,13 @@ export function useNoteEditor({
 }) {
   const {
     noteRef,
-    languageRef,
     pending,
+    serialize,
+    takePending,
     swapping,
     syncOutline,
     debouncedPersist,
     updateSlashMenu,
-    setWords,
   } = content;
   const setSaveState = useUi((s) => s.setSaveState);
   const editorRef = useRef<Editor | null>(null);
@@ -203,11 +203,10 @@ export function useNoteEditor({
         // A doc change can invalidate the popover's captured node position
         // and src (e.g. a background upload swapping the URL) — close it.
         setImageSource(null);
-        const markdown = updated.getMarkdown();
-        pending.current = markdown;
+        // Mark dirty; the markdown is produced once per pause (see takePending).
+        pending.current = DIRTY;
         setSaveState("saving");
-        debouncedPersist(markdown);
-        setWords(countWords(markdown, languageRef.current));
+        debouncedPersist();
         syncOutline(updated);
         updateSlashMenu(updated);
       },
@@ -222,6 +221,22 @@ export function useNoteEditor({
   // One animated caret per live editor, created only while it can actually be
   // seen (active tab, rich-text mode) and when the setting is on. Recreating
   // on toggle is cheap and keeps the disabled path allocation-free.
+  // Let the content pipeline serialise this editor on demand, and capture
+  // any unsaved edit on "destroy" — emitted while the editor still has state.
+  useEffect(() => {
+    if (!editor) return;
+    serialize.current = () => editor.getMarkdown();
+    const capture = () => {
+      takePending();
+    };
+    editor.on("destroy", capture);
+    return () => {
+      // Replaced or unmounting: settle this editor's edit while it's alive.
+      takePending();
+      editor.off("destroy", capture);
+    };
+  }, [editor, serialize, takePending]);
+
   const motionEnabled = cursorAnimation && active && !markdownSource && !missing;
   useEffect(() => {
     // `editor.isDestroyed` is true while the view is a throwing Tiptap Proxy
