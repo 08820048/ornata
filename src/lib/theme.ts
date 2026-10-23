@@ -1,7 +1,23 @@
-import type { Palette, Theme } from "@/lib/types";
+import type { DarkPalette, LightPalette, Theme } from "@/lib/types";
 
 const STORAGE_KEY = "ornata:theme";
-const PALETTE_KEY = "ornata:palette";
+const PALETTES_KEY = "ornata:palettes";
+
+export interface Palettes {
+  light: LightPalette;
+  dark: DarkPalette;
+}
+
+let palettes: Palettes = { light: "default", dark: "default" };
+let isDark = false;
+
+/** Put the palette for the current mode on <html> (`data-palette`, absent for
+ *  the default one). */
+function paintPalette() {
+  const id = isDark ? palettes.dark : palettes.light;
+  if (id === "default") delete document.documentElement.dataset.palette;
+  else document.documentElement.dataset.palette = id;
+}
 
 /**
  * Apply a theme to the document root and mirror it to localStorage. The
@@ -11,7 +27,9 @@ const PALETTE_KEY = "ornata:palette";
 export function applyTheme(theme: Theme) {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const dark = theme === "dark" || (theme === "system" && media.matches);
+  isDark = dark;
   document.documentElement.classList.toggle("dark", dark);
+  paintPalette();
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {
@@ -26,6 +44,8 @@ export function renderTheme(theme: Theme) {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const dark = theme === "dark" || (theme === "system" && media.matches);
   document.documentElement.classList.toggle("dark", dark);
+  // Printed/exported pages stay on the neutral palette.
+  delete document.documentElement.dataset.palette;
 }
 
 /** Last applied theme, for a flash-free first paint. */
@@ -41,24 +61,31 @@ export function cachedTheme(): Theme {
   return "system";
 }
 
-/** Apply a palette to the document root (`data-palette`, absent for the
- *  default) and mirror it to localStorage for a flash-free first paint. */
-export function applyPalette(palette: Palette) {
-  if (palette === "default") delete document.documentElement.dataset.palette;
-  else document.documentElement.dataset.palette = palette;
+/** Choose the light- and dark-mode palettes; the one for the current mode is
+ *  painted now, and both are mirrored to localStorage for first paint. */
+export function applyPalettes(next: Palettes) {
+  palettes = next;
+  paintPalette();
   try {
-    localStorage.setItem(PALETTE_KEY, palette);
+    localStorage.setItem(PALETTES_KEY, JSON.stringify(next));
   } catch {
-    // storage disabled — the in-memory palette still applies
+    // storage disabled — the in-memory palettes still apply
   }
 }
 
-/** Last applied palette, for a flash-free first paint. */
-export function cachedPalette(): Palette {
+/** Last applied palettes, for a flash-free first paint. */
+export function cachedPalettes(): Palettes {
   try {
-    if (localStorage.getItem(PALETTE_KEY) === "paper-basalt") return "paper-basalt";
+    const raw = localStorage.getItem(PALETTES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Palettes>;
+      return {
+        light: parsed.light ?? "default",
+        dark: parsed.dark ?? "default",
+      };
+    }
   } catch {
     // ignore
   }
-  return "default";
+  return { light: "default", dark: "default" };
 }

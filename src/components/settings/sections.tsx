@@ -6,7 +6,9 @@ import {
   IconSun,
 } from "@tabler/icons-react";
 import type { MessageKey } from "@/lib/i18n";
-import type { Language, Palette, Theme } from "@/lib/types";
+import type { Language, Theme } from "@/lib/types";
+import { DARK_PALETTES, LIGHT_PALETTES } from "@/lib/palettes";
+import { PalettePicker } from "@/components/settings/PalettePicker";
 import { Button } from "@/components/ui/Button";
 import {
   Kbd,
@@ -27,11 +29,6 @@ const THEMES: Array<{ value: Theme; label: MessageKey; icon: typeof IconSun }> =
   { value: "system", label: "settings.theme.system", icon: IconDeviceDesktop },
   { value: "light", label: "settings.theme.light", icon: IconSun },
   { value: "dark", label: "settings.theme.dark", icon: IconMoon },
-];
-
-const PALETTES: Array<{ value: Palette; label: MessageKey }> = [
-  { value: "default", label: "settings.palette.default" },
-  { value: "paper-basalt", label: "settings.palette.paperBasalt" },
 ];
 
 const LANGUAGES: Array<{ value: Language; label: MessageKey }> = [
@@ -70,8 +67,10 @@ export function AppearanceSection() {
   const t = useT();
   const theme = useVault((s) => s.theme);
   const setTheme = useVault((s) => s.setTheme);
-  const palette = useVault((s) => s.palette);
-  const setPalette = useVault((s) => s.setPalette);
+  const lightPalette = useVault((s) => s.lightPalette);
+  const darkPalette = useVault((s) => s.darkPalette);
+  const setLightPalette = useVault((s) => s.setLightPalette);
+  const setDarkPalette = useVault((s) => s.setDarkPalette);
 
   return (
     <SettingGroup
@@ -92,16 +91,28 @@ export function AppearanceSection() {
           className="w-[268px]"
         />
       </SettingRow>
-      <SettingRow label={t("settings.palette")} hint={t("settings.palette.hint")}>
-        <Segmented
-          id="settings-palette"
-          value={palette}
-          ariaLabel={t("settings.palette")}
-          options={PALETTES.map(({ value, label }) => ({ value, label: t(label) }))}
-          onChange={(value) => void setPalette(value)}
-          className="w-[268px]"
-        />
-      </SettingRow>
+      <div>
+        <p className="text-[13px] text-ink">{t("settings.palette.light")}</p>
+        <div className="mt-2.5">
+          <PalettePicker
+            value={lightPalette}
+            palettes={LIGHT_PALETTES}
+            onChange={(value) => void setLightPalette(value)}
+            ariaLabel={t("settings.palette.light")}
+          />
+        </div>
+      </div>
+      <div className="pt-1">
+        <p className="text-[13px] text-ink">{t("settings.palette.dark")}</p>
+        <div className="mt-2.5">
+          <PalettePicker
+            value={darkPalette}
+            palettes={DARK_PALETTES}
+            onChange={(value) => void setDarkPalette(value)}
+            ariaLabel={t("settings.palette.dark")}
+          />
+        </div>
+      </div>
     </SettingGroup>
   );
 }

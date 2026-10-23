@@ -14,8 +14,15 @@ pub struct AppConfig {
     pub vault_path: Option<String>,
     #[serde(default)]
     pub theme: Theme,
+    /// The colour scheme used in light mode / in dark mode.
     #[serde(default)]
-    pub palette: Palette,
+    pub light_palette: LightPalette,
+    #[serde(default)]
+    pub dark_palette: DarkPalette,
+    /// Pre-0.11 single palette; read once by `load` to seed the two above,
+    /// never written back.
+    #[serde(default, skip_serializing)]
+    pub palette: Option<String>,
     #[serde(default)]
     pub language: Language,
     #[serde(default = "default_outline_sound")]
@@ -170,7 +177,9 @@ impl Default for AppConfig {
         Self {
             vault_path: None,
             theme: Theme::default(),
-            palette: Palette::default(),
+            light_palette: LightPalette::default(),
+            dark_palette: DarkPalette::default(),
+            palette: None,
             language: Language::default(),
             outline_sound: default_outline_sound(),
             cursor_animation: default_cursor_animation(),
@@ -191,14 +200,26 @@ pub enum Theme {
     Dark,
 }
 
-/// Colour palette applied on top of the light/dark mode.
+/// Light-mode colour schemes.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum Palette {
+pub enum LightPalette {
     #[default]
     Default,
-    /// Paper (light) and Basalt (dark).
-    PaperBasalt,
+    Paper,
+    PaperTextured,
+}
+
+/// Dark-mode colour schemes.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DarkPalette {
+    #[default]
+    Default,
+    Basalt,
+    TokyoTechno,
+    EarlyEmber,
+    NeonNoir,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
@@ -223,10 +244,23 @@ pub fn load(app: &tauri::AppHandle) -> AppConfig {
     let Ok(path) = config_file(app) else {
         return AppConfig::default();
     };
-    fs::read_to_string(path)
+    let config: AppConfig = fs::read_to_string(path)
         .ok()
         .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    migrate_palette(config)
+}
+
+/// Seed the per-mode palettes from the retired single `palette` setting.
+fn migrate_palette(mut config: AppConfig) -> AppConfig {
+    if config.palette.take().as_deref() == Some("paper-basalt")
+        && config.light_palette == LightPalette::Default
+        && config.dark_palette == DarkPalette::Default
+    {
+        config.light_palette = LightPalette::PaperTextured;
+        config.dark_palette = DarkPalette::Basalt;
+    }
+    config
 }
 
 pub fn save(app: &tauri::AppHandle, config: &AppConfig) -> AppResult<()> {
@@ -237,15 +271,32 @@ pub fn save(app: &tauri::AppHandle, config: &AppConfig) -> AppResult<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AppConfig, Language, Palette};
+    use super::{migrate_palette, AppConfig, DarkPalette, Language, LightPalette};
 
     #[test]
-    fn palette_defaults_and_round_trips() {
+    fn palettes_default_and_round_trip() {
         let config: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
-        assert_eq!(config.palette, Palette::Default);
-        let config: AppConfig = serde_json::from_str(r#"{"palette":"paper-basalt"}"#).unwrap();
-        assert_eq!(config.palette, Palette::PaperBasalt);
-        assert!(serde_json::to_string(&config).unwrap().contains("\"paper-basalt\""));
+        assert_eq!(config.light_palette, LightPalette::Default);
+        assert_eq!(config.dark_palette, DarkPalette::Default);
+        let config: AppConfig =
+            serde_json::from_str(r#"{"lightPalette":"paper-textured","darkPalette":"neon-noir"}"#)
+                .unwrap();
+        assert_eq!(config.light_palette, LightPalette::PaperTextured);
+        assert_eq!(config.dark_palette, DarkPalette::NeonNoir);
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(json.contains("\"paper-textured\"") && json.contains("\"neon-noir\""));
+    }
+
+    #[test]
+    fn the_old_single_palette_seeds_both_modes_once() {
+        let old: AppConfig = serde_json::from_str(r#"{"palette":"paper-basalt"}"#).unwrap();
+        let migrated = migrate_palette(old);
+        assert_eq!(migrated.light_palette, LightPalette::PaperTextured);
+        assert_eq!(migrated.dark_palette, DarkPalette::Basalt);
+        assert!(!serde_json::to_string(&migrated).unwrap().contains("\"palette\""));
+        let chosen: AppConfig =
+            serde_json::from_str(r#"{"palette":"paper-basalt","lightPalette":"paper"}"#).unwrap();
+        assert_eq!(migrate_palette(chosen).light_palette, LightPalette::Paper);
     }
 
     #[test]

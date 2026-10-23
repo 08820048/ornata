@@ -16,7 +16,9 @@ export function useSettingsBridge() {
     void listenSettings((patch) => {
       const vault = useVault.getState();
       if (patch.theme) vault.applyRemoteTheme(patch.theme);
-      if (patch.palette) vault.applyRemotePalette(patch.palette);
+      if (patch.lightPalette || patch.darkPalette) {
+        vault.applyRemotePalettes(patch.lightPalette, patch.darkPalette);
+      }
       if (patch.language) {
         useLocale.getState().applyRemoteLanguage(patch.language);
       }

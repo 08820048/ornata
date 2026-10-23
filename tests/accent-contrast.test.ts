@@ -10,17 +10,20 @@ function blockTokens(opener: string) {
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)].map((m) => [m[1], m[2]]));
 }
 
-const PALETTE = ':root[data-palette="paper-basalt"]';
+const PAPER = ':root:is([data-palette="paper"], [data-palette="paper-textured"]) {';
 const BLOCKS = {
   light: ":root {",
   dark: "\n.dark {",
-  "paper": `${PALETTE} {`,
-  "basalt": `${PALETTE}.dark {`,
+  paper: PAPER,
+  basalt: ':root[data-palette="basalt"] {',
+  "tokyo-techno": ':root[data-palette="tokyo-techno"] {',
+  "early-ember": ':root[data-palette="early-ember"] {',
+  "neon-noir": ':root[data-palette="neon-noir"] {',
 } as const;
 
 /** A mode's tokens; the palettes override the base light/dark ones. */
 function tokens(name: keyof typeof BLOCKS) {
-  const base = blockTokens(name === "paper" ? BLOCKS.light : name === "basalt" ? BLOCKS.dark : BLOCKS[name]);
+  const base = blockTokens(name === "light" || name === "paper" ? BLOCKS.light : BLOCKS.dark);
   return { ...base, ...blockTokens(BLOCKS[name]) };
 }
 
@@ -36,7 +39,7 @@ function contrast(a: string, b: string) {
 }
 
 describe("accent colour", () => {
-  for (const name of ["light", "dark", "paper", "basalt"] as const) {
+  for (const name of Object.keys(BLOCKS) as Array<keyof typeof BLOCKS>) {
     const t = tokens(name);
 
     test(`${name}: links and the caret read clearly on the page`, () => {

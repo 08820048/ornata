@@ -205,11 +205,12 @@
     --syntax-plain: #c9d1d9;
 }
 
-/* Paper (light) and Basalt (dark): the `paper-basalt` palette, selected with
-   `data-palette` on <html> and layered over the light/dark mode. Scales are
-   from the Light Paper and Basalt Bedrock themes; the light accent is
-   darkened to hold the contrast pinned by tests/accent-contrast.test.ts. */
-:root[data-palette="paper-basalt"] {
+/* Colour palettes: `data-palette` on <html> names the one chosen for the
+   current mode (absent = the default light/dark above). Light: paper,
+   paper-textured. Dark: basalt, tokyo-techno, early-ember, neon-noir. Scales
+   are from the matching Thymer themes; accents are darkened where needed to
+   hold the contrast pinned by tests/accent-contrast.test.ts. */
+:root:is([data-palette="paper"], [data-palette="paper-textured"]) {
     --bg: #fefae9;
     --panel: #fdf5e5;
     --sunken: #f3e7c8;
@@ -244,7 +245,7 @@
     --syntax-plain: #4c483d;
 }
 
-:root[data-palette="paper-basalt"].dark {
+:root[data-palette="basalt"] {
     --bg: #040608;
     --panel: #090c0f;
     --sunken: #010202;
@@ -264,7 +265,9 @@
     --accent-ink: #040608;
     --todo: var(--accent);
     --caret: #b8c5d4;
+    --caret-opacity: 0.7;
     --caret-glow: drop-shadow(0 0 2px #b8c5d4);
+    --caret-block: 1;
 
     --code-surface: #0f1318;
     --diagram-surface: #0c0f13;
@@ -276,10 +279,106 @@
     --syntax-plain: #c4cbd4;
 }
 
-/* Paper's tactile surface: a fixed, tiled, multiply-blended mottle + grain
-   over the whole window (generated here, not an image file). Light only —
-   Basalt stays flat — and never on print or export. */
-:root[data-palette="paper-basalt"]:not(.dark) body::before {
+:root[data-palette="tokyo-techno"] {
+    --bg: #0f0916;
+    --panel: #17111e;
+    --sunken: #0b0610;
+    --statusbar: #1f1a29;
+    --menu: #1f1a29;
+    --ink: #ededed;
+    --note-ink: #d4d4d4;
+    --muted: #9a94ad;
+    --faint: #756f8b;
+    --line: #312b3c;
+    --line-soft: #262031;
+    --hover: rgba(237, 237, 237, 0.06);
+    --active: rgba(237, 237, 237, 0.1);
+    --invert: #ededed;
+    --invert-ink: #0f0916;
+    --accent: #ebd647;
+    --accent-ink: #0f0916;
+    --todo: var(--accent);
+    --caret: #ebd647;
+
+    --code-surface: #1f1a29;
+    --diagram-surface: #17111e;
+    --diagram-node: #262031;
+    --code-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.4);
+
+    --syntax-plain: #d4d4d4;
+}
+
+:root[data-palette="early-ember"] {
+    --bg: #0a100f;
+    --panel: #111816;
+    --sunken: #050a09;
+    --statusbar: #1a231f;
+    --menu: #1a231f;
+    --ink: #ededed;
+    --note-ink: #d4d4d4;
+    --muted: #95a7a4;
+    --faint: #70857f;
+    --line: #2b3633;
+    --line-soft: #212b28;
+    --hover: rgba(237, 237, 237, 0.06);
+    --active: rgba(237, 237, 237, 0.1);
+    --invert: #ededed;
+    --invert-ink: #0a100f;
+    --accent: #f9af5f;
+    --accent-ink: #0a100f;
+    --todo: var(--accent);
+    --caret: #f9af5f;
+
+    --code-surface: #1a231f;
+    --diagram-surface: #111816;
+    --diagram-node: #212b28;
+    --code-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.4);
+
+    --syntax-plain: #d4d4d4;
+}
+
+:root[data-palette="neon-noir"] {
+    --bg: #0d0f13;
+    --panel: #14161c;
+    --sunken: #090b0e;
+    --statusbar: #1a1c24;
+    --menu: #1a1c24;
+    --ink: #f9fbff;
+    --note-ink: #d4e9f3;
+    --muted: #98a2b0;
+    --faint: #6c7a8e;
+    --line: #282a36;
+    --line-soft: #21232d;
+    --hover: rgba(249, 251, 255, 0.06);
+    --active: rgba(249, 251, 255, 0.1);
+    --invert: #f9fbff;
+    --invert-ink: #0d0f13;
+    --accent: #ff79c6;
+    --accent-ink: #0d0f13;
+    --todo: var(--accent);
+    --caret: #ff79c6;
+    --caret-opacity: 0.7;
+    --caret-glow: drop-shadow(0 0 2px #ff79c6);
+    --caret-block: 1;
+
+    --code-surface: #1a1c24;
+    --diagram-surface: #14161c;
+    --diagram-node: #21232d;
+    --code-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.4);
+
+    --syntax-plain: #d4e9f3;
+}
+
+/* Paper Textured's tactile surface: a fixed, tiled, multiply-blended mottle +
+   grain over the whole window (generated here, not an image file). Plain
+   Paper stays flat, and it never shows on print or export. */
+:root[data-palette="paper-textured"] body::before {
     content: "";
     position: fixed;
     inset: 0;
@@ -291,9 +390,9 @@
     opacity: 0.5;
 }
 
-/* Paper's hand-drawn rules: the straight hairlines become slightly bowed
-   strokes (note dividers, status bar top, sidebar edge). Light only. */
-:root[data-palette="paper-basalt"]:not(.dark) .prose-note hr {
+/* Paper's hand-drawn rules (both variants): the straight hairlines become
+   slightly bowed strokes (note dividers, status bar top, sidebar edge). */
+:root:is([data-palette="paper"], [data-palette="paper-textured"]) .prose-note hr {
     height: 6px;
     border: none;
     background-image: url("data:image/svg+xml,%3Csvg width='100%' height='6' viewBox='0 0 100 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 0 3 C 20 2 80 4 100 3' stroke='%23d9c298' fill='none' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
@@ -301,11 +400,11 @@
     opacity: 0.55;
 }
 
-:root[data-palette="paper-basalt"]:not(.dark) .paper-status {
+:root:is([data-palette="paper"], [data-palette="paper-textured"]) .paper-status {
     border-top-color: transparent;
 }
 
-:root[data-palette="paper-basalt"]:not(.dark) .paper-status::before {
+:root:is([data-palette="paper"], [data-palette="paper-textured"]) .paper-status::before {
     content: "";
     position: absolute;
     top: -3px;
@@ -317,11 +416,11 @@
     background-repeat: repeat-x;
 }
 
-:root[data-palette="paper-basalt"]:not(.dark) .paper-side {
+:root:is([data-palette="paper"], [data-palette="paper-textured"]) .paper-side {
     border-right-color: transparent;
 }
 
-:root[data-palette="paper-basalt"]:not(.dark) .paper-side::after {
+:root:is([data-palette="paper"], [data-palette="paper-textured"]) .paper-side::after {
     content: "";
     position: absolute;
     top: 0;
@@ -334,7 +433,7 @@
 }
 
 @media print {
-    :root[data-palette="paper-basalt"] body::before {
+    :root[data-palette="paper-textured"] body::before {
         display: none;
     }
 }

@@ -7,7 +7,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::backlinks::{self, Backlink};
-use crate::config::{self, ImageUpload, ImageUploadMode, Language, Palette, PdfSettings, Theme};
+use crate::config::{self, DarkPalette, ImageUpload, ImageUploadMode, Language, LightPalette, PdfSettings, Theme};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::graph;
@@ -101,7 +101,8 @@ pub struct VaultSnapshot {
     pub name: String,
     pub tree: Vec<TreeNode>,
     pub theme: Theme,
-    pub palette: Palette,
+    pub light_palette: LightPalette,
+    pub dark_palette: DarkPalette,
     pub outline_sound: bool,
     pub cursor_animation: bool,
     pub image_upload: ImageUpload,
@@ -119,7 +120,8 @@ fn snapshot(app: &AppHandle, root: &Path) -> AppResult<VaultSnapshot> {
         name,
         tree,
         theme: config.theme,
-        palette: config.palette,
+        light_palette: config.light_palette,
+        dark_palette: config.dark_palette,
         outline_sound: config.outline_sound,
         cursor_animation: config.cursor_animation,
         image_upload: config.image_upload,
@@ -581,9 +583,16 @@ pub fn set_theme(app: AppHandle, theme: Theme) -> AppResult<()> {
 }
 
 #[tauri::command]
-pub fn set_palette(app: AppHandle, palette: Palette) -> AppResult<()> {
+pub fn set_light_palette(app: AppHandle, palette: LightPalette) -> AppResult<()> {
     let mut cfg = config::load(&app);
-    cfg.palette = palette;
+    cfg.light_palette = palette;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
+pub fn set_dark_palette(app: AppHandle, palette: DarkPalette) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.dark_palette = palette;
     config::save(&app, &cfg)
 }
 

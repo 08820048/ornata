@@ -1,7 +1,13 @@
 export type Theme = "system" | "light" | "dark";
 
-/** Colour palette applied on top of the light/dark mode. */
-export type Palette = "default" | "paper-basalt";
+/** Colour schemes, chosen separately for light and for dark mode. */
+export type LightPalette = "default" | "paper" | "paper-textured";
+export type DarkPalette =
+  | "default"
+  | "basalt"
+  | "tokyo-techno"
+  | "early-ember"
+  | "neon-noir";
 export type Language = "en" | "zh-CN";
 export type ImageUploadMode = "local" | "custom";
 
@@ -34,7 +40,8 @@ export interface VaultSnapshot {
   name: string;
   tree: TreeNode[];
   theme: Theme;
-  palette: Palette;
+  lightPalette: LightPalette;
+  darkPalette: DarkPalette;
   outlineSound: boolean;
   cursorAnimation: boolean;
   imageUpload: ImageUpload;
@@ -43,7 +50,8 @@ export interface VaultSnapshot {
 /** Scalar settings served to the standalone settings window. */
 export interface SettingsSnapshot {
   theme: Theme;
-  palette: Palette;
+  lightPalette: LightPalette;
+  darkPalette: DarkPalette;
   language: Language;
   outlineSound: boolean;
   cursorAnimation: boolean;
