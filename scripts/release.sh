@@ -34,6 +34,9 @@ source "$SCRIPT_DIR/check-release-signing.sh"
 echo "Synchronizing version $VERSION..."
 bun "$SCRIPT_DIR/sync-version.js" "$VERSION"
 
+echo "Mirroring CHANGELOG.md into the vault changelog note..."
+bun "$SCRIPT_DIR/sync-changelog-note.js" || echo "(changelog note not synced; run bun run changelog:note later)"
+
 echo "Removing stale release artifacts..."
 rm -rf "$PROJECT_ROOT/src-tauri/target/release/bundle" "$PROJECT_ROOT/release/$VERSION"
 

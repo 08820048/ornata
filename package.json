@@ -18,7 +18,8 @@
     "icon:generate": "bash scripts/generate-icons.sh",
     "release:preflight": "bash scripts/check-release-signing.sh",
     "release:publish": "bun scripts/publish-r2.js",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "changelog:note": "bun scripts/sync-changelog-note.js"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",

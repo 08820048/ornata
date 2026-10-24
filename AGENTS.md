@@ -86,7 +86,7 @@ Blocking work must not run on the main thread, where a sync command executes: di
 
 Releases are run by hand from the maintainer's Mac (Developer ID + Apple notarization + Tauri updater key; `bun run release:preflight` checks them). Windows installers are built and published separately on a Windows machine, so a macOS release must not claim them.
 
-1. Update `CHANGELOG.md` (new `## [x.y.z] - date` above the last one) and add an entry to `site/lib/releases.ts` (English plus `zh`).
+1. Update `CHANGELOG.md` (new `## [x.y.z] - date` above the last one) and add an entry to `site/lib/releases.ts` (English plus `zh`). `bun run changelog:note` then mirrors CHANGELOG.md into the vault note `10-项目/产品/Ornata/Ornata 更新日志.md` (hand-written v0.1.x entries are kept, 0.2.0+ is regenerated); `bun run release` also runs it. Run it whenever CHANGELOG.md changes outside a release.
 2. `bun run release x.y.z "<notes>"` — version sync, signed build, notarization, staged in `release/x.y.z/`. Commit and push the version bump it makes.
 3. `bun run release:publish -- x.y.z --confirm` — uploads to R2 and switches the stable channel (what the in-app updater reads). This is not undoable; check the staged files first.
 4. Only after step 3, `cd site && bun run deploy`: the site's download links are built from the version number.
