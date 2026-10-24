@@ -61,7 +61,7 @@ export function GeneralSection() {
         </SettingRow>
       </SettingGroup>
       <VaultSection />
-      <SettingGroup title={t("settings.backup")} hint={t("settings.backup.hint")}>
+      <SettingGroup title={t("settings.backup")}>
         <BackupSettings />
       </SettingGroup>
     </>
