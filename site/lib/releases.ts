@@ -10,6 +10,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.11.0",
+    zh: {
+      summary: "自动备份：笔记丢了、误删了，还有一份在文件夹之外的副本。",
+      changes: [
+        "新增自动备份。在「设置 › 通用」里选一个文件夹（有 iCloud 云盘或 Dropbox 时会直接提供），Ornata 大约每天在后台把笔记和图片打成一个带日期的压缩包存进去。保留最近 7 天、4 周和 6 个月的备份，其余自动清理，而且只清理它自己生成的文件。历史快照不包含在内。要恢复时，解压备份就是你原来的笔记库文件夹。",
+        "备份失败时会弹出通知，并在设置里写明原因。",
+      ],
+    },
+    date: "October 24, 2026",
+    dateTime: "2026-10-24",
+    summary: "Automatic backups: a copy of your notes outside the notes folder, in case they are lost or deleted by mistake.",
+    changes: [
+      "Automatic backups. In Settings › General, choose a folder (iCloud Drive and Dropbox are offered when you have them) and Ornata saves a dated zip of your notes and images there about once a day, in the background. It keeps the last 7 days, 4 weeks and 6 months and cleans up the rest, touching only its own files. History snapshots aren't included. To restore, unzip a backup — it is your vault folder as it was.",
+      "A failed backup is reported with the reason, in a notification and in Settings.",
+    ],
+  },
+  {
     version: "0.10.2",
     zh: {
       summary: "一轮细节打磨：通知跟随主题，侧栏、状态栏、设置页更清爽。",

@@ -2,6 +2,13 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.11.0] - 2026-10-24
+
+### Added
+
+- Automatic backups. In Settings › General, choose a folder (iCloud Drive and Dropbox are offered when you have them) and Ornata saves a dated zip of your notes and images there about once a day, in the background. It keeps the last 7 days, 4 weeks and 6 months and cleans up the rest, touching only its own files. History snapshots aren't included. To restore, unzip a backup — it is your vault folder as it was.
+- A failed backup is reported with the reason, in a notification and in Settings.
+
 ## [0.10.2] - 2026-10-24
 
 ### Changed
