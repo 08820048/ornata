@@ -17,7 +17,7 @@ export function PalettePicker<T extends string>({
 }) {
   const t = useT();
   return (
-    <div role="group" aria-label={ariaLabel} className="flex flex-wrap gap-2.5">
+    <div role="group" aria-label={ariaLabel} className="grid grid-cols-5 gap-x-3.5 gap-y-3">
       {palettes.map(({ id, label, swatch }) => {
         const active = id === value;
         return (
@@ -26,11 +26,11 @@ export function PalettePicker<T extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(id)}
-            className="group flex w-[92px] flex-col gap-1.5 text-left"
+            className="group flex min-w-0 flex-col gap-1.5 text-left"
           >
             <span
               className={cx(
-                "flex h-[58px] overflow-hidden rounded-lg transition-shadow duration-100",
+                "mx-0.5 flex h-[54px] overflow-hidden rounded-lg transition-shadow duration-100",
                 active
                   ? "ring-2 ring-ink ring-offset-2 ring-offset-bg"
                   : "ring-1 ring-line group-hover:ring-faint",

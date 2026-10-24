@@ -4,7 +4,7 @@ import {
   IconCircleX,
   IconLayoutColumns,
   IconLayoutSidebarRightCollapse,
-  IconShare2,
+  IconTopologyStar3,
   IconX,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
@@ -278,7 +278,7 @@ function Tab({
         <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover/tab:bg-hover/60 group-hover/tab:opacity-100" />
       )}
       {!isNoteTab(tab) && (
-        <IconShare2 size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
+        <IconTopologyStar3 size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
       )}
       <span className="relative z-10 truncate">{title}</span>
       <Tooltip label={t("editor.closeTab")} side="bottom">

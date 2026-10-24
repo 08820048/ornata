@@ -12,7 +12,7 @@ import {
   IconPlug,
   IconSearch,
   IconSettings,
-  IconShare2,
+  IconTopologyStar3,
 } from "@tabler/icons-react";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { openPath } from "@tauri-apps/plugin-opener";
@@ -149,7 +149,7 @@ export function CommandPalette() {
       {
         id: "link-graph",
         label: t("graph.title"),
-        icon: IconShare2,
+        icon: IconTopologyStar3,
         run: () => useVault.getState().setView({ type: "graph" }),
       },
       {

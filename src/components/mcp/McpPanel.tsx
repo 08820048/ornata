@@ -180,7 +180,7 @@ export function McpPanel() {
           ))}
         </div>
         <div className="relative mt-2 rounded-xl border border-line-soft bg-sunken">
-          <pre className="max-h-[132px] overflow-auto px-3.5 py-3 pr-11 font-mono text-[11.5px] leading-5 text-ink">
+          <pre className="max-h-[132px] overflow-y-auto whitespace-pre-wrap break-all px-3.5 py-3 pr-11 font-mono text-[11.5px] leading-5 text-ink">
             {current.text}
           </pre>
           <span className="absolute right-1.5 top-1.5">
@@ -222,7 +222,7 @@ export function McpPanel() {
       <section className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <h3 className="text-[13px] font-semibold text-ink">{t("mcp.cli.title")}</h3>
-          <p className="mt-0.5 truncate text-[11.5px] text-faint">
+          <p className="mt-0.5 break-words text-[11.5px] leading-4 text-faint">
             {installed ? t("mcp.cli.installedAt", { path: status.installedAt ?? "" }) : t("mcp.cli.detail")}
           </p>
         </div>
