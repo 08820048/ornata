@@ -1,26 +1,27 @@
 import { Toaster } from "sonner";
+import { useVault } from "@/stores/vault";
 
-/** App-wide toast host, shared by the main and settings windows. */
+/** App-wide toast host, shared by the main and settings windows. Colours,
+ *  border, radius and shadow come from the theme tokens in `styles.css`. */
 export function AppToaster() {
+  const theme = useVault((s) => s.theme);
+  // Sonner tints its icons and close button from its own light/dark flag, so
+  // hand it the app's mode rather than letting it read the OS.
+  const dark =
+    theme === "dark" ||
+    (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   return (
     <Toaster
+      theme={dark ? "dark" : "light"}
       position="top-right"
       gap={8}
       offset={16}
       toastOptions={{
-        style: {
-          background: "var(--panel)",
-          color: "var(--ink)",
-          border: "1px solid var(--line)",
-          fontSize: "13px",
-          borderRadius: "10px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-        },
         // Sonner colors actions from its own theme; use our inverted pill.
         actionButtonStyle: {
           background: "var(--invert)",
           color: "var(--invert-ink)",
-          borderRadius: "6px",
+          borderRadius: "4px",
         },
       }}
     />
