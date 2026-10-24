@@ -7,7 +7,7 @@ import {
   IconListCheck,
   IconPin,
   IconSearch,
-  IconSortAZ,
+  IconSortAscendingLetters,
   IconX,
 } from "@tabler/icons-react";
 import { ActionSwapButton } from "@/components/motion/action-swap";
@@ -67,15 +67,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="flex items-center px-4 pb-2">
-        <span
-          className="truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-faint"
-          title={name}
-        >
-          {name}
-        </span>
-      </div>
-
       {pinned.length > 0 && (
         <div className="px-2 pb-2">
           <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
@@ -124,13 +115,16 @@ export function Sidebar() {
       )}
 
       <div className="flex items-center justify-between pl-4 pr-2 pb-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
-          {t("common.notes")}
+        <span
+          className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-faint"
+          title={name}
+        >
+          {name || t("common.notes")}
         </span>
         <div className="flex items-center gap-0.5">
           <ActionSwapButton
             items={[
-              { id: "name", label: t("tree.sortName"), icon: <IconSortAZ size={14.5} stroke={1.75} />, ariaLabel: t("tree.sortName") },
+              { id: "name", label: t("tree.sortName"), icon: <IconSortAscendingLetters size={15} stroke={1.75} />, ariaLabel: t("tree.sortName") },
               { id: "modified", label: t("tree.sortModified"), icon: <IconClock size={14.5} stroke={1.75} />, ariaLabel: t("tree.sortModified") },
             ]}
             value={treeSort}
@@ -158,7 +152,6 @@ export function Sidebar() {
       </div>
 
       <FileTree />
-
     </aside>
   );
 }

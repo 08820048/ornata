@@ -8,7 +8,7 @@ import { barShortcuts, type BarContext } from "@/lib/shortcuts";
 import { useT } from "@/stores/locale";
 import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
-import { KeyCap } from "./KeyCap";
+import { KeyCombo } from "./KeyCap";
 import { McpIndicator } from "./McpIndicator";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { UpdateHint } from "./UpdateHint";
@@ -36,11 +36,7 @@ export function ShortcutBar() {
         {!hintsHidden &&
           barShortcuts(context).map((shortcut) => (
             <span key={shortcut.label} className="flex items-center gap-1.5">
-              <span className="flex items-center gap-[3px]">
-                {shortcut.keys.map((key) => (
-                  <KeyCap key={key} value={key} />
-                ))}
-              </span>
+              <KeyCombo keys={shortcut.keys} />
               {t(shortcut.label)}
             </span>
           ))}

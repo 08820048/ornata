@@ -24,3 +24,15 @@ export function KeyCap({ value }: { value: string }) {
     </kbd>
   );
 }
+
+/** A whole shortcut as one pill — `⌘` `K` side by side — for dense strips. */
+export function KeyCombo({ keys }: { keys: string[] }) {
+  return (
+    <kbd className="inline-flex h-[18px] items-center gap-[3px] rounded-[5px] bg-sunken px-1.5 font-sans text-[10.5px] font-medium leading-none text-ink">
+      {keys.map((key, index) => {
+        const Icon = ICONS[key];
+        return Icon ? <Icon key={index} size={11} stroke={2} aria-label={key} /> : <span key={index}>{key}</span>;
+      })}
+    </kbd>
+  );
+}
