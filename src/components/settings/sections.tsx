@@ -17,6 +17,7 @@ import {
   SettingRow,
   Toggle,
 } from "@/components/settings/controls";
+import { BackupSettings } from "@/components/settings/BackupSettings";
 import { ImageUploadSettings } from "@/components/settings/ImageUploadSettings";
 import { PdfExportSettings } from "@/components/settings/PdfExportSettings";
 import { UpdateControl } from "@/components/settings/UpdateControl";
@@ -60,6 +61,9 @@ export function GeneralSection() {
         </SettingRow>
       </SettingGroup>
       <VaultSection />
+      <SettingGroup title={t("settings.backup")} hint={t("settings.backup.hint")}>
+        <BackupSettings />
+      </SettingGroup>
     </>
   );
 }

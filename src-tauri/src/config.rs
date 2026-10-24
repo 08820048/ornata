@@ -25,6 +25,9 @@ pub struct AppConfig {
     pub palette: Option<String>,
     #[serde(default)]
     pub language: Language,
+    /// Where automatic backups go and how the last ones went.
+    #[serde(default)]
+    pub backup: crate::backup::BackupConfig,
     #[serde(default = "default_outline_sound")]
     pub outline_sound: bool,
     #[serde(default = "default_cursor_animation")]
@@ -181,6 +184,7 @@ impl Default for AppConfig {
             dark_palette: DarkPalette::default(),
             palette: None,
             language: Language::default(),
+            backup: Default::default(),
             outline_sound: default_outline_sound(),
             cursor_animation: default_cursor_animation(),
             image_upload: ImageUpload::default(),

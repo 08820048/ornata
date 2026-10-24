@@ -197,6 +197,23 @@ export default function App() {
     };
   }, [status]);
 
+  // A scheduled backup that fails shouldn't go unnoticed.
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    listen<{ ok: boolean; detail: string }>("ornata-backup", (event) => {
+      if (!event.payload.ok) {
+        toast.error(t("toast.backupFailed"), { description: event.payload.detail });
+      }
+    })
+      .then((un) => (cancelled ? un() : (stop = un)))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [t]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const mod = event.metaKey || event.ctrlKey;

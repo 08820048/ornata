@@ -2,6 +2,8 @@ mod app_data;
 mod agent_docs;
 mod agent_tools;
 mod assets;
+mod backup;
+mod backup_commands;
 mod backlinks;
 mod cli;
 mod commands;
@@ -66,6 +68,7 @@ pub fn run() {
         }).build())
         .manage(AppState::default())
         .manage(watcher::SelfWrites::default())
+        .manage(backup_commands::BackupGuard::default())
         .manage(cli::app_api::McpServer::default())
         .manage(print_export::PrintState::default())
         .manage(reveal::ExportedFiles::default())
@@ -141,6 +144,11 @@ pub fn run() {
             commands::set_theme,
             commands::set_light_palette,
             commands::set_dark_palette,
+            backup_commands::get_backup,
+            backup_commands::set_backup_folder,
+            backup_commands::choose_backup_folder,
+            backup_commands::run_backup_now,
+            backup_commands::reveal_backup_folder,
             commands::set_outline_sound,
             commands::set_cursor_animation,
             commands::get_language,

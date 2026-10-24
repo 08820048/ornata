@@ -30,6 +30,8 @@ trash = "5"
 notify = "8.2.0"
 tiny_http = "0.12"
 dunce = "1.0.5"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+zip = { version = "4", default-features = false, features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
 tauri-plugin-single-instance = "2.5.4"

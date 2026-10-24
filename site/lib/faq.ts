@@ -50,6 +50,10 @@ export const FAQS_EN: Faq[] = [
     a: "Ornata automatically checks its signed update feed. When a release is available, you can download it with visible progress and restart to install it. The macOS build is Developer ID signed and notarized by Apple.",
   },
   {
+    q: "What if I lose my notes or delete them by mistake?",
+    a: "Deleted notes go to the system Trash, and every note keeps a history of earlier versions. For a copy that survives losing the folder itself, turn on Backup in Settings › General: Ornata saves a dated zip of your notes and images to a folder you choose, such as one inside iCloud Drive or Dropbox, about once a day, and keeps recent ones plus a few older ones. To restore, unzip a backup.",
+  },
+  {
     q: "Does Ornata have a dark mode and themes?",
     a: "Yes. Choose light, dark, or follow the system, and pick a theme for each: Default, Paper, or Paper Textured in light; Default, Basalt Bedrock, Tokyo Techno, Early Ember, or Neon Noir in dark. The palette icon in the status bar switches them without opening Settings.",
   },
@@ -110,6 +114,10 @@ export const FAQS_ZH: Faq[] = [
   {
     q: "更新是怎么进行的？",
     a: "Ornata 会自动检查它的签名更新源。有新版本时，你可以在看得见进度的情况下下载，然后重启安装。macOS 版经过 Developer ID 签名，并由 Apple 公证。",
+  },
+  {
+    q: "笔记丢了或者误删了能找回吗？",
+    a: "删除的笔记会进系统废纸篓，每篇笔记还保留着历史版本。想要一份在笔记库之外的副本，可以在「设置 › 通用」里打开「备份」：Ornata 大约每天把笔记和图片打成一个带日期的压缩包，存到你选的文件夹（比如 iCloud 云盘或 Dropbox 里的文件夹），保留最近的几份和更早的少数几份。要恢复时，解压备份即可。",
   },
   {
     q: "有深色模式和主题吗？",

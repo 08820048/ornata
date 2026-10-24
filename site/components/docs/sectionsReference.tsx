@@ -63,7 +63,7 @@ export const REFERENCE: DocSection[] = [
     lead: "Open with ⌘, — search the settings if you can't find one.",
     body: (
       <Ul>
-        <Li><strong className="font-medium text-foreground">General</strong> — interface language (English or 简体中文), and which vault folder is open.</Li>
+        <Li><strong className="font-medium text-foreground">General</strong> — interface language (English or 简体中文), and which vault folder is open, and Backup: pick a folder (iCloud Drive and Dropbox are offered when you have them) and Ornata saves a dated zip of your notes and images there about once a day, keeping recent ones plus a few older ones. History snapshots aren't included. To restore, unzip a backup.</Li>
         <Li><strong className="font-medium text-foreground">Appearance</strong> — light, dark, or follow the system, and a theme for each of light and dark.</Li>
         <Li><strong className="font-medium text-foreground">Editor</strong> — the outline sound, the animated cursor, and image upload: keep pasted images in the vault, or run your own upload command.</Li>
         <Li><strong className="font-medium text-foreground">Export</strong> — PDF paper size and margins.</Li>

@@ -60,6 +60,20 @@ export interface SettingsSnapshot {
   vaultName: string | null;
 }
 
+/** How one backup run went (the zip's name, or the error). */
+export interface BackupRecord {
+  atMs: number;
+  ok: boolean;
+  detail: string;
+  size: number;
+}
+
+export interface BackupInfo {
+  folder: string | null;
+  suggestions: Array<{ label: string; path: string }>;
+  last: BackupRecord | null;
+}
+
 /** The vault's link graph (notes as nodes, internal links as edges). */
 export interface GraphNode {
   rel: string;

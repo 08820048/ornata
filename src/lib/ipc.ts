@@ -18,6 +18,7 @@ import type {
   UnusedAsset,
   OpenTask,
   SettingsSnapshot,
+  BackupInfo,
   DarkPalette,
   LightPalette,
   Theme,
@@ -177,6 +178,12 @@ export const ipc = {
   saveImageAs: (source: string) =>
     call<string | null>("save_image_as", { source }),
   openLocalImage: (path: string) => call<void>("open_local_image", { path }),
+  getBackup: () => call<BackupInfo>("get_backup"),
+  setBackupFolder: (folder: string | null) =>
+    call<BackupInfo>("set_backup_folder", { folder }),
+  chooseBackupFolder: () => call<BackupInfo | null>("choose_backup_folder"),
+  runBackupNow: () => call<BackupInfo>("run_backup_now"),
+  revealBackupFolder: () => call<void>("reveal_backup_folder"),
   setTheme: (theme: Theme) => call<void>("set_theme", { theme }),
   setLightPalette: (palette: LightPalette) =>
     call<void>("set_light_palette", { palette }),
