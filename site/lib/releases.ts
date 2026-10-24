@@ -10,6 +10,21 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.1",
+    zh: {
+      summary: "修复了用中文输入法在标题里打字时文字跑到下一行的问题。",
+      changes: [
+        "用中文等输入法在标题里打字时，选中候选词（比如按空格）可能把标题拆开：拼音字母留在标题里，选好的文字却跑到下面新的一行。现在文字会留在标题里。",
+      ],
+    },
+    date: "October 24, 2026",
+    dateTime: "2026-10-24",
+    summary: "Fixes typed text jumping out of a heading when using an input method.",
+    changes: [
+      "Typing a heading with a Chinese (or other) input method: choosing a candidate, for example with Space, could split the heading, leaving the pre-edit letters in it and putting the text you chose on a new line below. The text now stays in the heading.",
+    ],
+  },
+  {
     version: "0.10.0",
     zh: {
       summary: "浅色、深色各选一套主题，底部状态栏更完整，大笔记库里打字更顺。",

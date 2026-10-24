@@ -2,6 +2,12 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.10.1] - 2026-10-24
+
+### Fixed
+
+- Typing a heading with a Chinese (or other) input method: after `## `, choosing a candidate with Space could split the heading, leaving the pre-edit letters in it and putting the typed text on a new line below. The text now stays in the heading.
+
 ## [0.10.0] - 2026-10-23
 
 ### Added
