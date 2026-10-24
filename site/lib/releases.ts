@@ -10,6 +10,33 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.2",
+    zh: {
+      summary: "一轮细节打磨：通知跟随主题，侧栏、状态栏、设置页更清爽。",
+      changes: [
+        "通知提示现在和应用其余部分一致：和菜单同一套底色、描边、圆角和阴影，在每个主题下都协调。在「纸张纹理」主题里，它会压在纸纹下面，不再浮在上面。",
+        "侧栏的两行标题合并成一行（库名加上排序、标签、新建笔记、新建文件夹按钮），排序图标也更清楚。",
+        "状态栏的快捷键提示每条合成一个键帽，更好读；命令面板里的快捷键和查找栏也做了同样的整理。",
+        "编辑区右侧的目录刻度更长更清楚，悬停区域也更宽。",
+        "链接图谱换成了图谱图标，不再用分享图标。",
+        "设置页：五款深色主题卡片排在同一行；MCP 命令自动换行，复制按钮不再盖住文字。",
+        "状态栏的主题切换面板，模式图标更清晰，主题色块改成两色圆点；纸张主题的手绘侧栏边线更轻。",
+      ],
+    },
+    date: "October 24, 2026",
+    dateTime: "2026-10-24",
+    summary: "A round of polish: notifications follow your theme, and the sidebar, status bar and settings are cleaner.",
+    changes: [
+      "Notifications now look like the rest of the app: the same surface, border, corner radius and shadow as menus, in every theme. In Paper Textured they sit under the paper grain instead of floating above it.",
+      "The sidebar has one header row (your vault name with the sort, tag, new note and new folder buttons) instead of two, and a clearer sort icon.",
+      "Keyboard hints in the status bar are one key cap per shortcut, easier to read; the command palette's shortcuts and the Find bar got the same care.",
+      "The outline ticks on the right edge are longer and clearer, with a wider hover area.",
+      "The link graph has a graph icon instead of a share icon.",
+      "Settings: the five dark theme cards fit on one row, and the MCP command wraps instead of scrolling, with its copy button no longer covering the text.",
+      "The theme switcher in the status bar has clearer mode icons and two-tone theme swatches, and Paper's hand-drawn sidebar edge is lighter.",
+    ],
+  },
+  {
     version: "0.10.1",
     zh: {
       summary: "修复了用中文输入法在标题里打字时文字跑到下一行的问题。",

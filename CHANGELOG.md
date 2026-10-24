@@ -2,6 +2,18 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.10.2] - 2026-10-24
+
+### Changed
+
+- Notifications now look like the rest of the app: the same surface, border, corner radius and shadow as menus, in every theme. In Paper Textured they sit under the paper grain instead of floating above it.
+- The sidebar has one header row (your vault name with the sort, tag, new note and new folder buttons) instead of two, and a clearer sort icon.
+- Keyboard hints in the status bar are one key cap per shortcut, easier to read; the command palette's shortcuts and the Find bar got the same care.
+- The outline ticks on the right edge are longer and clearer, with a wider hover area.
+- The link graph has a graph icon instead of a share icon.
+- Settings: the five dark theme cards fit on one row; the MCP command wraps instead of scrolling, and its copy button no longer covers the text.
+- The theme switcher in the status bar has clearer mode icons and two-tone theme swatches, and Paper's hand-drawn sidebar edge is lighter.
+
 ## [0.10.1] - 2026-10-24
 
 ### Fixed
