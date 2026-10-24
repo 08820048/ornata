@@ -120,7 +120,7 @@ export function ThemeSwitcher() {
                       : "text-muted hover:text-ink",
                   )}
                 >
-                  <Icon size={12} stroke={1.75} />
+                  <Icon size={13} stroke={1.75} />
                   {t(label)}
                 </button>
               ))}
@@ -138,14 +138,11 @@ export function ThemeSwitcher() {
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink transition-colors duration-100 hover:bg-hover"
                 >
                   <span
-                    className="relative size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-line"
-                    style={{ background: swatch.bg }}
-                  >
-                    <span
-                      className="absolute bottom-0 right-0 size-2 rounded-tl-full"
-                      style={{ background: swatch.accent }}
-                    />
-                  </span>
+                    className="size-4 shrink-0 rounded-full ring-1 ring-line"
+                    style={{
+                      background: `linear-gradient(135deg, ${swatch.bg} 50%, ${swatch.accent} 50%)`,
+                    }}
+                  />
                   <span className="flex-1 truncate">{t(label)}</span>
                   {current === id && <IconCheck size={13} stroke={2} className="shrink-0 text-muted" />}
                 </button>

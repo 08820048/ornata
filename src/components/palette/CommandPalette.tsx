@@ -38,6 +38,7 @@ interface PaletteItem {
   /** Dim breadcrumb of the containing folder, e.g. "projects / research". */
   path?: string;
   hint?: string;
+  shortcut?: string;
   icon: TablerIcon;
   run: () => void;
   /** ⌘↵: open beside the focused note (notes only). */
@@ -120,7 +121,7 @@ export function CommandPalette() {
       {
         id: "new-note",
         label: t("common.newNote"),
-        hint: keyLabel("⌘N"),
+        shortcut: keyLabel("⌘N"),
         icon: IconFilePlus,
         run: () => vault.createNote(activeDir(vault)),
       },
@@ -161,7 +162,7 @@ export function CommandPalette() {
       {
         id: "daily-note",
         label: t("daily.new"),
-        hint: keyLabel("⌘J"),
+        shortcut: keyLabel("⌘J"),
         icon: IconCalendar,
         run: () => void vault.openDailyNote(),
       },
@@ -176,7 +177,7 @@ export function CommandPalette() {
       {
         id: "open-markdown",
         label: t("palette.openMarkdown"),
-        hint: keyLabel("⌘O"),
+        shortcut: keyLabel("⌘O"),
         icon: IconFolderOpen,
         run: () => vault.chooseExternalNotes(),
       },
@@ -213,7 +214,7 @@ export function CommandPalette() {
       {
         id: "toggle-focus-mode",
         label: t("palette.toggleFocus"),
-        hint: keyLabel("⌘⇧F"),
+        shortcut: keyLabel("⌘⇧F"),
         icon: IconFocus,
         run: () => useUi.getState().toggleFocusMode(),
       },
@@ -226,7 +227,7 @@ export function CommandPalette() {
       {
         id: "settings",
         label: t("common.settings"),
-        hint: keyLabel("⌘,"),
+        shortcut: keyLabel("⌘,"),
         icon: IconSettings,
         run: () => void ipc.openSettingsWindow(),
       },
@@ -388,6 +389,11 @@ export function CommandPalette() {
                       <span className="relative z-10 min-w-0 shrink truncate text-[11.5px] leading-normal text-faint">
                         {item.path}
                       </span>
+                    )}
+                    {item.shortcut && (
+                      <kbd className="relative z-10 ml-auto shrink-0 rounded bg-sunken px-1.5 py-px font-sans text-[11px] font-medium text-muted">
+                        {item.shortcut}
+                      </kbd>
                     )}
                     {item.hint && (
                       <span className="relative z-10 ml-auto min-w-0 shrink-0 truncate pl-2 text-right text-[11.5px] text-faint">

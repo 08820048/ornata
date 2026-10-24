@@ -83,7 +83,7 @@ export function FindReplaceBar({
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder={t("find.placeholder")}
-          className="min-w-0 flex-1 rounded bg-bg px-2 py-1 text-[12.5px] text-ink outline-none placeholder:text-faint"
+          className="min-w-0 flex-1 rounded bg-sunken px-2 py-1 text-[12.5px] text-ink outline-none placeholder:text-faint"
           aria-label={t("find.placeholder")}
         />
         <span className="min-w-[52px] text-center text-[10.5px] tabular-nums text-faint">
@@ -116,7 +116,7 @@ export function FindReplaceBar({
             onChange={(event) => setReplacement(event.target.value)}
             onKeyDown={onKeyDown}
             placeholder={t("find.replaceWith")}
-            className="min-w-0 flex-1 rounded bg-bg px-2 py-1 text-[12.5px] text-ink outline-none placeholder:text-faint"
+            className="min-w-0 flex-1 rounded bg-sunken px-2 py-1 text-[12.5px] text-ink outline-none placeholder:text-faint"
             aria-label={t("find.replaceWith")}
           />
           <IconButton
