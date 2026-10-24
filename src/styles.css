@@ -691,7 +691,12 @@ body {
     display: grid;
     place-items: center;
     cursor: pointer;
-    user-select: none;
+    /* Must stay user-select: text, like the editor around it. The page above is
+       user-select: none, and in the built CSS (which gets the -webkit- prefix)
+       a none-inheriting widget inside a heading makes WebKit drop the whole
+       heading when an IME commit deletes its text; ProseMirror then reads that
+       as Enter and splits the block. */
+    user-select: text;
     color: var(--faint);
     font-size: 0.7em;
     opacity: 0;
