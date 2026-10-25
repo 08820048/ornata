@@ -9,13 +9,13 @@ export function LogoMark({
 }) {
   return (
     <Image
-      src="/ornata-mark-2026.png"
+      src="/ornata-avatar.png"
       alt=""
       width={size}
       height={size}
       priority={priority}
       aria-hidden="true"
-      className="shrink-0"
+      className="shrink-0 rounded-full"
     />
   );
 }
