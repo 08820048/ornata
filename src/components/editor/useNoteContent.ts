@@ -335,7 +335,6 @@ export function useNoteContentEffects({
     setProperties,
     setWords,
     outlineItems,
-    loadNonce,
   } = content;
   const t = useT();
   const outlineFrame = useRef<number | null>(null);
@@ -587,50 +586,6 @@ export function useNoteContentEffects({
       void reloadIfChanged();
     }
   }, [active, reloadIfChanged]);
-
-  // Quick capture: the main window routed a captured line here because Inbox
-  // is open in this pane — append to the pane's own content and save through
-  // its normal pipeline (single-writer rule).
-  const appendReq = useTabs((s) => s.appendReq);
-  const appliedAppendNonce = useRef(0);
-  useEffect(() => {
-    if (!appendReq || appendReq.key !== currentKey) return;
-    // Consume once — rawText is in the deps below (source mode reads it), and
-    // re-running on those changes would append the same line repeatedly.
-    if (appendReq.nonce === appliedAppendNonce.current) return;
-    // Wait until this pane has loaded its note; appending into an empty
-    // pre-load document would autosave over Inbox.md and wipe prior lines.
-    // Also skip burning the nonce when the editor is not ready yet.
-    if (loadedKey.current !== currentKey) return;
-    if (!markdownSource && (!editor || editor.isDestroyed)) return;
-
-    appliedAppendNonce.current = appendReq.nonce;
-    const line = appendReq.line;
-    // Clear the store request so a remounted pane cannot replay it.
-    if (useTabs.getState().appendReq?.nonce === appendReq.nonce) {
-      useTabs.setState({ appendReq: null });
-    }
-    if (markdownSource) {
-      const base = rawText.replace(/\n*$/, "");
-      const next = base ? `${base}\n${line}\n` : `${line}\n`;
-      setRawText(next);
-      const { frontmatter: fm, body } = splitFrontmatter(next);
-      frontmatter.current = fm;
-      pending.current = body;
-      debouncedPersist(body);
-      return;
-    }
-    // Narrowed above: editor is present when not in source mode.
-    const instance = editor!;
-    const end = instance.state.doc.content.size;
-    instance
-      .chain()
-      .insertContentAt(end, {
-        type: "paragraph",
-        content: [{ type: "text", text: line }],
-      })
-      .run();
-  }, [appendReq, currentKey, markdownSource, rawText, editor, setRawText, frontmatter, pending, debouncedPersist, loadNonce]);
 
   // Palette/menu "copy markdown / export / delete" actions routed through a
   // window event, so menus that outlive this pane can still target it.

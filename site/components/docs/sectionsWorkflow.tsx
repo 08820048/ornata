@@ -68,18 +68,14 @@ export const WORKFLOW: DocSection[] = [
   },
   {
     id: "daily",
-    title: "Daily notes, Inbox, tasks, templates",
-    lead: "Capture quickly, then come back to it.",
+    title: "Daily notes, tasks, templates",
+    lead: "Write it down, then come back to it.",
     body: (
       <>
         <Ul>
           <Li>
             <Kbd>⌘J</Kbd> opens today&apos;s note, <Code>journal/2026-10-18.md</Code> for example, creating it if needed. To
             start each day from a template, save one named <Code>daily</Code> (see below).
-          </Li>
-          <Li>
-            <strong className="font-medium text-foreground">Quick capture:</strong> <Kbd>⌘⌥J</Kbd> works from any app.
-            A small box appears; type a line and press Return. It is added to <Code>Inbox.md</Code> with the time.
           </Li>
           <Li>
             <strong className="font-medium text-foreground">Tasks:</strong> any <Code>- [ ]</Code> line (or{" "}
@@ -173,7 +169,7 @@ export const WORKFLOW: DocSection[] = [
           rows={[
             ["Off", "Nothing."],
             ["Read only (default)", "List, read, and search notes; see backlinks, open tasks, and daily notes."],
-            ["Read & write", "Also create, update, and append to notes, add to daily notes and Inbox, tick tasks. Every edit keeps the old text in the note's history."],
+            ["Read & write", "Also create, update, and append to notes, add to daily notes, tick tasks. Every edit keeps the old text in the note's history."],
             ["Full access", "Also rename, move, and delete. Deleted notes go to the Trash."],
           ]}
         />
@@ -197,7 +193,6 @@ export const WORKFLOW: DocSection[] = [
 ornata read projects/roadmap.md
 ornata tasks
 echo "ship it" | ornata journal add     # append to today's note
-ornata capture "buy milk"                # a timestamped line in Inbox.md
 ornata help`}</Pre>
       </>
     ),

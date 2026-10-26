@@ -51,15 +51,12 @@ export const WORKFLOW_ZH: DocSection[] = [
   },
   {
     id: "daily",
-    title: "日记、收件箱、待办、模板",
-    lead: "先快速记下，稍后再回来。",
+    title: "日记、待办、模板",
+    lead: "记下来，稍后再回来。",
     body: (
       <Ul>
         <Li>
           <Kbd>⌘J</Kbd> 打开今天的笔记，例如 <Code>journal/2026-10-18.md</Code>，没有就创建。想让每天从模板开始，保存一个名为 <Code>daily</Code> 的模板（见下）。
-        </Li>
-        <Li>
-          <B>快速记录：</B><Kbd>⌘⌥J</Kbd> 在任何应用里都可用。会弹出一个小框，输入一行并按回车，就带着时间追加到 <Code>Inbox.md</Code>。
         </Li>
         <Li>
           <B>待办：</B>任何 <Code>- [ ]</Code> 行（或 <Code>*</Code> 加空格）都是待办。边栏的「任务」行会按笔记分组列出整个笔记库里所有未完成的待办；在那里勾选，所在笔记里就同步完成。
@@ -136,7 +133,7 @@ export const WORKFLOW_ZH: DocSection[] = [
           rows={[
             ["关闭", "什么都不能做。"],
             ["只读（默认）", "列出、读取、搜索笔记；查看反向链接、未完成待办和日记。"],
-            ["读写", "还可以新建、更新、追加笔记，写入日记和收件箱，勾选待办。每次编辑都会把旧文本保留在笔记的历史里。"],
+            ["读写", "还可以新建、更新、追加笔记，写入日记，勾选待办。每次编辑都会把旧文本保留在笔记的历史里。"],
             ["完全访问", "还可以重命名、移动和删除。被删除的笔记进入废纸篓。"],
           ]}
         />
@@ -154,7 +151,6 @@ export const WORKFLOW_ZH: DocSection[] = [
 ornata read projects/roadmap.md
 ornata tasks
 echo "ship it" | ornata journal add     # 追加到今天的笔记
-ornata capture "buy milk"                # 在 Inbox.md 里记一行带时间的内容
 ornata help`}</Pre>
       </>
     ),

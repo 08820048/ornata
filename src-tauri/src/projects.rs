@@ -153,7 +153,7 @@ pub fn next_issue(issues: Vec<Issue>) -> Option<Issue> {
         })
 }
 
-/// The project's inbox note, where issues captured from elsewhere land.
+/// The note that holds a project's loose tasks, those added without a plan.
 pub const TASKS_NOTE: &str = "Tasks";
 /// What this note used to be called; projects that already have one keep using it.
 const LEGACY_TASKS_NOTE: &str = "Backlog";

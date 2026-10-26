@@ -22,7 +22,6 @@ const SHORTCUTS: Array<[string, string]> = [
   ["⌘↵", "在命令面板里：把结果在侧边打开"],
   ["⌘ 点击", "在笔记链接上：在侧边打开"],
   ["⌥↑  /  ⌥↓", "上移或下移块或列表项"],
-  ["⌘⌥J", "在任何应用里快速记录到收件箱"],
 ];
 
 export const REFERENCE_ZH: DocSection[] = [

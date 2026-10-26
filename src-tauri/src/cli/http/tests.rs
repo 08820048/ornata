@@ -142,7 +142,7 @@ fn access_is_read_per_request_so_settings_apply_at_once() {
     };
     let server = start(0, token(), provider).unwrap();
     let port = server.port();
-    let capture = rpc(2, "tools/call", json!({ "name": "capture", "arguments": { "text": "x" } }));
+    let capture = rpc(2, "tools/call", json!({ "name": "add_to_daily_note", "arguments": { "text": "x" } }));
     assert!(send(port, "POST", "/mcp", &[], &capture).body.contains("\"isError\":true"));
     level.store(2, Ordering::SeqCst);
     assert!(send(port, "POST", "/mcp", &[], &capture).body.contains("\"isError\":false"));

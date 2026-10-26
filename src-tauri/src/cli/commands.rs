@@ -6,7 +6,7 @@ use super::tools::{call, Level};
 use super::{mcp, vault_path};
 
 const COMMANDS: &[&str] = &[
-    "mcp", "vault", "list", "read", "search", "backlinks", "tasks", "daily", "journal", "capture", "create",
+    "mcp", "vault", "list", "read", "search", "backlinks", "tasks", "daily", "journal", "create",
     "append", "done",
 ];
 
@@ -26,7 +26,6 @@ COMMANDS
   tasks                       Every open task in the vault
   daily [--date YYYY-MM-DD]   Print a day's note
   journal add [text…]         Append to today's note (--date for another day)
-  capture [text…]             Add a timestamped line to Inbox.md
   create <title> [--dir DIR] [text…]   Create a note
   append <path> [text…]       Append to a note
   done <path> <line> <text…>  Tick an open task (values from `tasks`)
@@ -165,7 +164,6 @@ pub fn execute(
             }
             ("add_to_daily_note", with_date(json!({ "text": text(&words[1..], stdin)? })))
         }
-        "capture" => ("capture", json!({ "text": text(words, stdin)? })),
         "create" => {
             let title = first()?;
             let mut args = json!({ "title": title, "directory": parsed.flag("dir").unwrap_or("") });
@@ -224,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn daily_capture_create_append_roundtrip() {
+    fn daily_create_append_roundtrip() {
         let dir = tempdir().unwrap();
         ensure_layout(dir.path()).unwrap();
         let root = dir.path();
@@ -234,9 +232,6 @@ mod tests {
         run_cmd(root, w, "journal", &["add", "--date", "2026-10-18"], "- [ ] follow up\n").unwrap();
         let daily = run_cmd(root, w, "daily", &["--date", "2026-10-18"], "").unwrap();
         assert!(daily.contains("met Ada") && daily.contains("follow up"));
-
-        run_cmd(root, w, "capture", &["buy", "milk"], "").unwrap();
-        assert!(run_cmd(root, w, "read", &["Inbox.md"], "").unwrap().contains("buy milk"));
 
         run_cmd(root, w, "create", &["Plan", "--dir", ""], "# Plan\n- [ ] ship\n").unwrap();
         run_cmd(root, w, "append", &["Plan.md", "- [ ] test"], "").unwrap();
@@ -253,9 +248,8 @@ mod tests {
     fn writes_need_the_level_and_bad_input_is_explained() {
         let dir = tempdir().unwrap();
         ensure_layout(dir.path()).unwrap();
-        let err = run_cmd(dir.path(), Level::ReadOnly, "capture", &["x"], "").unwrap_err();
+        let err = run_cmd(dir.path(), Level::ReadOnly, "create", &["x"], "").unwrap_err();
         assert!(err.contains("Settings"));
-        assert!(run_cmd(dir.path(), Level::Write, "capture", &[], "").unwrap_err().contains("no text"));
         assert!(run_cmd(dir.path(), Level::Write, "journal", &["add", "x", "--date", "tomorrow"], "").unwrap_err().contains("date"));
         assert!(run_cmd(dir.path(), Level::Write, "read", &["../../etc/passwd"], "").is_err());
     }

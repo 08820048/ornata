@@ -91,7 +91,6 @@ pub fn tools() -> Vec<Tool> {
         tool("append_to_note", "Append Markdown to the end of a note.", Level::Write, object(json!({ "path": path, "content": text }), &["path", "content"])),
         tool("add_to_daily_note", "Append Markdown to a day's note, creating it from the daily template if needed.", Level::Write,
             object(json!({ "text": text, "date": date }), &["text"])),
-        tool("capture", "Add one timestamped line to Inbox.md.", Level::Write, object(json!({ "text": { "type": "string" } }), &["text"])),
         tool("complete_task", "Tick an open task. Pass the path, line, and text from list_tasks; refused if the line changed.", Level::Write,
             object(json!({ "path": path, "line": { "type": "integer" }, "text": { "type": "string" } }), &["path", "line", "text"])),
         tool("create_folder", "Create a folder.", Level::Write, object(json!({ "name": { "type": "string" }, "directory": { "type": "string" } }), &["name"])),
@@ -271,13 +270,6 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
             let template = templates::read_template(root, "daily").unwrap_or_default();
             let rel = ensure_note(root, "journal", &date, &template)?;
             append(root, &rel, arg(args, "text")?)?;
-            Ok(json!({ "path": rel }))
-        }
-        "capture" => {
-            let text = arg(args, "text")?.split_whitespace().collect::<Vec<_>>().join(" ");
-            vault_guard::contained_rel(root, "Inbox.md")?;
-            let rel = ensure_note(root, "", "Inbox", "")?;
-            append(root, &rel, &format!("- [{}] {text}", local("+%Y-%m-%d %H:%M")))?;
             Ok(json!({ "path": rel }))
         }
         "complete_task" => {

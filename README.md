@@ -49,7 +49,7 @@ Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes
 
 ## Command line & MCP
 
-Ornata can be driven by any AI agent that speaks [MCP](https://modelcontextprotocol.io) (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Claude Desktop, …) and from a terminal. The tools are the same either way: list, read, and search notes, backlinks, open tasks, daily notes, capture to `Inbox.md`; and, if you allow it, create, update, append, tick tasks, rename, move, and delete.
+Ornata can be driven by any AI agent that speaks [MCP](https://modelcontextprotocol.io) (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Claude Desktop, …) and from a terminal. The tools are the same either way: list, read, and search notes, backlinks, open tasks, daily notes; and, if you allow it, create, update, append, tick tasks, rename, move, and delete.
 
 **Connect an agent.** Click the plug in the status bar (or ⌘K → "MCP settings"), press **Connect**, and copy the line for your agent. It carries the access token the server requires, for example:
 
@@ -71,7 +71,6 @@ claude mcp add ornata -- "/Applications/Ornata.app/Contents/MacOS/Ornata" mcp
 ornata search "roadmap"
 ornata tasks
 echo "ship it" | ornata journal add     # append to today's note
-ornata capture "buy milk"                # timestamped line in Inbox.md
 ornata help
 ```
 

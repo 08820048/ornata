@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import "katex/dist/katex.min.css";
 import App from "./App";
 import { SettingsWindow } from "@/components/settings/SettingsWindow";
-import { QuickCapture } from "@/components/quick/QuickCapture";
 import { PrintView } from "@/components/print/PrintView";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { applyPalettes, applyTheme, cachedPalettes, cachedTheme } from "@/lib/theme";
@@ -33,8 +32,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ErrorBoundary>
       {windowKind === "settings" ? (
         <SettingsWindow />
-      ) : windowKind === "quick-capture" ? (
-        <QuickCapture />
       ) : windowKind === "print" ? (
         <PrintView />
       ) : (

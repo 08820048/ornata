@@ -148,27 +148,6 @@ export default function App() {
     };
   }, [status, t]);
 
-  // Quick capture (⌘⌥J) hands its text to this window — the single writer
-  // of the vault — which appends it to Inbox.md.
-  useEffect(() => {
-    if (status !== "ready") return;
-    let stop: (() => void) | undefined;
-    let cancelled = false;
-    listen<string>("ornata-quick-capture", ({ payload }) => {
-      // Rust emits a bare string (see quick_capture::submit_quick_capture).
-      void useVault.getState().appendQuickCapture(payload);
-    })
-      .then((unlisten) => {
-        if (cancelled) unlisten();
-        else stop = unlisten;
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-      stop?.();
-    };
-  }, [status]);
-
   // Pick up edits made outside the app when the window regains focus. The
   // Rust watcher (ornata-vault-changed) covers live changes while focused;
   // this catches anything missed when focus was elsewhere entirely.

@@ -22,7 +22,6 @@ mod pdf_export;
 #[cfg(target_os = "macos")]
 mod pdf_outline;
 mod print_export;
-mod quick_capture;
 mod reveal;
 mod search;
 mod tags;
@@ -60,14 +59,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(|app, _shortcut, event| {
-            // Only react to the press, not the release.
-            if event.state() == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                if let Err(err) = quick_capture::toggle(app) {
-                    eprintln!("quick capture: {err}");
-                }
-            }
-        }).build())
         .manage(AppState::default())
         .manage(watcher::SelfWrites::default())
         .manage(backup_commands::BackupGuard::default())
@@ -108,9 +99,6 @@ pub fn run() {
             commands::note_history,
             commands::list_unused_assets,
             commands::link_graph,
-            quick_capture::toggle_quick_capture,
-            quick_capture::submit_quick_capture,
-            quick_capture::dismiss_quick_capture,
             print_export::start_print_export,
             print_export::current_print_job,
             print_export::print_view_ready,
@@ -167,14 +155,6 @@ pub fn run() {
             settings_window::open_settings_window,
         ])
         .setup(|app| {
-            // The global shortcut is best-effort: registration can fail on a
-            // conflict or missing permission, and the app stays fully usable
-            // (the capture window remains reachable in-app if we add one).
-            use tauri_plugin_global_shortcut::GlobalShortcutExt;
-            let shortcut = if cfg!(target_os = "macos") { "cmd+alt+j" } else { "ctrl+alt+j" };
-            if let Err(err) = app.global_shortcut().register(shortcut) {
-                eprintln!("global shortcut {shortcut} unavailable: {err}");
-            }
             #[cfg(windows)]
             open_external(app.handle(), launch_paths(std::env::args()));
             // The MCP server comes back up if it was left on.
@@ -182,8 +162,8 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Closing the main window quits the whole app — the quick-capture
-            // window is not a standalone writer and must not outlive it.
+            // Closing the main window quits the whole app — the settings and
+            // print windows must not outlive it.
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { .. } = event {
                     window.app_handle().exit(0);

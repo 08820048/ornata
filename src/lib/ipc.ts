@@ -89,8 +89,6 @@ export const ipc = {
   noteHistory: (rel: string) => call<SnapshotMeta[]>("note_history", { rel }),
   listUnusedAssets: () => call<UnusedAsset[]>("list_unused_assets"),
   linkGraph: () => call<LinkGraph>("link_graph"),
-  submitQuickCapture: (text: string) =>
-    call<void>("submit_quick_capture", { text }),
   startPrintExport: (input: {
     markdown: string;
     vaultRoot: string;
@@ -116,8 +114,6 @@ export const ipc = {
     headings: OutlineEntry[];
   }) =>
     call<void>("print_view_ready", input),
-  dismissQuickCapture: () => call<void>("dismiss_quick_capture"),
-  toggleQuickCapture: () => call<void>("toggle_quick_capture"),
   trashAssets: (names: string[]) => call<number>("trash_assets", { names }),
   readAppData: (name: string) => call<string | null>("read_app_data", { name }),
   writeAppData: (name: string, content: string) =>

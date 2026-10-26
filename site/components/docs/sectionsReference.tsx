@@ -18,7 +18,6 @@ const SHORTCUTS: Array<[string, string]> = [
   ["⌘↵", "In the palette: open the result to the side"],
   ["⌘-click", "On a note link: open it to the side"],
   ["⌥↑  /  ⌥↓", "Move the block or list item up or down"],
-  ["⌘⌥J", "Quick capture to Inbox, from any app"],
 ];
 
 export const REFERENCE: DocSection[] = [

@@ -10,13 +10,12 @@ import type {
 } from "@/lib/types";
 
 /** Which of the two windows this JS context is running in. */
-export type WindowKind = "main" | "settings" | "quick-capture" | "print";
+export type WindowKind = "main" | "settings" | "print";
 
 export function currentWindowKind(): WindowKind {
   try {
     const label = getCurrentWindow().label;
     if (label === "settings") return "settings";
-    if (label === "quick-capture") return "quick-capture";
     if (label === "print") return "print";
     return "main";
   } catch {

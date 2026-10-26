@@ -1,5 +1,4 @@
 import {
-  IconBolt,
   IconCalendar,
   IconFilePlus,
   IconFileText,
@@ -142,12 +141,6 @@ export function CommandPalette() {
         label: t("templates.reveal"),
         icon: IconFolderOpen,
         run: () => void ipc.revealTemplates(),
-      },
-      {
-        id: "quick-capture",
-        label: t("daily.quickCapture"),
-        icon: IconBolt,
-        run: () => void ipc.toggleQuickCapture(),
       },
       {
         id: "link-graph",
