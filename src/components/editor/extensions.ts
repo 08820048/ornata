@@ -19,6 +19,7 @@ import { BrokenLinks } from "./brokenLinks";
 import { HeadingFold } from "./headingFold";
 import { MoveBlock } from "./moveBlock";
 import { FindReplace } from "./findReplace";
+import { SlashHighlight } from "./slashHighlight";
 import { WikiLink } from "./wikiLink";
 import { NonInclusiveLink } from "./link";
 import { t } from "@/stores/locale";
@@ -123,5 +124,6 @@ export function createExtensions(assetRoot: string) {
     BlockPlus,
     MoveBlock,
     FindReplace,
+    SlashHighlight,
   ];
 }

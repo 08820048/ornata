@@ -2,7 +2,7 @@ import { EditorContent } from "@tiptap/react";
 import {
   IconHistory,
 } from "@tabler/icons-react";
-import { lazy, memo, Suspense, useRef, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   joinFrontmatter,
@@ -25,6 +25,7 @@ import { NoteLinkPicker } from "./NoteLinkPicker";
 import { NoteProperties } from "./NoteProperties";
 import { SelectionMenu } from "./SelectionMenu";
 import { SlashMenu } from "./SlashMenu";
+import { slashHighlightKey } from "./slashHighlight";
 import { usePaneLinkClicks, usePaneRequests } from "./usePaneRequests";
 import {
   countWords,
@@ -115,6 +116,16 @@ export const NoteEditor = memo(function NoteEditor({
     setImageSource,
     setImageMenu,
   });
+
+  const slashRange = slashMenu?.range;
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(
+      editor.state.tr.setMeta(slashHighlightKey, {
+        range: slashRange ? { from: slashRange.from, to: slashRange.to } : null,
+      }),
+    );
+  }, [editor, slashRange?.from, slashRange?.to]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { reloadIfChanged, updateActiveOutline, selectOutlineItem } = useNoteContentEffects({
     editor,

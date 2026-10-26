@@ -784,6 +784,13 @@ body {
 .find-match {
     background: var(--hover);
 }
+.slash-trigger {
+    background: var(--active);
+    border-radius: 4px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding: 1px 0;
+}
 .find-match-current {
     background: var(--active);
     box-shadow: 0 0 0 1px var(--line);

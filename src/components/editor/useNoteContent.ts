@@ -214,14 +214,14 @@ export function useNoteContentState({
     const triggerIndex = textBefore.lastIndexOf(trigger);
     const from = position - (textBefore.length - triggerIndex);
     const coords = instance.view.coordsAtPos(position);
-    const menuHeight = 272;
+    const menuHeight = 288;
     const below = window.innerHeight - coords.bottom > menuHeight + 16;
     setSlashMenu({
       trigger,
       query: match[1] ?? "",
       range: { from, to: position },
       position: {
-        left: Math.max(12, Math.min(coords.left, window.innerWidth - 220)),
+        left: Math.max(12, Math.min(coords.left, window.innerWidth - 352)),
         top: below
           ? coords.bottom + 6
           : Math.max(12, coords.top - menuHeight - 6),
