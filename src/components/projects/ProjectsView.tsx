@@ -16,7 +16,7 @@ import { useT } from "@/stores/locale";
 import { useProjects } from "@/stores/projects";
 import { useVault } from "@/stores/vault";
 import { BoardView } from "./BoardView";
-import { AgentBadge, PRIORITIES, PRIORITY_ICONS, PriorityIcon, STATUSES, STATUS_ICONS, StatusIcon, nextStatus } from "./issueIcons";
+import { AgentBadge, PRIORITIES, PRIORITY_ICONS, PriorityIcon, STATUSES, STATUS_ICONS, StampLabel, StatusIcon, nextStatus } from "./issueIcons";
 
 type Filter = "open" | "all";
 
@@ -370,6 +370,7 @@ function IssueRow({
             {issue.due.slice(5)}
           </span>
         )}
+        <StampLabel issue={issue} />
         {issue.priority && <PriorityIcon priority={issue.priority} />}
       </button>
     </li>

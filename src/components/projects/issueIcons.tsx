@@ -3,6 +3,9 @@ import {
   IconAntennaBars2,
   IconAntennaBars3,
   IconAntennaBars5,
+  IconCalendarCheck,
+  IconCalendarPlus,
+  IconCalendarX,
   IconCircle,
   IconCircleCheckFilled,
   IconCircleHalf2,
@@ -10,7 +13,8 @@ import {
   IconRobot,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
-import type { IssuePriority, IssueStatus } from "@/lib/types";
+import { shownStamp, stampDay, stampText } from "@/lib/stamps";
+import type { Issue, IssuePriority, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 
@@ -79,6 +83,27 @@ export function AgentBadge({ name }: { name: string }) {
     >
       <IconRobot size={11} stroke={2} />
       {name}
+    </span>
+  );
+}
+
+/** Created / finished day of an issue; the full times are in the tooltip. */
+export function StampLabel({ issue }: { issue: Issue }) {
+  const t = useT();
+  const shown = shownStamp(issue);
+  if (!shown) return null;
+  const ended = issue.status === "done" || issue.status === "canceled";
+  const tip = [
+    issue.created && t("projects.stampCreated", { time: stampText(issue.created) }),
+    ended && issue.closed && t(issue.status === "done" ? "projects.stampDone" : "projects.stampCanceled", { time: stampText(issue.closed) }),
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const Icon = ended && issue.closed ? (issue.status === "done" ? IconCalendarCheck : IconCalendarX) : IconCalendarPlus;
+  return (
+    <span title={tip} className="flex shrink-0 items-center gap-0.5 text-[11px] tabular-nums text-faint">
+      <Icon size={12} stroke={1.75} />
+      {stampDay(shown)}
     </span>
   );
 }

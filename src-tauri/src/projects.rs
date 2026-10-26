@@ -179,7 +179,7 @@ pub fn add_issue(root: &Path, project_rel: &str, text: &str, status: IssueStatus
     if !content.is_empty() && !content.ends_with('\n') {
         content.push('\n');
     }
-    content.push_str(&format!("- {} {text}\n", status.mark()));
+    content.push_str(&format!("- {} {}\n", status.mark(), crate::issues::new_issue_text(text, status)));
     write_note(root, &rel, &content)?;
     Ok(rel)
 }
@@ -271,14 +271,17 @@ mod tests {
         let backlog = add_issue(root, &app, "first", IssueStatus::Todo).unwrap();
         assert_eq!(backlog, "App/Tasks.md");
         add_issue(root, &app, " second ", IssueStatus::Todo).unwrap();
-        assert_eq!(
-            crate::notes::read_note(root, &backlog).unwrap(),
-            "# Tasks\n\n- [ ] first\n- [ ] second\n"
-        );
+        let written = crate::notes::read_note(root, &backlog).unwrap();
+        let tasks = parse_issues(&backlog, &written);
+        assert_eq!(tasks.iter().map(|t| t.title.as_str()).collect::<Vec<_>>(), ["first", "second"]);
+        assert!(tasks.iter().all(|t| t.created.is_some() && t.closed.is_none()));
+        assert!(written.starts_with("# Tasks\n\n- [ ] first ◷"));
         add_issue(root, &app, "going", IssueStatus::Doing).unwrap();
         add_issue(root, &app, "finished", IssueStatus::Done).unwrap();
         let tail = crate::notes::read_note(root, &backlog).unwrap();
-        assert!(tail.contains("- [/] going\n") && tail.contains("- [x] finished\n"));
+        let tail = parse_issues(&backlog, &tail);
+        assert_eq!((tail[2].status, tail[2].closed.is_none()), (IssueStatus::Doing, true));
+        assert_eq!((tail[3].status, tail[3].closed.is_some()), (IssueStatus::Done, true));
         assert!(add_issue(root, &app, "a\nb", IssueStatus::Todo).is_err());
         assert!(add_issue(root, "Plain", "x", IssueStatus::Todo).is_err());
 

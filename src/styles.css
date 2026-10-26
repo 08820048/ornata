@@ -1536,6 +1536,13 @@ body {
 .prose-note ul[data-type="taskList"] input:checked + span::after {
     opacity: 1;
 }
+/* when a task was made / finished: bookkeeping, kept quiet */
+.prose-note .task-stamp {
+    color: var(--faint);
+    font-size: 0.82em;
+    font-variant-numeric: tabular-nums;
+}
+
 /* in progress: the same box with a play triangle; canceled: the same box with a diagonal stroke */
 .prose-note ul[data-type="taskList"] li[data-status="doing"] > label span::after {
     left: 50%;

@@ -43,8 +43,10 @@ and edit it directly with ordinary file tools.
 A folder holding a `.ornata-project` file is a project. Its issues are the task
 lines of the notes inside it: `- [ ]` todo, `- [/]` in progress, `- [x]` done,
 `- [-]` canceled. Inline tokens: `#tag`, `!urgent|!high|!medium|!low`,
-`@2026-11-10`, and `+name` (an agent working on it). Plain bullets indented
-under a task are its decision notes. Prefer the MCP tools (`list_issues`,
+`@2026-11-10`, `+name` (an agent working on it), and the times Ornata keeps:
+`◷2026-10-26T14:30` created, `✓…` done, `✗…` canceled (leave them as they are;
+the tools write and clear them). Plain bullets indented under a task are its
+decision notes. Prefer the MCP tools (`list_issues`,
 `next_issue`, `claim_issue`, `add_decision`, `set_issue_status`,
 `set_issue_priority`) over editing those lines by hand.
 

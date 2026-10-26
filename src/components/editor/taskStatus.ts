@@ -1,5 +1,9 @@
 import { Extension, InputRule, type Editor } from "@tiptap/core";
 import TaskItem from "@tiptap/extension-task-item";
+import type { Node as PMNode } from "@tiptap/pm/model";
+import { Plugin, type Transaction } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { stampNow } from "@/lib/stamps";
 import TaskList from "@tiptap/extension-task-list";
 
 /**
@@ -26,6 +30,50 @@ type Tokenizer = {
 
 const base = (TaskList.config as unknown as { markdownTokenizer: Tokenizer }).markdownTokenizer;
 
+const STAMP = "\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2})?";
+const CLOSING = new RegExp(`(?:^|\\s)[✓✗]${STAMP}(?=\\s|$)`, "g");
+const ANY_STAMP = new RegExp(`[◷✓✗]${STAMP}`, "g");
+
+/**
+ * Keep the item's `✓time` in step with its box: ticking adds when it was done,
+ * un-ticking removes it, like the project views and agents do. The stamp is
+ * ordinary text at the end of the item's first line.
+ */
+function restampItem(tr: Transaction, at: number, done: boolean) {
+  const item = tr.doc.nodeAt(at);
+  const line = item?.firstChild;
+  if (!item || !line || line.type.name !== "paragraph") return;
+  const start = at + 2;
+  const ranges: Array<[number, number]> = [];
+  line.descendants((child, offset) => {
+    if (!child.isText || !child.text) return;
+    for (const m of child.text.matchAll(CLOSING)) {
+      const from = start + offset + (m.index ?? 0);
+      ranges.push([from, from + m[0].length]);
+    }
+  });
+  let end = start + line.content.size;
+  for (const [from, to] of ranges.reverse()) {
+    tr.delete(from, to);
+    end -= to - from;
+  }
+  if (done) tr.insert(end, tr.doc.type.schema.text(`${end > start ? " " : ""}✓${stampNow()}`));
+}
+
+/** Dim the `◷` `✓` `✗` times in task lines: they are the app's bookkeeping, not prose. */
+function stampDecorations(doc: PMNode) {
+  const found: Decoration[] = [];
+  doc.descendants((node, pos, parent) => {
+    if (node.type.name === "paragraph" && parent?.type.name !== "taskItem") return false;
+    if (!node.isText || !node.text) return;
+    for (const m of node.text.matchAll(ANY_STAMP)) {
+      const from = pos + (m.index ?? 0);
+      found.push(Decoration.inline(from, from + m[0].length, { class: "task-stamp" }));
+    }
+  });
+  return DecorationSet.create(doc, found);
+}
+
 export const TaskListStatus = TaskList.extend({
   markdownTokenizer: {
     ...base,
@@ -49,6 +97,18 @@ export const TaskItemStatus = TaskItem.extend({
         renderHTML: (attrs: Record<string, unknown>) => (attrs.status ? { "data-status": attrs.status } : {}),
       },
     };
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        state: {
+          init: (_, { doc }) => stampDecorations(doc),
+          apply: (tr, old) => (tr.docChanged ? stampDecorations(tr.doc) : old),
+        },
+        props: { decorations(state) { return this.getState(state); } },
+      }),
+    ];
   },
 
   parseMarkdown(token, h) {
@@ -94,6 +154,7 @@ export const TaskItemStatus = TaskItem.extend({
             const at = getPos();
             if (typeof at !== "number") return false;
             tr.setNodeMarkup(at, undefined, { ...tr.doc.nodeAt(at)?.attrs, checked, status: null });
+            restampItem(tr, at, checked);
             return true;
           })
           .run();

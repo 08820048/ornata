@@ -71,8 +71,10 @@ describe("task statuses", () => {
     expect(editor.view.dom.querySelector("li")?.getAttribute("data-status")).toBe("doing");
     input.checked = true;
     input.dispatchEvent(new Event("change"));
-    expect(items(editor)).toEqual([{ checked: true, status: null, text: "doing" }]);
-    expect(editor.getMarkdown()).toContain("- [x] doing");
+    const [item] = items(editor);
+    expect({ checked: item.checked, status: item.status }).toEqual({ checked: true, status: null });
+    expect(item.text).toMatch(/^doing ✓\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+    expect(editor.getMarkdown()).toMatch(/- \[x\] doing ✓/);
     editor.destroy();
   });
 
@@ -105,6 +107,45 @@ describe("task statuses", () => {
     expect(editor.isActive("codeBlock")).toBe(true);
     type(editor, "[/] ");
     expect(items(editor)).toEqual([]);
+    editor.destroy();
+  });
+});
+
+describe("task times", () => {
+  test("ticking a task stamps when it was done; un-ticking removes it", () => {
+    const editor = make("- [ ] ship it ◷2026-10-26T09:05\n");
+    const input = () => editor.view.dom.querySelector("input") as HTMLInputElement;
+    const line = () => editor.state.doc.firstChild?.firstChild?.firstChild?.textContent ?? "";
+
+    input().checked = true;
+    input().dispatchEvent(new Event("change"));
+    expect(line()).toMatch(/^ship it ◷2026-10-26T09:05 ✓\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+    expect(editor.getMarkdown()).toMatch(/- \[x\] ship it ◷2026-10-26T09:05 ✓\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+
+    input().checked = false;
+    input().dispatchEvent(new Event("change"));
+    expect(line()).toBe("ship it ◷2026-10-26T09:05");
+    editor.destroy();
+  });
+
+  test("an older day-only stamp is replaced, and an empty task gets no stray space", () => {
+    const editor = make("- [x] old ✓2026-09-01\n");
+    const input = editor.view.dom.querySelector("input") as HTMLInputElement;
+    input.checked = false;
+    input.dispatchEvent(new Event("change"));
+    expect(editor.state.doc.firstChild?.firstChild?.firstChild?.textContent).toBe("old");
+    input.checked = true;
+    input.dispatchEvent(new Event("change"));
+    const text = editor.state.doc.firstChild?.firstChild?.firstChild?.textContent ?? "";
+    expect(text).toMatch(/^old ✓\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+    expect(text).not.toContain("2026-09-01");
+    editor.destroy();
+  });
+
+  test("the times in a task line are styled as quiet bookkeeping", () => {
+    const editor = make("- [ ] a ◷2026-10-26T09:05 b\n\nplain ◷2026-10-26T09:05\n");
+    const spans = [...editor.view.dom.querySelectorAll(".task-stamp")].map((el) => el.textContent);
+    expect(spans).toEqual(["◷2026-10-26T09:05"]);
     editor.destroy();
   });
 });

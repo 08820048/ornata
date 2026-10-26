@@ -193,6 +193,10 @@ export interface Issue {
   tags: string[];
   /** Agent working on it (`+name` on the line), if one claimed it. */
   agent: string | null;
+  /** When it was created, `YYYY-MM-DDTHH:MM` (the `◷…` on the line); absent for tasks typed by hand. */
+  created: string | null;
+  /** When it was marked done or canceled (`✓…` / `✗…`); older lines carry only the day. */
+  closed: string | null;
   /** Plain bullets indented under the task. */
   notes: string[];
   depth: number;

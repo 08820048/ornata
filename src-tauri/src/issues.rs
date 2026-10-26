@@ -66,6 +66,10 @@ pub struct Issue {
     pub tags: Vec<String>,
     /// Who is working on it: an inline `+name` token, set when an agent claims it.
     pub agent: Option<String>,
+    /// When it was created, `YYYY-MM-DDTHH:MM` (inline `◷…`), if it was made through the app or an agent.
+    pub created: Option<String>,
+    /// When it was marked done or canceled (inline `✓…` / `✗…`); older lines carry only the day.
+    pub closed: Option<String>,
     /// Plain bullets indented under the task (decision notes).
     pub notes: Vec<String>,
     /// Nesting level among tasks (0 = top level).
@@ -147,12 +151,97 @@ struct Tokens {
     due: Option<String>,
     tags: Vec<String>,
     agent: Option<String>,
+    created: Option<String>,
+    closed: Option<String>,
 }
 
-/// Older versions stamped finished tasks with `✓YYYY-MM-DD`; it is still
-/// kept out of titles.
-fn completion_token(word: &str) -> bool {
-    word.strip_prefix('✓').is_some_and(is_date)
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Stamp {
+    Created,
+    Done,
+    Canceled,
+}
+
+impl Stamp {
+    fn glyph(self) -> char {
+        match self {
+            Self::Created => '◷',
+            Self::Done => '✓',
+            Self::Canceled => '✗',
+        }
+    }
+
+    /// The stamp that goes with a task that has just been marked `status`.
+    fn closing(status: IssueStatus) -> Option<Self> {
+        match status {
+            IssueStatus::Done => Some(Self::Done),
+            IssueStatus::Canceled => Some(Self::Canceled),
+            _ => None,
+        }
+    }
+}
+
+/// `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`.
+fn is_stamp_time(s: &str) -> bool {
+    s.is_ascii()
+        && match s.len() {
+            10 => is_date(s),
+            16 => {
+                let b = s.as_bytes();
+                is_date(&s[..10])
+                    && b[10] == b'T'
+                    && b[11..13].iter().chain(&b[14..16]).all(u8::is_ascii_digit)
+                    && b[13] == b':'
+            }
+            _ => false,
+        }
+}
+
+/// `◷2026-10-26T14:30` created, `✓…` done, `✗…` canceled.
+fn stamp_token(word: &str) -> Option<(Stamp, &str)> {
+    [Stamp::Created, Stamp::Done, Stamp::Canceled]
+        .into_iter()
+        .find_map(|kind| word.strip_prefix(kind.glyph()).filter(|t| is_stamp_time(t)).map(|t| (kind, t)))
+}
+
+fn is_closing_stamp(word: &str) -> bool {
+    matches!(stamp_token(word), Some((Stamp::Done | Stamp::Canceled, _)))
+}
+
+/// Now, to the minute, in local time.
+pub fn now_stamp() -> String {
+    chrono::Local::now().format("%Y-%m-%dT%H:%M").to_string()
+}
+
+/// A new task line's text: `text` plus its creation time, and for a task
+/// that starts out done or canceled the matching closing time too.
+pub fn new_issue_text(text: &str, status: IssueStatus) -> String {
+    let now = now_stamp();
+    let mut out = format!("{} {}{now}", text.trim(), Stamp::Created.glyph());
+    if let Some(closing) = Stamp::closing(status) {
+        out.push_str(&format!(" {}{now}", closing.glyph()));
+    }
+    out
+}
+
+/// `text` as it should read once the task has become `status`: the closing
+/// time of that status is kept if there already, added if not; the other
+/// closing time goes; a claim goes unless the task is in progress.
+fn restamped(text: &str, status: IssueStatus) -> String {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let keep_closing = Stamp::closing(status).and_then(|want| {
+        words.iter().find(|w| stamp_token(w).is_some_and(|(kind, _)| kind == want)).map(|w| w.to_string())
+    });
+    let mut out: Vec<String> = words
+        .iter()
+        .filter(|w| !is_closing_stamp(w))
+        .filter(|w| status == IssueStatus::Doing || agent_token(w).is_none())
+        .map(|w| w.to_string())
+        .collect();
+    if let Some(closing) = Stamp::closing(status) {
+        out.push(keep_closing.unwrap_or_else(|| format!("{}{}", closing.glyph(), now_stamp())));
+    }
+    out.join(" ")
 }
 
 /// `+claude-code`: a plus, a letter, then word characters.
@@ -163,14 +252,16 @@ fn agent_token(word: &str) -> Option<&str> {
 }
 
 fn tokens(text: &str) -> Tokens {
-    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None };
+    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None, created: None, closed: None };
     let mut kept: Vec<&str> = Vec::new();
     for word in text.split_whitespace() {
         if let Some(priority) = priority_token(word) {
             out.priority.get_or_insert(priority);
             continue;
         }
-        if completion_token(word) {
+        if let Some((kind, time)) = stamp_token(word) {
+            let slot = if kind == Stamp::Created { &mut out.created } else { &mut out.closed };
+            slot.get_or_insert_with(|| time.to_string());
             continue;
         }
         if let Some(name) = agent_token(word) {
@@ -226,6 +317,8 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
                 due: t.due,
                 tags: t.tags,
                 agent: t.agent,
+                created: t.created,
+                closed: t.closed,
                 notes: Vec::new(),
                 depth: stack.len(),
             });
@@ -269,7 +362,7 @@ fn read_lines(root: &Path, rel: &str) -> AppResult<Vec<String>> {
 
 /// Rewrite the box of the task at `line` to `status`, provided the line still
 /// reads `text` — guards against the note changing since it was listed.
-/// Leaving "doing" drops the claim token. `forced` keeps a history snapshot
+/// Leaving "doing" drops the claim; closing a task stamps when, and reopening it removes that. `forced` keeps a history snapshot
 /// of what was replaced (agent writes).
 pub fn set_issue_status(
     root: &Path,
@@ -280,9 +373,8 @@ pub fn set_issue_status(
     forced: bool,
 ) -> AppResult<()> {
     rewrite(root, rel, line, text, forced, |task| {
-        let claimed = task.text.split_whitespace().any(|w| agent_token(w).is_some());
-        let unclaimed = || task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect::<Vec<_>>().join(" ");
-        (status, (claimed && status != IssueStatus::Doing).then(unclaimed))
+        let next = restamped(task.text, status);
+        (status, (next != task.text).then_some(next))
     })
 }
 
@@ -300,7 +392,7 @@ pub fn claim_issue(
         return Err(AppError::InvalidInput("agent name must start with a letter".into()));
     }
     rewrite(root, rel, line, text, forced, |task| {
-        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect();
+        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none() && !is_closing_stamp(w)).collect();
         (IssueStatus::Doing, Some(format!("{} +{name}", rest.join(" "))))
     })
 }
@@ -415,6 +507,21 @@ mod tests {
     use crate::vault::ensure_layout;
     use tempfile::tempdir;
 
+    /// `s` without any stamp words, so line shapes can be compared exactly.
+    fn bare(s: &str) -> String {
+        let mut out = s.to_string();
+        for glyph in ['◷', '✓', '✗'] {
+            while let Some(at) = out.find(glyph) {
+                let rest = &out[at + glyph.len_utf8()..];
+                let len = [16, 10].into_iter().find(|n| rest.get(..*n).is_some_and(is_stamp_time));
+                let Some(len) = len else { break };
+                let start = if out[..at].ends_with(' ') { at - 1 } else { at };
+                out.replace_range(start..at + glyph.len_utf8() + len, "");
+            }
+        }
+        out
+    }
+
     #[test]
     fn parses_status_tokens_and_notes() {
         let md = "# Plan\n- [ ] Loose\n## V1\n- [ ] Fix graph #Bug !high @2026-11-01\n  - decided: keep it\n  - [/] Sub task\n    - inner note\n- [x] Shipped\n- [-] Dropped\n```\n- [ ] code\n```\n## V2\n* [X] Later\nprose\n  - stray\n";
@@ -478,9 +585,9 @@ mod tests {
         assert!(set_issue_status(root, &rel, 0, "Other", IssueStatus::Done, false).is_err());
         set_issue_status(root, &rel, 0, "Draft", IssueStatus::Doing, false).unwrap();
         set_issue_status(root, &rel, 1, "Nested", IssueStatus::Canceled, false).unwrap();
-        assert_eq!(read_note(root, &rel).unwrap(), "- [/] Draft\r\n  * [-] Nested\n");
+        assert_eq!(bare(&read_note(root, &rel).unwrap()), "- [/] Draft\r\n  * [-] Nested\n");
         set_issue_status(root, &rel, 0, "Draft", IssueStatus::Todo, false).unwrap();
-        assert_eq!(read_note(root, &rel).unwrap(), "- [ ] Draft\r\n  * [-] Nested\n");
+        assert_eq!(bare(&read_note(root, &rel).unwrap()), "- [ ] Draft\r\n  * [-] Nested\n");
     }
 
     #[test]
@@ -506,8 +613,66 @@ mod tests {
 
         set_issue_status(root, &rel, 1, "Draft #a +claude-code", IssueStatus::Done, true).unwrap();
         let done = read_note(root, &rel).unwrap();
-        assert!(done.contains("- [x] Draft #a\n"), "{done}");
+        assert!(bare(&done).contains("- [x] Draft #a\n"), "{done}");
+        assert!(!done.contains("+claude-code"));
         assert!(claim_issue(root, &rel, 1, "Draft #a", "9bad", true).is_err());
+    }
+
+    #[test]
+    fn stamps_follow_the_status() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let rel = create_note(root, "", "Plan").unwrap();
+        write_note(root, &rel, "- [ ] Fix #bug ◷2026-10-26T09:05 !high\n").unwrap();
+        let issue = |root: &Path| parse_issues(&rel, &read_note(root, &rel).unwrap()).remove(0);
+        let text = |root: &Path| issue(root).text;
+
+        let first = issue(root);
+        assert_eq!((first.created.as_deref(), first.closed.as_deref()), (Some("2026-10-26T09:05"), None));
+        assert_eq!(first.title, "Fix");
+
+        set_issue_status(root, &rel, 0, &text(root), IssueStatus::Done, false).unwrap();
+        let done = issue(root);
+        let closed = done.closed.clone().unwrap();
+        assert_eq!(closed.len(), 16);
+        assert_eq!(done.created.as_deref(), Some("2026-10-26T09:05"));
+        assert!(read_note(root, &rel).unwrap().contains(&format!("✓{closed}")));
+
+        // Done again keeps the original time; canceling swaps ✓ for ✗.
+        set_issue_status(root, &rel, 0, &text(root), IssueStatus::Done, false).unwrap();
+        assert_eq!(issue(root).closed, Some(closed));
+        set_issue_status(root, &rel, 0, &text(root), IssueStatus::Canceled, false).unwrap();
+        let note = read_note(root, &rel).unwrap();
+        assert!(note.contains('✗') && !note.contains('✓'));
+        assert_eq!(issue(root).status, IssueStatus::Canceled);
+
+        // Reopening drops the closing time but keeps when it was created and the rest.
+        set_issue_status(root, &rel, 0, &text(root), IssueStatus::Todo, false).unwrap();
+        let reopened = issue(root);
+        assert_eq!((reopened.closed, reopened.created.as_deref()), (None, Some("2026-10-26T09:05")));
+        assert_eq!(reopened.priority, Some(Priority::High));
+        assert_eq!(reopened.tags, ["bug"]);
+    }
+
+    #[test]
+    fn older_day_only_stamps_still_count_and_stay_out_of_titles() {
+        let issues = parse_issues("p.md", "- [x] Old ✓2026-09-01\n- [ ] Mixed ◷2026-10-01 ✓2026-10-02T08:00 x ✓nope\n");
+        assert_eq!((issues[0].title.as_str(), issues[0].closed.as_deref()), ("Old", Some("2026-09-01")));
+        assert_eq!(issues[1].title, "Mixed x ✓nope");
+        assert_eq!((issues[1].created.as_deref(), issues[1].closed.as_deref()), (Some("2026-10-01"), Some("2026-10-02T08:00")));
+    }
+
+    #[test]
+    fn new_tasks_are_created_stamped() {
+        let open = new_issue_text(" ship it ", IssueStatus::Todo);
+        assert!(open.starts_with("ship it ◷") && open.chars().count() == "ship it ◷".chars().count() + 16);
+        let done = new_issue_text("ship it", IssueStatus::Done);
+        let task = parse_issues("p.md", &format!("- [x] {done}\n")).remove(0);
+        assert_eq!(task.title, "ship it");
+        assert_eq!(task.created, task.closed);
+        let canceled = parse_issues("p.md", &format!("- [-] {}\n", new_issue_text("x", IssueStatus::Canceled))).remove(0);
+        assert!(canceled.created.is_some() && canceled.closed.is_some());
     }
 
     #[test]

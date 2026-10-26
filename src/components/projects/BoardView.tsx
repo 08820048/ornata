@@ -18,7 +18,7 @@ import { hrefToRel } from "@/lib/noteLinks";
 import type { Issue, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
-import { AgentBadge, PriorityIcon, STATUSES, StatusIcon } from "./issueIcons";
+import { AgentBadge, PriorityIcon, STATUSES, StampLabel, StatusIcon } from "./issueIcons";
 
 const keyOf = (issue: Issue) => `${issue.rel}:${issue.line}`;
 
@@ -173,6 +173,7 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
           </span>
         ))}
         {issue.due && <span className="shrink-0 tabular-nums">{issue.due.slice(5)}</span>}
+        <StampLabel issue={issue} />
         {issue.priority && <PriorityIcon priority={issue.priority} />}
       </div>
     </div>
