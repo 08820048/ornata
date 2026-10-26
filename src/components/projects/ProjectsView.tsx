@@ -113,7 +113,7 @@ export function ProjectsView({ active }: { active: boolean }) {
   const promote = async (issue: Issue) => {
     if (!selected) return;
     try {
-      const rel = await promoteIssue(selected, issue);
+      const rel = await promoteIssue(selected, issue, t("projects.source"));
       notifyNotesChanged();
       setNonce((n) => n + 1);
       void useProjects.getState().load();

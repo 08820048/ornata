@@ -488,8 +488,9 @@ pub fn create_issue_note(
     state: State<'_, AppState>,
     project: String,
     title: String,
+    body: Option<String>,
 ) -> AppResult<String> {
-    projects::create_issue_note(&state.root()?, &project, &title)
+    projects::create_issue_note(&state.root()?, &project, &title, body.as_deref().unwrap_or(""))
 }
 
 #[tauri::command]

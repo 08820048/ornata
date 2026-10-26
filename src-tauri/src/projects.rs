@@ -211,9 +211,11 @@ pub fn create_project_doc(
 }
 
 /// The page for an issue promoted out of a task line: a note named after it
-/// in the project's `issues/` folder, starting with its title.
-pub fn create_issue_note(root: &Path, project_rel: &str, title: &str) -> AppResult<String> {
-    create_project_doc(root, project_rel, "issues", title, &format!("# {}\n\n", title.trim()))
+/// in the project's `issues/` folder, starting with its title and then `body`.
+pub fn create_issue_note(root: &Path, project_rel: &str, title: &str, body: &str) -> AppResult<String> {
+    let body = body.trim();
+    let tail = if body.is_empty() { String::new() } else { format!("{body}\n\n") };
+    create_project_doc(root, project_rel, "issues", title, &format!("# {}\n\n{tail}", title.trim()))
 }
 
 #[cfg(test)]
@@ -249,11 +251,11 @@ mod tests {
         assert_eq!(names, [("App", 0), ("Sub", 1)]);
         assert_eq!(project_issues(root, &app).unwrap().len(), 3);
 
-        let page = create_issue_note(root, &app, "Fix: graph/search").unwrap();
+        let page = create_issue_note(root, &app, "Fix: graph/search", "").unwrap();
         assert_eq!(page, "App/issues/Fix graph search.md");
-        assert_eq!(create_issue_note(root, &app, "Fix: graph/search").unwrap(), "App/issues/Fix graph search 2.md");
+        assert_eq!(create_issue_note(root, &app, "Fix: graph/search", "Source: x").unwrap(), "App/issues/Fix graph search 2.md");
         assert_eq!(crate::notes::read_note(root, &page).unwrap(), "# Fix: graph/search\n\n");
-        assert!(create_issue_note(root, "Plain", "x").is_err());
+        assert!(create_issue_note(root, "Plain", "x", "").is_err());
         let review = create_project_doc(root, &app, "Reviews", "Review", "# R\n").unwrap();
         assert_eq!(review, "App/Reviews/Review.md");
         assert!(create_project_doc(root, &app, "../x", "t", "").is_err());

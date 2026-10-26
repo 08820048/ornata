@@ -77,7 +77,7 @@ function Column({
     <section
       ref={setNodeRef}
       className={cx(
-        "min-h-[160px] rounded-lg p-1.5 transition-colors duration-100",
+        "min-h-[160px] min-w-0 rounded-lg p-1.5 transition-colors duration-100",
         isOver ? "bg-active" : "bg-sunken/60",
       )}
     >
@@ -147,13 +147,13 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
     <div
       onClick={() => (target ? openNoteAt(target, target) : openNoteAt(issue.rel, issue.rel, issue.title))}
       className={cx(
-        "cursor-pointer rounded-md border border-line-soft bg-bg px-2.5 py-2 transition-colors duration-100 hover:border-line",
+        "min-w-0 cursor-pointer overflow-hidden rounded-md border border-line-soft bg-bg px-2.5 py-2 transition-colors duration-100 hover:border-line",
         overlay && "shadow-lg shadow-black/10",
       )}
     >
       <div
         className={cx(
-          "text-[13px] leading-[1.45]",
+          "line-clamp-4 text-[13px] leading-[1.45] [overflow-wrap:anywhere]",
           closed ? "text-faint" : "text-ink",
           issue.status === "canceled" && "line-through",
         )}

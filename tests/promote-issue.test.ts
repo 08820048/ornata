@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { isPromoted, promotedText } from "../src/lib/promoteIssue";
+import { isPromoted, promotedText, splitSource } from "../src/lib/promoteIssue";
 import type { Issue } from "../src/lib/types";
 
 const issue = (over: Partial<Issue>): Issue => ({
@@ -25,4 +25,19 @@ test("an issue that is just a link counts as promoted", () => {
   expect(isPromoted(issue({ title: "[Spec](issues/Spec.md)" }))).toBe(true);
   expect(isPromoted(issue({ title: "Spec" }))).toBe(false);
   expect(isPromoted(issue({ title: "See [Spec](a.md) now" }))).toBe(false);
+});
+
+test("the link back to where a task came from is its source, not part of its name", () => {
+  const title = "Polish the graph [Ornata plan](10-%E9%A1%B9/Ornata%20plan.md)";
+  expect(splitSource(title)).toEqual({
+    text: "Polish the graph",
+    source: { label: "Ornata plan", href: "10-%E9%A1%B9/Ornata%20plan.md" },
+  });
+  // A line that is only a link has no separate source.
+  expect(splitSource("[Spec](a.md)")).toEqual({ text: "[Spec](a.md)", source: null });
+  expect(splitSource("plain")).toEqual({ text: "plain", source: null });
+
+  const out = promotedText(issue({ title, priority: null, due: null, tags: [] }), "P/issues/Polish the graph.md");
+  expect(out).toBe("[Polish the graph](P/issues/Polish%20the%20graph.md)");
+  expect(out).not.toContain("%E9");
 });
