@@ -134,20 +134,13 @@ pub fn set_project(root: &Path, rel: &str, on: bool) -> AppResult<()> {
 /// The issue to work on next: anything already in progress first, then open
 /// ones by priority, due date, and document order.
 pub fn next_issue(issues: Vec<Issue>) -> Option<Issue> {
-    let rank = |p: Option<Priority>| match p {
-        Some(Priority::Urgent) => 0,
-        Some(Priority::High) => 1,
-        Some(Priority::Medium) => 2,
-        Some(Priority::Low) => 3,
-        None => 4,
-    };
     issues
         .into_iter()
         .filter(|i| matches!(i.status, IssueStatus::Todo | IssueStatus::Doing))
         .min_by_key(|i| {
             (
                 i.status != IssueStatus::Doing,
-                rank(i.priority),
+                Priority::rank(i.priority),
                 i.due.clone().unwrap_or_else(|| "9999".into()),
             )
         })
@@ -159,7 +152,7 @@ pub const TASKS_NOTE: &str = "Tasks";
 const LEGACY_TASKS_NOTE: &str = "Backlog";
 
 /// Append a task with `status` to the project's `Tasks.md` (created on first
-/// use). It only says where the line is stored — the status is the box. A done task gets today's completion stamp. Returns the note's
+/// use). It only says where the line is stored — the status is the box. Returns the note's
 /// rel path.
 pub fn add_issue(root: &Path, project_rel: &str, text: &str, status: IssueStatus) -> AppResult<String> {
     let text = text.trim();
@@ -186,8 +179,7 @@ pub fn add_issue(root: &Path, project_rel: &str, text: &str, status: IssueStatus
     if !content.is_empty() && !content.ends_with('\n') {
         content.push('\n');
     }
-    let stamp = if status == IssueStatus::Done { format!(" ✓{}", crate::issues::today()) } else { String::new() };
-    content.push_str(&format!("- {} {text}{stamp}\n", status.mark()));
+    content.push_str(&format!("- {} {text}\n", status.mark()));
     write_note(root, &rel, &content)?;
     Ok(rel)
 }
@@ -286,7 +278,7 @@ mod tests {
         add_issue(root, &app, "going", IssueStatus::Doing).unwrap();
         add_issue(root, &app, "finished", IssueStatus::Done).unwrap();
         let tail = crate::notes::read_note(root, &backlog).unwrap();
-        assert!(tail.contains("- [/] going\n") && tail.contains(&format!("- [x] finished ✓{}\n", crate::issues::today())));
+        assert!(tail.contains("- [/] going\n") && tail.contains("- [x] finished\n"));
         assert!(add_issue(root, &app, "a\nb", IssueStatus::Todo).is_err());
         assert!(add_issue(root, "Plain", "x", IssueStatus::Todo).is_err());
 

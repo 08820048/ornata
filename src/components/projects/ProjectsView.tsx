@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { IconCalendarStats, IconClipboardCopy, IconFileDescription, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
+import { IconCircleOff, IconClipboardCopy, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
 import { openNoteAt } from "@/components/editor/NoteBacklinks";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -8,53 +8,43 @@ import { parseInline } from "@/lib/inlineMarkdown";
 import { ipc } from "@/lib/ipc";
 import { hrefToRel } from "@/lib/noteLinks";
 import { agentBrief } from "@/lib/agentBrief";
-import { changelogDraft, createDoc, todayIso, weeklyReview } from "@/lib/projectDocs";
 import { isPromoted, promoteIssue } from "@/lib/promoteIssue";
 import { NOTES_CHANGED, notifyNotesChanged } from "@/lib/vaultEvents";
-import type { Issue, IssueStatus } from "@/lib/types";
+import type { Issue, IssuePriority, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 import { useProjects } from "@/stores/projects";
 import { useVault } from "@/stores/vault";
 import { BoardView } from "./BoardView";
-import { AgentBadge, PriorityIcon, STATUSES, STATUS_ICONS, StatusIcon, nextStatus } from "./issueIcons";
+import { AgentBadge, PRIORITIES, PRIORITY_ICONS, PriorityIcon, STATUSES, STATUS_ICONS, StatusIcon, nextStatus } from "./issueIcons";
 
 type Filter = "open" | "all";
 
-interface Milestone {
-  name: string | null;
-  issues: Issue[];
-}
-
 interface NoteGroup {
   rel: string;
-  milestones: Milestone[];
+  issues: Issue[];
 }
 
 const isOpen = (issue: Issue) => issue.status === "todo" || issue.status === "doing";
 
-/** Notes in path order, each split into milestones in document order. */
+/** Notes in path order, each with its issues in document order. */
 function groupIssues(issues: Issue[], filter: Filter): NoteGroup[] {
   const groups: NoteGroup[] = [];
   for (const issue of issues) {
     let group = groups[groups.length - 1];
-    if (group?.rel !== issue.rel) groups.push((group = { rel: issue.rel, milestones: [] }));
-    let milestone = group.milestones[group.milestones.length - 1];
-    if (!milestone || milestone.name !== issue.milestone) {
-      group.milestones.push((milestone = { name: issue.milestone, issues: [] }));
-    }
-    milestone.issues.push(issue);
+    if (group?.rel !== issue.rel) groups.push((group = { rel: issue.rel, issues: [] }));
+    group.issues.push(issue);
   }
   if (filter === "all") return groups;
   return groups
-    .map((g) => ({ ...g, milestones: g.milestones.filter((m) => m.issues.some(isOpen)) }))
-    .filter((g) => g.milestones.length > 0);
+    .map((g) => ({ ...g, issues: g.issues.filter(isOpen) }))
+    .filter((g) => g.issues.length > 0);
 }
 
 /**
  * The projects tab: every task line of the selected project's notes, grouped
- * by note and milestone (the heading above it) in document order. It is a
- * view over the markdown — a status change rewrites that one line's box.
+ * by note in document order, or as a board of status columns. It is a view
+ * over the markdown — a status or priority change rewrites that one line.
  */
 export function ProjectsView({ active }: { active: boolean }) {
   const t = useT();
@@ -148,26 +138,17 @@ export function ProjectsView({ active }: { active: boolean }) {
     }
   };
 
-  const makeDoc = async (folder: string, title: string, content: string) => {
-    if (!selected) return;
+  const setPriority = async (issue: Issue, priority: IssuePriority | null) => {
+    if (issue.priority === priority) return;
     try {
-      const rel = await createDoc(selected, folder, title, content);
+      await ipc.setIssuePriority(issue.rel, issue.line, issue.text, priority);
       notifyNotesChanged();
       setNonce((n) => n + 1);
-      toast.success(t("projects.docCreated", { title }));
-      openNoteAt(rel, rel);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
+      setNonce((n) => n + 1);
     }
   };
-  const makeReview = () =>
-    makeDoc("Reviews", t("projects.reviewTitle", { date: todayIso() }), weeklyReview(issues ?? [], todayIso()));
-  const makeChangelog = (milestone: string) =>
-    makeDoc(
-      "Changelogs",
-      t("projects.changelogTitle", { milestone: plain(milestone) }),
-      changelogDraft(milestone, issues ?? []),
-    );
 
   const copyBrief = async (issue: Issue) => {
     try {
@@ -197,16 +178,6 @@ export function ProjectsView({ active }: { active: boolean }) {
             <span className="shrink-0 text-[12px] tabular-nums text-muted">
               {t("projects.progress", { done, total: counted.length })}
             </span>
-            <Tooltip label={t("projects.review")}>
-              <button
-                type="button"
-                aria-label={t("projects.review")}
-                onClick={() => void makeReview()}
-                className="press grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted transition-colors duration-100 hover:bg-hover hover:text-ink"
-              >
-                <IconCalendarStats size={14} stroke={1.75} />
-              </button>
-            </Tooltip>
             <div className="flex shrink-0 rounded-md bg-sunken p-0.5">
               {(["list", "board"] as const).map((value) => {
                 const Icon = value === "list" ? IconList : IconLayoutKanban;
@@ -254,7 +225,7 @@ export function ProjectsView({ active }: { active: boolean }) {
           <Empty text={t("projects.noIssues")} hint={t("projects.syntax")} />
         )}
         {!failed && issues && mode === "board" && (
-          <BoardView issues={issues} onStatus={setStatus} onAdd={addIssue} />
+          <BoardView issues={issues} onStatus={setStatus} onAdd={addIssue} onMenu={(issue, at) => setMenu({ issue, at })} />
         )}
         {mode === "list" && !failed && issues && issues.length > 0 && groups.length === 0 && (
           <Empty text={t("projects.allDone")} />
@@ -270,16 +241,16 @@ export function ProjectsView({ active }: { active: boolean }) {
               <IconFileText size={12} stroke={2} className="shrink-0" />
               <span className="truncate">{group.rel.replace(/\.md$/i, "")}</span>
             </button>
-            {group.milestones.map((milestone, index) => (
-              <MilestoneBlock
-                key={`${milestone.name}:${index}`}
-                milestone={milestone}
-                filter={filter}
-                onStatus={setStatus}
-                onMenu={(issue, at) => setMenu({ issue, at })}
-                onChangelog={makeChangelog}
-              />
-            ))}
+            <ul>
+              {group.issues.map((issue) => (
+                <IssueRow
+                  key={`${issue.rel}:${issue.line}`}
+                  issue={issue}
+                  onStatus={setStatus}
+                  onMenu={(issue, at) => setMenu({ issue, at })}
+                />
+              ))}
+            </ul>
           </section>
         ))}
       </div>
@@ -293,6 +264,12 @@ export function ProjectsView({ active }: { active: boolean }) {
               icon: STATUS_ICONS[status],
               onSelect: () => void setStatus(menu.issue, status),
             })),
+            ...PRIORITIES.map((priority) => ({
+              label: t(`projects.priority.${priority}`),
+              icon: PRIORITY_ICONS[priority],
+              onSelect: () => void setPriority(menu.issue, priority),
+            })),
+            { label: t("projects.priority.none"), icon: IconCircleOff, onSelect: () => void setPriority(menu.issue, null) },
             { label: t("projects.copyBrief"), icon: IconClipboardCopy, onSelect: () => void copyBrief(menu.issue) },
             ...(isPromoted(menu.issue)
               ? []
@@ -300,64 +277,6 @@ export function ProjectsView({ active }: { active: boolean }) {
           ]}
         />
       )}
-    </div>
-  );
-}
-
-function MilestoneBlock({
-  milestone,
-  filter,
-  onStatus,
-  onMenu,
-  onChangelog,
-}: {
-  milestone: Milestone;
-  filter: Filter;
-  onStatus: (issue: Issue, status: IssueStatus) => void;
-  onMenu: (issue: Issue, at: MenuPosition) => void;
-  onChangelog: (milestone: string) => void;
-}) {
-  const t = useT();
-  const shown = filter === "all" ? milestone.issues : milestone.issues.filter(isOpen);
-  const counted = milestone.issues.filter((i) => i.status !== "canceled");
-  const done = counted.filter((i) => i.status === "done").length;
-  return (
-    <div className="group/ms mb-4">
-      {milestone.name && (
-        <div className="flex items-center gap-2 border-b border-line-soft px-2 pb-1.5 pt-2">
-          <span className="min-w-0 truncate text-[13px] font-semibold text-ink">
-            {plain(milestone.name)}
-          </span>
-          <span className="shrink-0 text-[11.5px] tabular-nums text-faint">
-            {done}/{counted.length}
-          </span>
-          {done > 0 && (
-            <Tooltip label={t("projects.changelog")}>
-              <button
-                type="button"
-                aria-label={t("projects.changelog")}
-                onClick={() => onChangelog(milestone.name!)}
-                className={cx(
-                  "ml-auto grid h-5 w-5 shrink-0 place-items-center rounded transition-colors duration-100 hover:bg-hover hover:text-ink",
-                  done === counted.length ? "text-muted" : "text-faint opacity-0 group-hover/ms:opacity-100",
-                )}
-              >
-                <IconFileDescription size={13} stroke={1.75} />
-              </button>
-            </Tooltip>
-          )}
-        </div>
-      )}
-      <ul className="pt-1">
-        {shown.map((issue) => (
-          <IssueRow
-            key={`${issue.rel}:${issue.line}`}
-            issue={issue}
-            onStatus={onStatus}
-            onMenu={onMenu}
-          />
-        ))}
-      </ul>
     </div>
   );
 }
@@ -462,8 +381,6 @@ function today() {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
-
-const plain = (markdown: string) => parseInline(markdown, "").map((p) => p.text).join("");
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (

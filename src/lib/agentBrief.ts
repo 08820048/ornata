@@ -22,7 +22,6 @@ export function agentBrief(project: string, issue: Issue): string {
     `> ${issue.title}`,
     "",
     `- Status: ${STATUS[issue.status]}`,
-    ...(issue.milestone ? [`- Milestone: ${issue.milestone}`] : []),
     ...(meta.length > 0 ? [`- ${meta.join(" · ")}`] : []),
     `- Where it is written: ${issue.rel}, line ${issue.line + 1}`,
     ...(page ? [`- Its page: ${page} (read it first)`] : []),

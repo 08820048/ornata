@@ -45,7 +45,9 @@ export function StatusIcon({ status, size = 16 }: { status: IssueStatus; size?: 
   );
 }
 
-const PRIORITY_ICONS: Record<IssuePriority, TablerIcon> = {
+export const PRIORITIES: IssuePriority[] = ["urgent", "high", "medium", "low"];
+
+export const PRIORITY_ICONS: Record<IssuePriority, TablerIcon> = {
   urgent: IconAlertSquareFilled,
   high: IconAntennaBars5,
   medium: IconAntennaBars3,

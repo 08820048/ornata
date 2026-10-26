@@ -308,13 +308,20 @@ function Row({ node, depth }: { node: TreeNode; depth: number }) {
     disabled: invalidTarget,
     data: { dir: targetDir },
   });
+  const rowEl = useRef<HTMLDivElement | null>(null);
   const setRowRef = useCallback(
     (element: HTMLDivElement | null) => {
+      rowEl.current = element;
       setDragRef(element);
       setDropRef(element);
     },
     [setDragRef, setDropRef],
   );
+  // The open note's row scrolls into view when it becomes the active one
+  // (a tab switch can reveal it deep inside a folder that was just opened).
+  useEffect(() => {
+    if (isActive) rowEl.current?.scrollIntoView?.({ block: "nearest" });
+  }, [isActive]);
 
   return (
     <>

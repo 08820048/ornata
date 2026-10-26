@@ -18,6 +18,7 @@ import type {
   UnusedAsset,
   OpenTask,
   Issue,
+  IssuePriority,
   IssueStatus,
   ProjectSummary,
   SettingsSnapshot,
@@ -161,13 +162,13 @@ export const ipc = {
   listProjects: () => call<ProjectSummary[]>("list_projects"),
   projectIssues: (rel: string) => call<Issue[]>("project_issues", { rel }),
   setProject: (rel: string, on: boolean) => call<void>("set_project", { rel, on }),
+  setIssuePriority: (rel: string, line: number, text: string, priority: IssuePriority | null) =>
+    call<void>("set_issue_priority", { rel, line, text, priority }),
   setIssueStatus: (rel: string, line: number, text: string, status: IssueStatus) =>
     call<void>("set_issue_status", { rel, line, text, status }),
 
   addIssue: (project: string, text: string, status?: IssueStatus) =>
     call<string>("add_issue", { project, text, status }),
-  createProjectDoc: (project: string, folder: string, title: string, content: string) =>
-    call<string>("create_project_doc", { project, folder, title, content }),
   createIssueNote: (project: string, title: string) =>
     call<string>("create_issue_note", { project, title }),
   replaceIssueText: (rel: string, line: number, text: string, newText: string) =>

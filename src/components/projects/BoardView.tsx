@@ -13,6 +13,7 @@ import {
 } from "@dnd-kit/core";
 import { openNoteAt } from "@/components/editor/NoteBacklinks";
 import { parseInline } from "@/lib/inlineMarkdown";
+import { columnIssues } from "@/lib/issueOrder";
 import { hrefToRel } from "@/lib/noteLinks";
 import type { Issue, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -26,11 +27,14 @@ export function BoardView({
   issues,
   onStatus,
   onAdd,
+  onMenu,
 }: {
   issues: Issue[];
   onStatus: (issue: Issue, status: IssueStatus) => void;
   /** Create a task with `text` in `status`; resolves true when it was written. */
   onAdd: (status: IssueStatus, text: string) => Promise<boolean>;
+  /** Right-click on a card: the same menu the list rows have. */
+  onMenu: (issue: Issue, at: { x: number; y: number }) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [dragging, setDragging] = useState<Issue | null>(null);
@@ -47,7 +51,7 @@ export function BoardView({
     <DndContext sensors={sensors} onDragStart={onStart} onDragEnd={onEnd} onDragCancel={() => setDragging(null)}>
       <div className="grid grid-cols-4 items-start gap-3">
         {STATUSES.map((status) => (
-          <Column key={status} status={status} issues={issues.filter((i) => i.status === status)} onAdd={onAdd} />
+          <Column key={status} status={status} issues={columnIssues(issues, status)} onAdd={onAdd} onMenu={onMenu} />
         ))}
       </div>
       <DragOverlay dropAnimation={null}>{dragging && <Card issue={dragging} overlay />}</DragOverlay>
@@ -59,10 +63,12 @@ function Column({
   status,
   issues,
   onAdd,
+  onMenu,
 }: {
   status: IssueStatus;
   issues: Issue[];
   onAdd: (status: IssueStatus, text: string) => Promise<boolean>;
+  onMenu: (issue: Issue, at: { x: number; y: number }) => void;
 }) {
   const t = useT();
   const [adding, setAdding] = useState(false);
@@ -97,17 +103,33 @@ function Column({
           />
         )}
         {issues.map((issue) => (
-          <DraggableCard key={keyOf(issue)} issue={issue} />
+          <DraggableCard key={keyOf(issue)} issue={issue} onMenu={onMenu} />
         ))}
       </div>
     </section>
   );
 }
 
-function DraggableCard({ issue }: { issue: Issue }) {
+function DraggableCard({
+  issue,
+  onMenu,
+}: {
+  issue: Issue;
+  onMenu: (issue: Issue, at: { x: number; y: number }) => void;
+}) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: keyOf(issue) });
   return (
-    <div ref={setNodeRef} {...listeners} {...attributes} className={cx("touch-none", isDragging && "opacity-40")}>
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onMenu(issue, { x: event.clientX, y: event.clientY });
+      }}
+      className={cx("touch-none", isDragging && "opacity-40")}
+    >
       <Card issue={issue} />
     </div>
   );
@@ -120,7 +142,7 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
   const target = linked ? hrefToRel(linked[1]) : null;
   // Tasks.md / Backlog.md only hold lines added without a plan; their name says nothing about the task.
   const stem = issue.rel.replace(/\.md$/i, "").split("/").pop();
-  const where = issue.milestone ?? (stem === "Tasks" || stem === "Backlog" ? "" : stem);
+  const where = stem === "Tasks" || stem === "Backlog" ? "" : stem;
   return (
     <div
       onClick={() => (target ? openNoteAt(target, target) : openNoteAt(issue.rel, issue.rel, issue.title))}

@@ -1,8 +1,7 @@
 //! Issues are plain task-list lines. The box carries the status (`[ ]` todo,
 //! `[/]` doing, `[x]` done, `[-]` canceled); inline tokens carry the rest —
-//! `#tag`, `!urgent|!high|!medium|!low`, `@YYYY-MM-DD`. The nearest heading
-//! above (below the H1) is the milestone, and plain bullets indented under a
-//! task are its decision notes. Nothing is stored anywhere but the line.
+//! `#tag`, `!urgent|!high|!medium|!low`, `@YYYY-MM-DD`. A heading ends any
+//! open task, and plain bullets indented under a task are its decision notes. Nothing is stored anywhere but the line.
 
 use std::path::Path;
 
@@ -41,7 +40,7 @@ impl IssueStatus {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Priority {
     Urgent,
@@ -67,9 +66,6 @@ pub struct Issue {
     pub tags: Vec<String>,
     /// Who is working on it: an inline `+name` token, set when an agent claims it.
     pub agent: Option<String>,
-    /// Day it was marked done: an inline `✓YYYY-MM-DD`, stamped by the app and agent tools.
-    pub completed: Option<String>,
-    pub milestone: Option<String>,
     /// Plain bullets indented under the task (decision notes).
     pub notes: Vec<String>,
     /// Nesting level among tasks (0 = top level).
@@ -101,13 +97,36 @@ fn task_line(line: &str) -> Option<TaskLine<'_>> {
     (!text.is_empty()).then_some(TaskLine { indent, box_at, status, text })
 }
 
-fn heading(line: &str) -> Option<(usize, &str)> {
+fn heading(line: &str) -> Option<()> {
     let level = line.chars().take_while(|c| *c == '#').count();
-    if !(1..=6).contains(&level) {
-        return None;
+    ((1..=6).contains(&level) && line[level..].starts_with(' ')).then_some(())
+}
+
+/// `!urgent` `!high` `!medium` (or `!med`) `!low`, in any case.
+fn priority_token(word: &str) -> Option<Priority> {
+    match word.to_lowercase().as_str() {
+        "!urgent" => Some(Priority::Urgent),
+        "!high" => Some(Priority::High),
+        "!medium" | "!med" => Some(Priority::Medium),
+        "!low" => Some(Priority::Low),
+        _ => None,
     }
-    let text = line[level..].strip_prefix(' ')?.trim().trim_end_matches('#').trim();
-    Some((level, text))
+}
+
+impl Priority {
+    fn token(self) -> &'static str {
+        match self {
+            Self::Urgent => "!urgent",
+            Self::High => "!high",
+            Self::Medium => "!medium",
+            Self::Low => "!low",
+        }
+    }
+
+    /// 0 for urgent down to 4 for none: the order issues are listed in.
+    pub fn rank(priority: Option<Self>) -> u8 {
+        priority.map_or(4, |p| p as u8)
+    }
 }
 
 fn word_char(c: char) -> bool {
@@ -128,11 +147,12 @@ struct Tokens {
     due: Option<String>,
     tags: Vec<String>,
     agent: Option<String>,
-    completed: Option<String>,
 }
 
-fn completion_token(word: &str) -> Option<&str> {
-    word.strip_prefix('✓').filter(|d| is_date(d))
+/// Older versions stamped finished tasks with `✓YYYY-MM-DD`; it is still
+/// kept out of titles.
+fn completion_token(word: &str) -> bool {
+    word.strip_prefix('✓').is_some_and(is_date)
 }
 
 /// `+claude-code`: a plus, a letter, then word characters.
@@ -143,23 +163,14 @@ fn agent_token(word: &str) -> Option<&str> {
 }
 
 fn tokens(text: &str) -> Tokens {
-    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None, completed: None };
+    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None };
     let mut kept: Vec<&str> = Vec::new();
     for word in text.split_whitespace() {
-        let lower = word.to_lowercase();
-        let priority = match lower.as_str() {
-            "!urgent" => Some(Priority::Urgent),
-            "!high" => Some(Priority::High),
-            "!medium" | "!med" => Some(Priority::Medium),
-            "!low" => Some(Priority::Low),
-            _ => None,
-        };
-        if priority.is_some() {
-            out.priority = out.priority.or(priority);
+        if let Some(priority) = priority_token(word) {
+            out.priority.get_or_insert(priority);
             continue;
         }
-        if let Some(day) = completion_token(word) {
-            out.completed.get_or_insert_with(|| day.to_string());
+        if completion_token(word) {
             continue;
         }
         if let Some(name) = agent_token(word) {
@@ -188,7 +199,6 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
     let mut issues: Vec<Issue> = Vec::new();
     // Open tasks by indent, innermost last: (indent, index into `issues`).
     let mut stack: Vec<(usize, usize)> = Vec::new();
-    let mut milestone: Option<String> = None;
     let mut fenced = false;
     for (line, raw) in content.split('\n').enumerate() {
         let trimmed = raw.trim_start();
@@ -199,11 +209,8 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
         if fenced || trimmed.is_empty() {
             continue;
         }
-        if let Some((level, text)) = heading(raw) {
+        if heading(raw).is_some() {
             stack.clear();
-            if level > 1 {
-                milestone = (!text.is_empty()).then(|| text.to_string());
-            }
             continue;
         }
         if let Some(task) = task_line(raw) {
@@ -219,8 +226,6 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
                 due: t.due,
                 tags: t.tags,
                 agent: t.agent,
-                completed: t.completed,
-                milestone: milestone.clone(),
                 notes: Vec::new(),
                 depth: stack.len(),
             });
@@ -275,24 +280,10 @@ pub fn set_issue_status(
     forced: bool,
 ) -> AppResult<()> {
     rewrite(root, rel, line, text, forced, |task| {
-        let words: Vec<&str> = task.text.split_whitespace().collect();
-        let mut kept: Vec<String> = words
-            .iter()
-            .filter(|w| completion_token(w).is_none())
-            .filter(|w| status == IssueStatus::Doing || agent_token(w).is_none())
-            .map(|w| w.to_string())
-            .collect();
-        if status == IssueStatus::Done {
-            let stamp = words.iter().find(|w| completion_token(w).is_some());
-            kept.push(stamp.map_or_else(|| format!("✓{}", today()), |w| w.to_string()));
-        }
-        let next = kept.join(" ");
-        (status, (next != task.text).then_some(next))
+        let claimed = task.text.split_whitespace().any(|w| agent_token(w).is_some());
+        let unclaimed = || task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect::<Vec<_>>().join(" ");
+        (status, (claimed && status != IssueStatus::Doing).then(unclaimed))
     })
-}
-
-pub fn today() -> String {
-    chrono::Local::now().format("%Y-%m-%d").to_string()
 }
 
 /// Mark the task as in progress and claimed by `agent` (shown on the board).
@@ -309,8 +300,28 @@ pub fn claim_issue(
         return Err(AppError::InvalidInput("agent name must start with a letter".into()));
     }
     rewrite(root, rel, line, text, forced, |task| {
-        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none() && completion_token(w).is_none()).collect();
+        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect();
         (IssueStatus::Doing, Some(format!("{} +{name}", rest.join(" "))))
+    })
+}
+
+/// Set the task's priority, or clear it with `None`: the `!level` token is
+/// swapped on the line (placed last when new). Refused if the line changed.
+pub fn set_issue_priority(
+    root: &Path,
+    rel: &str,
+    line: usize,
+    text: &str,
+    priority: Option<Priority>,
+    forced: bool,
+) -> AppResult<()> {
+    rewrite(root, rel, line, text, forced, |task| {
+        let mut words: Vec<&str> = task.text.split_whitespace().filter(|w| priority_token(w).is_none()).collect();
+        if let Some(priority) = priority {
+            words.push(priority.token());
+        }
+        let next = words.join(" ");
+        (task.status, (next != task.text).then_some(next))
     })
 }
 
@@ -405,22 +416,22 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn parses_status_tokens_milestones_and_notes() {
+    fn parses_status_tokens_and_notes() {
         let md = "# Plan\n- [ ] Loose\n## V1\n- [ ] Fix graph #Bug !high @2026-11-01\n  - decided: keep it\n  - [/] Sub task\n    - inner note\n- [x] Shipped\n- [-] Dropped\n```\n- [ ] code\n```\n## V2\n* [X] Later\nprose\n  - stray\n";
         let issues = parse_issues("p.md", md);
         let summary: Vec<_> = issues
             .iter()
-            .map(|i| (i.line, i.title.as_str(), i.status, i.milestone.as_deref(), i.depth))
+            .map(|i| (i.line, i.title.as_str(), i.status, i.depth))
             .collect();
         assert_eq!(
             summary,
             [
-                (1, "Loose", IssueStatus::Todo, None, 0),
-                (3, "Fix graph", IssueStatus::Todo, Some("V1"), 0),
-                (5, "Sub task", IssueStatus::Doing, Some("V1"), 1),
-                (7, "Shipped", IssueStatus::Done, Some("V1"), 0),
-                (8, "Dropped", IssueStatus::Canceled, Some("V1"), 0),
-                (13, "Later", IssueStatus::Done, Some("V2"), 0),
+                (1, "Loose", IssueStatus::Todo, 0),
+                (3, "Fix graph", IssueStatus::Todo, 0),
+                (5, "Sub task", IssueStatus::Doing, 1),
+                (7, "Shipped", IssueStatus::Done, 0),
+                (8, "Dropped", IssueStatus::Canceled, 0),
+                (13, "Later", IssueStatus::Done, 0),
             ]
         );
         let fix = &issues[1];
@@ -495,12 +506,29 @@ mod tests {
 
         set_issue_status(root, &rel, 1, "Draft #a +claude-code", IssueStatus::Done, true).unwrap();
         let done = read_note(root, &rel).unwrap();
-        assert!(done.contains(&format!("- [x] Draft #a ✓{}\n", today())), "{done}");
-        let issue = &parse_issues(&rel, &done)[0];
-        assert_eq!((issue.completed.as_deref(), issue.title.as_str()), (Some(today().as_str()), "Draft"));
-        let text = format!("Draft #a ✓{}", today());
-        set_issue_status(root, &rel, 1, &text, IssueStatus::Todo, true).unwrap();
-        assert!(read_note(root, &rel).unwrap().contains("- [ ] Draft #a\n"));
+        assert!(done.contains("- [x] Draft #a\n"), "{done}");
         assert!(claim_issue(root, &rel, 1, "Draft #a", "9bad", true).is_err());
+    }
+
+    #[test]
+    fn priority_is_swapped_cleared_and_ranked() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let rel = create_note(root, "", "Plan").unwrap();
+        write_note(root, &rel, "- [ ] Fix #bug !LOW @2026-11-01\n- [/] Other\n").unwrap();
+        set_issue_priority(root, &rel, 0, "Fix #bug !LOW @2026-11-01", Some(Priority::Urgent), false).unwrap();
+        assert_eq!(read_note(root, &rel).unwrap(), "- [ ] Fix #bug @2026-11-01 !urgent\n- [/] Other\n");
+        set_issue_priority(root, &rel, 1, "Other", Some(Priority::High), true).unwrap();
+        let content = read_note(root, &rel).unwrap();
+        assert!(content.ends_with("- [/] Other !high\n"));
+        let issues = parse_issues(&rel, &content);
+        assert_eq!((issues[0].priority, issues[1].priority), (Some(Priority::Urgent), Some(Priority::High)));
+        assert!(Priority::rank(issues[0].priority) < Priority::rank(issues[1].priority));
+        assert!(Priority::rank(issues[1].priority) < Priority::rank(None));
+
+        set_issue_priority(root, &rel, 0, "Fix #bug @2026-11-01 !urgent", None, false).unwrap();
+        assert!(read_note(root, &rel).unwrap().starts_with("- [ ] Fix #bug @2026-11-01\n"));
+        assert!(set_issue_priority(root, &rel, 0, "stale", None, false).is_err());
     }
 }

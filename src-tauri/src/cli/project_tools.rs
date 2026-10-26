@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 
 use super::tools::{arg, object, opt, Level, Tool};
 use crate::error::{AppError, AppResult};
-use crate::issues::{self, Issue, IssueStatus};
+use crate::issues::{self, Issue, IssueStatus, Priority};
 use crate::{projects, vault_guard};
 
 pub fn definitions() -> Vec<Tool> {
@@ -19,13 +19,15 @@ pub fn definitions() -> Vec<Tool> {
     let tool = |name, description, needs, schema| Tool { name, description, needs, schema };
     vec![
         tool("list_projects", "List projects (folders marked as projects) with issue counts by status.", Level::ReadOnly, object(json!({}), &[])),
-        tool("list_issues", "List issues — the task lines of a project's notes — with status, priority, due date, tags, milestone and decision notes.", Level::ReadOnly,
+        tool("list_issues", "List issues — the task lines of a project's notes — with status, priority, due date, tags and decision notes.", Level::ReadOnly,
             object(json!({ "project": project, "status": status }), &[])),
         tool("next_issue", "The issue to work on next: in-progress first, then by priority and due date.", Level::ReadOnly, object(json!({ "project": project }), &[])),
         tool("claim_issue", "Mark an issue as in progress and show on the board that this agent is working on it.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "agent": { "type": "string", "description": "Only used when the connection did not say who it is; normally your MCP client name is shown" } }), &["path", "line", "text"])),
         tool("set_issue_status", "Change an issue's status (todo, doing, done, canceled). Leaving doing releases the claim.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "status": status }), &["path", "line", "text", "status"])),
+        tool("set_issue_priority", "Set an issue's priority (urgent, high, medium, low), or clear it with none.", Level::Write,
+            object(json!({ "path": path, "line": line, "text": text, "priority": { "type": "string", "enum": ["urgent", "high", "medium", "low", "none"] } }), &["path", "line", "text", "priority"])),
         tool("add_decision", "Record a one-line decision or progress note under an issue.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "decision": { "type": "string" } }), &["path", "line", "text", "decision"])),
         tool("add_issue", "Add an issue to a project's Tasks.md note (status defaults to todo).", Level::Write,
@@ -85,6 +87,17 @@ pub fn call(root: &Path, name: &str, args: &Value) -> Option<AppResult<Value>> {
             issues::set_issue_status(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, status, true)?;
             Ok(json!({ "updated": true }))
         })(),
+        "set_issue_priority" => (|| {
+            let priority = match arg(args, "priority")? {
+                "none" => None,
+                other => Some(
+                    serde_json::from_value::<Priority>(json!(other))
+                        .map_err(|_| AppError::InvalidInput("priority must be urgent, high, medium, low or none".into()))?,
+                ),
+            };
+            issues::set_issue_priority(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, priority, true)?;
+            Ok(json!({ "updated": true }))
+        })(),
         "add_decision" => (|| {
             issues::add_issue_note(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, arg(args, "decision")?, true)?;
             Ok(json!({ "added": true }))
@@ -139,6 +152,10 @@ mod tests {
 
         assert!(super::call(root, "set_issue_status", &json!({ "path": plan, "line": line, "text": "x", "status": "done" })).unwrap().is_err());
         assert!(super::call(root, "set_issue_status", &json!({ "path": plan, "line": line, "text": "x", "status": "bogus" })).unwrap().is_err());
+        let text = all[0]["text"].clone();
+        call("set_issue_priority", json!({ "path": plan, "line": all[0]["line"], "text": text, "priority": "urgent" }));
+        assert_eq!(call("list_issues", json!({}))[0]["priority"], "urgent");
+        assert!(super::call(root, "set_issue_priority", &json!({ "path": plan, "line": 1, "text": "x", "priority": "soon" })).unwrap().is_err());
         assert!(super::call(root, "nope", &json!({})).is_none());
     }
 }

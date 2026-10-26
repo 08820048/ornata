@@ -400,7 +400,12 @@ export const useVault = create<VaultState>((set, get) => ({
     );
     if (view?.type === "note") {
       useTabs.getState().open(view.note);
-      if (view.note.kind === "vault") get().pushRecent(view.note.rel);
+      if (view.note.kind === "vault") {
+        // Showing a note, by any route (tab switch, link, palette), opens its
+        // folders in the tree so it can be found there.
+        get().expandTo(view.note.rel);
+        get().pushRecent(view.note.rel);
+      }
     } else if (view) {
       useTabs.getState().open(tabOfView(view));
     }
@@ -432,7 +437,7 @@ export const useVault = create<VaultState>((set, get) => ({
       path = path ? `${path}/${part}` : part;
       expanded.add(path);
     }
-    set({ expanded });
+    if (expanded.size !== get().expanded.size) set({ expanded });
   },
 
   createNote: async (dir) => {

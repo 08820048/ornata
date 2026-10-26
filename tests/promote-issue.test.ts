@@ -4,7 +4,7 @@ import type { Issue } from "../src/lib/types";
 
 const issue = (over: Partial<Issue>): Issue => ({
   rel: "P/plan.md", line: 3, text: "", title: "Fix [graph] search", status: "todo",
-  priority: "high", due: "2026-11-10", tags: ["bug"], milestone: null, notes: [], depth: 0, ...over,
+  priority: "high", due: "2026-11-10", tags: ["bug"], notes: [], depth: 0, ...over,
 });
 
 test("a promoted line links to the page and keeps its tokens", () => {

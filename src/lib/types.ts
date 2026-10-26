@@ -193,10 +193,6 @@ export interface Issue {
   tags: string[];
   /** Agent working on it (`+name` on the line), if one claimed it. */
   agent: string | null;
-  /** Day it was marked done (`✓YYYY-MM-DD` on the line). */
-  completed: string | null;
-  /** Nearest heading above the line (below the H1). */
-  milestone: string | null;
   /** Plain bullets indented under the task. */
   notes: string[];
   depth: number;

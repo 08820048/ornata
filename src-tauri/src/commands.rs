@@ -17,7 +17,7 @@ use crate::templates;
 use crate::image_source::{self, ImagePayload};
 use crate::mentions::{self, Mention};
 use crate::search::SearchHit;
-use crate::issues::{self, Issue, IssueStatus};
+use crate::issues::{self, Issue, IssueStatus, Priority};
 use crate::projects::{self, ProjectSummary};
 use crate::tasks::{self, OpenTask};
 use crate::vault::{self, TreeNode};
@@ -484,17 +484,6 @@ pub fn add_issue(
 }
 
 #[tauri::command]
-pub fn create_project_doc(
-    state: State<'_, AppState>,
-    project: String,
-    folder: String,
-    title: String,
-    content: String,
-) -> AppResult<String> {
-    projects::create_project_doc(&state.root()?, &project, &folder, &title, &content)
-}
-
-#[tauri::command]
 pub fn create_issue_note(
     state: State<'_, AppState>,
     project: String,
@@ -512,6 +501,17 @@ pub fn replace_issue_text(
     new_text: String,
 ) -> AppResult<()> {
     issues::replace_issue_text(&state.root()?, &rel, line, &text, &new_text)
+}
+
+#[tauri::command]
+pub fn set_issue_priority(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+    priority: Option<Priority>,
+) -> AppResult<()> {
+    issues::set_issue_priority(&state.root()?, &rel, line, &text, priority, false)
 }
 
 #[tauri::command]
