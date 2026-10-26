@@ -66,6 +66,8 @@ pub struct Issue {
     pub tags: Vec<String>,
     /// Who is working on it: an inline `+name` token, set when an agent claims it.
     pub agent: Option<String>,
+    /// Who finished it: an inline `✓by:name` token, left behind when a claimed task is marked done.
+    pub done_by: Option<String>,
     /// When it was created, `YYYY-MM-DDTHH:MM` (inline `◷…`), if it was made through the app or an agent.
     pub created: Option<String>,
     /// When it was marked done or canceled (inline `✓…` / `✗…`); older lines carry only the day.
@@ -151,6 +153,7 @@ struct Tokens {
     due: Option<String>,
     tags: Vec<String>,
     agent: Option<String>,
+    done_by: Option<String>,
     created: Option<String>,
     closed: Option<String>,
 }
@@ -226,21 +229,26 @@ pub fn new_issue_text(text: &str, status: IssueStatus) -> String {
 
 /// `text` as it should read once the task has become `status`: the closing
 /// time of that status is kept if there already, added if not; the other
-/// closing time goes; a claim goes unless the task is in progress.
+/// closing time goes; a claim goes unless the task is in progress, and becomes
+/// `✓by:name` when the task is done (that token only stays while it is done).
 fn restamped(text: &str, status: IssueStatus) -> String {
     let words: Vec<&str> = text.split_whitespace().collect();
+    let finisher = (status == IssueStatus::Done).then(|| {
+        words.iter().find_map(|w| agent_token(w).or_else(|| done_by_token(w))).map(|name| format!("{DONE_BY}{name}"))
+    });
     let keep_closing = Stamp::closing(status).and_then(|want| {
         words.iter().find(|w| stamp_token(w).is_some_and(|(kind, _)| kind == want)).map(|w| w.to_string())
     });
     let mut out: Vec<String> = words
         .iter()
         .filter(|w| !is_closing_stamp(w))
-        .filter(|w| status == IssueStatus::Doing || agent_token(w).is_none())
+        .filter(|w| done_by_token(w).is_none() && (status == IssueStatus::Doing || agent_token(w).is_none()))
         .map(|w| w.to_string())
         .collect();
     if let Some(closing) = Stamp::closing(status) {
         out.push(keep_closing.unwrap_or_else(|| format!("{}{}", closing.glyph(), now_stamp())));
     }
+    out.extend(finisher.flatten());
     out.join(" ")
 }
 
@@ -251,8 +259,17 @@ fn agent_token(word: &str) -> Option<&str> {
     (chars.next()?.is_alphabetic() && chars.all(word_char)).then_some(name)
 }
 
+const DONE_BY: &str = "✓by:";
+
+/// `✓by:claude-code`: who finished the task.
+fn done_by_token(word: &str) -> Option<&str> {
+    let name = word.strip_prefix(DONE_BY)?;
+    let mut chars = name.chars();
+    (chars.next()?.is_alphabetic() && chars.all(word_char)).then_some(name)
+}
+
 fn tokens(text: &str) -> Tokens {
-    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None, created: None, closed: None };
+    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None, done_by: None, created: None, closed: None };
     let mut kept: Vec<&str> = Vec::new();
     for word in text.split_whitespace() {
         if let Some(priority) = priority_token(word) {
@@ -266,6 +283,10 @@ fn tokens(text: &str) -> Tokens {
         }
         if let Some(name) = agent_token(word) {
             out.agent.get_or_insert_with(|| name.to_string());
+            continue;
+        }
+        if let Some(name) = done_by_token(word) {
+            out.done_by.get_or_insert_with(|| name.to_string());
             continue;
         }
         if let Some(date) = word.strip_prefix('@').filter(|d| is_date(d)) {
@@ -317,6 +338,7 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
                 due: t.due,
                 tags: t.tags,
                 agent: t.agent,
+                done_by: t.done_by,
                 created: t.created,
                 closed: t.closed,
                 notes: Vec::new(),
@@ -392,7 +414,7 @@ pub fn claim_issue(
         return Err(AppError::InvalidInput("agent name must start with a letter".into()));
     }
     rewrite(root, rel, line, text, forced, |task| {
-        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none() && !is_closing_stamp(w)).collect();
+        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none() && done_by_token(w).is_none() && !is_closing_stamp(w)).collect();
         (IssueStatus::Doing, Some(format!("{} +{name}", rest.join(" "))))
     })
 }
@@ -613,8 +635,14 @@ mod tests {
 
         set_issue_status(root, &rel, 1, "Draft #a +claude-code", IssueStatus::Done, true).unwrap();
         let done = read_note(root, &rel).unwrap();
-        assert!(bare(&done).contains("- [x] Draft #a\n"), "{done}");
+        assert!(bare(&done).contains("- [x] Draft #a ✓by:claude-code\n"), "{done}");
         assert!(!done.contains("+claude-code"));
+        assert!(done.contains(" ✓by:claude-code\n"), "{done}");
+        let issue = &parse_issues(&rel, &done)[0];
+        assert_eq!((issue.agent.as_deref(), issue.done_by.as_deref(), issue.title.as_str()), (None, Some("claude-code"), "Draft"));
+        let done_line = done.lines().find(|l| l.contains("✓by:")).unwrap().trim_start_matches("- [x] ").to_string();
+        set_issue_status(root, &rel, 1, &done_line, IssueStatus::Canceled, true).unwrap();
+        assert!(!read_note(root, &rel).unwrap().contains("by:"));
         assert!(claim_issue(root, &rel, 1, "Draft #a", "9bad", true).is_err());
     }
 

@@ -35,6 +35,7 @@ export function promotedText(issue: Issue, rel: string): string {
     ...(issue.priority ? [`!${issue.priority}`] : []),
     ...(issue.due ? [`@${issue.due}`] : []),
     ...(issue.agent ? [`+${issue.agent}`] : []),
+    ...(issue.doneBy ? [`✓by:${issue.doneBy}`] : []),
     ...(issue.created ? [`◷${issue.created}`] : []),
     ...(issue.closed && issue.status === "done" ? [`✓${issue.closed}`] : []),
     ...(issue.closed && issue.status === "canceled" ? [`✗${issue.closed}`] : []),

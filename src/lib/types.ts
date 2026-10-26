@@ -193,6 +193,8 @@ export interface Issue {
   tags: string[];
   /** Agent working on it (`+name` on the line), if one claimed it. */
   agent: string | null;
+  /** Agent that finished it (`✓by:name` on the line), left when a claimed task is marked done. */
+  doneBy: string | null;
   /** When it was created, `YYYY-MM-DDTHH:MM` (the `◷…` on the line); absent for tasks typed by hand. */
   created: string | null;
   /** When it was marked done or canceled (`✓…` / `✗…`); older lines carry only the day. */

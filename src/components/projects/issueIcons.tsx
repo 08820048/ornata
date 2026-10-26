@@ -88,11 +88,11 @@ export function AgentMark({ name, size = 12 }: { name: string; size?: number }) 
 }
 
 /** Shown on an issue an agent has claimed. */
-export function AgentBadge({ name }: { name: string }) {
+export function AgentBadge({ name, done }: { name: string; done?: boolean }) {
   const t = useT();
   return (
     <span
-      title={t("projects.agentWorking", { name })}
+      title={t(done ? "projects.agentDone" : "projects.agentWorking", { name })}
       className="flex shrink-0 items-center gap-1 rounded bg-sunken px-1.5 text-[11px] leading-[18px] text-muted"
     >
       <AgentMark name={name} />

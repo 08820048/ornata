@@ -167,6 +167,7 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
       <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-faint">
         <span className="min-w-0 flex-1 truncate">{where}</span>
         {issue.agent && <AgentBadge name={issue.agent} />}
+        {issue.doneBy && <AgentBadge name={issue.doneBy} done />}
         {issue.tags.slice(0, 2).map((tag) => (
           <span key={tag} className="shrink-0 rounded bg-sunken px-1.5 leading-[16px] text-muted">
             #{tag}

@@ -4,7 +4,7 @@ import type { Issue } from "../src/lib/types";
 
 const issue = (over: Partial<Issue>): Issue => ({
   rel: "App/Plan.md", line: 4, text: "", title: "Fix graph", status: "todo", priority: null,
-  due: null, tags: [], agent: null, created: null, closed: null, notes: [], depth: 0, ...over,
+  due: null, tags: [], agent: null, doneBy: null, created: null, closed: null, notes: [], depth: 0, ...over,
 });
 
 test("the brief names the line, the page and the recorded decisions", () => {

@@ -355,6 +355,7 @@ function IssueRow({
           </span>
         )}
         {issue.agent && <AgentBadge name={issue.agent} />}
+        {issue.doneBy && <AgentBadge name={issue.doneBy} done />}
         {issue.tags.map((tag) => (
           <span key={tag} className="shrink-0 rounded bg-sunken px-1.5 text-[11px] leading-[18px] text-muted">
             #{tag}

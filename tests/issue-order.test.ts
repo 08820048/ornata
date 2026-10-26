@@ -3,7 +3,7 @@ import { columnIssues, priorityRank } from "../src/lib/issueOrder";
 import type { Issue } from "../src/lib/types";
 
 const issue = (title: string, status: Issue["status"], priority: Issue["priority"] = null): Issue => ({
-  rel: "p.md", line: 0, text: title, title, status, priority, due: null, tags: [], agent: null, created: null, closed: null, notes: [], depth: 0,
+  rel: "p.md", line: 0, text: title, title, status, priority, due: null, tags: [], agent: null, doneBy: null, created: null, closed: null, notes: [], depth: 0,
 });
 
 test("in progress lists the most urgent first and keeps note order among equals", () => {
