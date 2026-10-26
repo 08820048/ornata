@@ -4,6 +4,7 @@ import {
   IconBlockquote,
   IconCalendar,
   IconChecklist,
+  IconCircleX,
   IconCode,
   IconH1,
   IconH2,
@@ -13,6 +14,7 @@ import {
   IconListNumbers,
   IconMinus,
   IconPilcrow,
+  IconProgress,
   IconTable,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
@@ -21,6 +23,7 @@ import { addDays, dailyRel, dateStamp, DATE_MENTIONS } from "@/lib/dateLinks";
 import { CODE_BLOCK_VARIANTS } from "@/lib/syntaxHighlighter";
 import { relToHref } from "@/lib/noteLinks";
 import { cx } from "@/lib/utils";
+import { setTaskStatus } from "./taskStatus";
 import type { MessageKey } from "@/lib/i18n";
 import { useT } from "@/stores/locale";
 
@@ -165,6 +168,22 @@ const commands: SlashCommand[] = [
     keywords: "todo checkbox check",
     shortcut: "*",
     run: (e) => e.chain().focus().toggleTaskList().run(),
+  },
+  {
+    id: "task-doing",
+    label: "slash.taskDoing",
+    icon: IconProgress,
+    keywords: "in progress doing started wip task",
+    shortcut: "[/]",
+    run: (e) => setTaskStatus(e, "doing"),
+  },
+  {
+    id: "task-canceled",
+    label: "slash.taskCanceled",
+    icon: IconCircleX,
+    keywords: "canceled cancelled dropped abandoned task",
+    shortcut: "[-]",
+    run: (e) => setTaskStatus(e, "canceled"),
   },
   {
     id: "quote",

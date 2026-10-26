@@ -6,7 +6,7 @@ import { Table } from "@tiptap/extension-table";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import TableRow from "@tiptap/extension-table-row";
-import { TaskItemStatus, TaskListStatus } from "./taskStatus";
+import { TaskItemStatus, TaskListStatus, TaskStatusInput } from "./taskStatus";
 import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { BlockPlus } from "./blockPlus";
@@ -112,6 +112,7 @@ export function createExtensions(assetRoot: string) {
     TaskListStatus,
     TaskItemStatus.configure({ nested: true }),
     StarTask,
+    TaskStatusInput,
     Table.configure({ resizable: false }),
     TableRow,
     TableHeader,

@@ -18,6 +18,15 @@ afterAll(async () => {
   await GlobalRegistrator.unregister();
 });
 
+/** Type `text` the way the keyboard does, so input rules run. */
+function type(editor: InstanceType<typeof Editor>, text: string) {
+  for (const char of text) {
+    const { from, to } = editor.state.selection;
+    const handled = editor.view.someProp("handleTextInput", (f) => f(editor.view, from, to, char));
+    if (!handled) editor.view.dispatch(editor.state.tr.insertText(char, from, to));
+  }
+}
+
 const make = (markdown: string) =>
   new Editor({ element: document.createElement("div"), extensions: createExtensions("/vault"), content: markdown, contentType: "markdown" });
 
@@ -64,6 +73,38 @@ describe("task statuses", () => {
     input.dispatchEvent(new Event("change"));
     expect(items(editor)).toEqual([{ checked: true, status: null, text: "doing" }]);
     expect(editor.getMarkdown()).toContain("- [x] doing");
+    editor.destroy();
+  });
+
+  test("typing [/] or [-] and a space at a line start makes that kind of task", () => {
+    for (const [marks, status] of [["[/] ", "doing"], ["[-] ", "canceled"]] as const) {
+      const editor = make("<p></p>");
+      editor.commands.focus();
+      type(editor, marks);
+      type(editor, "ship it");
+      expect(items(editor)).toEqual([{ checked: false, status, text: "ship it" }]);
+      expect(editor.getMarkdown()).toContain(`- [${marks[1]}] ship it`);
+      editor.destroy();
+    }
+  });
+
+  test("on a line that is already a task the box just changes", () => {
+    const editor = make("- [ ] first\n");
+    editor.commands.focus("end");
+    editor.commands.splitListItem("taskItem");
+    type(editor, "[/] ");
+    type(editor, "second");
+    expect(items(editor).map((i) => i.status)).toEqual([null, "doing"]);
+    expect(editor.getJSON().content?.filter((n) => n.type === "taskList")).toHaveLength(1);
+    editor.destroy();
+  });
+
+  test("[/] in a code block stays text", () => {
+    const editor = make("```\n\n```\n");
+    editor.commands.setTextSelection(1);
+    expect(editor.isActive("codeBlock")).toBe(true);
+    type(editor, "[/] ");
+    expect(items(editor)).toEqual([]);
     editor.destroy();
   });
 });

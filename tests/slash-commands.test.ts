@@ -47,6 +47,8 @@ describe("slash menu", () => {
     expect(shortcut("h2")).toBe("##");
     expect(shortcut("bullet")).toBe("-");
     expect(shortcut("task")).toBe("*");
+    expect(shortcut("task-doing")).toBe("[/]");
+    expect(shortcut("task-canceled")).toBe("[-]");
     expect(shortcut("quote")).toBe(">");
   });
 });

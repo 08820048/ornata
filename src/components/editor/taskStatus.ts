@@ -1,3 +1,4 @@
+import { Extension, InputRule, type Editor } from "@tiptap/core";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 
@@ -117,5 +118,37 @@ export const TaskItemStatus = TaskItem.extend({
         },
       };
     };
+  },
+});
+
+/** Make the paragraph the caret is in a task with `status` (the slash menu's "in progress" / "canceled"). */
+export function setTaskStatus(editor: Editor, status: "doing" | "canceled") {
+  const chain = editor.chain().focus();
+  if (!editor.isActive("taskItem")) chain.toggleTaskList();
+  return chain.updateAttributes("taskItem", { status, checked: false }).run();
+}
+
+/**
+ * `[/] ` and `[-] ` at the start of a line make an in-progress / canceled
+ * task, the way `[ ] ` and `* ` make a plain one. On a line that is already a
+ * task the box just changes.
+ */
+export const TaskStatusInput = Extension.create({
+  name: "taskStatusInput",
+  priority: 1000,
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /^\s*\[([/-])\]\s$/,
+        handler: ({ range, match, chain }) => {
+          const { editor } = this;
+          if (editor.isActive("codeBlock")) return null;
+          const status = match[1] === "/" ? "doing" : "canceled";
+          const c = chain().deleteRange(range);
+          if (!editor.isActive("taskItem")) c.toggleTaskList();
+          c.updateAttributes("taskItem", { status, checked: false }).run();
+        },
+      }),
+    ];
   },
 });
