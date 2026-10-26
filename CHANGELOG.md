@@ -2,6 +2,22 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.12.0] - 2026-10-26
+
+### Added
+
+- Projects. Right-click a folder and mark it as a project: its notes' task lines become issues, shown in a Projects tab as a list grouped by note or as a board with Todo, In progress, Done and Canceled columns. Drag a card to change its status, click a status to cycle it, right-click for any status or priority, and use "+" on a column to add a task straight into it. Nothing is stored outside your Markdown. The sidebar switches between Notes and Projects, and the switch now glides with a spring.
+- Task statuses in the editor: type `[/] ` for in progress and `[-] ` for canceled (the slash menu has both too), next to the usual `[ ]` and `[x]`.
+- Issues carry a priority (`!urgent`, `!high`, `!medium`, `!low`), a due date (`@2026-11-10`), tags, and the times they were created, finished or canceled.
+- Right-click an issue and choose "Turn into issue page" to give it its own note in the project's `issues/` folder. Select text in any note and use "Create issue" to capture it into a project.
+- Agents can work the board over MCP and the command line: list projects and issues, get the next issue, claim one, change status or priority, add decision notes and add issues. A claimed issue shows the agent's own logo, and when the agent finishes it, the done card keeps a badge saying who did it.
+- A new project gets PRD and Bug report templates.
+- Switching to a note, for example by changing tabs, opens its folders in the sidebar and scrolls to it.
+
+### Removed
+
+- The Inbox quick capture. Projects replace it.
+
 ## [0.11.0] - 2026-10-24
 
 ### Added
