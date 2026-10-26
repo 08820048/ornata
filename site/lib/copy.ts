@@ -30,7 +30,7 @@ export interface Copy {
     position: string;
     positionTitle: string;
     positionBody: string;
-    chapters: { write: [string, string]; connect: [string, string]; find: [string, string] };
+    chapters: { write: [string, string]; connect: [string, string]; find: [string, string]; plan: [string, string] };
     files: Story;
     editor: Story;
     themes: Story;
@@ -39,6 +39,7 @@ export interface Copy {
     split: Story;
     palette: Story;
     tasks: Story;
+    projects: Story;
   };
   agents: { eyebrow: string; title: string; body: string; terminal: string };
   faq: { aside: string; title: string; lead: string; items: Faq[] };
@@ -94,7 +95,7 @@ const en: Copy = {
     position: "The position",
     positionTitle: "Notes should outlive the app.",
     positionBody: "Most notes apps grow into systems you have to maintain — plugins, sync layers, a private database. Ornata stays an instrument: quick to open, quiet while you write, and honest about where your files live.",
-    chapters: { write: ["Write.", "Plain files underneath, a precise editor on top."], connect: ["Connect.", "Links become context, and the context becomes a map."], find: ["Find.", "Everything important is one keystroke away."] },
+    chapters: { write: ["Write.", "Plain files underneath, a precise editor on top."], connect: ["Connect.", "Links become context, and the context becomes a map."], find: ["Find.", "Everything important is one keystroke away."], plan: ["Plan.", "The tasks in your notes, on a board your agents can work."] },
     files: { eyebrow: "Plain files, real folders", title: "Your notes are already exported.", body: "Pick any folder. Ornata writes ordinary Markdown into real directories, keeps frontmatter from other tools, and notices edits made elsewhere. When you need to share, export a PDF with a bookmark outline, or standalone HTML." },
     editor: { eyebrow: "A professional editor", title: "Rich where it helps. Plain underneath.", body: "Clean typography, language-aware code, pasted images, and a magnetic outline for long notes — while the file on disk stays readable anywhere." },
     themes: { eyebrow: "Themes", title: "One theme for the day, another for the night.", body: "Pick a colour scheme for light mode and another for dark — warm Paper with a hand-drawn touch, near-black Basalt, a neon-pink noir — and switch from the status bar without opening Settings." },
@@ -103,11 +104,12 @@ const en: Copy = {
     split: { eyebrow: "Side by side", title: "Read one note while you write another.", body: "⌘-click a link, or press ⌘↵ in the palette, and the note opens beside this one. Up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done." },
     palette: { eyebrow: "Command palette", title: "One keystroke to anywhere.", body: "Search titles and content, jump between notes, or run any action from ⌘K." },
     tasks: { eyebrow: "Vault-wide tasks", title: "Every open task, in one list.", body: "Checkboxes from across the vault, with counts and folder context. Tick one here and it's done in its note." },
+    projects: { eyebrow: "Projects", title: "A board made of your own notes.", body: "Mark a folder as a project and the tasks in its notes become issues, on a board or in a list. Drag a card to change its status, set a priority, and let an agent claim one — its logo shows on the card, and stays as the one who finished it. Every change is just a line in a Markdown file." },
   },
   agents: {
     eyebrow: "Any agent, one vault",
     title: "Bring the agent you already use.",
-    body: "Ornata speaks MCP, so Claude Code, Codex, Cursor, and the rest can search your notes, add to today’s page, and tick off tasks. You decide per vault what an agent may do — off, read only, or read & write — and every edit keeps the old version in the note’s history.",
+    body: "Ornata speaks MCP, so Claude Code, Codex, Cursor, and the rest can search your notes, add to today’s page, tick off tasks, and pick up issues from your project boards. You decide per vault what an agent may do — off, read only, or read & write — and every edit keeps the old version in the note’s history.",
     terminal: "Or from any terminal:",
   },
   faq: { aside: "Details", title: "The practical questions.", lead: "Storage, compatibility, updates, and exactly what an outside agent can do.", items: FAQS_EN },
@@ -134,7 +136,7 @@ const en: Copy = {
   },
   meta: {
     title: "Ornata — local-first Markdown notes for Mac and Windows",
-    description: "Ornata is a free, local-first Markdown notes app for macOS and Windows. Notes stay as plain .md files in a folder you own, with a link graph, backlinks, and an MCP server so the AI agents you already use can work on your notes only as far as you allow.",
+    description: "Ornata is a free, local-first Markdown notes app for macOS and Windows. Notes stay as plain .md files in a folder you own, with a link graph, backlinks, project boards, and an MCP server so the AI agents you already use can work on your notes only as far as you allow.",
     docsTitle: "Docs",
     docsDescription: "How to use Ornata: vaults, writing, links, split view, search, daily notes, export, MCP and the command line, shortcuts, and troubleshooting.",
     updatesTitle: "Updates",
@@ -170,7 +172,7 @@ const zh: Copy = {
     position: "我们的主张",
     positionTitle: "笔记应该比应用活得更久。",
     positionBody: "大多数笔记应用会长成一套你得维护的系统：插件、同步层、私有数据库。Ornata 只做一件趁手的工具：打开快，写作时安静，并且坦率地告诉你文件放在哪里。",
-    chapters: { write: ["写。", "底层是纯文件，上层是精准的编辑器。"], connect: ["连。", "链接成为上下文，上下文连成地图。"], find: ["找。", "重要的东西，一个快捷键就到。"] },
+    chapters: { write: ["写。", "底层是纯文件，上层是精准的编辑器。"], connect: ["连。", "链接成为上下文，上下文连成地图。"], find: ["找。", "重要的东西，一个快捷键就到。"], plan: ["排。", "笔记里的待办，成了智能体也能干活的看板。"] },
     files: { eyebrow: "纯文件，真文件夹", title: "你的笔记，本来就已经导出了。", body: "选任意一个文件夹。Ornata 把普通 Markdown 写进真实的目录，保留其他工具写的 frontmatter，并能发现别处所做的修改。要分享时，导出带书签目录的 PDF，或独立的 HTML。" },
     editor: { eyebrow: "专业的编辑器", title: "该丰富时丰富，底层始终朴素。", body: "清爽的排版、识别语言的代码块、粘贴图片，以及长笔记的磁吸大纲 —— 而磁盘上的文件在任何地方都能读。" },
     themes: { eyebrow: "主题", title: "白天一套，夜里另一套。", body: "分别为浅色和深色模式选配色 —— 带手绘笔触的暖色纸张、近乎纯黑的玄武岩、霓虹粉的黑色电影 —— 在状态栏里就能切换，不用打开设置。" },
@@ -179,11 +181,12 @@ const zh: Copy = {
     split: { eyebrow: "并排查看", title: "写这一篇时，读另一篇。", body: "⌘ 点击链接，或在命令面板里按 ⌘↵，笔记就在旁边打开。最多四个窗格，每个都有自己的标题栏和前进后退箭头。拖动分隔条调整大小，用完关掉即可。" },
     palette: { eyebrow: "命令面板", title: "一个快捷键，去哪都行。", body: "搜索标题与内容，在笔记间跳转，或用 ⌘K 执行任何操作。" },
     tasks: { eyebrow: "全库待办", title: "所有未完成的事，一张清单。", body: "汇总整个笔记库的复选框，带数量和所在文件夹。在这里勾掉一项，它所在的笔记里就同步完成。" },
+    projects: { eyebrow: "项目", title: "由你自己的笔记组成的看板。", body: "把一个文件夹标记为项目，它笔记里的待办就成了 issue，可以放在看板或列表里看。拖动卡片改状态、设优先级，也可以让智能体来认领 —— 卡片上会显示它的 logo，完成后还会留下完成者。每一次改动，都只是 Markdown 文件里的一行。" },
   },
   agents: {
     eyebrow: "任何智能体，同一个笔记库",
     title: "带上你已经在用的智能体。",
-    body: "Ornata 支持 MCP，所以 Claude Code、Codex、Cursor 等都能搜索你的笔记、往今天的日记里追加内容、勾选待办。每个笔记库允许智能体做什么由你决定 —— 关闭、只读，或读写 —— 每次编辑都会把旧版本留在笔记的历史里。",
+    body: "Ornata 支持 MCP，所以 Claude Code、Codex、Cursor 等都能搜索你的笔记、往今天的日记里追加内容、勾选待办，还能从项目看板里认领 issue。每个笔记库允许智能体做什么由你决定 —— 关闭、只读，或读写 —— 每次编辑都会把旧版本留在笔记的历史里。",
     terminal: "也可以在任意终端里：",
   },
   faq: { aside: "细节", title: "实际会问的问题。", lead: "存储、兼容、更新，以及外部智能体到底能做什么。", items: FAQS_ZH },
@@ -210,7 +213,7 @@ const zh: Copy = {
   },
   meta: {
     title: "Ornata — Mac 与 Windows 本地优先的 Markdown 笔记",
-    description: "Ornata 是一款免费的、本地优先的 Markdown 笔记应用，支持 macOS 和 Windows。笔记就是你自己文件夹里的普通 .md 文件，带链接图谱、反向链接，以及一个 MCP 服务，让你已经在用的 AI 智能体在你允许的范围内处理笔记。",
+    description: "Ornata 是一款免费的、本地优先的 Markdown 笔记应用，支持 macOS 和 Windows。笔记就是你自己文件夹里的普通 .md 文件，带链接图谱、反向链接、项目看板，以及一个 MCP 服务，让你已经在用的 AI 智能体在你允许的范围内处理笔记。",
     docsTitle: "文档",
     docsDescription: "如何使用 Ornata：笔记库、写作、链接、分屏、搜索、日记、导出、MCP 与命令行、快捷键和故障排查。",
     updatesTitle: "更新日志",

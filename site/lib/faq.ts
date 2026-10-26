@@ -26,6 +26,10 @@ export const FAQS_EN: Faq[] = [
     a: "Yes. ⌘-click a link, press ⌘↵ on a result in the command palette, or choose Open to the side from a tab or a file's menu. You can have up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done.",
   },
   {
+    q: "Does Ornata have projects or a task board?",
+    a: "Yes. Right-click a folder and mark it as a project: the task lines in its notes become issues, shown in a list or on a board with Todo, In progress, Done and Canceled columns. Statuses, priority, due dates and tags are written on the line itself, so nothing is stored outside your Markdown. Agents with read & write access can claim an issue and finish it, and the card shows which agent did.",
+  },
+  {
     q: "Can I export my notes?",
     a: "They're already Markdown files, so there's nothing to export to keep them. To share, export a note as a PDF — with a bookmark outline built from its headings, plus your choice of paper size and margins — or as standalone HTML. Each export offers Show in Finder when it's done.",
   },
@@ -90,6 +94,10 @@ export const FAQS_ZH: Faq[] = [
   {
     q: "可以并排查看两篇笔记吗？",
     a: "可以。⌘ 点击链接，在命令面板的结果上按 ⌘↵，或在标签页或文件的菜单里选择「在侧边打开」。最多可以有四个窗格，每个都有自己的标题栏和前进后退箭头。拖动分隔条调整大小，用完关掉即可。",
+  },
+  {
+    q: "Ornata 有项目或任务看板吗？",
+    a: "有。右键一个文件夹，标记为项目：其中笔记里的待办行会成为 issue，可以用列表查看，也可以放在「待办、进行中、已完成、已取消」四列的看板上。状态、优先级、截止日期和标签都写在行本身，所以不会有任何内容存在你的 Markdown 之外。有读写权限的智能体可以认领并完成 issue，卡片上会显示是哪个智能体。",
   },
   {
     q: "可以导出笔记吗？",

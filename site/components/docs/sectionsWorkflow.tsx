@@ -91,6 +91,49 @@ export const WORKFLOW: DocSection[] = [
     ),
   },
   {
+    id: "projects",
+    title: "Projects and issues",
+    lead: "The tasks in your notes, on a board.",
+    body: (
+      <>
+        <Ul>
+          <Li>
+            <strong className="font-medium text-foreground">Make a project:</strong> right-click a folder and choose
+            Set as project. Its notes&apos; task lines become issues; nothing is stored anywhere but your Markdown. Switch
+            the sidebar between <em>Notes</em> and <em>Projects</em> at the top, and open the Projects tab for the list or
+            the board.
+          </Li>
+          <Li>
+            <strong className="font-medium text-foreground">Statuses:</strong> <Code>[ ]</Code> todo, <Code>[/]</Code> in
+            progress, <Code>[x]</Code> done, <Code>[-]</Code> canceled. Type <Code>[/]</Code> or <Code>[-]</Code> and a
+            space at the start of a line, or use the slash menu.
+          </Li>
+          <Li>
+            <strong className="font-medium text-foreground">Details on the line:</strong> <Code>#tag</Code>,{" "}
+            <Code>!urgent</Code> / <Code>!high</Code> / <Code>!medium</Code> / <Code>!low</Code>, <Code>@2026-11-10</Code>.
+            Ornata also stamps when a task was created, finished or canceled. Indented bullets under a task are its notes.
+          </Li>
+          <Li>
+            <strong className="font-medium text-foreground">The board:</strong> drag a card to change its status, click a
+            status to cycle it, right-click a card or row for any status or priority, and use + on a column to add a task
+            straight into it (it goes into the project&apos;s <Code>Tasks.md</Code>).
+          </Li>
+          <Li>
+            <strong className="font-medium text-foreground">Capture:</strong> select text in any note and choose Create
+            issue, or right-click an issue and choose Turn into issue page to give it its own note in the
+            project&apos;s <Code>issues/</Code> folder.
+          </Li>
+          <Li>
+            <strong className="font-medium text-foreground">Agents:</strong> with read &amp; write access, an agent can list
+            projects and issues, ask for the next issue, claim one, change status or priority, add decision notes and add
+            issues. A claimed issue shows the agent&apos;s own logo; when the agent marks it done, the card keeps a badge
+            saying who finished it.
+          </Li>
+        </Ul>
+      </>
+    ),
+  },
+  {
     id: "history",
     title: "History and clean-up",
     lead: "Undo further back than ⌘Z.",
@@ -142,7 +185,7 @@ export const WORKFLOW: DocSection[] = [
         <P>
           Ornata speaks <strong className="font-medium text-foreground">MCP</strong>, the open standard AI agents use to
           reach tools. An agent can search and read your notes, see backlinks and open tasks, and — only if you allow it
-          — create, edit, append, tick tasks, rename, move, and delete.
+          — create, edit, append, tick tasks, work project issues, rename, move, and delete.
         </P>
         <H3>Connect an agent</H3>
         <Ul>
@@ -169,7 +212,7 @@ export const WORKFLOW: DocSection[] = [
           rows={[
             ["Off", "Nothing."],
             ["Read only (default)", "List, read, and search notes; see backlinks, open tasks, and daily notes."],
-            ["Read & write", "Also create, update, and append to notes, add to daily notes, tick tasks. Every edit keeps the old text in the note's history."],
+            ["Read & write", "Also create, update, and append to notes, add to daily notes, tick tasks, claim and update project issues. Every edit keeps the old text in the note's history."],
             ["Full access", "Also rename, move, and delete. Deleted notes go to the Trash."],
           ]}
         />

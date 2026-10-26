@@ -32,12 +32,13 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - Compatibility: works on the same plain-Markdown vault as Obsidian; preserves external frontmatter
 - Linking: backlinks and unlinked mentions per note; a link graph tab (folder regions, search, link direction) and a local graph under each note
 - Workspace: open tabs, plus split view — up to four notes side by side, each pane with its own header, draggable dividers, ⌘1–⌘4 to jump between panes; focus mode; back/forward through visited notes; headings fold; @ inserts a link to a daily note
+- Projects: right-click a folder to mark it as a project; the task lines in its notes become issues, in a list or on a board (Todo, In progress, Done, Canceled). Status is the checkbox ([ ] [/] [x] [-]), with inline #tag, !urgent/!high/!medium/!low, @date, and times — all stored in the Markdown. Drag cards to change status; "Turn into issue page" gives an issue its own note. Agents with read & write access can list, claim, update and add issues; a claimed issue shows the agent's logo and a done one shows who finished it
 - Search: ⌘K command palette searches titles and content, and finds titles from shorthand (e.g. "prjroad" → "project roadmap")
 - Agents: Ornata serves MCP, so outside agents (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Claude Desktop) can search, read, and edit notes. Connect from MCP Settings; HTTP on localhost (http://127.0.0.1:13200/mcp, with a bearer token shown in MCP Settings) or stdio (the command "ornata mcp", works with the app closed). Access is set per vault in Settings (off, read only, read & write, full) and the agent cannot raise it. The same tools are a command line: ornata search, read, tasks, backlinks, daily, journal add, capture, create, append
 - Backup: Settings › General saves a dated zip of the notes and images (not history snapshots) to a folder you choose, e.g. in iCloud Drive or Dropbox, about once a day; restore by unzipping
 - Themes: light, dark, or follow the system, with a theme for each — Default / Paper / Paper Textured in light, Default / Basalt Bedrock / Tokyo Techno / Early Ember / Neon Noir in dark; switch from the status bar
 - Export: PDF with a heading bookmark outline and paper/margin settings, standalone HTML, or the Markdown file itself
-- Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search, vault-wide open tasks
+- Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search, vault-wide open tasks, project boards
 - Updates: signed update feed; the macOS build is Developer ID signed and notarized (the Windows installer is not yet code-signed)
 - Languages: English, Simplified Chinese
 - License: MIT

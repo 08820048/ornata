@@ -103,6 +103,10 @@ function Sidebar({ active }: { active: string | null }) {
           <QuickRow icon={CalendarDays} label="New daily note" keys="⌘J" />
           <QuickRow icon={ListChecks} label="Tasks" />
         </div>
+        <div className="mt-2 grid grid-cols-2 rounded-md bg-sunken p-0.5 text-[12px]">
+          <span className="rounded-[5px] bg-background py-[3px] text-center text-foreground shadow-sm">Notes</span>
+          <span className="py-[3px] text-center text-muted-foreground">Projects</span>
+        </div>
       </div>
       <div className="px-4 pb-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">My Notes</span>

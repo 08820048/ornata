@@ -68,6 +68,33 @@ export const WORKFLOW_ZH: DocSection[] = [
     ),
   },
   {
+    id: "projects",
+    title: "项目与 issue",
+    lead: "笔记里的待办，放上看板。",
+    body: (
+      <Ul>
+        <Li>
+          <B>创建项目：</B>右键文件夹，选「设为项目」。其中笔记里的待办行就成了 issue；除了你的 Markdown，不会在别处存任何东西。边栏顶部可以在「笔记」和「项目」之间切换，打开「项目」标签页查看列表或看板。
+        </Li>
+        <Li>
+          <B>状态：</B><Code>[ ]</Code> 待办，<Code>[/]</Code> 进行中，<Code>[x]</Code> 已完成，<Code>[-]</Code> 已取消。在行首输入 <Code>[/]</Code> 或 <Code>[-]</Code> 加空格，或用斜杠菜单。
+        </Li>
+        <Li>
+          <B>写在行上的细节：</B><Code>#标签</Code>、<Code>!urgent</Code> / <Code>!high</Code> / <Code>!medium</Code> / <Code>!low</Code>、<Code>@2026-11-10</Code>。Ornata 还会记下待办的创建、完成和取消时间。待办下方缩进的列表项是它的备注。
+        </Li>
+        <Li>
+          <B>看板：</B>拖动卡片改状态，点状态循环切换，右键卡片或行选择任意状态或优先级，列顶的「+」可直接在该列新增任务（写进项目的 <Code>Tasks.md</Code>）。
+        </Li>
+        <Li>
+          <B>收集：</B>在任意笔记里选中文字，选「创建 issue」；或右键 issue 选「升级为 issue 页面」，在项目的 <Code>issues/</Code> 文件夹里给它一篇独立的笔记。
+        </Li>
+        <Li>
+          <B>智能体：</B>有读写权限时，智能体可以列出项目和 issue、取下一个 issue、认领、改状态或优先级、写决策备注、新增 issue。被认领的 issue 会显示该智能体自己的 logo；智能体标记完成后，卡片上会留下完成者徽章。
+        </Li>
+      </Ul>
+    ),
+  },
+  {
     id: "history",
     title: "历史与清理",
     lead: "比 ⌘Z 撤得更远。",
@@ -110,7 +137,7 @@ export const WORKFLOW_ZH: DocSection[] = [
     body: (
       <>
         <P>
-          Ornata 支持 <B>MCP</B> —— AI 智能体用来调用工具的开放标准。智能体可以搜索和读取你的笔记，查看反向链接和未完成待办，并且 —— 只有你允许时 —— 新建、编辑、追加、勾选待办、重命名、移动和删除。
+          Ornata 支持 <B>MCP</B> —— AI 智能体用来调用工具的开放标准。智能体可以搜索和读取你的笔记，查看反向链接和未完成待办，并且 —— 只有你允许时 —— 新建、编辑、追加、勾选待办、处理项目 issue、重命名、移动和删除。
         </P>
         <H3>连接智能体</H3>
         <Ul>
