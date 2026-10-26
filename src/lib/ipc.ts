@@ -168,7 +168,8 @@ export const ipc = {
   setIssueStatus: (rel: string, line: number, text: string, status: IssueStatus) =>
     call<void>("set_issue_status", { rel, line, text, status }),
 
-  addIssue: (project: string, text: string) => call<string>("add_issue", { project, text }),
+  addIssue: (project: string, text: string, status?: IssueStatus) =>
+    call<string>("add_issue", { project, text, status }),
   createProjectDoc: (project: string, folder: string, title: string, content: string) =>
     call<string>("create_project_doc", { project, folder, title, content }),
   createIssueNote: (project: string, title: string) =>

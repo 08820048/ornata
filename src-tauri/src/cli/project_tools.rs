@@ -28,8 +28,8 @@ pub fn definitions() -> Vec<Tool> {
             object(json!({ "path": path, "line": line, "text": text, "status": status }), &["path", "line", "text", "status"])),
         tool("add_decision", "Record a one-line decision or progress note under an issue.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "decision": { "type": "string" } }), &["path", "line", "text", "decision"])),
-        tool("add_issue", "Add an issue to a project's Backlog.md.", Level::Write,
-            object(json!({ "project": project, "text": { "type": "string", "description": "One line; may include #tag !high @2026-11-10" } }), &["project", "text"])),
+        tool("add_issue", "Add an issue to a project's Backlog.md (status defaults to todo).", Level::Write,
+            object(json!({ "project": project, "text": { "type": "string", "description": "One line; may include #tag !high @2026-11-10" }, "status": status }), &["project", "text"])),
     ]
 }
 
@@ -90,7 +90,11 @@ pub fn call(root: &Path, name: &str, args: &Value) -> Option<AppResult<Value>> {
             Ok(json!({ "added": true }))
         })(),
         "add_issue" => (|| {
-            let path = projects::add_issue(root, arg(args, "project")?, arg(args, "text")?)?;
+            let status = match opt(args, "status") {
+                "" => IssueStatus::Todo,
+                other => status_of(other)?,
+            };
+            let path = projects::add_issue(root, arg(args, "project")?, arg(args, "text")?, status)?;
             Ok(json!({ "path": path }))
         })(),
         _ => return None,

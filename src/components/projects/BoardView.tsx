@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { IconPlus } from "@tabler/icons-react";
 import {
   DndContext,
   DragOverlay,
@@ -24,9 +25,12 @@ const keyOf = (issue: Issue) => `${issue.rel}:${issue.line}`;
 export function BoardView({
   issues,
   onStatus,
+  onAdd,
 }: {
   issues: Issue[];
   onStatus: (issue: Issue, status: IssueStatus) => void;
+  /** Create a task with `text` in `status`; resolves true when it was written. */
+  onAdd: (status: IssueStatus, text: string) => Promise<boolean>;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [dragging, setDragging] = useState<Issue | null>(null);
@@ -43,7 +47,7 @@ export function BoardView({
     <DndContext sensors={sensors} onDragStart={onStart} onDragEnd={onEnd} onDragCancel={() => setDragging(null)}>
       <div className="grid grid-cols-4 items-start gap-3">
         {STATUSES.map((status) => (
-          <Column key={status} status={status} issues={issues.filter((i) => i.status === status)} />
+          <Column key={status} status={status} issues={issues.filter((i) => i.status === status)} onAdd={onAdd} />
         ))}
       </div>
       <DragOverlay dropAnimation={null}>{dragging && <Card issue={dragging} overlay />}</DragOverlay>
@@ -51,8 +55,17 @@ export function BoardView({
   );
 }
 
-function Column({ status, issues }: { status: IssueStatus; issues: Issue[] }) {
+function Column({
+  status,
+  issues,
+  onAdd,
+}: {
+  status: IssueStatus;
+  issues: Issue[];
+  onAdd: (status: IssueStatus, text: string) => Promise<boolean>;
+}) {
   const t = useT();
+  const [adding, setAdding] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
     <section
@@ -66,8 +79,23 @@ function Column({ status, issues }: { status: IssueStatus; issues: Issue[] }) {
         <StatusIcon status={status} size={14} />
         <span>{t(`projects.status.${status}`)}</span>
         <span className="tabular-nums text-faint">{issues.length}</span>
+        <button
+          type="button"
+          aria-label={t("projects.addTo", { status: t(`projects.status.${status}`) })}
+          title={t("projects.addTo", { status: t(`projects.status.${status}`) })}
+          onClick={() => setAdding(true)}
+          className="press ml-auto grid h-5 w-5 place-items-center rounded text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
+        >
+          <IconPlus size={14} stroke={1.75} />
+        </button>
       </header>
       <div className="flex flex-col gap-1.5">
+        {adding && (
+          <NewCard
+            onSubmit={(text) => onAdd(status, text)}
+            onClose={() => setAdding(false)}
+          />
+        )}
         {issues.map((issue) => (
           <DraggableCard key={keyOf(issue)} issue={issue} />
         ))}
@@ -123,6 +151,45 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
         {issue.due && <span className="shrink-0 tabular-nums">{issue.due.slice(5)}</span>}
         {issue.priority && <PriorityIcon priority={issue.priority} />}
       </div>
+    </div>
+  );
+}
+
+/** An empty card to type into: Enter adds the task and stays open for the next one, Esc or leaving it empty closes. */
+function NewCard({
+  onSubmit,
+  onClose,
+}: {
+  onSubmit: (text: string) => Promise<boolean>;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const ref = useRef<HTMLInputElement>(null);
+  const [text, setText] = useState("");
+  useEffect(() => ref.current?.focus(), []);
+  const submit = async () => {
+    const value = text.trim();
+    if (!value) return onClose();
+    setText("");
+    if (!(await onSubmit(value))) setText(value);
+  };
+  return (
+    <div className="rounded-md border border-line bg-bg px-2.5 py-2">
+      <input
+        ref={ref}
+        value={text}
+        placeholder={t("projects.newPlaceholder")}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return;
+          if (event.key === "Enter") {
+            event.preventDefault();
+            void submit();
+          } else if (event.key === "Escape") onClose();
+        }}
+        onBlur={() => !text.trim() && onClose()}
+        className="w-full bg-transparent text-[13px] leading-[1.45] text-ink outline-none placeholder:text-faint"
+      />
     </div>
   );
 }

@@ -21,7 +21,7 @@ pub enum IssueStatus {
 }
 
 impl IssueStatus {
-    fn mark(self) -> &'static str {
+    pub fn mark(self) -> &'static str {
         match self {
             Self::Todo => "[ ]",
             Self::Doing => "[/]",
@@ -291,7 +291,7 @@ pub fn set_issue_status(
     })
 }
 
-fn today() -> String {
+pub fn today() -> String {
     chrono::Local::now().format("%Y-%m-%d").to_string()
 }
 

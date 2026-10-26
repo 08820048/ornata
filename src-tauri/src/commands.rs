@@ -474,8 +474,13 @@ pub fn set_project(app: AppHandle, state: State<'_, AppState>, rel: String, on: 
 }
 
 #[tauri::command]
-pub fn add_issue(state: State<'_, AppState>, project: String, text: String) -> AppResult<String> {
-    projects::add_issue(&state.root()?, &project, &text)
+pub fn add_issue(
+    state: State<'_, AppState>,
+    project: String,
+    text: String,
+    status: Option<IssueStatus>,
+) -> AppResult<String> {
+    projects::add_issue(&state.root()?, &project, &text, status.unwrap_or(IssueStatus::Todo))
 }
 
 #[tauri::command]

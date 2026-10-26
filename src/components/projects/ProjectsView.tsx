@@ -134,6 +134,20 @@ export function ProjectsView({ active }: { active: boolean }) {
     }
   };
 
+  const addIssue = async (status: IssueStatus, text: string) => {
+    if (!selected) return false;
+    try {
+      await ipc.addIssue(selected, text, status);
+      notifyNotesChanged();
+      setNonce((n) => n + 1);
+      void useProjects.getState().load();
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+
   const makeDoc = async (folder: string, title: string, content: string) => {
     if (!selected) return;
     try {
@@ -236,11 +250,11 @@ export function ProjectsView({ active }: { active: boolean }) {
         </header>
 
         {failed && <p className="py-8 text-center text-[13px] text-faint">{t("projects.loadFailed")}</p>}
-        {!failed && issues?.length === 0 && (
+        {mode === "list" && !failed && issues?.length === 0 && (
           <Empty text={t("projects.noIssues")} hint={t("projects.syntax")} />
         )}
-        {!failed && issues && issues.length > 0 && mode === "board" && (
-          <BoardView issues={issues} onStatus={setStatus} />
+        {!failed && issues && mode === "board" && (
+          <BoardView issues={issues} onStatus={setStatus} onAdd={addIssue} />
         )}
         {mode === "list" && !failed && issues && issues.length > 0 && groups.length === 0 && (
           <Empty text={t("projects.allDone")} />

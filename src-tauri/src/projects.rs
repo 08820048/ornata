@@ -156,9 +156,10 @@ pub fn next_issue(issues: Vec<Issue>) -> Option<Issue> {
 /// The project's inbox note, where issues captured from elsewhere land.
 pub const BACKLOG: &str = "Backlog";
 
-/// Append `- [ ] text` to the project's `Backlog.md` (created on first use).
-/// Returns the note's rel path.
-pub fn add_issue(root: &Path, project_rel: &str, text: &str) -> AppResult<String> {
+/// Append a task with `status` to the project's `Backlog.md` (created on
+/// first use). A done task gets today's completion stamp. Returns the note's
+/// rel path.
+pub fn add_issue(root: &Path, project_rel: &str, text: &str, status: IssueStatus) -> AppResult<String> {
     let text = text.trim();
     if text.is_empty() || text.contains('\n') {
         return Err(AppError::InvalidInput("invalid task text".into()));
@@ -178,7 +179,8 @@ pub fn add_issue(root: &Path, project_rel: &str, text: &str) -> AppResult<String
     if !content.is_empty() && !content.ends_with('\n') {
         content.push('\n');
     }
-    content.push_str(&format!("- [ ] {text}\n"));
+    let stamp = if status == IssueStatus::Done { format!(" ✓{}", crate::issues::today()) } else { String::new() };
+    content.push_str(&format!("- {} {text}{stamp}\n", status.mark()));
     write_note(root, &rel, &content)?;
     Ok(rel)
 }
@@ -267,15 +269,19 @@ mod tests {
         assert_eq!(next_issue(by_priority).unwrap().title, "a");
         assert!(next_issue(all.into_iter().filter(|i| i.status == IssueStatus::Done).collect()).is_none());
 
-        let backlog = add_issue(root, &app, "first").unwrap();
+        let backlog = add_issue(root, &app, "first", IssueStatus::Todo).unwrap();
         assert_eq!(backlog, "App/Backlog.md");
-        add_issue(root, &app, " second ").unwrap();
+        add_issue(root, &app, " second ", IssueStatus::Todo).unwrap();
         assert_eq!(
             crate::notes::read_note(root, &backlog).unwrap(),
             "# Backlog\n\n- [ ] first\n- [ ] second\n"
         );
-        assert!(add_issue(root, &app, "a\nb").is_err());
-        assert!(add_issue(root, "Plain", "x").is_err());
+        add_issue(root, &app, "going", IssueStatus::Doing).unwrap();
+        add_issue(root, &app, "finished", IssueStatus::Done).unwrap();
+        let tail = crate::notes::read_note(root, &backlog).unwrap();
+        assert!(tail.contains("- [/] going\n") && tail.contains(&format!("- [x] finished ✓{}\n", crate::issues::today())));
+        assert!(add_issue(root, &app, "a\nb", IssueStatus::Todo).is_err());
+        assert!(add_issue(root, "Plain", "x", IssueStatus::Todo).is_err());
 
         set_project(root, &app, false).unwrap();
         assert!(project_issues(root, &app).is_err());
