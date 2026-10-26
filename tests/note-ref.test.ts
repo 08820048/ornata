@@ -1,5 +1,15 @@
 import { expect, test } from "bun:test";
-import { relIsUnder, remapRelList } from "../src/lib/noteRef";
+import {
+  GRAPH_TAB,
+  PROJECTS_TAB,
+  isNoteTab,
+  relIsUnder,
+  remapRelList,
+  tabKey,
+  tabOfView,
+  vaultNote,
+  viewOfTab,
+} from "../src/lib/noteRef";
 
 test("remapRelList rewrites a note and everything inside a folder", () => {
   expect(remapRelList(["a.md", "projects/a.md", "projects/sub/b.md", "other.md"], "projects", "work")).toEqual([
@@ -23,4 +33,16 @@ test("relIsUnder matches the entry and its descendants only", () => {
   expect(relIsUnder("projects", "projects")).toBe(true);
   expect(relIsUnder("projects-old/a.md", "projects")).toBe(false);
   expect(relIsUnder("other.md", "projects")).toBe(false);
+});
+
+test("graph and projects tabs are distinct non-note tabs that round-trip through views", () => {
+  for (const tab of [GRAPH_TAB, PROJECTS_TAB]) {
+    expect(isNoteTab(tab)).toBe(false);
+    expect(tabOfView(viewOfTab(tab))).toEqual(tab);
+  }
+  expect(tabKey(GRAPH_TAB)).not.toBe(tabKey(PROJECTS_TAB));
+  const note = vaultNote("a.md");
+  expect(isNoteTab(note)).toBe(true);
+  expect(viewOfTab(PROJECTS_TAB)).toEqual({ type: "projects" });
+  expect(tabOfView(viewOfTab(note))).toEqual(note);
 });

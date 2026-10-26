@@ -17,6 +17,9 @@ import type {
   TagCount,
   UnusedAsset,
   OpenTask,
+  Issue,
+  IssueStatus,
+  ProjectSummary,
   SettingsSnapshot,
   BackupInfo,
   DarkPalette,
@@ -158,6 +161,18 @@ export const ipc = {
 
   reopenTask: (rel: string, line: number, text: string) =>
     call<void>("reopen_task", { rel, line, text }),
+
+  listProjects: () => call<ProjectSummary[]>("list_projects"),
+  projectIssues: (rel: string) => call<Issue[]>("project_issues", { rel }),
+  setProject: (rel: string, on: boolean) => call<void>("set_project", { rel, on }),
+  setIssueStatus: (rel: string, line: number, text: string, status: IssueStatus) =>
+    call<void>("set_issue_status", { rel, line, text, status }),
+
+  addIssue: (project: string, text: string) => call<string>("add_issue", { project, text }),
+  createIssueNote: (project: string, title: string) =>
+    call<string>("create_issue_note", { project, title }),
+  replaceIssueText: (rel: string, line: number, text: string, newText: string) =>
+    call<void>("replace_issue_text", { rel, line, text, newText }),
 
   exportNote: (rel: string, content: string) =>
     call<string | null>("export_note", { rel, content }),

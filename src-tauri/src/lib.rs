@@ -27,6 +27,8 @@ mod reveal;
 mod search;
 mod tags;
 mod templates;
+mod issues;
+mod projects;
 mod tasks;
 mod settings_window;
 mod upload;
@@ -130,6 +132,13 @@ pub fn run() {
             commands::open_tasks,
             commands::complete_task,
             commands::reopen_task,
+            commands::list_projects,
+            commands::project_issues,
+            commands::set_project,
+            commands::set_issue_status,
+            commands::add_issue,
+            commands::create_issue_note,
+            commands::replace_issue_text,
             commands::export_note,
             external_notes::export_external_note,
             commands::save_image_asset,

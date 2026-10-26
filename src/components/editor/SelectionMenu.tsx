@@ -4,17 +4,19 @@ import { NodeSelection } from "@tiptap/pm/state";
 import {
   IconBold,
   IconCode,
+  IconChecklist,
   IconItalic,
   IconLink,
   IconStrikethrough,
   IconUnderline,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { captureIssue } from "@/lib/captureIssue";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 
-export function SelectionMenu({ editor }: { editor: Editor }) {
+export function SelectionMenu({ editor, noteRel }: { editor: Editor; noteRel: string | null }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const t = useT();
@@ -132,6 +134,22 @@ export function SelectionMenu({ editor }: { editor: Editor }) {
               >
                 <IconLink size={14} stroke={2} />
               </MarkButton>
+              {noteRel && (
+                <MarkButton
+                  active={false}
+                  label={t("projects.capture")}
+                  onClick={(event) => {
+                    const { from, to } = editor.state.selection;
+                    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+                    captureIssue(editor.state.doc.textBetween(from, to, " "), noteRel, {
+                      x: rect.left,
+                      y: rect.bottom + 4,
+                    });
+                  }}
+                >
+                  <IconChecklist size={14} stroke={2} />
+                </MarkButton>
+              )}
             </>
           )}
         </div>
@@ -148,7 +166,7 @@ function MarkButton({
 }: {
   active: boolean;
   label: string;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent) => void;
   children: React.ReactNode;
 }) {
   return (
@@ -161,7 +179,7 @@ function MarkButton({
         )}
         onMouseDown={(event) => {
           event.preventDefault();
-          onClick();
+          onClick(event);
         }}
       >
         {children}

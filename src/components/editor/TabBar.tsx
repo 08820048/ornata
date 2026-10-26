@@ -4,6 +4,7 @@ import {
   IconCircleX,
   IconLayoutColumns,
   IconLayoutSidebarRightCollapse,
+  IconLayoutKanban,
   IconTopologyStar3,
   IconX,
 } from "@tabler/icons-react";
@@ -216,7 +217,9 @@ function Tab({
 }) {
   const setView = useVault((s) => s.setView);
   const t = useT();
-  const title = isNoteTab(tab) ? noteTitle(tab) : t("graph.title");
+  const title = isNoteTab(tab)
+    ? noteTitle(tab)
+    : t(tab.kind === "graph" ? "graph.title" : "projects.title");
 
   return (
     <div
@@ -277,8 +280,11 @@ function Tab({
       ) : (
         <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover/tab:bg-hover/60 group-hover/tab:opacity-100" />
       )}
-      {!isNoteTab(tab) && (
+      {tab.kind === "graph" && (
         <IconTopologyStar3 size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
+      )}
+      {tab.kind === "projects" && (
+        <IconLayoutKanban size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
       )}
       <span className="relative z-10 truncate">{title}</span>
       <Tooltip label={t("editor.closeTab")} side="bottom">

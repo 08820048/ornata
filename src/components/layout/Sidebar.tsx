@@ -13,6 +13,9 @@ import {
 import { ActionSwapButton } from "@/components/motion/action-swap";
 import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
+import { ProjectsSidebar } from "@/components/projects/ProjectsSidebar";
+import { useProjects, type SidebarMode } from "@/stores/projects";
+import { useEffect } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useUi } from "@/stores/ui";
 import { vaultNote } from "@/lib/noteRef";
@@ -33,7 +36,17 @@ export function Sidebar() {
   const setTagsOpen = useUi((s) => s.setTagsOpen);
   const treeSort = useVault((s) => s.treeSort);
   const setTreeSort = useVault((s) => s.setTreeSort);
+  const root = useVault((s) => s.root);
+  const vaultVersion = useVault((s) => s.vaultVersion);
+  const mode = useProjects((s) => s.sidebar);
   const t = useT();
+
+  useEffect(() => {
+    if (root) useProjects.getState().restore(root);
+  }, [root]);
+  useEffect(() => {
+    if (useProjects.getState().root) void useProjects.getState().load();
+  }, [vaultVersion]);
 
   return (
     <aside className="paper-side relative flex h-full w-[240px] shrink-0 flex-col border-r border-line-soft bg-panel">
@@ -65,94 +78,132 @@ export function Sidebar() {
             onClick={() => setTasksOpen(true)}
           />
         </div>
+        <ModeSwitch mode={mode} />
       </div>
 
-      {pinned.length > 0 && (
-        <div className="px-2 pb-2">
-          <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
-            {t("pinned.title")}
-          </div>
-          {pinned.map((rel) => {
-            const node = flattenNotes(tree).find((n) => n.rel === rel);
-            return (
-              <div
-                key={rel}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  const vault = useVault.getState();
-                  vault.expandTo(rel);
-                  vault.setView({ type: "note", note: vaultNote(rel) });
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    const vault = useVault.getState();
-                    vault.expandTo(rel);
-                    vault.setView({ type: "note", note: vaultNote(rel) });
-                  }
-                }}
-                className="group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
-              >
-                <IconPin size={12} stroke={2} className="shrink-0 text-faint" />
-                <span className="min-w-0 flex-1 truncate">
-                  {node?.name ?? rel.replace(/\.md$/i, "")}
-                </span>
-                <button
-                  type="button"
-                  aria-label={t("pinned.remove")}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void togglePin(rel);
-                  }}
-                  className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity duration-100 hover:text-ink group-hover:opacity-100"
-                >
-                  <IconX size={12} stroke={2} />
-                </button>
+      {mode === "projects" ? (
+        <ProjectsSidebar />
+      ) : (
+        <>
+          {pinned.length > 0 && (
+            <div className="px-2 pb-2">
+              <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
+                {t("pinned.title")}
               </div>
-            );
-          })}
-        </div>
+              {pinned.map((rel) => {
+                const node = flattenNotes(tree).find((n) => n.rel === rel);
+                return (
+                  <div
+                    key={rel}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      const vault = useVault.getState();
+                      vault.expandTo(rel);
+                      vault.setView({ type: "note", note: vaultNote(rel) });
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        const vault = useVault.getState();
+                        vault.expandTo(rel);
+                        vault.setView({ type: "note", note: vaultNote(rel) });
+                      }
+                    }}
+                    className="group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
+                  >
+                    <IconPin size={12} stroke={2} className="shrink-0 text-faint" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {node?.name ?? rel.replace(/\.md$/i, "")}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t("pinned.remove")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void togglePin(rel);
+                      }}
+                      className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity duration-100 hover:text-ink group-hover:opacity-100"
+                    >
+                      <IconX size={12} stroke={2} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pl-4 pr-2 pb-1">
+            <span
+              className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-faint"
+              title={name}
+            >
+              {name || t("common.notes")}
+            </span>
+            <div className="flex items-center gap-0.5">
+              <ActionSwapButton
+                items={[
+                  { id: "name", label: t("tree.sortName"), icon: <IconSortAscendingLetters size={15} stroke={1.75} />, ariaLabel: t("tree.sortName") },
+                  { id: "modified", label: t("tree.sortModified"), icon: <IconClock size={14.5} stroke={1.75} />, ariaLabel: t("tree.sortModified") },
+                ]}
+                value={treeSort}
+                onValueChange={(value) => setTreeSort(value as TreeSort)}
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-md text-faint hover:text-muted"
+              />
+              <IconAction label={t("tags.title")} onClick={() => setTagsOpen(true)}>
+                <IconHash size={14.5} stroke={1.75} />
+              </IconAction>
+              <IconAction
+                label={t("common.newNote")}
+                onClick={() => createNote(activeDir(useVault.getState()))}
+              >
+                <IconFilePlus size={14.5} stroke={1.75} />
+              </IconAction>
+              <IconAction
+                label={t("common.newFolder")}
+                onClick={() => createFolder("", t("common.untitled"))}
+              >
+                <IconFolderPlus size={14.5} stroke={1.75} />
+              </IconAction>
+            </div>
+          </div>
+
+          <FileTree />
+        </>
       )}
-
-      <div className="flex items-center justify-between pl-4 pr-2 pb-1">
-        <span
-          className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-faint"
-          title={name}
-        >
-          {name || t("common.notes")}
-        </span>
-        <div className="flex items-center gap-0.5">
-          <ActionSwapButton
-            items={[
-              { id: "name", label: t("tree.sortName"), icon: <IconSortAscendingLetters size={15} stroke={1.75} />, ariaLabel: t("tree.sortName") },
-              { id: "modified", label: t("tree.sortModified"), icon: <IconClock size={14.5} stroke={1.75} />, ariaLabel: t("tree.sortModified") },
-            ]}
-            value={treeSort}
-            onValueChange={(value) => setTreeSort(value as TreeSort)}
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 rounded-md text-faint hover:text-muted"
-          />
-          <IconAction label={t("tags.title")} onClick={() => setTagsOpen(true)}>
-            <IconHash size={14.5} stroke={1.75} />
-          </IconAction>
-          <IconAction
-            label={t("common.newNote")}
-            onClick={() => createNote(activeDir(useVault.getState()))}
-          >
-            <IconFilePlus size={14.5} stroke={1.75} />
-          </IconAction>
-          <IconAction
-            label={t("common.newFolder")}
-            onClick={() => createFolder("", t("common.untitled"))}
-          >
-            <IconFolderPlus size={14.5} stroke={1.75} />
-          </IconAction>
-        </div>
-      </div>
-
-      <FileTree />
     </aside>
+  );
+}
+
+/** Notes or projects in the sidebar. Picking projects also shows the projects tab. */
+function ModeSwitch({ mode }: { mode: SidebarMode }) {
+  const t = useT();
+  const pick = (next: SidebarMode) => {
+    useProjects.getState().setSidebar(next);
+    if (next === "projects") {
+      const { selected } = useProjects.getState();
+      if (selected) useProjects.getState().open(selected);
+    }
+  };
+  return (
+    <div role="tablist" className="mt-2 grid grid-cols-2 rounded-md bg-sunken p-0.5">
+      {(["notes", "projects"] as const).map((value) => (
+        <button
+          key={value}
+          type="button"
+          role="tab"
+          aria-selected={mode === value}
+          onClick={() => pick(value)}
+          className={cx(
+            "rounded-[5px] py-[3px] text-[12px] transition-colors duration-100",
+            mode === value ? "bg-bg text-ink shadow-sm" : "text-muted hover:text-ink",
+          )}
+        >
+          {t(value === "notes" ? "common.notes" : "projects.title")}
+        </button>
+      ))}
+    </div>
   );
 }
 

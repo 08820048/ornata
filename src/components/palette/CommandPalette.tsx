@@ -12,6 +12,7 @@ import {
   IconPlug,
   IconSearch,
   IconSettings,
+  IconLayoutKanban,
   IconTopologyStar3,
 } from "@tabler/icons-react";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
@@ -27,6 +28,7 @@ import { flattenNotes } from "@/lib/tree";
 import type { SearchHit, TreeNode } from "@/lib/types";
 import { cx, keyLabel, parentDir } from "@/lib/utils";
 import { Modal } from "@/components/ui/Modal";
+import { useProjects } from "@/stores/projects";
 import { useTabs } from "@/stores/tabs";
 import { useUi } from "@/stores/ui";
 import { activeDir, useVault } from "@/stores/vault";
@@ -152,6 +154,15 @@ export function CommandPalette() {
         label: t("graph.title"),
         icon: IconTopologyStar3,
         run: () => useVault.getState().setView({ type: "graph" }),
+      },
+      {
+        id: "projects",
+        label: t("projects.open"),
+        icon: IconLayoutKanban,
+        run: () => {
+          useProjects.getState().setSidebar("projects");
+          useVault.getState().setView({ type: "projects" });
+        },
       },
       {
         id: "cleanup-assets",

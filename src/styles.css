@@ -1536,6 +1536,28 @@ body {
 .prose-note ul[data-type="taskList"] input:checked + span::after {
     opacity: 1;
 }
+/* in progress: half-filled box; canceled: struck box with a dash */
+.prose-note ul[data-type="taskList"] li[data-status="doing"] > label span {
+    background: linear-gradient(90deg, var(--todo) 50%, transparent 50%);
+}
+.prose-note ul[data-type="taskList"] li[data-status="canceled"] > label span {
+    border-color: var(--faint);
+}
+.prose-note ul[data-type="taskList"] li[data-status="canceled"] > label span::after {
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 0;
+    border-right: 0;
+    border-bottom: 1.5px solid var(--faint);
+    transform: translate(-50%, -50%);
+    opacity: 1;
+}
+.prose-note ul[data-type="taskList"] li[data-status="canceled"] > div {
+    color: var(--faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--faint);
+}
 
 /* placeholder */
 .prose-note .is-editor-empty:first-child::before {

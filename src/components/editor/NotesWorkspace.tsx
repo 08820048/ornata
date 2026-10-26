@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { NoteEditor } from "./NoteEditor";
 import { GraphView } from "@/components/graph/GraphView";
+import { ProjectsView } from "@/components/projects/ProjectsView";
 import { PaneHeader } from "@/components/layout/PaneHeader";
 import { isNoteTab, sameTab, tabKey, tabOfView, viewOfTab } from "@/lib/noteRef";
 import { MIN_PANE_PX, resizeDivider } from "@/lib/split";
@@ -112,8 +113,10 @@ export function NotesWorkspace({ visible }: { visible: boolean }) {
               <div className="absolute inset-0">
                 {isNoteTab(tab) ? (
                   <NoteEditor note={tab} active={isActive} />
-                ) : (
+                ) : tab.kind === "graph" ? (
                   <GraphView active={isActive} />
+                ) : (
+                  <ProjectsView active={isActive} />
                 )}
               </div>
             </div>

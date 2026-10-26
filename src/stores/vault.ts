@@ -11,7 +11,6 @@ import {
   tabOfView,
   vaultNote,
   viewOfTab,
-  GRAPH_TAB,
 } from "@/lib/noteRef";
 import type {
   ExternalNote,
@@ -404,8 +403,8 @@ export const useVault = create<VaultState>((set, get) => ({
     if (view?.type === "note") {
       useTabs.getState().open(view.note);
       if (view.note.kind === "vault") get().pushRecent(view.note.rel);
-    } else if (view?.type === "graph") {
-      useTabs.getState().open(GRAPH_TAB);
+    } else if (view) {
+      useTabs.getState().open(tabOfView(view));
     }
   },
 

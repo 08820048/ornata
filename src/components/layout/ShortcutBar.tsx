@@ -25,7 +25,7 @@ export function ShortcutBar() {
   const view = useVault((s) => s.view);
   if (focusMode) return null;
 
-  const context: BarContext = !view ? "empty" : view.type === "graph" ? "graph" : "note";
+  const context: BarContext = !view ? "empty" : view.type === "note" ? "note" : "graph";
 
   return (
     <footer

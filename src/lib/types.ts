@@ -175,10 +175,46 @@ export type NoteRef =
 /** The vault's link graph, open as a tab beside notes. */
 export type GraphTab = { kind: "graph" };
 
-/** Anything the tab strip can hold. Notes stay `NoteRef` everywhere else. */
-export type TabRef = NoteRef | GraphTab;
+/** Issue state, written as the task box: `[ ]` `[/]` `[x]` `[-]`. */
+export type IssueStatus = "todo" | "doing" | "done" | "canceled";
+export type IssuePriority = "urgent" | "high" | "medium" | "low";
 
-export type View = { type: "note"; note: NoteRef } | { type: "graph" };
+/** One task line of a project note (Rust `issues::Issue`). */
+export interface Issue {
+  rel: string;
+  line: number;
+  /** The line after the box, verbatim — the guard for edits. */
+  text: string;
+  /** `text` minus the `#tag` / `!priority` / `@date` tokens. */
+  title: string;
+  status: IssueStatus;
+  priority: IssuePriority | null;
+  due: string | null;
+  tags: string[];
+  /** Nearest heading above the line (below the H1). */
+  milestone: string | null;
+  /** Plain bullets indented under the task. */
+  notes: string[];
+  depth: number;
+}
+
+/** A folder marked as a project, with issue counts by status. */
+export interface ProjectSummary {
+  rel: string;
+  name: string;
+  todo: number;
+  doing: number;
+  done: number;
+  canceled: number;
+}
+
+/** The project space (issues of marked folders), open as a tab beside notes. */
+export type ProjectsTab = { kind: "projects" };
+
+/** Anything the tab strip can hold. Notes stay `NoteRef` everywhere else. */
+export type TabRef = NoteRef | GraphTab | ProjectsTab;
+
+export type View = { type: "note"; note: NoteRef } | { type: "graph" } | { type: "projects" };
 
 /** What external agents (the `ornata` command line / MCP server) may do. */
 export type CliAccess = "off" | "readOnly" | "readWrite" | "full";

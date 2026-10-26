@@ -1,0 +1,235 @@
+//! A project is a folder of notes marked by a hidden `.ornata-project` file,
+//! which travels with the folder on rename/move. Its issues are the task lines
+//! of every note inside it, except those of nested projects (they are theirs).
+
+use std::fs;
+use std::path::Path;
+
+use serde::Serialize;
+
+use crate::error::{AppError, AppResult};
+use crate::issues::{parse_issues, Issue, IssueStatus};
+use crate::notes::{create_note, write_note};
+use crate::vault::{notes_root, rel_of, resolve_rel};
+
+pub const MARKER: &str = ".ornata-project";
+
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectSummary {
+    pub rel: String,
+    pub name: String,
+    pub todo: usize,
+    pub doing: usize,
+    pub done: usize,
+    pub canceled: usize,
+}
+
+fn is_project(dir: &Path) -> bool {
+    dir.join(MARKER).is_file()
+}
+
+fn visible_entries(dir: &Path) -> Vec<fs::DirEntry> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut out: Vec<_> = entries
+        .flatten()
+        .filter(|e| !e.file_name().to_string_lossy().starts_with('.'))
+        .collect();
+    out.sort_by_key(|e| e.file_name().to_string_lossy().to_lowercase());
+    out
+}
+
+/// Every marked folder in the vault, with issue counts by status.
+pub fn list_projects(root: &Path) -> AppResult<Vec<ProjectSummary>> {
+    fn walk(root: &Path, dir: &Path, out: &mut Vec<ProjectSummary>) -> AppResult<()> {
+        for entry in visible_entries(dir) {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            if is_project(&path) {
+                let rel = rel_of(root, &path)?;
+                let mut summary = ProjectSummary {
+                    name: entry.file_name().to_string_lossy().to_string(),
+                    ..Default::default()
+                };
+                for issue in issues_in(root, &path)? {
+                    match issue.status {
+                        IssueStatus::Todo => summary.todo += 1,
+                        IssueStatus::Doing => summary.doing += 1,
+                        IssueStatus::Done => summary.done += 1,
+                        IssueStatus::Canceled => summary.canceled += 1,
+                    }
+                }
+                summary.rel = rel;
+                out.push(summary);
+            }
+            walk(root, &path, out)?;
+        }
+        Ok(())
+    }
+    let mut out = Vec::new();
+    walk(root, &notes_root(root), &mut out)?;
+    Ok(out)
+}
+
+fn project_dir(root: &Path, rel: &str) -> AppResult<std::path::PathBuf> {
+    if rel.trim_matches('/').is_empty() {
+        return Err(AppError::InvalidInput("the notes root cannot be a project".into()));
+    }
+    let dir = resolve_rel(root, rel)?;
+    if !dir.is_dir() {
+        return Err(AppError::NotFound(rel.to_string()));
+    }
+    Ok(dir)
+}
+
+/// All issues of the project at `rel`, ordered by note path then line.
+pub fn project_issues(root: &Path, rel: &str) -> AppResult<Vec<Issue>> {
+    let dir = project_dir(root, rel)?;
+    if !is_project(&dir) {
+        return Err(AppError::NotFound(rel.to_string()));
+    }
+    issues_in(root, &dir)
+}
+
+fn issues_in(root: &Path, dir: &Path) -> AppResult<Vec<Issue>> {
+    fn walk(root: &Path, dir: &Path, top: bool, out: &mut Vec<Issue>) -> AppResult<()> {
+        if !top && is_project(dir) {
+            return Ok(());
+        }
+        let (folders, files): (Vec<_>, Vec<_>) =
+            visible_entries(dir).into_iter().partition(|e| e.path().is_dir());
+        for entry in files {
+            let path = entry.path();
+            if path.extension().is_none_or(|e| e != "md") {
+                continue;
+            }
+            let content = fs::read_to_string(&path).unwrap_or_default();
+            out.extend(parse_issues(&rel_of(root, &path)?, &content));
+        }
+        for entry in folders {
+            walk(root, &entry.path(), false, out)?;
+        }
+        Ok(())
+    }
+    let mut out = Vec::new();
+    walk(root, dir, true, &mut out)?;
+    Ok(out)
+}
+
+/// Mark (or unmark) the folder at `rel` as a project.
+pub fn set_project(root: &Path, rel: &str, on: bool) -> AppResult<()> {
+    let marker = project_dir(root, rel)?.join(MARKER);
+    match (on, marker.is_file()) {
+        (true, false) => fs::write(marker, "")?,
+        (false, true) => fs::remove_file(marker)?,
+        _ => {}
+    }
+    Ok(())
+}
+
+/// The project's inbox note, where issues captured from elsewhere land.
+pub const BACKLOG: &str = "Backlog";
+
+/// Append `- [ ] text` to the project's `Backlog.md` (created on first use).
+/// Returns the note's rel path.
+pub fn add_issue(root: &Path, project_rel: &str, text: &str) -> AppResult<String> {
+    let text = text.trim();
+    if text.is_empty() || text.contains('\n') {
+        return Err(AppError::InvalidInput("invalid task text".into()));
+    }
+    let dir = project_dir(root, project_rel)?;
+    if !is_project(&dir) {
+        return Err(AppError::NotFound(project_rel.to_string()));
+    }
+    let file = dir.join(format!("{BACKLOG}.md"));
+    let rel = rel_of(root, &file)?;
+    let mut content = if file.is_file() {
+        fs::read_to_string(&file)?
+    } else {
+        create_note(root, project_rel, BACKLOG)?;
+        format!("# {BACKLOG}\n\n")
+    };
+    if !content.is_empty() && !content.ends_with('\n') {
+        content.push('\n');
+    }
+    content.push_str(&format!("- [ ] {text}\n"));
+    write_note(root, &rel, &content)?;
+    Ok(rel)
+}
+
+/// Create the page for an issue promoted out of a task line: a note named
+/// after it in the project's `issues/` folder, starting with its title.
+/// Returns the note's rel path (suffixed if the name was taken).
+pub fn create_issue_note(root: &Path, project_rel: &str, title: &str) -> AppResult<String> {
+    let dir = project_dir(root, project_rel)?;
+    if !is_project(&dir) {
+        return Err(AppError::NotFound(project_rel.to_string()));
+    }
+    let issues = dir.join("issues");
+    if !issues.is_dir() {
+        fs::create_dir(&issues)?;
+    }
+    let rel = create_note(root, &rel_of(root, &issues)?, title)?;
+    write_note(root, &rel, &format!("# {}\n\n", title.trim()))?;
+    Ok(rel)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::notes::{create_folder, create_note, write_note};
+    use crate::vault::ensure_layout;
+    use tempfile::tempdir;
+
+    #[test]
+    fn lists_marked_folders_and_keeps_nested_projects_apart() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let app = create_folder(root, "", "App").unwrap();
+        let sub = create_folder(root, &app, "Sub").unwrap();
+        create_folder(root, "", "Plain").unwrap();
+        let plan = create_note(root, &app, "Plan").unwrap();
+        write_note(root, &plan, "- [ ] a\n- [/] b\n- [x] c\n").unwrap();
+        let inner = create_note(root, &sub, "Inner").unwrap();
+        write_note(root, &inner, "- [-] d\n").unwrap();
+
+        assert!(list_projects(root).unwrap().is_empty());
+        set_project(root, &app, true).unwrap();
+        set_project(root, &app, true).unwrap();
+        let list = list_projects(root).unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!((list[0].todo, list[0].doing, list[0].done, list[0].canceled), (1, 1, 1, 1));
+
+        set_project(root, &sub, true).unwrap();
+        let list = list_projects(root).unwrap();
+        let names: Vec<_> = list.iter().map(|p| (p.name.as_str(), p.canceled)).collect();
+        assert_eq!(names, [("App", 0), ("Sub", 1)]);
+        assert_eq!(project_issues(root, &app).unwrap().len(), 3);
+
+        let page = create_issue_note(root, &app, "Fix: graph/search").unwrap();
+        assert_eq!(page, "App/issues/Fix graph search.md");
+        assert_eq!(create_issue_note(root, &app, "Fix: graph/search").unwrap(), "App/issues/Fix graph search 2.md");
+        assert_eq!(crate::notes::read_note(root, &page).unwrap(), "# Fix: graph/search\n\n");
+        assert!(create_issue_note(root, "Plain", "x").is_err());
+
+        let backlog = add_issue(root, &app, "first").unwrap();
+        assert_eq!(backlog, "App/Backlog.md");
+        add_issue(root, &app, " second ").unwrap();
+        assert_eq!(
+            crate::notes::read_note(root, &backlog).unwrap(),
+            "# Backlog\n\n- [ ] first\n- [ ] second\n"
+        );
+        assert!(add_issue(root, &app, "a\nb").is_err());
+        assert!(add_issue(root, "Plain", "x").is_err());
+
+        set_project(root, &app, false).unwrap();
+        assert!(project_issues(root, &app).is_err());
+        assert!(set_project(root, "", true).is_err());
+        assert!(set_project(root, "../x", true).is_err());
+    }
+}

@@ -1,5 +1,5 @@
 import { debounce } from "@/lib/utils";
-import { GRAPH_TAB, externalNote, sameTab, tabOfView, vaultNote, viewOfTab } from "@/lib/noteRef";
+import { GRAPH_TAB, PROJECTS_TAB, externalNote, sameTab, tabOfView, vaultNote, viewOfTab } from "@/lib/noteRef";
 import { restorePanes } from "@/lib/paneSession";
 import { ipc } from "@/lib/ipc";
 import { flattenNotes } from "@/lib/tree";
@@ -57,9 +57,9 @@ function parseNoteRef(value: unknown): NoteRef | null {
 }
 
 function parseTab(value: unknown): TabRef | null {
-  if (value && typeof value === "object" && (value as { kind?: unknown }).kind === "graph") {
-    return GRAPH_TAB;
-  }
+  const kind = value && typeof value === "object" ? (value as { kind?: unknown }).kind : null;
+  if (kind === "graph") return GRAPH_TAB;
+  if (kind === "projects") return PROJECTS_TAB;
   return parseNoteRef(value);
 }
 
@@ -67,6 +67,7 @@ function parseView(value: unknown): View | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;
   if (raw.type === "graph") return { type: "graph" };
+  if (raw.type === "projects") return { type: "projects" };
   if (raw.type === "note") {
     // Migrate pre-NoteRef sessions whose note view stored `rel` directly.
     const note = parseNoteRef(raw.note ?? raw.rel);
@@ -116,6 +117,7 @@ export async function restoreSession(root: string) {
   }
   const valid = (tab: TabRef) =>
     tab.kind === "graph" ||
+    tab.kind === "projects" ||
     (tab.kind === "vault"
       ? existing.has(tab.rel)
       : authorizedExternal.has(tab.path));

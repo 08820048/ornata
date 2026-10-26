@@ -1,0 +1,127 @@
+import { useMemo, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { openNoteAt } from "@/components/editor/NoteBacklinks";
+import { parseInline } from "@/lib/inlineMarkdown";
+import { hrefToRel } from "@/lib/noteLinks";
+import type { Issue, IssueStatus } from "@/lib/types";
+import { cx } from "@/lib/utils";
+import { useT } from "@/stores/locale";
+import { PriorityIcon, STATUSES, StatusIcon } from "./issueIcons";
+
+const keyOf = (issue: Issue) => `${issue.rel}:${issue.line}`;
+
+/** Status columns; dropping a card on one rewrites that task's box. */
+export function BoardView({
+  issues,
+  onStatus,
+}: {
+  issues: Issue[];
+  onStatus: (issue: Issue, status: IssueStatus) => void;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const [dragging, setDragging] = useState<Issue | null>(null);
+  const byKey = useMemo(() => new Map(issues.map((i) => [keyOf(i), i])), [issues]);
+
+  const onStart = (event: DragStartEvent) => setDragging(byKey.get(String(event.active.id)) ?? null);
+  const onEnd = (event: DragEndEvent) => {
+    setDragging(null);
+    const issue = byKey.get(String(event.active.id));
+    if (issue && event.over) onStatus(issue, event.over.id as IssueStatus);
+  };
+
+  return (
+    <DndContext sensors={sensors} onDragStart={onStart} onDragEnd={onEnd} onDragCancel={() => setDragging(null)}>
+      <div className="grid grid-cols-4 items-start gap-3">
+        {STATUSES.map((status) => (
+          <Column key={status} status={status} issues={issues.filter((i) => i.status === status)} />
+        ))}
+      </div>
+      <DragOverlay dropAnimation={null}>{dragging && <Card issue={dragging} overlay />}</DragOverlay>
+    </DndContext>
+  );
+}
+
+function Column({ status, issues }: { status: IssueStatus; issues: Issue[] }) {
+  const t = useT();
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+  return (
+    <section
+      ref={setNodeRef}
+      className={cx(
+        "min-h-[160px] rounded-lg p-1.5 transition-colors duration-100",
+        isOver ? "bg-active" : "bg-sunken/60",
+      )}
+    >
+      <header className="flex items-center gap-1.5 px-1.5 pb-2 pt-1 text-[12px] font-medium text-muted">
+        <StatusIcon status={status} size={14} />
+        <span>{t(`projects.status.${status}`)}</span>
+        <span className="tabular-nums text-faint">{issues.length}</span>
+      </header>
+      <div className="flex flex-col gap-1.5">
+        {issues.map((issue) => (
+          <DraggableCard key={keyOf(issue)} issue={issue} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DraggableCard({ issue }: { issue: Issue }) {
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: keyOf(issue) });
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes} className={cx("touch-none", isDragging && "opacity-40")}>
+      <Card issue={issue} />
+    </div>
+  );
+}
+
+function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
+  const closed = issue.status === "done" || issue.status === "canceled";
+  const parts = parseInline(issue.title, issue.rel);
+  const linked = /^\[[^\]]+\]\(([^)\s]+)\)$/.exec(issue.title.trim());
+  const target = linked ? hrefToRel(linked[1]) : null;
+  const where = issue.milestone ?? issue.rel.replace(/\.md$/i, "").split("/").pop();
+  return (
+    <div
+      onClick={() => (target ? openNoteAt(target, target) : openNoteAt(issue.rel, issue.rel, issue.title))}
+      className={cx(
+        "cursor-pointer rounded-md border border-line-soft bg-bg px-2.5 py-2 transition-colors duration-100 hover:border-line",
+        overlay && "shadow-lg shadow-black/10",
+      )}
+    >
+      <div
+        className={cx(
+          "text-[13px] leading-[1.45]",
+          closed ? "text-faint" : "text-ink",
+          issue.status === "canceled" && "line-through",
+        )}
+      >
+        {parts.map((part, index) => (
+          <span key={index} className={part.kind === "link" && !closed ? "text-accent" : undefined}>
+            {part.text}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-faint">
+        <span className="min-w-0 flex-1 truncate">{where}</span>
+        {issue.tags.slice(0, 2).map((tag) => (
+          <span key={tag} className="shrink-0 rounded bg-sunken px-1.5 leading-[16px] text-muted">
+            #{tag}
+          </span>
+        ))}
+        {issue.due && <span className="shrink-0 tabular-nums">{issue.due.slice(5)}</span>}
+        {issue.priority && <PriorityIcon priority={issue.priority} />}
+      </div>
+    </div>
+  );
+}

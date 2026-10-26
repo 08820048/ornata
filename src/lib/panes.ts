@@ -1,4 +1,4 @@
-import { tabKey, viewOfTab } from "@/lib/noteRef";
+import { tabKey, tabOfView, viewOfTab } from "@/lib/noteRef";
 import { nextPane } from "@/lib/split";
 import type { TabRef } from "@/lib/types";
 import { useTabs } from "@/stores/tabs";
@@ -29,7 +29,7 @@ export function focusNextPane(): boolean {
   const { split } = useTabs.getState();
   const view = useVault.getState().view;
   if (!split || !view) return false;
-  const next = nextPane(split, view.type === "note" ? view.note : { kind: "graph" });
+  const next = nextPane(split, tabOfView(view));
   if (!next) return false;
   focusPane(next);
   return true;

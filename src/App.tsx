@@ -20,6 +20,7 @@ import { goBack, goForward } from "@/lib/navigate";
 import { handleVaultChanged } from "@/lib/vaultEvents";
 import { focusNextPane, focusPaneNumber } from "@/lib/panes";
 import { McpDialog } from "@/components/mcp/McpDialog";
+import { IssuePicker } from "@/components/projects/IssuePicker";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
@@ -277,6 +278,7 @@ export default function App() {
         {status === "ready" && <AppShell />}
         <CommandPalette />
         {status === "ready" && <TasksDialog />}
+        {status === "ready" && <IssuePicker />}
         {status === "ready" && <McpDialog />}
       {status === "ready" && <TagsDialog />}
       {status === "ready" && <UnusedAssetsDialog />}

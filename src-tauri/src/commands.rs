@@ -17,6 +17,8 @@ use crate::templates;
 use crate::image_source::{self, ImagePayload};
 use crate::mentions::{self, Mention};
 use crate::search::SearchHit;
+use crate::issues::{self, Issue, IssueStatus};
+use crate::projects::{self, ProjectSummary};
 use crate::tasks::{self, OpenTask};
 use crate::vault::{self, TreeNode};
 use crate::{agent_docs, assets, legacy, notes, search, upload};
@@ -446,6 +448,59 @@ pub fn complete_task(
     text: String,
 ) -> AppResult<()> {
     tasks::complete_task(&state.root()?, &rel, line, &text)
+}
+
+#[tauri::command]
+pub async fn list_projects(state: State<'_, AppState>) -> AppResult<Vec<ProjectSummary>> {
+    let root = state.root()?;
+    off_main(move || projects::list_projects(&root)).await
+}
+
+#[tauri::command]
+pub async fn project_issues(state: State<'_, AppState>, rel: String) -> AppResult<Vec<Issue>> {
+    let root = state.root()?;
+    off_main(move || projects::project_issues(&root, &rel)).await
+}
+
+#[tauri::command]
+pub fn set_project(state: State<'_, AppState>, rel: String, on: bool) -> AppResult<()> {
+    projects::set_project(&state.root()?, &rel, on)
+}
+
+#[tauri::command]
+pub fn add_issue(state: State<'_, AppState>, project: String, text: String) -> AppResult<String> {
+    projects::add_issue(&state.root()?, &project, &text)
+}
+
+#[tauri::command]
+pub fn create_issue_note(
+    state: State<'_, AppState>,
+    project: String,
+    title: String,
+) -> AppResult<String> {
+    projects::create_issue_note(&state.root()?, &project, &title)
+}
+
+#[tauri::command]
+pub fn replace_issue_text(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+    new_text: String,
+) -> AppResult<()> {
+    issues::replace_issue_text(&state.root()?, &rel, line, &text, &new_text)
+}
+
+#[tauri::command]
+pub fn set_issue_status(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+    status: IssueStatus,
+) -> AppResult<()> {
+    issues::set_issue_status(&state.root()?, &rel, line, &text, status)
 }
 
 #[tauri::command]

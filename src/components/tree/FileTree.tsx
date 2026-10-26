@@ -20,6 +20,7 @@ import {
   IconPencil,
   IconPin,
   IconTrash,
+  IconLayoutKanban,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -32,6 +33,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/lib/ipc";
+import { useProjects } from "@/stores/projects";
 import { sortChildren } from "@/lib/tree";
 import type { TreeNode, TreeSort } from "@/lib/types";
 import { EASE_OUT } from "@/lib/ease";
@@ -179,6 +181,11 @@ export function FileTree() {
             if (rel) setRenaming(rel);
           },
         },
+        {
+          label: isProject(node.rel) ? t("projects.unmark") : t("projects.mark"),
+          icon: IconLayoutKanban,
+          onSelect: () => void useProjects.getState().mark(node.rel, !isProject(node.rel)),
+        },
       );
     }
     items.push(
@@ -206,6 +213,8 @@ export function FileTree() {
     return items;
   }
 }
+
+const isProject = (rel: string) => useProjects.getState().projects.some((p) => p.rel === rel);
 
 function findNode(nodes: TreeNode[], rel: string): TreeNode | null {
   for (const node of nodes) {

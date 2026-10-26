@@ -307,7 +307,7 @@ export const NoteEditor = memo(function NoteEditor({
             </footer>
           )}
           {active && editor && !markdownSource && (
-            <SelectionMenu editor={editor} />
+            <SelectionMenu editor={editor} noteRel={note.kind === "vault" ? note.rel : null} />
           )}
         {active && !markdownSource && (
           <SlashMenu
