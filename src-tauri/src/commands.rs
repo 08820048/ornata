@@ -463,13 +463,30 @@ pub async fn project_issues(state: State<'_, AppState>, rel: String) -> AppResul
 }
 
 #[tauri::command]
-pub fn set_project(state: State<'_, AppState>, rel: String, on: bool) -> AppResult<()> {
-    projects::set_project(&state.root()?, &rel, on)
+pub fn set_project(app: AppHandle, state: State<'_, AppState>, rel: String, on: bool) -> AppResult<()> {
+    let root = state.root()?;
+    projects::set_project(&root, &rel, on)?;
+    if on {
+        let zh = config::load(&app).language == Language::SimplifiedChinese;
+        templates::seed_project_templates(&root, zh)?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
 pub fn add_issue(state: State<'_, AppState>, project: String, text: String) -> AppResult<String> {
     projects::add_issue(&state.root()?, &project, &text)
+}
+
+#[tauri::command]
+pub fn create_project_doc(
+    state: State<'_, AppState>,
+    project: String,
+    folder: String,
+    title: String,
+    content: String,
+) -> AppResult<String> {
+    projects::create_project_doc(&state.root()?, &project, &folder, &title, &content)
 }
 
 #[tauri::command]

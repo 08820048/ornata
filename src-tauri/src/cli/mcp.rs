@@ -19,6 +19,7 @@ pub fn serve(
     level: Level,
     presence: Option<&Presence>,
 ) -> io::Result<()> {
+    let mut client = String::new();
     for line in input.lines() {
         let line = line?;
         if line.trim().is_empty() {
@@ -27,12 +28,12 @@ pub fn serve(
         let reply = match serde_json::from_str::<Value>(&line) {
             Ok(message) => {
                 if message.get("method").and_then(Value::as_str) == Some("initialize") {
-                    let client = message["params"]["clientInfo"]["name"].as_str().unwrap_or("unknown");
+                    client = message["params"]["clientInfo"]["name"].as_str().unwrap_or("unknown").to_string();
                     if let Some(presence) = presence {
-                        presence.set_client(client);
+                        presence.set_client(&client);
                     }
                 }
-                handle(root, level, &message)
+                handle(root, level, &client, &message)
             }
             Err(_) => Some(error(Value::Null, -32700, "parse error")),
         };
@@ -52,8 +53,9 @@ fn error(id: Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
-/// `None` for notifications, which get no reply.
-pub(super) fn handle(root: &Path, level: Level, message: &Value) -> Option<Value> {
+/// `None` for notifications, which get no reply. `client` is the agent's own
+/// name from `initialize` (empty when unknown); a claim carries it.
+pub(super) fn handle(root: &Path, level: Level, client: &str, message: &Value) -> Option<Value> {
     let id = message.get("id")?.clone();
     let method = message.get("method").and_then(Value::as_str).unwrap_or("");
     let params = message.get("params").cloned().unwrap_or(Value::Null);
@@ -91,7 +93,10 @@ pub(super) fn handle(root: &Path, level: Level, message: &Value) -> Option<Value
         }
         "tools/call" => {
             let name = params.get("name").and_then(Value::as_str).unwrap_or("");
-            let args = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+            let mut args = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+            if name == "claim_issue" && !client.is_empty() && client != "unknown" {
+                args["agent"] = json!(client);
+            }
             let (text, is_error) = match call(root, level, name, &args) {
                 Ok(value) => (serde_json::to_string_pretty(&value).unwrap_or_default(), false),
                 Err(err) => (err.to_string(), true),
@@ -187,6 +192,25 @@ mod tests {
         let text = allowed[1]["result"]["content"][0]["text"].as_str().unwrap();
         assert!(text.contains("ship it") && text.contains("more"));
         assert_eq!(allowed[2]["result"]["isError"], true, "delete needs full access");
+    }
+
+    #[test]
+    fn a_claim_carries_the_clients_own_name() {
+        let call = |id, name: &str, args: Value| rpc(id, "tools/call", json!({ "name": name, "arguments": args }));
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        let folder = crate::notes::create_folder(dir.path(), "", "App").unwrap();
+        crate::projects::set_project(dir.path(), &folder, true).unwrap();
+        let note = create_note(dir.path(), &folder, "Plan").unwrap();
+        write_note(dir.path(), &note, "- [ ] Ship\n").unwrap();
+        let lines = [
+            rpc(1, "initialize", json!({ "clientInfo": { "name": "Claude Code" } })),
+            call(2, "claim_issue", json!({ "path": note, "line": 0, "text": "Ship", "agent": "someone-else" })),
+        ];
+        let input: String = lines.iter().map(|l| format!("{l}\n")).collect();
+        let mut out = Vec::new();
+        serve(input.as_bytes(), &mut out, dir.path(), Level::Write, None).unwrap();
+        assert!(crate::notes::read_note(dir.path(), &note).unwrap().contains("- [/] Ship +Claude-Code"));
     }
 
     #[test]

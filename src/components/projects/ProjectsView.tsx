@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { IconClipboardCopy, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
+import { IconCalendarStats, IconClipboardCopy, IconFileDescription, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
 import { openNoteAt } from "@/components/editor/NoteBacklinks";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -8,6 +8,7 @@ import { parseInline } from "@/lib/inlineMarkdown";
 import { ipc } from "@/lib/ipc";
 import { hrefToRel } from "@/lib/noteLinks";
 import { agentBrief } from "@/lib/agentBrief";
+import { changelogDraft, createDoc, todayIso, weeklyReview } from "@/lib/projectDocs";
 import { isPromoted, promoteIssue } from "@/lib/promoteIssue";
 import { NOTES_CHANGED, notifyNotesChanged } from "@/lib/vaultEvents";
 import type { Issue, IssueStatus } from "@/lib/types";
@@ -133,6 +134,27 @@ export function ProjectsView({ active }: { active: boolean }) {
     }
   };
 
+  const makeDoc = async (folder: string, title: string, content: string) => {
+    if (!selected) return;
+    try {
+      const rel = await createDoc(selected, folder, title, content);
+      notifyNotesChanged();
+      setNonce((n) => n + 1);
+      toast.success(t("projects.docCreated", { title }));
+      openNoteAt(rel, rel);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    }
+  };
+  const makeReview = () =>
+    makeDoc("Reviews", t("projects.reviewTitle", { date: todayIso() }), weeklyReview(issues ?? [], todayIso()));
+  const makeChangelog = (milestone: string) =>
+    makeDoc(
+      "Changelogs",
+      t("projects.changelogTitle", { milestone: plain(milestone) }),
+      changelogDraft(milestone, issues ?? []),
+    );
+
   const copyBrief = async (issue: Issue) => {
     try {
       await navigator.clipboard.writeText(agentBrief(project?.name ?? "", issue));
@@ -161,6 +183,16 @@ export function ProjectsView({ active }: { active: boolean }) {
             <span className="shrink-0 text-[12px] tabular-nums text-muted">
               {t("projects.progress", { done, total: counted.length })}
             </span>
+            <Tooltip label={t("projects.review")}>
+              <button
+                type="button"
+                aria-label={t("projects.review")}
+                onClick={() => void makeReview()}
+                className="press grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted transition-colors duration-100 hover:bg-hover hover:text-ink"
+              >
+                <IconCalendarStats size={14} stroke={1.75} />
+              </button>
+            </Tooltip>
             <div className="flex shrink-0 rounded-md bg-sunken p-0.5">
               {(["list", "board"] as const).map((value) => {
                 const Icon = value === "list" ? IconList : IconLayoutKanban;
@@ -231,6 +263,7 @@ export function ProjectsView({ active }: { active: boolean }) {
                 filter={filter}
                 onStatus={setStatus}
                 onMenu={(issue, at) => setMenu({ issue, at })}
+                onChangelog={makeChangelog}
               />
             ))}
           </section>
@@ -262,25 +295,43 @@ function MilestoneBlock({
   filter,
   onStatus,
   onMenu,
+  onChangelog,
 }: {
   milestone: Milestone;
   filter: Filter;
   onStatus: (issue: Issue, status: IssueStatus) => void;
   onMenu: (issue: Issue, at: MenuPosition) => void;
+  onChangelog: (milestone: string) => void;
 }) {
+  const t = useT();
   const shown = filter === "all" ? milestone.issues : milestone.issues.filter(isOpen);
   const counted = milestone.issues.filter((i) => i.status !== "canceled");
   const done = counted.filter((i) => i.status === "done").length;
   return (
-    <div className="mb-4">
+    <div className="group/ms mb-4">
       {milestone.name && (
-        <div className="flex items-baseline gap-2 border-b border-line-soft px-2 pb-1.5 pt-2">
+        <div className="flex items-center gap-2 border-b border-line-soft px-2 pb-1.5 pt-2">
           <span className="min-w-0 truncate text-[13px] font-semibold text-ink">
             {plain(milestone.name)}
           </span>
           <span className="shrink-0 text-[11.5px] tabular-nums text-faint">
             {done}/{counted.length}
           </span>
+          {done > 0 && (
+            <Tooltip label={t("projects.changelog")}>
+              <button
+                type="button"
+                aria-label={t("projects.changelog")}
+                onClick={() => onChangelog(milestone.name!)}
+                className={cx(
+                  "ml-auto grid h-5 w-5 shrink-0 place-items-center rounded transition-colors duration-100 hover:bg-hover hover:text-ink",
+                  done === counted.length ? "text-muted" : "text-faint opacity-0 group-hover/ms:opacity-100",
+                )}
+              >
+                <IconFileDescription size={13} stroke={1.75} />
+              </button>
+            </Tooltip>
+          )}
         </div>
       )}
       <ul className="pt-1">

@@ -1,5 +1,15 @@
-import { expect, test } from "bun:test";
-import { issueLine, owningProject } from "../src/lib/captureIssue";
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+
+let issueLine: typeof import("../src/lib/captureIssue").issueLine;
+let owningProject: typeof import("../src/lib/captureIssue").owningProject;
+beforeAll(async () => {
+  GlobalRegistrator.register();
+  ({ issueLine, owningProject } = await import("../src/lib/captureIssue"));
+});
+afterAll(async () => {
+  await GlobalRegistrator.unregister();
+});
 
 const project = (rel: string) => ({ rel, name: rel, todo: 0, doing: 0, done: 0, canceled: 0 });
 

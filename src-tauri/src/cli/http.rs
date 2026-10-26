@@ -255,20 +255,23 @@ fn handle(mut request: Request, port: u16, token: &TokenSource, provider: &Provi
     // A session id is handed out at `initialize`; later requests must carry it.
     let is_initialize = messages.iter().any(|m| m.get("method").and_then(Value::as_str) == Some("initialize"));
     let mut issued = None;
+    let mut client = String::new();
     if let Ok(mut state) = state.lock() {
         if is_initialize {
             let id = uuid::Uuid::new_v4().to_string();
-            let client = messages
+            client = messages
                 .iter()
                 .find_map(|m| m["params"]["clientInfo"]["name"].as_str())
                 .unwrap_or("unknown")
                 .to_string();
             state.activity.last_client = client.clone();
-            state.add(id.clone(), client);
+            state.add(id.clone(), client.clone());
             issued = Some(id);
         } else if session.as_ref().is_some_and(|id| !state.clients.contains_key(id)) {
             drop(state);
             return reply(request, 404, Some(error_body(-32000, "unknown session; initialize again")), None);
+        } else if let Some(known) = session.as_ref().and_then(|id| state.clients.get(id)) {
+            client = known.clone();
         }
         state.activity.last_seen_ms = now_ms();
         state.activity.sessions = state.clients.len();
@@ -279,7 +282,7 @@ fn handle(mut request: Request, port: u16, token: &TokenSource, provider: &Provi
     };
     let replies: Vec<Value> = messages
         .into_iter()
-        .filter_map(|m| mcp::handle(&target.root, target.level, m))
+        .filter_map(|m| mcp::handle(&target.root, target.level, &client, m))
         .collect();
     match (&message, replies.len()) {
         (_, 0) => reply(request, 202, None, issued.as_deref()),

@@ -23,7 +23,7 @@ pub fn definitions() -> Vec<Tool> {
             object(json!({ "project": project, "status": status }), &[])),
         tool("next_issue", "The issue to work on next: in-progress first, then by priority and due date.", Level::ReadOnly, object(json!({ "project": project }), &[])),
         tool("claim_issue", "Mark an issue as in progress and show on the board that this agent is working on it.", Level::Write,
-            object(json!({ "path": path, "line": line, "text": text, "agent": { "type": "string", "description": "Your name, e.g. claude-code; letters, digits, - _ /" } }), &["path", "line", "text"])),
+            object(json!({ "path": path, "line": line, "text": text, "agent": { "type": "string", "description": "Only used when the connection did not say who it is; normally your MCP client name is shown" } }), &["path", "line", "text"])),
         tool("set_issue_status", "Change an issue's status (todo, doing, done, canceled). Leaving doing releases the claim.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "status": status }), &["path", "line", "text", "status"])),
         tool("add_decision", "Record a one-line decision or progress note under an issue.", Level::Write,

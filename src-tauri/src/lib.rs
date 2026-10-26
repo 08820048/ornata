@@ -138,6 +138,7 @@ pub fn run() {
             commands::set_issue_status,
             commands::add_issue,
             commands::create_issue_note,
+            commands::create_project_doc,
             commands::replace_issue_text,
             commands::export_note,
             external_notes::export_external_note,

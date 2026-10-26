@@ -62,11 +62,53 @@ pub fn read_template(root: &Path, name: &str) -> AppResult<String> {
     Ok(fs::read_to_string(path)?)
 }
 
+const SEEDED: &str = ".project-seeded";
+
+const PRD_EN: &str = "# PRD: \n\n## Problem\n\n## Goals\n\n## Non-goals\n\n## Solution\n\n## Tasks\n\n- [ ] \n";
+const PRD_ZH: &str = "# PRD：\n\n## 背景与问题\n\n## 目标\n\n## 不做什么\n\n## 方案\n\n## 任务\n\n- [ ] \n";
+const BUG_EN: &str = "# Bug: \n\n## What happens\n\n## Steps to reproduce\n\n1. \n\n## Expected\n\n## Environment\n\n## Cause\n\n## Fix\n\n- [ ] Fix it #bug !high\n";
+const BUG_ZH: &str = "# Bug：\n\n## 现象\n\n## 复现步骤\n\n1. \n\n## 期望\n\n## 环境\n\n## 原因\n\n## 修复\n\n- [ ] 修复 #bug !high\n";
+
+/// Add "PRD" and "Bug report" templates the first time a project is made.
+/// A marker keeps them from coming back after the user deletes or edits them,
+/// and an existing template of the same name is never touched.
+pub fn seed_project_templates(root: &Path, zh: bool) -> AppResult<()> {
+    let dir = templates_dir(root);
+    if dir.join(SEEDED).exists() {
+        return Ok(());
+    }
+    fs::create_dir_all(&dir)?;
+    let (prd, bug) = if zh { (PRD_ZH, BUG_ZH) } else { (PRD_EN, BUG_EN) };
+    let bug_name = if zh { "Bug 报告" } else { "Bug report" };
+    for (name, body) in [("PRD", prd), (bug_name, bug)] {
+        let path = dir.join(format!("{name}.md"));
+        if !path.exists() {
+            fs::write(path, body)?;
+        }
+    }
+    fs::write(dir.join(SEEDED), "")?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::vault::ensure_layout;
     use tempfile::tempdir;
+
+    #[test]
+    fn project_templates_are_seeded_once_and_never_overwrite() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        write_template(dir.path(), "PRD", "mine").unwrap();
+        seed_project_templates(dir.path(), false).unwrap();
+        assert_eq!(read_template(dir.path(), "PRD").unwrap(), "mine");
+        assert!(read_template(dir.path(), "Bug report").unwrap().contains("Steps to reproduce"));
+        fs::remove_file(templates_dir(dir.path()).join("Bug report.md")).unwrap();
+        seed_project_templates(dir.path(), false).unwrap();
+        assert!(read_template(dir.path(), "Bug report").is_err());
+        assert_eq!(list_templates(dir.path()), ["PRD"]);
+    }
 
     #[test]
     fn lists_and_reads_templates() {

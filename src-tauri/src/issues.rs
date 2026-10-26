@@ -67,6 +67,8 @@ pub struct Issue {
     pub tags: Vec<String>,
     /// Who is working on it: an inline `+name` token, set when an agent claims it.
     pub agent: Option<String>,
+    /// Day it was marked done: an inline `✓YYYY-MM-DD`, stamped by the app and agent tools.
+    pub completed: Option<String>,
     pub milestone: Option<String>,
     /// Plain bullets indented under the task (decision notes).
     pub notes: Vec<String>,
@@ -126,6 +128,11 @@ struct Tokens {
     due: Option<String>,
     tags: Vec<String>,
     agent: Option<String>,
+    completed: Option<String>,
+}
+
+fn completion_token(word: &str) -> Option<&str> {
+    word.strip_prefix('✓').filter(|d| is_date(d))
 }
 
 /// `+claude-code`: a plus, a letter, then word characters.
@@ -136,7 +143,7 @@ fn agent_token(word: &str) -> Option<&str> {
 }
 
 fn tokens(text: &str) -> Tokens {
-    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None };
+    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None, completed: None };
     let mut kept: Vec<&str> = Vec::new();
     for word in text.split_whitespace() {
         let lower = word.to_lowercase();
@@ -149,6 +156,10 @@ fn tokens(text: &str) -> Tokens {
         };
         if priority.is_some() {
             out.priority = out.priority.or(priority);
+            continue;
+        }
+        if let Some(day) = completion_token(word) {
+            out.completed.get_or_insert_with(|| day.to_string());
             continue;
         }
         if let Some(name) = agent_token(word) {
@@ -208,6 +219,7 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
                 due: t.due,
                 tags: t.tags,
                 agent: t.agent,
+                completed: t.completed,
                 milestone: milestone.clone(),
                 notes: Vec::new(),
                 depth: stack.len(),
@@ -263,10 +275,24 @@ pub fn set_issue_status(
     forced: bool,
 ) -> AppResult<()> {
     rewrite(root, rel, line, text, forced, |task| {
-        let claimed = task.text.split_whitespace().any(|w| agent_token(w).is_some());
-        let unclaimed = || task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect::<Vec<_>>().join(" ");
-        (status, (claimed && status != IssueStatus::Doing).then(unclaimed))
+        let words: Vec<&str> = task.text.split_whitespace().collect();
+        let mut kept: Vec<String> = words
+            .iter()
+            .filter(|w| completion_token(w).is_none())
+            .filter(|w| status == IssueStatus::Doing || agent_token(w).is_none())
+            .map(|w| w.to_string())
+            .collect();
+        if status == IssueStatus::Done {
+            let stamp = words.iter().find(|w| completion_token(w).is_some());
+            kept.push(stamp.map_or_else(|| format!("✓{}", today()), |w| w.to_string()));
+        }
+        let next = kept.join(" ");
+        (status, (next != task.text).then_some(next))
     })
+}
+
+fn today() -> String {
+    chrono::Local::now().format("%Y-%m-%d").to_string()
 }
 
 /// Mark the task as in progress and claimed by `agent` (shown on the board).
@@ -278,12 +304,12 @@ pub fn claim_issue(
     agent: &str,
     forced: bool,
 ) -> AppResult<()> {
-    let name: String = agent.chars().filter(|c| word_char(*c)).collect();
+    let name: String = agent.trim().replace(char::is_whitespace, "-").chars().filter(|c| word_char(*c)).collect();
     if !name.chars().next().is_some_and(char::is_alphabetic) {
         return Err(AppError::InvalidInput("agent name must start with a letter".into()));
     }
     rewrite(root, rel, line, text, forced, |task| {
-        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect();
+        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none() && completion_token(w).is_none()).collect();
         (IssueStatus::Doing, Some(format!("{} +{name}", rest.join(" "))))
     })
 }
@@ -468,7 +494,13 @@ mod tests {
         assert!(add_issue_note(root, &rel, 1, "stale", "x", true).is_err());
 
         set_issue_status(root, &rel, 1, "Draft #a +claude-code", IssueStatus::Done, true).unwrap();
-        assert!(read_note(root, &rel).unwrap().contains("- [x] Draft #a\n"));
+        let done = read_note(root, &rel).unwrap();
+        assert!(done.contains(&format!("- [x] Draft #a ✓{}\n", today())), "{done}");
+        let issue = &parse_issues(&rel, &done)[0];
+        assert_eq!((issue.completed.as_deref(), issue.title.as_str()), (Some(today().as_str()), "Draft"));
+        let text = format!("Draft #a ✓{}", today());
+        set_issue_status(root, &rel, 1, &text, IssueStatus::Todo, true).unwrap();
+        assert!(read_note(root, &rel).unwrap().contains("- [ ] Draft #a\n"));
         assert!(claim_issue(root, &rel, 1, "Draft #a", "9bad", true).is_err());
     }
 }

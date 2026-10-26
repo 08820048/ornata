@@ -183,21 +183,36 @@ pub fn add_issue(root: &Path, project_rel: &str, text: &str) -> AppResult<String
     Ok(rel)
 }
 
-/// Create the page for an issue promoted out of a task line: a note named
-/// after it in the project's `issues/` folder, starting with its title.
-/// Returns the note's rel path (suffixed if the name was taken).
-pub fn create_issue_note(root: &Path, project_rel: &str, title: &str) -> AppResult<String> {
+/// Create a note named `title` with `content` in `<project>/<folder>/`
+/// (the folder is made if missing). Returns its rel path, suffixed if the
+/// name was taken.
+pub fn create_project_doc(
+    root: &Path,
+    project_rel: &str,
+    folder: &str,
+    title: &str,
+    content: &str,
+) -> AppResult<String> {
     let dir = project_dir(root, project_rel)?;
     if !is_project(&dir) {
         return Err(AppError::NotFound(project_rel.to_string()));
     }
-    let issues = dir.join("issues");
-    if !issues.is_dir() {
-        fs::create_dir(&issues)?;
+    if folder.is_empty() || folder.contains(['/', '\\']) || folder.starts_with('.') {
+        return Err(AppError::InvalidInput("invalid folder".into()));
     }
-    let rel = create_note(root, &rel_of(root, &issues)?, title)?;
-    write_note(root, &rel, &format!("# {}\n\n", title.trim()))?;
+    let target = dir.join(folder);
+    if !target.is_dir() {
+        fs::create_dir(&target)?;
+    }
+    let rel = create_note(root, &rel_of(root, &target)?, title)?;
+    write_note(root, &rel, content)?;
     Ok(rel)
+}
+
+/// The page for an issue promoted out of a task line: a note named after it
+/// in the project's `issues/` folder, starting with its title.
+pub fn create_issue_note(root: &Path, project_rel: &str, title: &str) -> AppResult<String> {
+    create_project_doc(root, project_rel, "issues", title, &format!("# {}\n\n", title.trim()))
 }
 
 #[cfg(test)]
@@ -238,6 +253,10 @@ mod tests {
         assert_eq!(create_issue_note(root, &app, "Fix: graph/search").unwrap(), "App/issues/Fix graph search 2.md");
         assert_eq!(crate::notes::read_note(root, &page).unwrap(), "# Fix: graph/search\n\n");
         assert!(create_issue_note(root, "Plain", "x").is_err());
+        let review = create_project_doc(root, &app, "Reviews", "Review", "# R\n").unwrap();
+        assert_eq!(review, "App/Reviews/Review.md");
+        assert!(create_project_doc(root, &app, "../x", "t", "").is_err());
+        assert!(create_project_doc(root, &app, "a/b", "t", "").is_err());
 
         let all = project_issues(root, &app).unwrap();
         let next = next_issue(all.clone()).unwrap();
