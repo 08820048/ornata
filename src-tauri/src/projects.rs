@@ -8,7 +8,7 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::error::{AppError, AppResult};
-use crate::issues::{parse_issues, Issue, IssueStatus};
+use crate::issues::{parse_issues, Issue, IssueStatus, Priority};
 use crate::notes::{create_note, write_note};
 use crate::vault::{notes_root, rel_of, resolve_rel};
 
@@ -131,6 +131,28 @@ pub fn set_project(root: &Path, rel: &str, on: bool) -> AppResult<()> {
     Ok(())
 }
 
+/// The issue to work on next: anything already in progress first, then open
+/// ones by priority, due date, and document order.
+pub fn next_issue(issues: Vec<Issue>) -> Option<Issue> {
+    let rank = |p: Option<Priority>| match p {
+        Some(Priority::Urgent) => 0,
+        Some(Priority::High) => 1,
+        Some(Priority::Medium) => 2,
+        Some(Priority::Low) => 3,
+        None => 4,
+    };
+    issues
+        .into_iter()
+        .filter(|i| matches!(i.status, IssueStatus::Todo | IssueStatus::Doing))
+        .min_by_key(|i| {
+            (
+                i.status != IssueStatus::Doing,
+                rank(i.priority),
+                i.due.clone().unwrap_or_else(|| "9999".into()),
+            )
+        })
+}
+
 /// The project's inbox note, where issues captured from elsewhere land.
 pub const BACKLOG: &str = "Backlog";
 
@@ -216,6 +238,15 @@ mod tests {
         assert_eq!(create_issue_note(root, &app, "Fix: graph/search").unwrap(), "App/issues/Fix graph search 2.md");
         assert_eq!(crate::notes::read_note(root, &page).unwrap(), "# Fix: graph/search\n\n");
         assert!(create_issue_note(root, "Plain", "x").is_err());
+
+        let all = project_issues(root, &app).unwrap();
+        let next = next_issue(all.clone()).unwrap();
+        assert_eq!(next.title, "b");
+        let mut by_priority = all.clone();
+        by_priority[0].priority = Some(Priority::Urgent);
+        by_priority[1].status = IssueStatus::Todo;
+        assert_eq!(next_issue(by_priority).unwrap().title, "a");
+        assert!(next_issue(all.into_iter().filter(|i| i.status == IssueStatus::Done).collect()).is_none());
 
         let backlog = add_issue(root, &app, "first").unwrap();
         assert_eq!(backlog, "App/Backlog.md");

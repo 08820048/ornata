@@ -7,6 +7,7 @@ import {
   IconCircleCheckFilled,
   IconCircleHalf2,
   IconCircleX,
+  IconRobot,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 import type { IssuePriority, IssueStatus } from "@/lib/types";
@@ -62,6 +63,20 @@ export function PriorityIcon({ priority }: { priority: IssuePriority }) {
         aria-label={t(`projects.priority.${priority}`)}
         className={priority === "urgent" || priority === "high" ? "text-ink" : "text-faint"}
       />
+    </span>
+  );
+}
+
+/** Shown on an issue an agent has claimed. */
+export function AgentBadge({ name }: { name: string }) {
+  const t = useT();
+  return (
+    <span
+      title={t("projects.agentWorking", { name })}
+      className="flex shrink-0 items-center gap-1 rounded bg-sunken px-1.5 text-[11px] leading-[18px] text-muted"
+    >
+      <IconRobot size={11} stroke={2} />
+      {name}
     </span>
   );
 }

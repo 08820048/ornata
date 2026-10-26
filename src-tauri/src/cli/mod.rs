@@ -7,6 +7,7 @@ mod commands;
 pub(crate) mod app_api;
 pub(crate) mod http;
 mod mcp;
+mod project_tools;
 pub(crate) mod presence;
 mod tools;
 mod vault_path;

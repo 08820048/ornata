@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
+import { IconClipboardCopy, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
 import { openNoteAt } from "@/components/editor/NoteBacklinks";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { parseInline } from "@/lib/inlineMarkdown";
 import { ipc } from "@/lib/ipc";
 import { hrefToRel } from "@/lib/noteLinks";
+import { agentBrief } from "@/lib/agentBrief";
 import { isPromoted, promoteIssue } from "@/lib/promoteIssue";
 import { NOTES_CHANGED, notifyNotesChanged } from "@/lib/vaultEvents";
 import type { Issue, IssueStatus } from "@/lib/types";
@@ -15,7 +16,7 @@ import { useT } from "@/stores/locale";
 import { useProjects } from "@/stores/projects";
 import { useVault } from "@/stores/vault";
 import { BoardView } from "./BoardView";
-import { PriorityIcon, STATUSES, STATUS_ICONS, StatusIcon, nextStatus } from "./issueIcons";
+import { AgentBadge, PriorityIcon, STATUSES, STATUS_ICONS, StatusIcon, nextStatus } from "./issueIcons";
 
 type Filter = "open" | "all";
 
@@ -132,6 +133,15 @@ export function ProjectsView({ active }: { active: boolean }) {
     }
   };
 
+  const copyBrief = async (issue: Issue) => {
+    try {
+      await navigator.clipboard.writeText(agentBrief(project?.name ?? "", issue));
+      toast.success(t("projects.briefCopied"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   if (!selected || !project) {
     return <Centered>{t("projects.pick")}</Centered>;
   }
@@ -236,6 +246,7 @@ export function ProjectsView({ active }: { active: boolean }) {
               icon: STATUS_ICONS[status],
               onSelect: () => void setStatus(menu.issue, status),
             })),
+            { label: t("projects.copyBrief"), icon: IconClipboardCopy, onSelect: () => void copyBrief(menu.issue) },
             ...(isPromoted(menu.issue)
               ? []
               : [{ label: t("projects.promote"), icon: IconFileArrowRight, onSelect: () => void promote(menu.issue) }]),
@@ -359,6 +370,7 @@ function IssueRow({
             {issue.notes.length}
           </span>
         )}
+        {issue.agent && <AgentBadge name={issue.agent} />}
         {issue.tags.map((tag) => (
           <span key={tag} className="shrink-0 rounded bg-sunken px-1.5 text-[11px] leading-[18px] text-muted">
             #{tag}

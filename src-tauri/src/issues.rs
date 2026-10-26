@@ -9,7 +9,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult};
-use crate::notes::{read_note, write_note};
+use crate::notes::{read_note, write_note, write_note_forced_snapshot};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -65,6 +65,8 @@ pub struct Issue {
     pub priority: Option<Priority>,
     pub due: Option<String>,
     pub tags: Vec<String>,
+    /// Who is working on it: an inline `+name` token, set when an agent claims it.
+    pub agent: Option<String>,
     pub milestone: Option<String>,
     /// Plain bullets indented under the task (decision notes).
     pub notes: Vec<String>,
@@ -123,10 +125,18 @@ struct Tokens {
     priority: Option<Priority>,
     due: Option<String>,
     tags: Vec<String>,
+    agent: Option<String>,
+}
+
+/// `+claude-code`: a plus, a letter, then word characters.
+fn agent_token(word: &str) -> Option<&str> {
+    let name = word.strip_prefix('+')?;
+    let mut chars = name.chars();
+    (chars.next()?.is_alphabetic() && chars.all(word_char)).then_some(name)
 }
 
 fn tokens(text: &str) -> Tokens {
-    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new() };
+    let mut out = Tokens { title: String::new(), priority: None, due: None, tags: Vec::new(), agent: None };
     let mut kept: Vec<&str> = Vec::new();
     for word in text.split_whitespace() {
         let lower = word.to_lowercase();
@@ -139,6 +149,10 @@ fn tokens(text: &str) -> Tokens {
         };
         if priority.is_some() {
             out.priority = out.priority.or(priority);
+            continue;
+        }
+        if let Some(name) = agent_token(word) {
+            out.agent.get_or_insert_with(|| name.to_string());
             continue;
         }
         if let Some(date) = word.strip_prefix('@').filter(|d| is_date(d)) {
@@ -193,6 +207,7 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
                 priority: t.priority,
                 due: t.due,
                 tags: t.tags,
+                agent: t.agent,
                 milestone: milestone.clone(),
                 notes: Vec::new(),
                 depth: stack.len(),
@@ -218,27 +233,119 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
     issues
 }
 
+fn gone() -> AppError {
+    AppError::InvalidInput("task no longer exists".into())
+}
+
+fn save(root: &Path, rel: &str, lines: &[String], forced: bool) -> AppResult<()> {
+    let content = lines.join("\n");
+    if forced {
+        write_note_forced_snapshot(root, rel, &content)
+    } else {
+        write_note(root, rel, &content)
+    }
+}
+
+fn read_lines(root: &Path, rel: &str) -> AppResult<Vec<String>> {
+    Ok(read_note(root, rel)?.split('\n').map(str::to_string).collect())
+}
+
 /// Rewrite the box of the task at `line` to `status`, provided the line still
 /// reads `text` — guards against the note changing since it was listed.
+/// Leaving "doing" drops the claim token. `forced` keeps a history snapshot
+/// of what was replaced (agent writes).
 pub fn set_issue_status(
     root: &Path,
     rel: &str,
     line: usize,
     text: &str,
     status: IssueStatus,
+    forced: bool,
 ) -> AppResult<()> {
-    let content = read_note(root, rel)?;
-    let mut lines: Vec<String> = content.split('\n').map(str::to_string).collect();
-    let gone = || AppError::InvalidInput("task no longer exists".into());
+    rewrite(root, rel, line, text, forced, |task| {
+        let claimed = task.text.split_whitespace().any(|w| agent_token(w).is_some());
+        let unclaimed = || task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect::<Vec<_>>().join(" ");
+        (status, (claimed && status != IssueStatus::Doing).then(unclaimed))
+    })
+}
+
+/// Mark the task as in progress and claimed by `agent` (shown on the board).
+pub fn claim_issue(
+    root: &Path,
+    rel: &str,
+    line: usize,
+    text: &str,
+    agent: &str,
+    forced: bool,
+) -> AppResult<()> {
+    let name: String = agent.chars().filter(|c| word_char(*c)).collect();
+    if !name.chars().next().is_some_and(char::is_alphabetic) {
+        return Err(AppError::InvalidInput("agent name must start with a letter".into()));
+    }
+    rewrite(root, rel, line, text, forced, |task| {
+        let rest: Vec<_> = task.text.split_whitespace().filter(|w| agent_token(w).is_none()).collect();
+        (IssueStatus::Doing, Some(format!("{} +{name}", rest.join(" "))))
+    })
+}
+
+/// Shared guarded rewrite: `change` returns the new status and, if the text
+/// after the box should change, the new text.
+fn rewrite(
+    root: &Path,
+    rel: &str,
+    line: usize,
+    text: &str,
+    forced: bool,
+    change: impl FnOnce(&TaskLine) -> (IssueStatus, Option<String>),
+) -> AppResult<()> {
+    let mut lines = read_lines(root, rel)?;
     let current = lines.get(line).ok_or_else(gone)?;
     let task = task_line(current).filter(|t| t.text == text).ok_or_else(gone)?;
-    if task.status == status {
+    let (status, new_text) = change(&task);
+    if task.status == status && new_text.is_none() {
         return Ok(());
     }
     let at = task.box_at;
-    let next = format!("{}{}{}", &current[..at], status.mark(), &current[at + 3..]);
+    let next = match new_text {
+        Some(t) => {
+            let cr = if current.ends_with('\r') { "\r" } else { "" };
+            format!("{}{} {}{cr}", &current[..at], status.mark(), t.trim())
+        }
+        None => format!("{}{}{}", &current[..at], status.mark(), &current[at + 3..]),
+    };
     lines[line] = next;
-    write_note(root, rel, &lines.join("\n"))
+    save(root, rel, &lines, forced)
+}
+
+/// Add a plain bullet (a decision note) under the task at `line`, after its
+/// existing notes and sub-tasks. Refused if the line changed.
+pub fn add_issue_note(
+    root: &Path,
+    rel: &str,
+    line: usize,
+    text: &str,
+    note: &str,
+    forced: bool,
+) -> AppResult<()> {
+    let note = note.trim();
+    if note.is_empty() || note.contains('\n') {
+        return Err(AppError::InvalidInput("a decision must be one line".into()));
+    }
+    let mut lines = read_lines(root, rel)?;
+    let current = lines.get(line).ok_or_else(gone)?;
+    let task = task_line(current).filter(|t| t.text == text).ok_or_else(gone)?;
+    let indent = task.indent;
+    let mut last = line;
+    for (i, l) in lines.iter().enumerate().skip(line + 1) {
+        let trimmed = l.trim_start();
+        if trimmed.is_empty() || l.len() - trimmed.len() <= indent {
+            break;
+        }
+        last = i;
+    }
+    let cr = if current.ends_with('\r') { "\r" } else { "" };
+    lines.insert(last + 1, format!("{}- {note}{cr}", " ".repeat(indent + 2)));
+    save(root, rel, &lines, forced)
 }
 
 /// Swap the text after the box of the task at `line` for `new_text`, provided
@@ -331,11 +438,37 @@ mod tests {
         ensure_layout(root).unwrap();
         let rel = create_note(root, "", "Plan").unwrap();
         write_note(root, &rel, "- [ ] Draft\r\n  * [x] Nested\n").unwrap();
-        assert!(set_issue_status(root, &rel, 0, "Other", IssueStatus::Done).is_err());
-        set_issue_status(root, &rel, 0, "Draft", IssueStatus::Doing).unwrap();
-        set_issue_status(root, &rel, 1, "Nested", IssueStatus::Canceled).unwrap();
+        assert!(set_issue_status(root, &rel, 0, "Other", IssueStatus::Done, false).is_err());
+        set_issue_status(root, &rel, 0, "Draft", IssueStatus::Doing, false).unwrap();
+        set_issue_status(root, &rel, 1, "Nested", IssueStatus::Canceled, false).unwrap();
         assert_eq!(read_note(root, &rel).unwrap(), "- [/] Draft\r\n  * [-] Nested\n");
-        set_issue_status(root, &rel, 0, "Draft", IssueStatus::Todo).unwrap();
+        set_issue_status(root, &rel, 0, "Draft", IssueStatus::Todo, false).unwrap();
         assert_eq!(read_note(root, &rel).unwrap(), "- [ ] Draft\r\n  * [-] Nested\n");
+    }
+
+    #[test]
+    fn claims_and_releases_and_adds_notes() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let rel = create_note(root, "", "Plan").unwrap();
+        write_note(root, &rel, "## V1\n- [ ] Draft #a\n  - old note\n  - [ ] Sub\n- [ ] Next\n").unwrap();
+        claim_issue(root, &rel, 1, "Draft #a", "claude-code", true).unwrap();
+        let content = read_note(root, &rel).unwrap();
+        assert!(content.contains("- [/] Draft #a +claude-code\n"));
+        let issue = &parse_issues(&rel, &content)[0];
+        assert_eq!((issue.agent.as_deref(), issue.title.as_str()), (Some("claude-code"), "Draft"));
+        assert!(claim_issue(root, &rel, 1, "Draft #a", "x", true).is_err());
+
+        add_issue_note(root, &rel, 1, "Draft #a +claude-code", "decided: keep it", true).unwrap();
+        assert_eq!(
+            read_note(root, &rel).unwrap(),
+            "## V1\n- [/] Draft #a +claude-code\n  - old note\n  - [ ] Sub\n  - decided: keep it\n- [ ] Next\n"
+        );
+        assert!(add_issue_note(root, &rel, 1, "stale", "x", true).is_err());
+
+        set_issue_status(root, &rel, 1, "Draft #a +claude-code", IssueStatus::Done, true).unwrap();
+        assert!(read_note(root, &rel).unwrap().contains("- [x] Draft #a\n"));
+        assert!(claim_issue(root, &rel, 1, "Draft #a", "9bad", true).is_err());
     }
 }

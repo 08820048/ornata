@@ -191,6 +191,8 @@ export interface Issue {
   priority: IssuePriority | null;
   due: string | null;
   tags: string[];
+  /** Agent working on it (`+name` on the line), if one claimed it. */
+  agent: string | null;
   /** Nearest heading above the line (below the H1). */
   milestone: string | null;
   /** Plain bullets indented under the task. */

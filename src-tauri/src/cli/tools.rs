@@ -65,7 +65,7 @@ pub struct Tool {
     pub schema: Value,
 }
 
-fn object(properties: Value, required: &[&str]) -> Value {
+pub(super) fn object(properties: Value, required: &[&str]) -> Value {
     json!({ "type": "object", "properties": properties, "required": required })
 }
 
@@ -74,7 +74,7 @@ pub fn tools() -> Vec<Tool> {
     let text = json!({ "type": "string", "description": "Markdown text" });
     let date = json!({ "type": "string", "description": "YYYY-MM-DD; defaults to today" });
     let tool = |name, description, needs, schema| Tool { name, description, needs, schema };
-    vec![
+    let mut all = vec![
         tool("vault_info", "Describe the vault: folder, note count, and what this connection may do.", Level::ReadOnly, object(json!({}), &[])),
         tool("list_notes", "List notes (path, title, modified time), optionally under one folder.", Level::ReadOnly,
             object(json!({ "folder": { "type": "string", "description": "Folder path prefix, e.g. projects" } }), &[])),
@@ -100,17 +100,19 @@ pub fn tools() -> Vec<Tool> {
         tool("move_note", "Move a note or folder into another folder. Links that point to it are rewritten.", Level::Destructive,
             object(json!({ "path": path, "directory": { "type": "string", "description": "Target folder; empty for the notes root" } }), &["path"])),
         tool("delete_note", "Move a note or folder to the system Trash.", Level::Destructive, object(json!({ "path": path }), &["path"])),
-    ]
+    ];
+    all.extend(super::project_tools::definitions());
+    all
 }
 
-fn arg<'a>(args: &'a Value, key: &str) -> AppResult<&'a str> {
+pub(super) fn arg<'a>(args: &'a Value, key: &str) -> AppResult<&'a str> {
     args.get(key)
         .and_then(Value::as_str)
         .filter(|v| !v.trim().is_empty())
         .ok_or_else(|| AppError::InvalidInput(format!("{key} is required")))
 }
 
-fn opt<'a>(args: &'a Value, key: &str) -> &'a str {
+pub(super) fn opt<'a>(args: &'a Value, key: &str) -> &'a str {
     args.get(key).and_then(Value::as_str).unwrap_or("")
 }
 
@@ -212,6 +214,9 @@ pub fn call(root: &Path, level: Level, name: &str, args: &Value) -> AppResult<Va
     // Only notes that really live in the vault (not symlinks pointing out).
     if let Some(path) = args.get("path").and_then(Value::as_str) {
         vault_guard::contained_rel(root, path)?;
+    }
+    if let Some(result) = super::project_tools::call(root, name, args) {
+        return result;
     }
     match name {
         "vault_info" => Ok(json!({

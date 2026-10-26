@@ -500,7 +500,7 @@ pub fn set_issue_status(
     text: String,
     status: IssueStatus,
 ) -> AppResult<()> {
-    issues::set_issue_status(&state.root()?, &rel, line, &text, status)
+    issues::set_issue_status(&state.root()?, &rel, line, &text, status, false)
 }
 
 #[tauri::command]

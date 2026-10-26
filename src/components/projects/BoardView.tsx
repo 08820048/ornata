@@ -16,7 +16,7 @@ import { hrefToRel } from "@/lib/noteLinks";
 import type { Issue, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
-import { PriorityIcon, STATUSES, StatusIcon } from "./issueIcons";
+import { AgentBadge, PriorityIcon, STATUSES, StatusIcon } from "./issueIcons";
 
 const keyOf = (issue: Issue) => `${issue.rel}:${issue.line}`;
 
@@ -114,6 +114,7 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
       </div>
       <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-faint">
         <span className="min-w-0 flex-1 truncate">{where}</span>
+        {issue.agent && <AgentBadge name={issue.agent} />}
         {issue.tags.slice(0, 2).map((tag) => (
           <span key={tag} className="shrink-0 rounded bg-sunken px-1.5 leading-[16px] text-muted">
             #{tag}

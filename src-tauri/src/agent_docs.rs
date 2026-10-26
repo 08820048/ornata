@@ -38,6 +38,16 @@ and edit it directly with ordinary file tools.
 - Keep content plain Markdown; don't invent app-specific syntax.
 - Ornata picks up external changes when its window regains focus.
 
+## Projects and issues
+
+A folder holding a `.ornata-project` file is a project. Its issues are the task
+lines of the notes inside it: `- [ ]` todo, `- [/]` in progress, `- [x]` done,
+`- [-]` canceled. Inline tokens: `#tag`, `!urgent|!high|!medium|!low`,
+`@2026-11-10`, and `+name` (an agent working on it). The heading above a task
+is its milestone; plain bullets indented under it are decision notes. Prefer
+the MCP tools (`list_issues`, `next_issue`, `claim_issue`, `add_decision`,
+`set_issue_status`) over editing those lines by hand.
+
 "#;
 
 /// Write `CLAUDE.md` and `AGENTS.md` at the vault root so coding agents know
