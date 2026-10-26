@@ -14,6 +14,7 @@ import {
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 import { shownStamp, stampDay, stampText } from "@/lib/stamps";
+import { agentLogo, agentLogoPaths } from "./agentLogos";
 import type { Issue, IssuePriority, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
@@ -73,6 +74,19 @@ export function PriorityIcon({ priority }: { priority: IssuePriority }) {
   );
 }
 
+/** An agent's own logo, or a generic robot for one we do not know. */
+export function AgentMark({ name, size = 12 }: { name: string; size?: number }) {
+  const logo = agentLogo(name);
+  if (!logo) return <IconRobot size={size} stroke={2} />;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" clipRule="evenodd" aria-hidden="true">
+      {agentLogoPaths(logo).map((d, index) => (
+        <path key={index} d={d} />
+      ))}
+    </svg>
+  );
+}
+
 /** Shown on an issue an agent has claimed. */
 export function AgentBadge({ name }: { name: string }) {
   const t = useT();
@@ -81,7 +95,7 @@ export function AgentBadge({ name }: { name: string }) {
       title={t("projects.agentWorking", { name })}
       className="flex shrink-0 items-center gap-1 rounded bg-sunken px-1.5 text-[11px] leading-[18px] text-muted"
     >
-      <IconRobot size={11} stroke={2} />
+      <AgentMark name={name} />
       {name}
     </span>
   );
