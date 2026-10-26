@@ -154,10 +154,12 @@ pub fn next_issue(issues: Vec<Issue>) -> Option<Issue> {
 }
 
 /// The project's inbox note, where issues captured from elsewhere land.
-pub const BACKLOG: &str = "Backlog";
+pub const TASKS_NOTE: &str = "Tasks";
+/// What this note used to be called; projects that already have one keep using it.
+const LEGACY_TASKS_NOTE: &str = "Backlog";
 
-/// Append a task with `status` to the project's `Backlog.md` (created on
-/// first use). A done task gets today's completion stamp. Returns the note's
+/// Append a task with `status` to the project's `Tasks.md` (created on first
+/// use). It only says where the line is stored — the status is the box. A done task gets today's completion stamp. Returns the note's
 /// rel path.
 pub fn add_issue(root: &Path, project_rel: &str, text: &str, status: IssueStatus) -> AppResult<String> {
     let text = text.trim();
@@ -168,13 +170,18 @@ pub fn add_issue(root: &Path, project_rel: &str, text: &str, status: IssueStatus
     if !is_project(&dir) {
         return Err(AppError::NotFound(project_rel.to_string()));
     }
-    let file = dir.join(format!("{BACKLOG}.md"));
+    let legacy = dir.join(format!("{LEGACY_TASKS_NOTE}.md"));
+    let (name, file) = if legacy.is_file() {
+        (LEGACY_TASKS_NOTE, legacy)
+    } else {
+        (TASKS_NOTE, dir.join(format!("{TASKS_NOTE}.md")))
+    };
     let rel = rel_of(root, &file)?;
     let mut content = if file.is_file() {
         fs::read_to_string(&file)?
     } else {
-        create_note(root, project_rel, BACKLOG)?;
-        format!("# {BACKLOG}\n\n")
+        create_note(root, project_rel, name)?;
+        format!("# {name}\n\n")
     };
     if !content.is_empty() && !content.ends_with('\n') {
         content.push('\n');
@@ -270,11 +277,11 @@ mod tests {
         assert!(next_issue(all.into_iter().filter(|i| i.status == IssueStatus::Done).collect()).is_none());
 
         let backlog = add_issue(root, &app, "first", IssueStatus::Todo).unwrap();
-        assert_eq!(backlog, "App/Backlog.md");
+        assert_eq!(backlog, "App/Tasks.md");
         add_issue(root, &app, " second ", IssueStatus::Todo).unwrap();
         assert_eq!(
             crate::notes::read_note(root, &backlog).unwrap(),
-            "# Backlog\n\n- [ ] first\n- [ ] second\n"
+            "# Tasks\n\n- [ ] first\n- [ ] second\n"
         );
         add_issue(root, &app, "going", IssueStatus::Doing).unwrap();
         add_issue(root, &app, "finished", IssueStatus::Done).unwrap();
@@ -282,6 +289,13 @@ mod tests {
         assert!(tail.contains("- [/] going\n") && tail.contains(&format!("- [x] finished ✓{}\n", crate::issues::today())));
         assert!(add_issue(root, &app, "a\nb", IssueStatus::Todo).is_err());
         assert!(add_issue(root, "Plain", "x", IssueStatus::Todo).is_err());
+
+        let old = create_folder(root, "", "Old").unwrap();
+        set_project(root, &old, true).unwrap();
+        let legacy = create_note(root, &old, "Backlog").unwrap();
+        write_note(root, &legacy, "# Backlog\n").unwrap();
+        assert_eq!(add_issue(root, &old, "kept", IssueStatus::Todo).unwrap(), "Old/Backlog.md");
+        assert!(!root.join("notes/Old/Tasks.md").exists());
 
         set_project(root, &app, false).unwrap();
         assert!(project_issues(root, &app).is_err());

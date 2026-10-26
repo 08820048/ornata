@@ -118,7 +118,9 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
   const parts = parseInline(issue.title, issue.rel);
   const linked = /^\[[^\]]+\]\(([^)\s]+)\)$/.exec(issue.title.trim());
   const target = linked ? hrefToRel(linked[1]) : null;
-  const where = issue.milestone ?? issue.rel.replace(/\.md$/i, "").split("/").pop();
+  // Tasks.md / Backlog.md only hold lines added without a plan; their name says nothing about the task.
+  const stem = issue.rel.replace(/\.md$/i, "").split("/").pop();
+  const where = issue.milestone ?? (stem === "Tasks" || stem === "Backlog" ? "" : stem);
   return (
     <div
       onClick={() => (target ? openNoteAt(target, target) : openNoteAt(issue.rel, issue.rel, issue.title))}

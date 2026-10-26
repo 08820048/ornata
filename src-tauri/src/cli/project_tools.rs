@@ -28,7 +28,7 @@ pub fn definitions() -> Vec<Tool> {
             object(json!({ "path": path, "line": line, "text": text, "status": status }), &["path", "line", "text", "status"])),
         tool("add_decision", "Record a one-line decision or progress note under an issue.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "decision": { "type": "string" } }), &["path", "line", "text", "decision"])),
-        tool("add_issue", "Add an issue to a project's Backlog.md (status defaults to todo).", Level::Write,
+        tool("add_issue", "Add an issue to a project's Tasks.md note (status defaults to todo).", Level::Write,
             object(json!({ "project": project, "text": { "type": "string", "description": "One line; may include #tag !high @2026-11-10" }, "status": status }), &["project", "text"])),
     ]
 }
