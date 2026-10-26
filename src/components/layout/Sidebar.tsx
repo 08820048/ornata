@@ -10,6 +10,8 @@ import {
   IconSortAscendingLetters,
   IconX,
 } from "@tabler/icons-react";
+import { motion } from "motion/react";
+import { SPRING_LAYOUT } from "@/lib/ease";
 import { ActionSwapButton } from "@/components/motion/action-swap";
 import { flattenNotes } from "@/lib/tree";
 import { FileTree } from "@/components/tree/FileTree";
@@ -196,10 +198,18 @@ function ModeSwitch({ mode }: { mode: SidebarMode }) {
           aria-selected={mode === value}
           onClick={() => pick(value)}
           className={cx(
-            "rounded-[5px] py-[3px] text-[12px] transition-colors duration-100",
-            mode === value ? "bg-bg text-ink shadow-sm" : "text-muted hover:text-ink",
+            "relative isolate rounded-[5px] py-[3px] text-[12px] transition-colors duration-100",
+            mode === value ? "text-ink" : "text-muted hover:text-ink",
           )}
         >
+          {mode === value && (
+            <motion.span
+              layoutId="sidebar-mode-active"
+              initial={false}
+              transition={SPRING_LAYOUT}
+              className="absolute inset-0 -z-10 rounded-[5px] bg-bg shadow-sm"
+            />
+          )}
           {t(value === "notes" ? "common.notes" : "projects.title")}
         </button>
       ))}
