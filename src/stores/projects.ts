@@ -26,6 +26,8 @@ interface ProjectsState {
   /** Show `rel` in the projects tab. */
   open: (rel: string) => void;
   mark: (rel: string, on: boolean) => Promise<void>;
+  /** Rename the project's folder (the marker moves with it). */
+  rename: (rel: string, name: string) => Promise<void>;
 }
 
 const key = (root: string) => `ornata.projects:${root}`;
@@ -103,5 +105,13 @@ export const useProjects = create<ProjectsState>((set, get) => ({
       set({ sidebar: "projects" });
       get().open(rel);
     }
+  },
+
+  rename: async (rel, name) => {
+    const next = await useVault.getState().renameEntry(rel, name);
+    if (!next) return;
+    if (get().selected === rel) set({ selected: next });
+    persist(get());
+    await get().load();
   },
 }));

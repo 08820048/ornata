@@ -92,7 +92,8 @@ interface VaultState {
   openDailyNote: (date?: Date) => Promise<void>;
   createNoteFromTemplate: (template: string) => Promise<void>;
   createFolder: (dir: string, name: string) => Promise<string | null>;
-  renameEntry: (rel: string, name: string) => Promise<void>;
+  /** Resolves to the new path (it may get a collision suffix), or null on failure. */
+  renameEntry: (rel: string, name: string) => Promise<string | null>;
   renameExternalNote: (path: string, name: string) => Promise<void>;
   moveEntry: (rel: string, dir: string) => Promise<void>;
   deleteEntry: (rel: string) => Promise<void>;
@@ -583,8 +584,10 @@ export const useVault = create<VaultState>((set, get) => ({
           });
         }
       }
+      return next;
     } catch (err) {
       oops(err);
+      return null;
     }
   },
 
