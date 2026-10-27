@@ -7,7 +7,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { parseInline } from "@/lib/inlineMarkdown";
 import { ipc } from "@/lib/ipc";
 import { hrefToRel } from "@/lib/noteLinks";
-import { agentBrief } from "@/lib/agentBrief";
+import { agentBrief, issuePage } from "@/lib/agentBrief";
 import { isPromoted, promoteIssue } from "@/lib/promoteIssue";
 import { NOTES_CHANGED, notifyNotesChanged } from "@/lib/vaultEvents";
 import type { Issue, IssuePriority, IssueStatus } from "@/lib/types";
@@ -163,7 +163,10 @@ export function ProjectsView({ active }: { active: boolean }) {
 
   const copyBrief = async (issue: Issue) => {
     try {
-      await navigator.clipboard.writeText(agentBrief(project?.name ?? "", issue));
+      const page = issuePage(issue);
+      // Backlinks are context, not the point: without them the brief is still worth copying.
+      const backlinks = page ? await ipc.noteBacklinks(page).catch(() => []) : [];
+      await navigator.clipboard.writeText(agentBrief(project?.name ?? "", issue, backlinks));
       toast.success(t("projects.briefCopied"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
