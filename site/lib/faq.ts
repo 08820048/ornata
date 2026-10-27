@@ -10,6 +10,10 @@ export const FAQS_EN: Faq[] = [
     a: "On your computer, as plain Markdown files in a folder you choose. The core editor needs no account or proprietary database, and you can open the folder in Finder or File Explorer at any time.",
   },
   {
+    q: "Does Ornata collect any data?",
+    a: "No analytics, tracking or accounts are built into the app. Besides loading remote images that your notes point to and any image upload you set up yourself, the only thing it contacts us for is checking for and downloading updates. Our download server keeps anonymous counts of what was fetched (an installer or an update check), the version and the country, plus a one-day hash of the network address so a device is counted once a day; the hash cannot be followed from one day to the next, and we do not store IP addresses or anything from your notes.",
+  },
+  {
     q: "Is there sync?",
     a: "Not built in yet. Because notes are just files in a folder, you can sync them today with iCloud Drive, Dropbox, or git. Native sync is on the roadmap.",
   },
@@ -78,6 +82,10 @@ export const FAQS_ZH: Faq[] = [
   {
     q: "我的笔记存在哪里？",
     a: "存在你的电脑上，是你所选文件夹里的普通 Markdown 文件。核心编辑器不需要账号，也没有私有数据库，你随时可以在 Finder 或文件资源管理器里打开这个文件夹。",
+  },
+  {
+    q: "Ornata 会收集数据吗？",
+    a: "应用里没有内置任何统计、追踪或账号。除了加载笔记里引用的远程图片、以及你自己设置的图片上传，它唯一联系我们的地方就是检查和下载更新。我们的下载服务器只保留匿名的汇总计数：被取走的是什么（安装包或更新检查）、版本和国家，外加一个只在当天有效的网络地址哈希，用来让同一台设备一天只算一次；这个哈希无法跨天追踪，我们也不保存 IP 地址，更不会有你笔记里的任何内容。",
   },
   {
     q: "有同步功能吗？",
