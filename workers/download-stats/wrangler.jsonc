@@ -1,0 +1,11 @@
+{
+  "$schema": "../../site/node_modules/wrangler/config-schema.json",
+  "name": "ornata-downloads",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-10-01",
+  // Reachable on workers.dev for testing. The production route
+  // (download.ornata.app/*) is added only after the responses match, see README.md.
+  "workers_dev": true,
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "ornata" }],
+  "analytics_engine_datasets": [{ "binding": "STATS", "dataset": "ornata_downloads" }]
+}
