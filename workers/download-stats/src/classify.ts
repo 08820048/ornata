@@ -72,3 +72,15 @@ export async function deviceId(ip: string | null, day: string, secret: string | 
   const digest = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(digest).slice(0, 8), (b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+/**
+ * What the app says about itself on an update check: its version and system
+ * (`?v=0.12.2&t=darwin-aarch64`, from the updater's endpoint template). Older
+ * versions send nothing; anything that does not look like a version or a
+ * system is dropped, so the labels cannot be made up.
+ */
+export function clientInfo(params: URLSearchParams): { version: string; target: string } {
+  const v = params.get("v") ?? "";
+  const t = params.get("t") ?? "";
+  return { version: VERSION.test(v) ? v : "", target: PLATFORM.test(t) ? t : "" };
+}

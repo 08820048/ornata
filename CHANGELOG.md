@@ -2,6 +2,16 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.12.2] - 2026-10-27
+
+### Added
+
+- Add tasks from the list view: a "New task" button at the top of a project's list, next to the board's "+" on each column.
+- Turning an issue into its own page now takes the decision notes under it along to the new page.
+- "Copy for an agent" includes the other notes that link to the issue's page.
+- Typing `[-] ` to cancel a task now records when it was canceled, like ticking a task records when it was done.
+- Agents can reorder issues over MCP and the command line with the new `move_issue` tool.
+
 ## [0.12.1] - 2026-10-27
 
 ### Added

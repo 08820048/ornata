@@ -3,7 +3,8 @@
 //   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... bun scripts/download-stats.js [days]
 // The token needs "Account Analytics: Read". Bots are left out of every figure.
 // Columns written by the Worker: blob1 kind, blob2 version, blob3 platform, blob4 file,
-// blob5 country, blob6 client, blob7 device (daily hash), blob8 status; double1 count, double2 bytes.
+// blob5 country, blob6 client, blob7 device (daily hash), blob8 status, blob9 app version and
+// blob10 app system (update checks from 0.12.2 on; older apps send neither); double1 count, double2 bytes.
 
 const account = process.env.CLOUDFLARE_ACCOUNT_ID;
 const token = process.env.CLOUDFLARE_API_TOKEN;
@@ -69,4 +70,12 @@ section(
     SELECT blob5 AS country, SUM(_sample_interval) AS requests
     FROM ornata_downloads WHERE ${since} AND blob1 IN ('download', 'update_check') AND blob8 IN ('200', '206')
     GROUP BY country ORDER BY requests DESC LIMIT 10 FORMAT JSON`),
+);
+
+section(
+  "Devices that checked for updates, by the app version they run (0.12.2 and later report it)",
+  await sql(`
+    SELECT blob9 AS app_version, blob10 AS system, COUNT(DISTINCT blob7) AS device_days
+    FROM ornata_downloads WHERE ${since} AND blob1 = 'update_check' AND blob8 IN ('200', '206') AND blob9 != ''
+    GROUP BY app_version, system ORDER BY app_version DESC LIMIT 20 FORMAT JSON`),
 );

@@ -11,7 +11,7 @@ export const FAQS_EN: Faq[] = [
   },
   {
     q: "Does Ornata collect any data?",
-    a: "No analytics, tracking or accounts are built into the app. Besides loading remote images that your notes point to and any image upload you set up yourself, the only thing it contacts us for is checking for and downloading updates. Our download server keeps anonymous counts of what was fetched (an installer or an update check), the version and the country, plus a one-day hash of the network address so a device is counted once a day; the hash cannot be followed from one day to the next, and we do not store IP addresses or anything from your notes.",
+    a: "No analytics, tracking or accounts are built into the app. Besides loading remote images that your notes point to and any image upload you set up yourself, the only thing it contacts us for is checking for and downloading updates. Our download server keeps anonymous counts of what was fetched (an installer or an update check, which also says which version and system the app is), the release and the country, plus a one-day hash of the network address so a device is counted once a day; the hash cannot be followed from one day to the next, and we do not store IP addresses or anything from your notes.",
   },
   {
     q: "Is there sync?",
@@ -85,7 +85,7 @@ export const FAQS_ZH: Faq[] = [
   },
   {
     q: "Ornata 会收集数据吗？",
-    a: "应用里没有内置任何统计、追踪或账号。除了加载笔记里引用的远程图片、以及你自己设置的图片上传，它唯一联系我们的地方就是检查和下载更新。我们的下载服务器只保留匿名的汇总计数：被取走的是什么（安装包或更新检查）、版本和国家，外加一个只在当天有效的网络地址哈希，用来让同一台设备一天只算一次；这个哈希无法跨天追踪，我们也不保存 IP 地址，更不会有你笔记里的任何内容。",
+    a: "应用里没有内置任何统计、追踪或账号。除了加载笔记里引用的远程图片、以及你自己设置的图片上传，它唯一联系我们的地方就是检查和下载更新。我们的下载服务器只保留匿名的汇总计数：被取走的是什么（安装包或更新检查，更新检查会带上应用自己的版本和系统）、版本和国家，外加一个只在当天有效的网络地址哈希，用来让同一台设备一天只算一次；这个哈希无法跨天追踪，我们也不保存 IP 地址，更不会有你笔记里的任何内容。",
   },
   {
     q: "有同步功能吗？",

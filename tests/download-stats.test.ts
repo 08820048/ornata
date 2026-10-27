@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { classify, clientClass, dayKey, deviceId, startsAtBeginning } from "../workers/download-stats/src/classify";
+import { classify, clientClass, clientInfo, dayKey, deviceId, startsAtBeginning } from "../workers/download-stats/src/classify";
 
 const P = "/products/ornata-markd";
 
@@ -47,4 +47,11 @@ test("a device is the same within a day, differs across days and secrets, and is
   expect(await deviceId("1.2.3.4", "2026-10-27", undefined)).toBe("");
   expect(await deviceId(null, "2026-10-27", "s")).toBe("");
   expect(dayKey(new Date("2026-10-27T23:59:59Z"))).toBe("2026-10-27");
+});
+
+test("an update check reports the app's version and system, and nothing else is accepted", () => {
+  expect(clientInfo(new URLSearchParams("v=0.12.2&t=darwin-aarch64"))).toEqual({ version: "0.12.2", target: "darwin-aarch64" });
+  expect(clientInfo(new URLSearchParams(""))).toEqual({ version: "", target: "" });
+  expect(clientInfo(new URLSearchParams("v=<script>&t=plan9"))).toEqual({ version: "", target: "" });
+  expect(clientInfo(new URLSearchParams("v=1.0.0-beta.1&t=windows-x86_64"))).toEqual({ version: "1.0.0-beta.1", target: "windows-x86_64" });
 });

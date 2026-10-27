@@ -3,7 +3,7 @@
 // a path class, the release, the country, and a one-day salted hash to count a
 // device once a day (classify.ts). Data goes to Workers Analytics Engine.
 
-import { classify, clientClass, dayKey, deviceId, startsAtBeginning } from "./classify";
+import { classify, clientClass, clientInfo, dayKey, deviceId, startsAtBeginning } from "./classify";
 
 interface R2Range {
   offset?: number;
@@ -69,23 +69,24 @@ export default {
     const status = ranged ? 206 : 200;
 
     if (request.method === "GET" && startsAtBeginning(request.headers.get("range"))) {
-      ctx.waitUntil(record(request, env, key, status, length));
+      ctx.waitUntil(record(request, env, key, status, length, url.searchParams));
     }
     return new Response(request.method === "HEAD" ? null : object.body, { status, headers });
   },
 };
 
-async function record(request: Request, env: Env, key: string, status: number, bytes: number): Promise<void> {
+async function record(request: Request, env: Env, key: string, status: number, bytes: number, params: URLSearchParams): Promise<void> {
   try {
     const hit = classify(key);
     if (hit.kind === "other") return;
     const day = dayKey(new Date());
     const device = await deviceId(request.headers.get("cf-connecting-ip"), day, env.HASH_SECRET);
     const country = (request as Request & { cf?: { country?: string } }).cf?.country ?? "";
+    const app = hit.kind === "update_check" ? clientInfo(params) : { version: "", target: "" };
     // Column order is the contract with scripts/download-stats.js.
     env.STATS.writeDataPoint({
       indexes: [hit.kind],
-      blobs: [hit.kind, hit.version, hit.platform, hit.file, country, clientClass(request.headers.get("user-agent")), device, String(status)],
+      blobs: [hit.kind, hit.version, hit.platform, hit.file, country, clientClass(request.headers.get("user-agent")), device, String(status), app.version, app.target],
       doubles: [1, bytes],
     });
   } catch {

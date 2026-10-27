@@ -10,6 +10,29 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.12.2",
+    zh: {
+      summary: "列表视图能新增任务，升级为 issue 页面会带上决策记录，agent 可以给 issue 排序。",
+      changes: [
+        "在列表视图里也能新增任务：项目列表顶部有「新增任务」，和看板每列的「+」一样。",
+        "把 issue 升级为独立页面时，它下面的决策记录会一起搬到新页面。",
+        "「复制给 agent」会带上链接到该 issue 页面的其他笔记。",
+        "输入 `[-] ` 取消任务时，现在会记下取消的时间，和勾选完成会记下完成时间一样。",
+        "agent 可以通过 MCP 和命令行用新的 `move_issue` 工具给 issue 排序。",
+      ],
+    },
+    date: "October 27, 2026",
+    dateTime: "2026-10-27",
+    summary: "Add tasks from the list view, keep decision notes when turning an issue into a page, and let agents reorder issues.",
+    changes: [
+      "Add tasks from the list view: a \"New task\" button at the top of a project's list, next to the board's \"+\" on each column.",
+      "Turning an issue into its own page now takes the decision notes under it along to the new page.",
+      "\"Copy for an agent\" includes the other notes that link to the issue's page.",
+      "Typing `[-] ` to cancel a task now records when it was canceled, like ticking a task records when it was done.",
+      "Agents can reorder issues over MCP and the command line with the new `move_issue` tool.",
+    ],
+  },
+  {
     version: "0.12.1",
     zh: {
       summary: "看板可拖动排序，项目可重命名和移除，agent logo 换成品牌配色。",

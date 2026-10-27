@@ -4,7 +4,9 @@ Serves `download.ornata.app` from the R2 bucket `ornata` and counts what is fetc
 update checks can be told apart. It keeps no IP address: a request becomes one Analytics Engine data
 point with the kind (installer / update check / update bundle), release, platform, country, a coarse
 client class (bot / browser / app) and a salted hash of the address **and the day**, which counts a
-device once a day and cannot be followed across days. Resumed downloads count once.
+device once a day and cannot be followed across days. Resumed downloads count once. From 0.12.2 the app
+also adds its version and system to the update check (`?v=…&t=…`, from the endpoint in `tauri.conf.json`), so
+active devices can be split by version; only values shaped like a version or a system are accepted.
 
 - Column contract: `src/index.ts` (`record`) and `scripts/download-stats.js` (header comment).
 - Report: `CLOUDFLARE_ACCOUNT_ID=… CLOUDFLARE_API_TOKEN=… bun scripts/download-stats.js [days]`
