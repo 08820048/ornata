@@ -32,16 +32,27 @@ const section = (title, rows) => {
   console.table(rows);
 };
 
+const perDay = await sql(`
+  SELECT formatDateTime(timestamp, '%Y-%m-%d') AS day, blob1 AS kind, SUM(_sample_interval) AS n
+  FROM ornata_downloads WHERE ${since} AND blob8 IN ('200', '206')
+  GROUP BY day, kind ORDER BY day DESC FORMAT JSON`);
+// A device is the daily hash of its address, so distinct hashes per day = devices that checked that day.
+const devices = await sql(`
+  SELECT formatDateTime(timestamp, '%Y-%m-%d') AS day, COUNT(DISTINCT blob7) AS n
+  FROM ornata_downloads WHERE ${since} AND blob1 = 'update_check' AND blob8 IN ('200', '206') AND blob7 != ''
+  GROUP BY day FORMAT JSON`);
+const days_ = new Map();
+const row = (day) => days_.get(day) ?? days_.set(day, { day, downloads: 0, update_checks: 0, devices: 0, updates_installed: 0 }).get(day);
+for (const { day, kind, n } of perDay) {
+  const r = row(day);
+  if (kind === "download") r.downloads = Number(n);
+  if (kind === "update_check") r.update_checks = Number(n);
+  if (kind === "update_download") r.updates_installed = Number(n);
+}
+for (const { day, n } of devices) row(day).devices = Number(n);
 section(
-  `Per day, last ${days} days: installers downloaded, update checks, and distinct devices that checked`,
-  await sql(`
-    SELECT formatDateTime(timestamp, '%Y-%m-%d') AS day,
-           SUM(IF(blob1 = 'download', _sample_interval, 0)) AS downloads,
-           SUM(IF(blob1 = 'update_check', _sample_interval, 0)) AS update_checks,
-           COUNT(DISTINCT IF(blob1 = 'update_check', blob7, NULL)) AS devices,
-           SUM(IF(blob1 = 'update_download', _sample_interval, 0)) AS updates_installed
-    FROM ornata_downloads WHERE ${since} AND blob8 IN ('200', '206')
-    GROUP BY day ORDER BY day DESC FORMAT JSON`),
+  `Per day, last ${days} days: installers downloaded, update checks, distinct devices that checked, updates installed`,
+  [...days_.values()].sort((a, b) => b.day.localeCompare(a.day)),
 );
 
 section(
