@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { IconCircleOff, IconClipboardCopy, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes } from "@tabler/icons-react";
+import { IconCircleOff, IconClipboardCopy, IconFileText, IconFileArrowRight, IconLayoutKanban, IconList, IconNotes, IconPlus } from "@tabler/icons-react";
 import { openNoteAt } from "@/components/editor/NoteBacklinks";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -15,7 +15,7 @@ import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
 import { useProjects } from "@/stores/projects";
 import { useVault } from "@/stores/vault";
-import { BoardView } from "./BoardView";
+import { BoardView, NewCard } from "./BoardView";
 import { AgentBadge, PRIORITIES, PRIORITY_ICONS, PriorityIcon, STATUSES, STATUS_ICONS, StampLabel, StatusIcon, nextStatus } from "./issueIcons";
 
 type Filter = "open" | "all";
@@ -53,6 +53,7 @@ export function ProjectsView({ active }: { active: boolean }) {
   const vaultVersion = useVault((s) => s.vaultVersion);
   const [issues, setIssues] = useState<Issue[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [filter, setFilter] = useState<Filter>("open");
   const [mode, setMode] = useState<"list" | "board">(() =>
     localStorage.getItem("ornata.projects.mode") === "board" ? "board" : "list",
@@ -230,6 +231,22 @@ export function ProjectsView({ active }: { active: boolean }) {
           </div>
         </header>
 
+        {mode === "list" && !failed && (
+          <div className="mb-6">
+            {adding ? (
+              <NewCard onSubmit={(text) => addIssue("todo", text)} onClose={() => setAdding(false)} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="press flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[12.5px] text-faint transition-colors duration-100 hover:bg-hover hover:text-ink"
+              >
+                <IconPlus size={14} stroke={1.75} />
+                {t("projects.addTask")}
+              </button>
+            )}
+          </div>
+        )}
         {failed && <p className="py-8 text-center text-[13px] text-faint">{t("projects.loadFailed")}</p>}
         {mode === "list" && !failed && issues?.length === 0 && (
           <Empty text={t("projects.noIssues")} hint={t("projects.syntax")} />

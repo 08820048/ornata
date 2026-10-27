@@ -243,7 +243,7 @@ function Card({ issue, overlay }: { issue: Issue; overlay?: boolean }) {
 }
 
 /** An empty card to type into: Enter adds the task and stays open for the next one, Esc or leaving it empty closes. */
-function NewCard({
+export function NewCard({
   onSubmit,
   onClose,
 }: {
