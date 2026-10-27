@@ -10,6 +10,25 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.12.1",
+    zh: {
+      summary: "看板可拖动排序，项目可重命名和移除，agent logo 换成品牌配色。",
+      changes: [
+        "拖动卡片给看板排序。把卡片放到同一列、同一篇笔记的另一张卡片上，对应的任务行就会连同它下面缩进的记录一起移到那里。「进行中」列里，只能在相同优先级之间换位置。",
+        "在侧栏右键项目，可以重命名（会重命名它的文件夹）或从项目中移除（笔记原样保留）。",
+        "agent 的 logo 现在使用各自的品牌配色，并支持识别 Pi。",
+      ],
+    },
+    date: "October 27, 2026",
+    dateTime: "2026-10-27",
+    summary: "Drag to reorder the board, rename or remove projects, and agent logos in their brand colours.",
+    changes: [
+      "Reorder the board by dragging. Drop a card onto another card of the same column and note and its task line moves there, together with the notes indented under it. In In progress, cards can only trade places within the same priority.",
+      "Right-click a project in the sidebar to rename it (its folder is renamed) or remove it from your projects (the notes stay).",
+      "Agent logos now show their own brand colours, and Pi is recognised.",
+    ],
+  },
+  {
     version: "0.12.0",
     zh: {
       summary: "项目：把笔记里的任务变成看板，agent 也能认领和完成。",

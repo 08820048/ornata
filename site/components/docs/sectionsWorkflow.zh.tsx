@@ -83,7 +83,7 @@ export const WORKFLOW_ZH: DocSection[] = [
           <B>写在行上的细节：</B><Code>#标签</Code>、<Code>!urgent</Code> / <Code>!high</Code> / <Code>!medium</Code> / <Code>!low</Code>、<Code>@2026-11-10</Code>。Ornata 还会记下待办的创建、完成和取消时间。待办下方缩进的列表项是它的备注。
         </Li>
         <Li>
-          <B>看板：</B>拖动卡片改状态，点状态循环切换，右键卡片或行选择任意状态或优先级，列顶的「+」可直接在该列新增任务（写进项目的 <Code>Tasks.md</Code>）。
+          <B>看板：</B>拖动卡片改状态，点状态循环切换，右键卡片或行选择任意状态或优先级，列顶的「+」可直接在该列新增任务（写进项目的 <Code>Tasks.md</Code>）。把卡片放到同一列、同一篇笔记的另一张卡片上可以排序，对应的任务行会在文件里移动。在侧栏右键项目可重命名或移除。
         </Li>
         <Li>
           <B>收集：</B>在任意笔记里选中文字，选「创建 issue」；或右键 issue 选「升级为 issue 页面」，在项目的 <Code>issues/</Code> 文件夹里给它一篇独立的笔记。

@@ -2,6 +2,14 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.12.1] - 2026-10-27
+
+### Added
+
+- Reorder the board by dragging. Drop a card onto another card of the same column and note and its task line moves there, together with the notes indented under it. In In progress, cards can only trade places within the same priority.
+- Right-click a project in the sidebar to rename it (its folder is renamed) or remove it from your projects (the notes stay).
+- Agent logos now show their own brand colours, and Pi is recognised.
+
 ## [0.12.0] - 2026-10-26
 
 ### Added

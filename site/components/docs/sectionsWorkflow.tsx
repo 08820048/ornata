@@ -116,7 +116,7 @@ export const WORKFLOW: DocSection[] = [
           <Li>
             <strong className="font-medium text-foreground">The board:</strong> drag a card to change its status, click a
             status to cycle it, right-click a card or row for any status or priority, and use + on a column to add a task
-            straight into it (it goes into the project&apos;s <Code>Tasks.md</Code>).
+            straight into it (it goes into the project&apos;s <Code>Tasks.md</Code>). Drop a card onto another card in the same column and note to reorder: its line moves in the file. Right-click a project in the sidebar to rename or remove it.
           </Li>
           <Li>
             <strong className="font-medium text-foreground">Capture:</strong> select text in any note and choose Create
