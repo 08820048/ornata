@@ -170,6 +170,9 @@ export const ipc = {
   moveIssue: (rel: string, line: number, text: string, targetLine: number, targetText: string, after: boolean) =>
     call<void>("move_issue", { rel, line, text, targetLine, targetText, after }),
 
+  /** Delete the decision notes under a task; resolves to how many lines went. */
+  removeIssueNotes: (rel: string, line: number, text: string) =>
+    call<number>("remove_issue_notes", { rel, line, text }),
   addIssue: (project: string, text: string, status?: IssueStatus) =>
     call<string>("add_issue", { project, text, status }),
   createIssueNote: (project: string, title: string, body?: string) =>

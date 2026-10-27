@@ -126,6 +126,7 @@ pub fn run() {
             commands::set_project,
             commands::set_issue_status,
             commands::move_issue,
+            commands::remove_issue_notes,
             commands::set_issue_priority,
             commands::add_issue,
             commands::create_issue_note,

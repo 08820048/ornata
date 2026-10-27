@@ -46,7 +46,8 @@ export function promotedText(issue: Issue, rel: string): string {
  * Give a task its own page in the project's `issues/` folder and turn the
  * line into a link to it. The page is named after the task (shortened if it
  * is long, with the full text inside) and keeps a link to where the task
- * came from. Returns the new note's rel.
+ * came from; the decision notes under the task move onto the page. Returns
+ * the new note's rel.
  */
 export async function promoteIssue(project: string, issue: Issue, sourceLabel: string): Promise<string> {
   const { text, source } = splitSource(issue.title);
@@ -55,8 +56,14 @@ export async function promoteIssue(project: string, issue: Issue, sourceLabel: s
   const body = [
     ...(name === full ? [] : [full]),
     ...(source ? [`${sourceLabel}: [${plainLabel(source.label)}](${source.href})`] : []),
+    ...(issue.notes.length > 0 ? [issue.notes.map((note) => `- ${note}`).join("\n")] : []),
   ].join("\n\n");
   const rel = await ipc.createIssueNote(project, name, body);
-  await ipc.replaceIssueText(issue.rel, issue.line, issue.text, promotedText(issue, rel));
+  const next = promotedText(issue, rel);
+  await ipc.replaceIssueText(issue.rel, issue.line, issue.text, next);
+  if (issue.notes.length > 0) {
+    // The notes now live on the page; if clearing them here fails, they are merely duplicated.
+    await ipc.removeIssueNotes(issue.rel, issue.line, next.trim()).catch(() => 0);
+  }
   return rel;
 }

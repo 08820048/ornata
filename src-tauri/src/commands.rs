@@ -540,6 +540,11 @@ pub fn move_issue(
 }
 
 #[tauri::command]
+pub fn remove_issue_notes(state: State<'_, AppState>, rel: String, line: usize, text: String) -> AppResult<usize> {
+    crate::issue_move::remove_issue_notes(&state.root()?, &rel, line, &text)
+}
+
+#[tauri::command]
 pub fn reopen_task(
     state: State<'_, AppState>,
     rel: String,

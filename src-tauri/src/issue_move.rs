@@ -1,6 +1,7 @@
-//! Reordering issues: a task moves, with the lines indented under it, to just
-//! before or after another task of the same note. Order is only ever the order
-//! of the lines — nothing is stored elsewhere.
+//! Moving issue lines around. Reordering: a task moves, with the lines indented
+//! under it, to just before or after another task of the same note — order is
+//! only ever the order of the lines, nothing is stored elsewhere. Promoting a
+//! task to its own page takes the decision notes under it along.
 
 use std::path::Path;
 
@@ -61,6 +62,35 @@ pub fn move_issue(
     save(root, rel, &lines, forced)
 }
 
+/// Remove the decision notes under the task at `line` (still reading `text`):
+/// the plain bullets and text indented beneath it. Sub-tasks and what is
+/// under them stay. Returns how many lines were removed.
+pub fn remove_issue_notes(root: &Path, rel: &str, line: usize, text: &str) -> AppResult<usize> {
+    let mut lines = read_lines(root, rel)?;
+    let task = lines.get(line).and_then(|l| task_line(l)).filter(|t| t.text == text).ok_or_else(gone)?;
+    let end = block_end(&lines, line, task.indent);
+    let mut keep = vec![true; lines.len()];
+    let mut skip_until = line + 1;
+    for i in line + 1..end {
+        if i < skip_until {
+            continue;
+        }
+        if task_line(&lines[i]).is_some() {
+            skip_until = block_end(&lines, i, task_line(&lines[i]).map_or(0, |t| t.indent));
+        } else {
+            keep[i] = false;
+        }
+    }
+    let removed = keep.iter().filter(|k| !**k).count();
+    if removed == 0 {
+        return Ok(0);
+    }
+    let mut it = keep.iter();
+    lines.retain(|_| *it.next().unwrap());
+    save(root, rel, &lines, false)?;
+    Ok(removed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,5 +135,16 @@ mod tests {
         assert!(run(1, "A", 6, "changed", false).0.is_err());
         assert!(run(1, "A", 5, "C sub", false).0.is_err());
         assert!(run(4, "C", 5, "C sub", true).0.is_err());
+    }
+
+    #[test]
+    fn removes_notes_but_keeps_sub_tasks() {
+        let dir = tempdir().unwrap();
+        ensure_layout(dir.path()).unwrap();
+        let rel = create_note(dir.path(), "", "p").unwrap();
+        write_note(dir.path(), &rel, "- [ ] A\n  - note a\n    - deeper\n  - [ ] sub\n    - sub note\n  - note b\n- [ ] B\n  - note of b").unwrap();
+        assert_eq!(remove_issue_notes(dir.path(), &rel, 0, "A").unwrap(), 3);
+        assert_eq!(read_note(dir.path(), &rel).unwrap(), "- [ ] A\n  - [ ] sub\n    - sub note\n- [ ] B\n  - note of b");
+        assert!(remove_issue_notes(dir.path(), &rel, 0, "changed").is_err());
     }
 }
