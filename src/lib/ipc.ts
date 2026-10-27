@@ -166,6 +166,9 @@ export const ipc = {
     call<void>("set_issue_priority", { rel, line, text, priority }),
   setIssueStatus: (rel: string, line: number, text: string, status: IssueStatus) =>
     call<void>("set_issue_status", { rel, line, text, status }),
+  /** Move a task (with what is indented under it) next to another task of the same note. */
+  moveIssue: (rel: string, line: number, text: string, targetLine: number, targetText: string, after: boolean) =>
+    call<void>("move_issue", { rel, line, text, targetLine, targetText, after }),
 
   addIssue: (project: string, text: string, status?: IssueStatus) =>
     call<string>("add_issue", { project, text, status }),

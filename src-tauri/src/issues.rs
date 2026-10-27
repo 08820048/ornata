@@ -79,11 +79,11 @@ pub struct Issue {
 }
 
 /// A task line split up: indent width, byte offset of the box, status, text.
-struct TaskLine<'a> {
-    indent: usize,
+pub(crate) struct TaskLine<'a> {
+    pub(crate) indent: usize,
     box_at: usize,
     status: IssueStatus,
-    text: &'a str,
+    pub(crate) text: &'a str,
 }
 
 fn list_body(line: &str) -> Option<(usize, usize, &str)> {
@@ -96,7 +96,7 @@ fn list_body(line: &str) -> Option<(usize, usize, &str)> {
     Some((indent, line.len() - body.len(), body))
 }
 
-fn task_line(line: &str) -> Option<TaskLine<'_>> {
+pub(crate) fn task_line(line: &str) -> Option<TaskLine<'_>> {
     let (indent, box_at, body) = list_body(line)?;
     let status = IssueStatus::from_mark(body.get(..3)?)?;
     let text = body[3..].strip_prefix(' ')?.trim_end_matches('\r').trim();
@@ -365,11 +365,11 @@ pub fn parse_issues(rel: &str, content: &str) -> Vec<Issue> {
     issues
 }
 
-fn gone() -> AppError {
+pub(crate) fn gone() -> AppError {
     AppError::InvalidInput("task no longer exists".into())
 }
 
-fn save(root: &Path, rel: &str, lines: &[String], forced: bool) -> AppResult<()> {
+pub(crate) fn save(root: &Path, rel: &str, lines: &[String], forced: bool) -> AppResult<()> {
     let content = lines.join("\n");
     if forced {
         write_note_forced_snapshot(root, rel, &content)
@@ -378,7 +378,7 @@ fn save(root: &Path, rel: &str, lines: &[String], forced: bool) -> AppResult<()>
     }
 }
 
-fn read_lines(root: &Path, rel: &str) -> AppResult<Vec<String>> {
+pub(crate) fn read_lines(root: &Path, rel: &str) -> AppResult<Vec<String>> {
     Ok(read_note(root, rel)?.split('\n').map(str::to_string).collect())
 }
 

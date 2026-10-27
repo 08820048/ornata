@@ -26,6 +26,7 @@ mod reveal;
 mod search;
 mod tags;
 mod templates;
+mod issue_move;
 mod issues;
 mod projects;
 mod tasks;
@@ -124,6 +125,7 @@ pub fn run() {
             commands::project_issues,
             commands::set_project,
             commands::set_issue_status,
+            commands::move_issue,
             commands::set_issue_priority,
             commands::add_issue,
             commands::create_issue_note,

@@ -4,16 +4,20 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  pointerWithin,
+  rectIntersection,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { openNoteAt } from "@/components/editor/NoteBacklinks";
 import { parseInline } from "@/lib/inlineMarkdown";
-import { columnIssues } from "@/lib/issueOrder";
+import { columnIssues, priorityRank } from "@/lib/issueOrder";
 import { hrefToRel } from "@/lib/noteLinks";
 import type { Issue, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -22,15 +26,26 @@ import { AgentBadge, PriorityIcon, STATUSES, StampLabel, StatusIcon } from "./is
 
 const keyOf = (issue: Issue) => `${issue.rel}:${issue.line}`;
 
+/** Under the pointer, a card beats the column it sits in. */
+const collide: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  const cards = hits.filter((hit) => String(hit.id).includes(":"));
+  if (cards.length) return cards;
+  return hits.length ? hits : rectIntersection(args);
+};
+
 /** Status columns; dropping a card on one rewrites that task's box. */
 export function BoardView({
   issues,
   onStatus,
+  onMove,
   onAdd,
   onMenu,
 }: {
   issues: Issue[];
   onStatus: (issue: Issue, status: IssueStatus) => void;
+  /** Drop a card next to another one of the same column and note: reorder the lines. */
+  onMove: (issue: Issue, target: Issue, after: boolean) => void;
   /** Create a task with `text` in `status`; resolves true when it was written. */
   onAdd: (status: IssueStatus, text: string) => Promise<boolean>;
   /** Right-click on a card: the same menu the list rows have. */
@@ -40,18 +55,50 @@ export function BoardView({
   const [dragging, setDragging] = useState<Issue | null>(null);
   const byKey = useMemo(() => new Map(issues.map((i) => [keyOf(i), i])), [issues]);
 
+  const [overId, setOverId] = useState<string | null>(null);
+  const overStatus = overId ? (byKey.get(overId)?.status ?? (overId as IssueStatus)) : null;
+
   const onStart = (event: DragStartEvent) => setDragging(byKey.get(String(event.active.id)) ?? null);
-  const onEnd = (event: DragEndEvent) => {
+  const onOver = (event: DragOverEvent) => setOverId(event.over ? String(event.over.id) : null);
+  const stop = () => {
     setDragging(null);
+    setOverId(null);
+  };
+  const onEnd = (event: DragEndEvent) => {
+    stop();
     const issue = byKey.get(String(event.active.id));
-    if (issue && event.over) onStatus(issue, event.over.id as IssueStatus);
+    if (!issue || !event.over) return;
+    const target = byKey.get(String(event.over.id));
+    if (!target) return onStatus(issue, event.over.id as IssueStatus);
+    if (target.status !== issue.status) return onStatus(issue, target.status);
+    // Same column: the order is the order of lines, so only cards of one note
+    // (and, in progress, of one priority, which sorts first) can trade places.
+    if (target === issue || target.rel !== issue.rel || target.depth !== issue.depth) return;
+    if (issue.status === "doing" && priorityRank(issue.priority) !== priorityRank(target.priority)) return;
+    const column = columnIssues(issues, issue.status);
+    onMove(issue, target, column.indexOf(issue) < column.indexOf(target));
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={onStart} onDragEnd={onEnd} onDragCancel={() => setDragging(null)}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collide}
+      onDragStart={onStart}
+      onDragOver={onOver}
+      onDragEnd={onEnd}
+      onDragCancel={stop}
+    >
       <div className="grid grid-cols-4 items-start gap-3">
         {STATUSES.map((status) => (
-          <Column key={status} status={status} issues={columnIssues(issues, status)} onAdd={onAdd} onMenu={onMenu} />
+          <Column
+            key={status}
+            status={status}
+            issues={columnIssues(issues, status)}
+            active={overStatus === status}
+            overId={overId}
+            onAdd={onAdd}
+            onMenu={onMenu}
+          />
         ))}
       </div>
       <DragOverlay dropAnimation={null}>{dragging && <Card issue={dragging} overlay />}</DragOverlay>
@@ -62,23 +109,29 @@ export function BoardView({
 function Column({
   status,
   issues,
+  active,
+  overId,
   onAdd,
   onMenu,
 }: {
   status: IssueStatus;
   issues: Issue[];
+  /** The drag is over this column or one of its cards. */
+  active: boolean;
+  /** The card or column the drag is over. */
+  overId: string | null;
   onAdd: (status: IssueStatus, text: string) => Promise<boolean>;
   onMenu: (issue: Issue, at: { x: number; y: number }) => void;
 }) {
   const t = useT();
   const [adding, setAdding] = useState(false);
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const { setNodeRef } = useDroppable({ id: status });
   return (
     <section
       ref={setNodeRef}
       className={cx(
         "min-h-[160px] min-w-0 rounded-lg p-1.5 transition-colors duration-100",
-        isOver ? "bg-active" : "bg-sunken/60",
+        active ? "bg-active" : "bg-sunken/60",
       )}
     >
       <header className="flex items-center gap-1.5 px-1.5 pb-2 pt-1 text-[12px] font-medium text-muted">
@@ -103,7 +156,7 @@ function Column({
           />
         )}
         {issues.map((issue) => (
-          <DraggableCard key={keyOf(issue)} issue={issue} onMenu={onMenu} />
+          <DraggableCard key={keyOf(issue)} issue={issue} over={overId === keyOf(issue)} onMenu={onMenu} />
         ))}
       </div>
     </section>
@@ -112,15 +165,23 @@ function Column({
 
 function DraggableCard({
   issue,
+  over,
   onMenu,
 }: {
   issue: Issue;
+  /** Another card is being dragged over this one. */
+  over: boolean;
   onMenu: (issue: Issue, at: { x: number; y: number }) => void;
 }) {
-  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: keyOf(issue) });
+  const drag = useDraggable({ id: keyOf(issue) });
+  const drop = useDroppable({ id: keyOf(issue) });
+  const { listeners, attributes, isDragging } = drag;
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        drag.setNodeRef(node);
+        drop.setNodeRef(node);
+      }}
       {...listeners}
       {...attributes}
       onContextMenu={(event) => {
@@ -128,7 +189,7 @@ function DraggableCard({
         event.stopPropagation();
         onMenu(issue, { x: event.clientX, y: event.clientY });
       }}
-      className={cx("touch-none", isDragging && "opacity-40")}
+      className={cx("touch-none rounded-md", isDragging && "opacity-40", over && !isDragging && "ring-1 ring-ink/40")}
     >
       <Card issue={issue} />
     </div>

@@ -110,6 +110,16 @@ export function ProjectsView({ active }: { active: boolean }) {
     }
   };
 
+  const moveIssue = async (issue: Issue, target: Issue, after: boolean) => {
+    try {
+      await ipc.moveIssue(issue.rel, issue.line, issue.text, target.line, target.text, after);
+      notifyNotesChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    }
+    setNonce((n) => n + 1);
+  };
+
   const promote = async (issue: Issue) => {
     if (!selected) return;
     try {
@@ -225,7 +235,7 @@ export function ProjectsView({ active }: { active: boolean }) {
           <Empty text={t("projects.noIssues")} hint={t("projects.syntax")} />
         )}
         {!failed && issues && mode === "board" && (
-          <BoardView issues={issues} onStatus={setStatus} onAdd={addIssue} onMenu={(issue, at) => setMenu({ issue, at })} />
+          <BoardView issues={issues} onStatus={setStatus} onMove={moveIssue} onAdd={addIssue} onMenu={(issue, at) => setMenu({ issue, at })} />
         )}
         {mode === "list" && !failed && issues && issues.length > 0 && groups.length === 0 && (
           <Empty text={t("projects.allDone")} />

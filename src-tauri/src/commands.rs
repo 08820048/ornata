@@ -527,6 +527,19 @@ pub fn set_issue_status(
 }
 
 #[tauri::command]
+pub fn move_issue(
+    state: State<'_, AppState>,
+    rel: String,
+    line: usize,
+    text: String,
+    target_line: usize,
+    target_text: String,
+    after: bool,
+) -> AppResult<()> {
+    crate::issue_move::move_issue(&state.root()?, &rel, line, &text, target_line, &target_text, after, false)
+}
+
+#[tauri::command]
 pub fn reopen_task(
     state: State<'_, AppState>,
     rel: String,
