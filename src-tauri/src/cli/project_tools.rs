@@ -28,6 +28,8 @@ pub fn definitions() -> Vec<Tool> {
             object(json!({ "path": path, "line": line, "text": text, "status": status }), &["path", "line", "text", "status"])),
         tool("set_issue_priority", "Set an issue's priority (urgent, high, medium, low), or clear it with none.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "priority": { "type": "string", "enum": ["urgent", "high", "medium", "low", "none"] } }), &["path", "line", "text", "priority"])),
+        tool("move_issue", "Reorder an issue within its note: move it, with the notes indented under it, just before or after another issue of the same note and nesting. Order on the board follows the order of lines.", Level::Write,
+            object(json!({ "path": path, "line": line, "text": text, "target_line": { "type": "integer", "description": "Line of the issue to place it next to, from list_issues" }, "target_text": { "type": "string", "description": "That issue's `text` from list_issues" }, "position": { "type": "string", "enum": ["before", "after"], "description": "Default after" } }), &["path", "line", "text", "target_line", "target_text"])),
         tool("add_decision", "Record a one-line decision or progress note under an issue.", Level::Write,
             object(json!({ "path": path, "line": line, "text": text, "decision": { "type": "string" } }), &["path", "line", "text", "decision"])),
         tool("add_issue", "Add an issue to a project's Tasks.md note (status defaults to todo).", Level::Write,
@@ -98,6 +100,20 @@ pub fn call(root: &Path, name: &str, args: &Value) -> Option<AppResult<Value>> {
             issues::set_issue_priority(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, priority, true)?;
             Ok(json!({ "updated": true }))
         })(),
+        "move_issue" => (|| {
+            let target_line = args
+                .get("target_line")
+                .and_then(Value::as_u64)
+                .map(|n| n as usize)
+                .ok_or_else(|| AppError::InvalidInput("target_line is required".into()))?;
+            let after = match opt(args, "position") {
+                "" | "after" => true,
+                "before" => false,
+                _ => return Err(AppError::InvalidInput("position must be before or after".into())),
+            };
+            crate::issue_move::move_issue(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, target_line, arg(args, "target_text")?, after, true)?;
+            Ok(json!({ "moved": true }))
+        })(),
         "add_decision" => (|| {
             issues::add_issue_note(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, arg(args, "decision")?, true)?;
             Ok(json!({ "added": true }))
@@ -117,7 +133,7 @@ pub fn call(root: &Path, name: &str, args: &Value) -> Option<AppResult<Value>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::notes::{create_folder, create_note, write_note};
+    use crate::notes::{create_folder, create_note, read_note, write_note};
     use crate::vault::ensure_layout;
     use tempfile::tempdir;
 
@@ -157,5 +173,30 @@ mod tests {
         assert_eq!(call("list_issues", json!({}))[0]["priority"], "urgent");
         assert!(super::call(root, "set_issue_priority", &json!({ "path": plan, "line": 1, "text": "x", "priority": "soon" })).unwrap().is_err());
         assert!(super::call(root, "nope", &json!({})).is_none());
+    }
+
+    #[test]
+    fn an_agent_can_reorder_issues_within_a_note() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        ensure_layout(root).unwrap();
+        let app = create_folder(root, "", "App").unwrap();
+        projects::set_project(root, &app, true).unwrap();
+        let plan = create_note(root, &app, "Plan").unwrap();
+        write_note(root, &plan, "- [ ] One\n  - why\n- [ ] Two\n- [ ] Three\n").unwrap();
+
+        let titles = || -> Vec<String> {
+            call(root, "list_issues", &json!({})).unwrap().unwrap().as_array().unwrap().iter().map(|i| i["title"].as_str().unwrap().to_string()).collect()
+        };
+        let mv = |line: u64, text: &str, target: u64, target_text: &str, position: &str| {
+            call(root, "move_issue", &json!({ "path": plan, "line": line, "text": text, "target_line": target, "target_text": target_text, "position": position })).unwrap()
+        };
+        mv(0, "One", 3, "Three", "after").unwrap();
+        assert_eq!(titles(), ["Two", "Three", "One"]);
+        mv(1, "Three", 0, "Two", "before").unwrap();
+        assert_eq!(titles(), ["Three", "Two", "One"]);
+        assert!(mv(0, "stale", 1, "Two", "after").is_err());
+        assert!(mv(0, "Three", 1, "Two", "sideways").is_err());
+        assert_eq!(read_note(root, &plan).unwrap(), "- [ ] Three\n- [ ] Two\n- [ ] One\n  - why\n");
     }
 }

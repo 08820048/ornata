@@ -48,7 +48,7 @@ lines of the notes inside it: `- [ ]` todo, `- [/]` in progress, `- [x]` done,
 the tools write and clear them). Plain bullets indented under a task are its
 decision notes. Prefer the MCP tools (`list_issues`,
 `next_issue`, `claim_issue`, `add_decision`, `set_issue_status`,
-`set_issue_priority`) over editing those lines by hand.
+`set_issue_priority`, `move_issue`) over editing those lines by hand.
 
 "#;
 
