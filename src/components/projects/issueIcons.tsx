@@ -14,7 +14,7 @@ import {
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 import { shownStamp, stampDay, stampText } from "@/lib/stamps";
-import { agentLogo, agentLogoPaths } from "./agentLogos";
+import { agentLogo, agentLogoArt } from "./agentLogos";
 import type { Issue, IssuePriority, IssueStatus } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useT } from "@/stores/locale";
@@ -78,12 +78,20 @@ export function PriorityIcon({ priority }: { priority: IssuePriority }) {
 export function AgentMark({ name, size = 12 }: { name: string; size?: number }) {
   const logo = agentLogo(name);
   if (!logo) return <IconRobot size={size} stroke={2} />;
+  const { evenodd, svg } = agentLogoArt(logo);
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" clipRule="evenodd" aria-hidden="true">
-      {agentLogoPaths(logo).map((d, index) => (
-        <path key={index} d={d} />
-      ))}
-    </svg>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      fillRule={evenodd ? "evenodd" : undefined}
+      clipRule={evenodd ? "evenodd" : undefined}
+      aria-hidden="true"
+      className="shrink-0"
+      // Static markup bundled with the app (agentLogoData.ts), never user input.
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
   );
 }
 
