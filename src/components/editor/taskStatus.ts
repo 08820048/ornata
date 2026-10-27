@@ -1,7 +1,7 @@
 import { Extension, InputRule, type Editor } from "@tiptap/core";
 import TaskItem from "@tiptap/extension-task-item";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { Plugin, type Transaction } from "@tiptap/pm/state";
+import { Plugin, TextSelection, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { stampNow } from "@/lib/stamps";
 import TaskList from "@tiptap/extension-task-list";
@@ -35,11 +35,11 @@ const CLOSING = new RegExp(`(?:^|\\s)[✓✗]${STAMP}(?=\\s|$)`, "g");
 const ANY_STAMP = new RegExp(`[◷✓✗]${STAMP}`, "g");
 
 /**
- * Keep the item's `✓time` in step with its box: ticking adds when it was done,
- * un-ticking removes it, like the project views and agents do. The stamp is
- * ordinary text at the end of the item's first line.
+ * Keep the item's closing time in step with its box: ticking adds `✓time`,
+ * canceling adds `✗time`, anything else removes it, like the project views and
+ * agents do. The stamp is ordinary text at the end of the item's first line.
  */
-function restampItem(tr: Transaction, at: number, done: boolean) {
+function restampItem(tr: Transaction, at: number, closing: "✓" | "✗" | null, spaced = false) {
   const item = tr.doc.nodeAt(at);
   const line = item?.firstChild;
   if (!item || !line || line.type.name !== "paragraph") return;
@@ -57,7 +57,7 @@ function restampItem(tr: Transaction, at: number, done: boolean) {
     tr.delete(from, to);
     end -= to - from;
   }
-  if (done) tr.insert(end, tr.doc.type.schema.text(`${end > start ? " " : ""}✓${stampNow()}`));
+  if (closing) tr.insert(end, tr.doc.type.schema.text(`${end > start || spaced ? " " : ""}${closing}${stampNow()}`));
 }
 
 /** Dim the `◷` `✓` `✗` times in task lines: they are the app's bookkeeping, not prose. */
@@ -154,7 +154,7 @@ export const TaskItemStatus = TaskItem.extend({
             const at = getPos();
             if (typeof at !== "number") return false;
             tr.setNodeMarkup(at, undefined, { ...tr.doc.nodeAt(at)?.attrs, checked, status: null });
-            restampItem(tr, at, checked);
+            restampItem(tr, at, checked ? "✓" : null);
             return true;
           })
           .run();
@@ -182,11 +182,33 @@ export const TaskItemStatus = TaskItem.extend({
   },
 });
 
+/**
+ * Give the task item the caret is in `status` (never done), and its closing
+ * time to match: canceling stamps `✗`, in progress clears any `✓` / `✗`.
+ */
+function applyStatus(status: "doing" | "canceled") {
+  return ({ tr }: { tr: Transaction }) => {
+    const { $from } = tr.selection;
+    for (let depth = $from.depth; depth > 0; depth--) {
+      if ($from.node(depth).type.name !== "taskItem") continue;
+      const at = $from.before(depth);
+      tr.setNodeMarkup(at, undefined, { ...$from.node(depth).attrs, status, checked: false });
+      // The caret stays in front of the stamp, so what is typed next lands before it (the stamp starts with a space).
+      const caret = tr.selection.from;
+      const steps = tr.steps.length;
+      restampItem(tr, at, status === "canceled" ? "✗" : null, true);
+      tr.setSelection(TextSelection.create(tr.doc, tr.mapping.slice(steps).map(caret, -1)));
+      return true;
+    }
+    return false;
+  };
+}
+
 /** Make the paragraph the caret is in a task with `status` (the slash menu's "in progress" / "canceled"). */
 export function setTaskStatus(editor: Editor, status: "doing" | "canceled") {
   const chain = editor.chain().focus();
   if (!editor.isActive("taskItem")) chain.toggleTaskList();
-  return chain.updateAttributes("taskItem", { status, checked: false }).run();
+  return chain.command(applyStatus(status)).run();
 }
 
 /**
@@ -207,7 +229,7 @@ export const TaskStatusInput = Extension.create({
           const status = match[1] === "/" ? "doing" : "canceled";
           const c = chain().deleteRange(range);
           if (!editor.isActive("taskItem")) c.toggleTaskList();
-          c.updateAttributes("taskItem", { status, checked: false }).run();
+          c.command(applyStatus(status)).run();
         },
       }),
     ];

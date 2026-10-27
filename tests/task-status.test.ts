@@ -8,11 +8,13 @@ mock.module("@tauri-apps/plugin-opener", () => ({ openUrl: async () => undefined
 
 let Editor: typeof import("@tiptap/core").Editor;
 let createExtensions: typeof import("../src/components/editor/extensions").createExtensions;
+let setTaskStatus: typeof import("../src/components/editor/taskStatus").setTaskStatus;
 
 beforeAll(async () => {
   GlobalRegistrator.register();
   ({ Editor } = await import("@tiptap/core"));
   ({ createExtensions } = await import("../src/components/editor/extensions"));
+  ({ setTaskStatus } = await import("../src/components/editor/taskStatus"));
 });
 afterAll(async () => {
   await GlobalRegistrator.unregister();
@@ -84,10 +86,26 @@ describe("task statuses", () => {
       editor.commands.focus();
       type(editor, marks);
       type(editor, "ship it");
-      expect(items(editor)).toEqual([{ checked: false, status, text: "ship it" }]);
-      expect(editor.getMarkdown()).toContain(`- [${marks[1]}] ship it`);
+      // A canceled task is stamped with when; text typed after the marker lands before the stamp.
+      const stamp = status === "canceled" ? " ✗\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}" : "";
+      const [item] = items(editor);
+      expect({ checked: item.checked, status: item.status }).toEqual({ checked: false, status });
+      expect(item.text).toMatch(new RegExp(`^ship it${stamp}$`));
+      expect(editor.getMarkdown()).toMatch(new RegExp(`- \\[${marks[1] === "/" ? "/" : "-"}\\] ship it${stamp}`));
       editor.destroy();
     }
+  });
+
+  test("canceling stamps when; reopening or ticking it removes the stamp", () => {
+    const editor = make("- [ ] drop me ◷2026-10-26T09:05\n");
+    editor.commands.setTextSelection(5);
+    const line = () => editor.state.doc.firstChild?.firstChild?.firstChild?.textContent ?? "";
+    setTaskStatus(editor, "canceled");
+    expect(items(editor)).toHaveLength(1);
+    expect(line()).toMatch(/^drop me ◷2026-10-26T09:05 ✗\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+    setTaskStatus(editor, "doing");
+    expect(line()).toBe("drop me ◷2026-10-26T09:05");
+    editor.destroy();
   });
 
   test("on a line that is already a task the box just changes", () => {
