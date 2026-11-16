@@ -8,6 +8,7 @@ import { createExtensions } from "./extensions";
 import { parseMarkdownSlice } from "./markdownPaste";
 import { TextSelection } from "@tiptap/pm/state";
 import { imageTarget, type ImageTarget } from "./imageMenu";
+import { imageMarkdown } from "./imageExtras";
 import { wikiToMarkdown } from "@/lib/noteLinks";
 import { noteAssetRoot } from "@/lib/noteRef";
 import { flattenNotes } from "@/lib/tree";
@@ -154,13 +155,16 @@ export function useNoteEditor({
           const attrs = node.attrs as {
             alt?: string;
             src?: string;
+            title?: string | null;
             vaultSrc?: string | null;
           };
           const src = attrs.vaultSrc ?? attrs.src ?? "";
           setImageSource({
             pos: nodePos,
             src,
-            markdown: `![${attrs.alt ?? ""}](${src})`,
+            // Always the ![…](…) form here, caption included; a width set by
+            // dragging is kept on the node and isn't edited in this bar.
+            markdown: imageMarkdown({ src, alt: attrs.alt, title: attrs.title }),
             top: imgRect.bottom - boxRect.top + scroll.scrollTop + 6,
             left: imgRect.left - boxRect.left,
             width: imgRect.width,

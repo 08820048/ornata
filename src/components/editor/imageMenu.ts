@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
+  IconArrowsMaximize,
   IconCloudUpload,
   IconCopy,
   IconDownload,
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import type { MenuItem } from "@/components/ui/ContextMenu";
 import { ipc } from "@/lib/ipc";
 import { t } from "@/stores/locale";
+import { openLightbox } from "./imageExtras";
 import { isRemoteSource, resolveAssetPath } from "./extensions";
 import { reuploadImage } from "./insertImage";
 
@@ -41,6 +43,20 @@ export function imageTarget(
 
 export function imageMenuItems(editor: Editor, target: ImageTarget): MenuItem[] {
   const items: MenuItem[] = [
+    {
+      label: t("editor.image.view"),
+      icon: IconArrowsMaximize,
+      onSelect: () => {
+        let shown = "";
+        editor.state.doc.descendants((node, pos) => {
+          if (shown || node.type.name !== "image") return;
+          if ((node.attrs.vaultSrc ?? node.attrs.src) !== target.src) return;
+          const element = editor.view.nodeDOM(pos);
+          if (element instanceof HTMLImageElement) shown = element.currentSrc || element.src;
+        });
+        if (shown) openLightbox(shown);
+      },
+    },
     {
       label: t("editor.image.upload"),
       icon: IconCloudUpload,

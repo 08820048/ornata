@@ -13,6 +13,7 @@ import { BlockPlus } from "./blockPlus";
 import { TableHandles } from "./tableHandles";
 import { CalloutView } from "./callout";
 import { FootnoteView } from "./footnotes";
+import { ImageExtras, imageMarkdown } from "./imageExtras";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
@@ -79,11 +80,13 @@ export const LocalImage = (assetRoot: string) =>
       return ["img", { ...HTMLAttributes, src, "data-vault-src": vaultSrc }];
     },
 
-    renderMarkdown: (node) => {
-      const src = node.attrs?.vaultSrc ?? node.attrs?.src ?? "";
-      const alt = node.attrs?.alt ?? "";
-      return `![${alt}](${src})`;
-    },
+    renderMarkdown: (node) =>
+      imageMarkdown({
+        src: node.attrs?.vaultSrc ?? node.attrs?.src ?? "",
+        alt: node.attrs?.alt,
+        title: node.attrs?.title,
+        width: node.attrs?.width,
+      }),
   });
 
 export function createExtensions(assetRoot: string) {
@@ -128,6 +131,7 @@ export function createExtensions(assetRoot: string) {
     TableHandles,
     CalloutView,
     FootnoteView,
+    ImageExtras,
     MoveBlock,
     FindReplace,
     SlashHighlight,

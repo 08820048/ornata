@@ -41,6 +41,7 @@ import { LocalGraph } from "@/components/graph/LocalGraph";
 import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, type ImageTarget } from "./imageMenu";
 import { tableMenuItems } from "./tableMenu";
+import { parseImageTarget } from "./imageExtras";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 
 const MarkdownSourceEditor = lazy(() =>
@@ -219,11 +220,13 @@ export const NoteEditor = memo(function NoteEditor({
     if (!editor) return;
     const node = editor.state.doc.nodeAt(pos);
     if (!node || node.type.name !== "image") return;
-    const attrs: Record<string, unknown> = { ...node.attrs, alt };
+    // The bar holds `src "caption"` between its parentheses.
+    const target = parseImageTarget(src);
+    const attrs: Record<string, unknown> = { ...node.attrs, alt, title: target.title || null };
     // Only touch src when it actually changed — a matching src keeps the
     // vault-relative path (vaultSrc) as the Markdown source of truth.
-    if (src !== originalSrc) {
-      attrs.src = src;
+    if (target.src !== originalSrc) {
+      attrs.src = target.src;
       attrs.vaultSrc = null;
     }
     editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, attrs));

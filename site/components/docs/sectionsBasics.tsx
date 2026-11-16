@@ -113,6 +113,14 @@ export const BASICS: DocSection[] = [
           the label to change its type. The file keeps exactly the Markdown you typed, so GitHub and Obsidian show
           it the same way.
         </P>
+        <H3>Image size and captions</H3>
+        <P>
+          Point at an image and a grip appears on its right edge: drag it to set the width, double-click it to go
+          back to the original size. Clicking an image shows its Markdown below it; add{" "}
+          <Code>&quot;a caption&quot;</Code> after the path and it is shown under the image. Double-click an image
+          to view it larger. A resized image is saved as an <Code>&lt;img&gt;</Code> tag, since Markdown has no
+          syntax for size; everything else stays a plain <Code>![]()</Code>.
+        </P>
         <H3>Footnotes</H3>
         <P>
           Write <Code>[^1]</Code> in the text and <Code>[^1]: the note</Code> on a line of its own. The marker shows

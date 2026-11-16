@@ -101,6 +101,12 @@ export const BASICS_ZH: DocSection[] = [
           ，也认识 Obsidian 的类型名（<Code>info</Code>、<Code>bug</Code> 等）。用 <Code>/callout</Code>{" "}
           插入；点一下标签可以改类型。文件里保存的就是你输入的这行 Markdown，GitHub 和 Obsidian 都能照常显示。
         </P>
+        <H3>图片大小与图注</H3>
+        <P>
+          鼠标移到图片上，右边缘会出现一个拖柄：拖动调整宽度，双击拖柄恢复原始大小。单击图片会在下方显示它的 Markdown，在路径后面加上{" "}
+          <Code>&quot;图注&quot;</Code> 就会在图片下显示图注。双击图片放大查看。调整过大小的图片保存为 <Code>&lt;img&gt;</Code>{" "}
+          标签（Markdown 本身没有尺寸语法），其余仍是普通的 <Code>![]()</Code>。
+        </P>
         <H3>脚注</H3>
         <P>
           在正文里写 <Code>[^1]</Code>，再另起一行写 <Code>[^1]: 脚注内容</Code>。正文里的标记显示成编号，鼠标悬停可以看到脚注内容，按住{" "}

@@ -1312,6 +1312,65 @@ body {
     border-radius: 8px;
     margin: 1em 0;
 }
+/* The caption is the image's title, shown under it (imageExtras.ts). */
+.prose-note .image-caption {
+    display: block;
+    margin: -0.55em 0 1em;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    line-height: 1.5;
+    user-select: none;
+}
+/* Grip on the right edge of the image under the pointer: drag to resize. */
+.image-grip {
+    position: absolute;
+    z-index: 2;
+    width: 6px;
+    height: 40px;
+    border-radius: 3px;
+    background: var(--invert);
+    box-shadow: 0 0 0 1.5px var(--bg);
+    cursor: ew-resize;
+    opacity: 0;
+    pointer-events: none;
+    touch-action: none;
+    transition: opacity 120ms var(--ease-out);
+}
+.image-grip[data-shown="true"] {
+    opacity: 0.55;
+    pointer-events: auto;
+}
+.image-grip:hover,
+.image-grip[data-dragging="true"] {
+    opacity: 0.9;
+}
+.image-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: 32px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    cursor: zoom-out;
+    opacity: 0;
+    transition: opacity 140ms var(--ease-out);
+}
+.image-lightbox[data-shown="true"] {
+    opacity: 1;
+}
+.image-lightbox img {
+    max-width: 100%;
+    max-height: calc(100vh - 64px);
+    border-radius: 8px;
+    box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.4);
+}
+@media print {
+    .image-grip {
+        display: none;
+    }
+}
 .prose-note img.ProseMirror-selectednode {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
