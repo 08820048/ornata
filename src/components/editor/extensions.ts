@@ -10,6 +10,7 @@ import { TaskItemStatus, TaskListStatus, TaskStatusInput } from "./taskStatus";
 import Typography from "@tiptap/extension-typography";
 import StarterKit from "@tiptap/starter-kit";
 import { BlockPlus } from "./blockPlus";
+import { TableHandles } from "./tableHandles";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
@@ -122,6 +123,7 @@ export function createExtensions(assetRoot: string) {
     BrokenLinks,
     HeadingFold,
     BlockPlus,
+    TableHandles,
     MoveBlock,
     FindReplace,
     SlashHighlight,

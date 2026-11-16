@@ -96,6 +96,14 @@ export const BASICS: DocSection[] = [
           Type <Code>@</Code> to insert a link to today&apos;s, tomorrow&apos;s, or yesterday&apos;s{" "}
           <a className="text-foreground underline underline-offset-4" href="#daily">daily note</a>.
         </P>
+        <H3>Tables</H3>
+        <P>
+          Insert a table with <Code>/table</Code>. <Kbd>Tab</Kbd> in the last cell adds a row, and pointing at a
+          table shows a <strong className="font-medium text-foreground">+</strong> bar along its bottom and right
+          edge to add a row or a column. Right-click a cell to insert a row above or below, a column left or right,
+          align the column, or delete the row, the column, or the whole table. Alignment is saved as standard
+          Markdown (<Code>:---:</Code>).
+        </P>
         <H3>Links and images</H3>
         <Ul>
           <Li>

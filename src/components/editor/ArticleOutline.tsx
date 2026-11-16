@@ -28,6 +28,7 @@ export function ArticleOutline({
   return (
     <nav
       aria-label={t("editor.outline")}
+      data-outline
       onMouseLeave={() => setHoveredIndex(null)}
       onBlur={(event) => {
         if (

@@ -40,6 +40,7 @@ import { UnlinkedMentions } from "./UnlinkedMentions";
 import { LocalGraph } from "@/components/graph/LocalGraph";
 import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, type ImageTarget } from "./imageMenu";
+import { tableMenuItems } from "./tableMenu";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 
 const MarkdownSourceEditor = lazy(() =>
@@ -93,6 +94,7 @@ export const NoteEditor = memo(function NoteEditor({
     position: MenuPosition;
     target: ImageTarget;
   } | null>(null);
+  const [tableMenu, setTableMenu] = useState<MenuPosition | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const backlinksRef = useRef<HTMLElement>(null);
   const [backlinksOpen, setBacklinksOpen] = useState(true);
@@ -115,6 +117,7 @@ export const NoteEditor = memo(function NoteEditor({
     pageRef,
     setImageSource,
     setImageMenu,
+    setTableMenu,
   });
 
   const slashRange = slashMenu?.range;
@@ -376,6 +379,13 @@ export const NoteEditor = memo(function NoteEditor({
             applyImageSource(imageSource.pos, imageSource.src, alt, src);
           }}
           onClose={() => setImageSource(null)}
+        />
+      )}
+      {active && tableMenu && editor && !markdownSource && (
+        <ContextMenu
+          position={tableMenu}
+          items={tableMenuItems(editor)}
+          onClose={() => setTableMenu(null)}
         />
       )}
       {active && imageMenu && editor && !markdownSource && (

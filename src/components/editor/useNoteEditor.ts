@@ -6,6 +6,7 @@ import { imageFileFromDataTransfer, insertImageFile } from "./insertImage";
 import { CursorMotion } from "./cursorMotion";
 import { createExtensions } from "./extensions";
 import { parseMarkdownSlice } from "./markdownPaste";
+import { TextSelection } from "@tiptap/pm/state";
 import { imageTarget, type ImageTarget } from "./imageMenu";
 import { wikiToMarkdown } from "@/lib/noteLinks";
 import { noteAssetRoot } from "@/lib/noteRef";
@@ -45,6 +46,7 @@ export function useNoteEditor({
   pageRef,
   setImageSource,
   setImageMenu,
+  setTableMenu,
 }: {
   note: NoteRef;
   active: boolean;
@@ -57,6 +59,7 @@ export function useNoteEditor({
   pageRef: RefObject<HTMLDivElement | null>;
   setImageSource: (value: ImageSourceOverlay | null) => void;
   setImageMenu: (value: { position: MenuPosition; target: ImageTarget } | null) => void;
+  setTableMenu: (value: MenuPosition | null) => void;
 }) {
   const {
     noteRef,
@@ -168,6 +171,22 @@ export function useNoteEditor({
           // Right-click on an image: upload / open / copy / save as.
           contextmenu(view, event) {
             const img = event.target;
+            // Right-click in a table cell: rows, columns, alignment.
+            const cell = img instanceof Element && !(img instanceof HTMLImageElement) ? img.closest("td, th") : null;
+            if (cell && view.dom.contains(cell) && view.editable) {
+              // Act on the cell that was clicked, unless it is part of the selection already.
+              const at = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              const { from, to } = view.state.selection;
+              if (at && (at.pos < from || at.pos > to)) {
+                view.dispatch(
+                  view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(at.pos))),
+                );
+              }
+              event.preventDefault();
+              event.stopPropagation();
+              setTableMenu({ x: event.clientX, y: event.clientY });
+              return true;
+            }
             if (!(img instanceof HTMLImageElement)) return false;
             const pos = view.posAtDOM(img, 0);
             const node = view.state.doc.nodeAt(pos);

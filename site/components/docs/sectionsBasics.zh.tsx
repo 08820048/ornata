@@ -88,6 +88,12 @@ export const BASICS_ZH: DocSection[] = [
           <a className="text-foreground underline underline-offset-4" href="#daily">日记</a>{" "}
           的链接。
         </P>
+        <H3>表格</H3>
+        <P>
+          用 <Code>/table</Code> 插入表格。在最后一格按 <Kbd>Tab</Kbd> 会新增一行；把鼠标移到表格上，底边和右边会出现
+          添加行、添加列的 <B>+</B> 条。在单元格上点右键可以在上下插入行、在左右插入列、设置本列的对齐方式，或删除行、列和整张表格。对齐方式保存为标准
+          Markdown（<Code>:---:</Code>）。
+        </P>
         <H3>链接与图片</H3>
         <Ul>
           <Li>

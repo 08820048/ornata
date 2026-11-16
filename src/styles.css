@@ -1271,6 +1271,55 @@ body {
     font-weight: 600;
 }
 
+/* Bars at a table's bottom and right edge that add a row / a column. They
+   sit in an overlay next to the editor (tableHandles.ts), not in the note. */
+.table-add {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: var(--hover);
+    color: var(--faint);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+    transition:
+        opacity 120ms var(--ease-out),
+        background-color 100ms var(--ease-out),
+        color 100ms var(--ease-out);
+}
+.table-add[data-shown="true"] {
+    opacity: 1;
+    pointer-events: auto;
+}
+.table-add:hover {
+    background: var(--active);
+    color: var(--ink);
+}
+.table-add-row {
+    height: 14px;
+}
+/* The outline's hover zone on the pane's right edge reaches over the column
+   bar; while a table is under the pointer the outline lets the pointer through. */
+[data-table-hot="true"] [data-outline] {
+    pointer-events: none;
+}
+.table-add-column {
+    width: 14px;
+}
+@media print {
+    .table-add {
+        display: none;
+    }
+}
+
 /* ---------- agent response typography ---------- */
 
 .agent-markdown {
