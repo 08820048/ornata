@@ -94,6 +94,13 @@ export const BASICS_ZH: DocSection[] = [
           添加行、添加列的 <B>+</B> 条。在单元格上点右键可以在上下插入行、在左右插入列、设置本列的对齐方式，或删除行、列和整张表格。对齐方式保存为标准
           Markdown（<Code>:---:</Code>）。
         </P>
+        <H3>提示块</H3>
+        <P>
+          以 <Code>[!note]</Code> 开头的引用会显示成提示块，带图标和标签：<Code>&gt; [!note] 标题</Code>。类型有{" "}
+          <Code>note</Code>、<Code>tip</Code>、<Code>important</Code>、<Code>warning</Code>、<Code>caution</Code>
+          ，也认识 Obsidian 的类型名（<Code>info</Code>、<Code>bug</Code> 等）。用 <Code>/callout</Code>{" "}
+          插入；点一下标签可以改类型。文件里保存的就是你输入的这行 Markdown，GitHub 和 Obsidian 都能照常显示。
+        </P>
         <H3>链接与图片</H3>
         <Ul>
           <Li>

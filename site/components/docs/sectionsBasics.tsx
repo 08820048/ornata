@@ -104,6 +104,15 @@ export const BASICS: DocSection[] = [
           align the column, or delete the row, the column, or the whole table. Alignment is saved as standard
           Markdown (<Code>:---:</Code>).
         </P>
+        <H3>Callouts</H3>
+        <P>
+          A quote that opens with <Code>[!note]</Code> is shown as a callout with an icon and a label:{" "}
+          <Code>&gt; [!note] Title</Code>. The types are <Code>note</Code>, <Code>tip</Code>,{" "}
+          <Code>important</Code>, <Code>warning</Code> and <Code>caution</Code>, and Obsidian&apos;s names (
+          <Code>info</Code>, <Code>bug</Code>, …) are understood too. Insert one with <Code>/callout</Code>; click
+          the label to change its type. The file keeps exactly the Markdown you typed, so GitHub and Obsidian show
+          it the same way.
+        </P>
         <H3>Links and images</H3>
         <Ul>
           <Li>

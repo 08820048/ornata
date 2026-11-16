@@ -2,6 +2,7 @@ import type { Editor } from "@tiptap/react";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
 import {
   IconBlockquote,
+  IconInfoCircle,
   IconCalendar,
   IconChecklist,
   IconCircleX,
@@ -192,6 +193,14 @@ const commands: SlashCommand[] = [
     keywords: "blockquote",
     shortcut: ">",
     run: (e) => e.chain().focus().toggleBlockquote().run(),
+  },
+  {
+    id: "callout",
+    label: "slash.callout",
+    icon: IconInfoCircle,
+    keywords: "callout alert note tip warning admonition",
+    shortcut: "> [!note]",
+    run: (e) => e.chain().focus().setBlockquote().insertContent("[!note] ").run(),
   },
   ...codeCommands,
   {

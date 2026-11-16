@@ -826,6 +826,45 @@ body {
     color: var(--muted);
 }
 
+/* Callouts: a quote that opens with `[!type]` (callout.ts). Monochrome like
+   the rest — the kinds differ by icon and label, not by colour. */
+.prose-note blockquote.callout {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    padding: 0.55em 1em;
+    color: var(--note-ink);
+}
+.prose-note .callout-label {
+    margin-right: 0.3em;
+    font-weight: 600;
+    color: var(--ink);
+    user-select: none;
+}
+.prose-note .callout-label svg {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    margin-right: 0.4em;
+    vertical-align: -0.18em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+/* The typed marker is hidden behind the label until the caret is in it. */
+.prose-note .callout-marker {
+    font-size: 0;
+}
+.prose-note .callout-marker-raw {
+    color: var(--faint);
+}
+.prose-note .callout-title {
+    font-weight: 600;
+    color: var(--ink);
+}
+
 .prose-note code {
     font-family: var(--font-mono);
     font-size: 0.86em;
