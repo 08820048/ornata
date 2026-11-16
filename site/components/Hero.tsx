@@ -4,26 +4,13 @@ import Image from "next/image";
 import { ArrowDownRight, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { AppDemo } from "./AppDemo";
-import { DownloadButton } from "./ui/download-button";
+import { DownloadButton, WindowsLogo } from "./ui/download-button";
 import { ButtonLink } from "./ui/button";
 import { track } from "@/lib/analytics";
 import { EXE, VERSION } from "@/lib/config";
 import { EASE_OUT } from "@/lib/ease";
 import { useCopy } from "@/lib/locale";
 
-function WindowsMark() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M3 4.6 10.7 3.5v7.8H3V4.6Zm8.8-1.25L21 2v9.3h-9.2V3.35ZM3 12.4h7.7v7.9L3 19.2v-6.8Zm8.8 0H21V22l-9.2-1.3v-8.3Z" />
-    </svg>
-  );
-}
 
 export function Hero() {
   const reduce = useReducedMotion();
@@ -110,8 +97,9 @@ export function Hero() {
                     aria-label={copy.windowsLabel}
                     onClick={() => track("Download", { version: VERSION, platform: "windows" })}
                     className="w-full whitespace-nowrap sm:w-auto"
+                    meta={copy.windowsBeta}
                   >
-                    <WindowsMark />
+                    <WindowsLogo />
                     {copy.windowsDownload}
                   </ButtonLink>
                 </motion.div>

@@ -78,7 +78,8 @@ export function Nav() {
         <DownloadButton
           label={copy.download}
           size="sm"
-          className="ml-1 h-9 rounded-full px-4"
+          variant="ink"
+          className="ml-1 rounded-full px-4"
         />
       </div>
     </motion.header>

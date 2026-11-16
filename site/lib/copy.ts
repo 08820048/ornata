@@ -22,6 +22,7 @@ export interface Copy {
     body: string;
     windowsDownload: string;
     windowsLabel: string;
+    windowsBeta?: string;
     platform: string;
     workbench: string;
     facts: [string, string][];
@@ -85,8 +86,9 @@ const en: Copy = {
     badge: "A focused writing instrument",
     headline: ["Markdown,", "without the", "machinery."],
     body: "Ornata is a local-first Markdown notes app for macOS and Windows. It keeps the editor fast, the interface quiet, and every note as a plain .md file in a folder you own. No proprietary database. No account required. Just a precise place to write.",
-    windowsDownload: "Download for Windows",
+    windowsDownload: "Windows",
     windowsLabel: "Download Ornata for Windows (64-bit)",
+    windowsBeta: "Beta",
     platform: "macOS 12+ (Apple Silicon) · Windows 10+ (64-bit)",
     workbench: "The workbench / 01",
     facts: [["Format", "Plain .md"], ["Storage", "Your folder"], ["Account", "Not required"], ["Build", "Signed & notarized"]],
@@ -162,8 +164,9 @@ const zh: Copy = {
     badge: "一件专注的写作工具",
     headline: ["Markdown，", "没有多余的", "机关。"],
     body: "Ornata 是一款支持 macOS 和 Windows 的本地优先 Markdown 笔记应用。编辑器够快，界面够安静，每篇笔记都是你自己文件夹里的一个普通 .md 文件。没有私有数据库，不需要账号，只有一个精准的写作之处。",
-    windowsDownload: "下载 Windows 版",
+    windowsDownload: "Windows 版",
     windowsLabel: "下载 Ornata Windows 版（64 位）",
+    windowsBeta: "Beta",
     platform: "macOS 12+（Apple 芯片）· Windows 10+（64 位）",
     workbench: "工作台 / 01",
     facts: [["格式", "纯 .md"], ["存储", "你的文件夹"], ["账号", "无需账号"], ["构建", "已签名并公证"]],

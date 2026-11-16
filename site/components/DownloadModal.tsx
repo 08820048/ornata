@@ -3,6 +3,7 @@
 import { Check, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { buttonClass } from "./ui/button";
 import { EASE_OUT } from "@/lib/ease";
 import { useCopy } from "@/lib/locale";
 
@@ -92,7 +93,11 @@ export function DownloadModal() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-primary text-[13px] font-medium text-primary-foreground transition-[background-color,transform] duration-150 hover:bg-fg-soft active:scale-[0.96]"
+                className={buttonClass({
+                  variant: "ink",
+                  size: "md",
+                  className: "mt-6 w-full active:scale-[0.97]",
+                })}
               >
                 <Check size={14} />
                 {copy.done}

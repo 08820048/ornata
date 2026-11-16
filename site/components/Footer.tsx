@@ -87,15 +87,12 @@ export function Footer() {
               transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.2 }}
               className="mt-9 flex flex-col gap-3 sm:flex-row"
             >
-              <DownloadButton
-                size="lg"
-                className="bg-night-ink text-night hover:bg-paper"
-              />
+              <DownloadButton size="lg" tone="night" />
               <ButtonLink
                 href={href("/updates")}
-                variant="outline"
+                variant="secondary"
+                tone="night"
                 size="lg"
-                className="border-night-line text-night-ink hover:bg-night-line"
               >
                 {copy.updates}
               </ButtonLink>
