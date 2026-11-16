@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   GRAPH_TAB,
+  LIBRARY_TAB,
   PROJECTS_TAB,
   isNoteTab,
   relIsUnder,
@@ -45,4 +46,11 @@ test("graph and projects tabs are distinct non-note tabs that round-trip through
   expect(isNoteTab(note)).toBe(true);
   expect(viewOfTab(PROJECTS_TAB)).toEqual({ type: "projects" });
   expect(tabOfView(viewOfTab(note))).toEqual(note);
+});
+
+test("the library tab round-trips through its view", () => {
+  expect(viewOfTab(LIBRARY_TAB)).toEqual({ type: "library" });
+  expect(tabOfView({ type: "library" })).toBe(LIBRARY_TAB);
+  expect(tabKey(LIBRARY_TAB)).toBe("library");
+  expect(isNoteTab(LIBRARY_TAB)).toBe(false);
 });

@@ -1,4 +1,4 @@
-import type { GraphTab, NoteRef, ProjectsTab, TabRef, View } from "./types";
+import type { GraphTab, LibraryTab, NoteRef, ProjectsTab, TabRef, View } from "./types";
 
 export const vaultNote = (rel: string): NoteRef => ({ kind: "vault", rel });
 
@@ -56,6 +56,7 @@ export function noteRefForPath(root: string, path: string): NoteRef {
 
 export const GRAPH_TAB: GraphTab = { kind: "graph" };
 export const PROJECTS_TAB: ProjectsTab = { kind: "projects" };
+export const LIBRARY_TAB: LibraryTab = { kind: "library" };
 
 export function isNoteTab(tab: TabRef): tab is NoteRef {
   return tab.kind === "vault" || tab.kind === "external";
@@ -72,11 +73,12 @@ export function sameTab(a: TabRef, b: TabRef): boolean {
 /** The view that shows `tab`. */
 export function viewOfTab(tab: TabRef): View {
   if (isNoteTab(tab)) return { type: "note", note: tab };
-  return tab.kind === "graph" ? { type: "graph" } : { type: "projects" };
+  return { type: tab.kind };
 }
 
 /** The tab that `view` shows. */
 export function tabOfView(view: View): TabRef {
   if (view.type === "note") return view.note;
-  return view.type === "graph" ? GRAPH_TAB : PROJECTS_TAB;
+  if (view.type === "graph") return GRAPH_TAB;
+  return view.type === "projects" ? PROJECTS_TAB : LIBRARY_TAB;
 }

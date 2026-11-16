@@ -50,6 +50,9 @@ export const BASICS_ZH: DocSection[] = [
           <Li>
             用 <Kbd>⌘O</Kbd> 打开任意位置的 Markdown 文件。它像普通笔记一样在标签页里打开，但不会被复制进笔记库。
           </Li>
+          <Li>
+            侧栏里的<strong className="font-medium text-foreground">笔记库</strong>会打开一个标签页，把文件夹和笔记显示成卡片：文件夹卡片露出里面最近修改的笔记，笔记卡片是正文开头的缩略图。点文件夹进入，用顶部的路径返回，点笔记打开它。
+          </Li>
           <Li>在「设置 → 通用」里更换当前打开的笔记库。</Li>
         </Ul>
       </>

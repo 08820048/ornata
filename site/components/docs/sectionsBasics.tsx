@@ -54,6 +54,12 @@ export const BASICS: DocSection[] = [
             Open a Markdown file from anywhere with <Kbd>⌘O</Kbd>. It opens in a tab like any note, without being copied
             into the vault.
           </Li>
+          <Li>
+            <strong className="font-medium text-foreground">Library</strong> in the sidebar opens a tab that shows your
+            folders and notes as cards: a folder card shows the notes you edited last inside it, and a note card is a
+            miniature of how the note begins. Click a folder to step into it, use the path at the top to step back
+            out, and click a note to open it.
+          </Li>
           <Li>Change which vault is open in Settings → General.</Li>
         </Ul>
       </>

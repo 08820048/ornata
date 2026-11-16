@@ -4,6 +4,7 @@ import {
   IconFilePlus,
   IconFolderPlus,
   IconHash,
+  IconLayoutGrid,
   IconListCheck,
   IconPin,
   IconSearch,
@@ -73,6 +74,11 @@ export function Sidebar() {
             label={t("daily.new")}
             keys={keyLabel("⌘J")}
             onClick={() => void useVault.getState().openDailyNote()}
+          />
+          <QuickRow
+            icon={<IconLayoutGrid size={14} stroke={1.75} />}
+            label={t("library.title")}
+            onClick={() => useVault.getState().setView({ type: "library" })}
           />
           <QuickRow
             icon={<IconListCheck size={14} stroke={1.75} />}

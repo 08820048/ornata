@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { NoteEditor } from "./NoteEditor";
 import { GraphView } from "@/components/graph/GraphView";
+import { LibraryView } from "@/components/library/LibraryView";
 import { ProjectsView } from "@/components/projects/ProjectsView";
 import { PaneHeader } from "@/components/layout/PaneHeader";
 import { isNoteTab, sameTab, tabKey, tabOfView, viewOfTab } from "@/lib/noteRef";
@@ -115,6 +116,8 @@ export function NotesWorkspace({ visible }: { visible: boolean }) {
                   <NoteEditor note={tab} active={isActive} />
                 ) : tab.kind === "graph" ? (
                   <GraphView active={isActive} />
+                ) : tab.kind === "library" ? (
+                  <LibraryView active={isActive} />
                 ) : (
                   <ProjectsView active={isActive} />
                 )}

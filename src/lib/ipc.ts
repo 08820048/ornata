@@ -14,6 +14,7 @@ import type {
   RenameOutcome,
   SnapshotMeta,
   LinkGraph,
+  NoteHead,
   TagCount,
   UnusedAsset,
   OpenTask,
@@ -90,6 +91,7 @@ export const ipc = {
   noteHistory: (rel: string) => call<SnapshotMeta[]>("note_history", { rel }),
   listUnusedAssets: () => call<UnusedAsset[]>("list_unused_assets"),
   linkGraph: () => call<LinkGraph>("link_graph"),
+  noteHeads: (rels: string[]) => call<NoteHead[]>("note_heads", { rels }),
   startPrintExport: (input: {
     markdown: string;
     vaultRoot: string;

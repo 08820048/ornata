@@ -3,6 +3,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconFilePlus,
+  IconLayoutGrid,
   IconSearch,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
@@ -151,7 +152,7 @@ function EmptyAction({
 }: {
   icon: React.ReactNode;
   label: string;
-  keys: string;
+  keys?: string;
   onClick: () => void;
 }) {
   return (
@@ -162,9 +163,11 @@ function EmptyAction({
     >
       {icon}
       {label}
-      <kbd className="ml-1 rounded border border-line bg-bg px-1.5 py-0.5 font-mono text-[10.5px] text-faint">
-        {keys}
-      </kbd>
+      {keys && (
+        <kbd className="ml-1 rounded border border-line bg-bg px-1.5 py-0.5 font-mono text-[10.5px] text-faint">
+          {keys}
+        </kbd>
+      )}
     </button>
   );
 }
@@ -195,6 +198,11 @@ function EmptyState() {
           label={t("common.newNote")}
           keys={keyLabel("⌘N")}
           onClick={() => createNote("")}
+        />
+        <EmptyAction
+          icon={<IconLayoutGrid size={14} stroke={2} />}
+          label={t("library.title")}
+          onClick={() => useVault.getState().setView({ type: "library" })}
         />
         <EmptyAction
           icon={<IconCalendar size={14} stroke={2} />}

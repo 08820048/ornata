@@ -333,6 +333,15 @@ pub fn trash_assets(state: State<'_, AppState>, names: Vec<String>) -> AppResult
 }
 
 #[tauri::command]
+pub async fn note_heads(
+    state: State<'_, AppState>,
+    rels: Vec<String>,
+) -> AppResult<Vec<crate::previews::NoteHead>> {
+    let root = state.root()?;
+    off_main(move || crate::previews::note_heads(&root, &rels)).await
+}
+
+#[tauri::command]
 pub async fn link_graph(state: State<'_, AppState>) -> AppResult<graph::LinkGraph> {
     let root = state.root()?;
     off_main(move || graph::link_graph(&root)).await

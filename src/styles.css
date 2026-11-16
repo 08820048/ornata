@@ -1601,3 +1601,328 @@ kbd,
     font-feature-settings: normal;
     font-variant-numeric: normal;
 }
+
+/* ---- Library tab: folders and notes as cards ----------------------------
+   Sizes, shadows and opacities follow quiet.md's home grid (MIT). Every
+   surface is --bg or the ink mixed in at some strength, so each palette gets
+   its own folder without a colour of its own. */
+
+.library-grid {
+    --lib-paper-shadow: rgba(0, 0, 0, 0.07);
+    --lib-sheet-shadow: rgba(0, 0, 0, 0.035);
+    --lib-glass-shadow: rgba(0, 0, 0, 0.06);
+    --lib-pill-shadow: rgba(0, 0, 0, 0.05);
+    --lib-lit: color-mix(in srgb, var(--bg) 85%, transparent);
+}
+
+.dark .library-grid {
+    --lib-paper-shadow: rgba(0, 0, 0, 0.3);
+    --lib-sheet-shadow: rgba(0, 0, 0, 0.3);
+    --lib-glass-shadow: rgba(0, 0, 0, 0.35);
+    --lib-pill-shadow: rgba(0, 0, 0, 0.3);
+    --lib-lit: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.library-title {
+    font-family: var(--font-note);
+}
+
+/* A note card: a loose sheet with a hairline and the faintest lift. */
+.library-note-shadow {
+    position: absolute;
+    inset: 10px 6px 0;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px -2px var(--lib-sheet-shadow);
+}
+
+.library-note-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 28px;
+    background: var(--bg);
+    box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+/* Hovered, or its menu open: a soft ring around the card. */
+.library-note-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 31px;
+    box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--ink) 7%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms var(--ease-out);
+}
+
+.library-note:hover .library-note-ring,
+.library-note:focus-visible .library-note-ring,
+.library-note[data-menu="true"] .library-note-ring {
+    opacity: 1;
+}
+
+/* The pin gives way to the "more" button, which takes its corner on hover. */
+.library-note-pin {
+    transition: opacity 120ms var(--ease-out);
+}
+
+.library-note:hover .library-note-pin,
+.library-note:focus-within .library-note-pin,
+.library-note[data-menu="true"] .library-note-pin {
+    opacity: 0;
+}
+
+.library-note-more {
+    opacity: 0;
+    transition: opacity 120ms var(--ease-out);
+}
+
+.library-note:hover .library-note-more,
+.library-note:focus-within .library-note-more,
+.library-note[data-menu="true"] .library-note-more {
+    opacity: 1;
+}
+
+.library-folder:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+    border-radius: 18px;
+}
+
+.library-pill {
+    background: var(--bg);
+    box-shadow:
+        0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent),
+        0 1px 1.5px var(--lib-pill-shadow);
+}
+
+.library-pill:hover {
+    background: color-mix(in srgb, var(--ink) 6%, var(--bg));
+}
+
+/* The miniature page: laid out at reading size, shown at 28%. */
+.library-page {
+    width: calc(100% / 0.28);
+    transform: scale(0.28);
+    transform-origin: 0 0;
+    font-family: var(--font-note);
+    font-size: 16px;
+    line-height: 26px;
+    color: var(--note-ink);
+}
+
+.library-page > * + * {
+    margin-top: 11px;
+}
+
+.library-h {
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.library-h1 {
+    font-size: 26px;
+    line-height: 36px;
+    margin-top: 26px !important;
+}
+
+.library-h2 {
+    font-size: 22px;
+    line-height: 32px;
+    margin-top: 22px !important;
+}
+
+.library-h3 {
+    font-size: 19px;
+    line-height: 28px;
+    font-weight: 600;
+    margin-top: 18px !important;
+}
+
+.library-h4 {
+    font-size: 16px;
+    line-height: 26px;
+    font-weight: 600;
+    margin-top: 14px !important;
+}
+
+.library-page > .library-h:first-child {
+    margin-top: 0 !important;
+}
+
+.library-li {
+    display: flex;
+}
+
+.library-li + .library-li {
+    margin-top: 5px;
+}
+
+.library-marker {
+    display: flex;
+    flex: none;
+    align-items: center;
+    width: 24px;
+    height: 26px;
+}
+
+.library-quote {
+    position: relative;
+    padding: 4px 0 4px 18px;
+    color: var(--muted);
+}
+
+.library-quote::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+}
+
+.library-code {
+    margin-top: 16px !important;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--code-surface);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.library-code-head {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 28px;
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    font-family: var(--font-sans);
+    color: var(--muted);
+}
+
+.library-table {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 22px;
+}
+
+.library-table > * + * {
+    border-top: 1px solid var(--line);
+}
+
+.library-table-head {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.library-td {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    padding: 6px 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.library-td + .library-td {
+    border-left: 1px solid var(--line);
+}
+
+.library-image,
+.library-image-blank {
+    display: block;
+    margin-top: 16px !important;
+    border-radius: 10px;
+}
+
+.library-image {
+    max-width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+}
+
+.library-image-blank {
+    height: 220px;
+    background: var(--code-surface);
+}
+
+.library-rule {
+    margin-top: 12px !important;
+    border-top: 1px solid var(--line);
+}
+
+/* The folder: back plate, papers, frosted front. */
+.library-folder-back-top {
+    stop-color: var(--ink);
+    stop-opacity: 0.11;
+}
+
+.library-folder-back-bottom {
+    stop-color: var(--ink);
+    stop-opacity: 0.07;
+}
+
+.library-paper {
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow:
+        0 0 0 0.5px color-mix(in srgb, var(--ink) 8%, transparent),
+        0 3px 10px var(--lib-paper-shadow);
+    will-change: transform;
+}
+
+.library-sketch-heading {
+    fill: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.library-sketch-line {
+    fill: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* The whole folder's shadow sits under the front. */
+.library-folder-shadow {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 0;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px -2px var(--lib-glass-shadow);
+}
+
+/* Milky where the papers show through, all but opaque by the name. */
+.library-glass-top {
+    stop-color: var(--bg);
+    stop-opacity: 0.78;
+}
+
+.library-glass-solid {
+    stop-color: var(--bg);
+    stop-opacity: 0.97;
+}
+
+.library-glass-tint-top {
+    stop-color: var(--ink);
+    stop-opacity: 0.012;
+}
+
+.library-glass-tint-bottom {
+    stop-color: var(--ink);
+    stop-opacity: 0.035;
+}
+
+.library-glass-hairline {
+    stroke: color-mix(in srgb, var(--ink) 7%, transparent);
+    stroke-width: 1;
+}
+
+.library-glass-lit {
+    stroke: var(--lib-lit);
+    stroke-width: 1.5;
+}

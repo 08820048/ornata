@@ -11,6 +11,7 @@ import {
   IconPlug,
   IconSearch,
   IconSettings,
+  IconLayoutGrid,
   IconLayoutKanban,
   IconTopologyStar3,
 } from "@tabler/icons-react";
@@ -147,6 +148,12 @@ export function CommandPalette() {
         label: t("graph.title"),
         icon: IconTopologyStar3,
         run: () => useVault.getState().setView({ type: "graph" }),
+      },
+      {
+        id: "library",
+        label: t("library.title"),
+        icon: IconLayoutGrid,
+        run: () => useVault.getState().setView({ type: "library" }),
       },
       {
         id: "projects",

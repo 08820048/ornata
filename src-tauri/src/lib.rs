@@ -21,6 +21,7 @@ mod notes;
 mod pdf_export;
 #[cfg(target_os = "macos")]
 mod pdf_outline;
+mod previews;
 mod print_export;
 mod reveal;
 mod search;
@@ -100,6 +101,7 @@ pub fn run() {
             commands::note_history,
             commands::list_unused_assets,
             commands::link_graph,
+            commands::note_heads,
             print_export::start_print_export,
             print_export::current_print_job,
             print_export::print_view_ready,

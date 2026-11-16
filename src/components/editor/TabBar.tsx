@@ -4,6 +4,7 @@ import {
   IconCircleX,
   IconLayoutColumns,
   IconLayoutSidebarRightCollapse,
+  IconLayoutGrid,
   IconLayoutKanban,
   IconTopologyStar3,
   IconX,
@@ -219,7 +220,13 @@ function Tab({
   const t = useT();
   const title = isNoteTab(tab)
     ? noteTitle(tab)
-    : t(tab.kind === "graph" ? "graph.title" : "projects.title");
+    : t(
+        tab.kind === "graph"
+          ? "graph.title"
+          : tab.kind === "projects"
+            ? "projects.title"
+            : "library.title",
+      );
 
   return (
     <div
@@ -282,6 +289,9 @@ function Tab({
       )}
       {tab.kind === "graph" && (
         <IconTopologyStar3 size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
+      )}
+      {tab.kind === "library" && (
+        <IconLayoutGrid size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />
       )}
       {tab.kind === "projects" && (
         <IconLayoutKanban size={12} stroke={2} className="relative z-10 shrink-0 text-faint" />

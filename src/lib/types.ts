@@ -217,10 +217,23 @@ export interface ProjectSummary {
 /** The project space (issues of marked folders), open as a tab beside notes. */
 export type ProjectsTab = { kind: "projects" };
 
-/** Anything the tab strip can hold. Notes stay `NoteRef` everywhere else. */
-export type TabRef = NoteRef | GraphTab | ProjectsTab;
+/** The library (folders and notes as cards), open as a tab beside notes. */
+export type LibraryTab = { kind: "library" };
 
-export type View = { type: "note"; note: NoteRef } | { type: "graph" } | { type: "projects" };
+/** The opening text of a note's body (Rust `previews::NoteHead`). */
+export interface NoteHead {
+  rel: string;
+  text: string;
+}
+
+/** Anything the tab strip can hold. Notes stay `NoteRef` everywhere else. */
+export type TabRef = NoteRef | GraphTab | ProjectsTab | LibraryTab;
+
+export type View =
+  | { type: "note"; note: NoteRef }
+  | { type: "graph" }
+  | { type: "projects" }
+  | { type: "library" };
 
 /** What external agents (the `ornata` command line / MCP server) may do. */
 export type CliAccess = "off" | "readOnly" | "readWrite" | "full";

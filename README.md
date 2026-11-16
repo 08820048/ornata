@@ -24,6 +24,7 @@ Production downloads are signed with an Apple Developer ID certificate and notar
 
 - **WYSIWYG markdown editor** — write in a rich editor, saved as clean markdown on disk
 - **Folders & subfolders** — organize notes in real, Finder-visible folders
+- **Library** — browse the vault as cards: folders that show the notes inside them, and notes as miniatures of how they begin
 - **⌘K command palette** — jump to any note or folder instantly
 - **Instant search** — title + content, ranked, in milliseconds
 - **Quiet UI, your theme** — light, dark, or follow the system, with a colour scheme for each (Default, Paper, Paper Textured; Default, Basalt Bedrock, Tokyo Techno, Early Ember, Neon Noir), switchable from the status bar; one accent per theme for links, checked tasks, and the caret
