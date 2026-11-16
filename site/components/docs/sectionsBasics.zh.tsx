@@ -101,6 +101,12 @@ export const BASICS_ZH: DocSection[] = [
           ，也认识 Obsidian 的类型名（<Code>info</Code>、<Code>bug</Code> 等）。用 <Code>/callout</Code>{" "}
           插入；点一下标签可以改类型。文件里保存的就是你输入的这行 Markdown，GitHub 和 Obsidian 都能照常显示。
         </P>
+        <H3>脚注</H3>
+        <P>
+          在正文里写 <Code>[^1]</Code>，再另起一行写 <Code>[^1]: 脚注内容</Code>。正文里的标记显示成编号，鼠标悬停可以看到脚注内容，按住{" "}
+          <Kbd>⌘</Kbd> 点击编号跳到脚注（在脚注上点击则跳回正文）。<Code>/footnote</Code>{" "}
+          会一次插入标记和脚注行。编号按出现顺序排列，文件里保存的仍是你写的标记。
+        </P>
         <H3>链接与图片</H3>
         <Ul>
           <Li>

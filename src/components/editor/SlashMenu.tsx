@@ -3,6 +3,7 @@ import type { Icon as TablerIcon } from "@tabler/icons-react";
 import {
   IconBlockquote,
   IconInfoCircle,
+  IconSuperscript,
   IconCalendar,
   IconChecklist,
   IconCircleX,
@@ -18,6 +19,7 @@ import {
   IconProgress,
   IconTable,
 } from "@tabler/icons-react";
+import { insertFootnote } from "./footnotes";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, dailyRel, dateStamp, DATE_MENTIONS } from "@/lib/dateLinks";
@@ -201,6 +203,14 @@ const commands: SlashCommand[] = [
     keywords: "callout alert note tip warning admonition",
     shortcut: "> [!note]",
     run: (e) => e.chain().focus().setBlockquote().insertContent("[!note] ").run(),
+  },
+  {
+    id: "footnote",
+    label: "slash.footnote",
+    icon: IconSuperscript,
+    keywords: "footnote reference note citation",
+    shortcut: "[^1]",
+    run: (e) => insertFootnote(e),
   },
   ...codeCommands,
   {

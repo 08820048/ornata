@@ -12,6 +12,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { BlockPlus } from "./blockPlus";
 import { TableHandles } from "./tableHandles";
 import { CalloutView } from "./callout";
+import { FootnoteView } from "./footnotes";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
@@ -126,6 +127,7 @@ export function createExtensions(assetRoot: string) {
     BlockPlus,
     TableHandles,
     CalloutView,
+    FootnoteView,
     MoveBlock,
     FindReplace,
     SlashHighlight,

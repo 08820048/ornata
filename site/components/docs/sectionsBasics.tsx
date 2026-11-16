@@ -113,6 +113,13 @@ export const BASICS: DocSection[] = [
           the label to change its type. The file keeps exactly the Markdown you typed, so GitHub and Obsidian show
           it the same way.
         </P>
+        <H3>Footnotes</H3>
+        <P>
+          Write <Code>[^1]</Code> in the text and <Code>[^1]: the note</Code> on a line of its own. The marker shows
+          as a number; point at it to read the note, and <Kbd>⌘</Kbd>-click it to jump to the note (or from the note
+          back to the text). <Code>/footnote</Code> inserts both at once. Numbers follow the order of appearance;
+          the file keeps the markers you wrote.
+        </P>
         <H3>Links and images</H3>
         <Ul>
           <Li>

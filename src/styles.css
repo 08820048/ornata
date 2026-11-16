@@ -865,6 +865,61 @@ body {
     color: var(--ink);
 }
 
+/* Footnotes: `[^id]` and `[^id]: text` stay text (footnotes.ts); a number
+   stands in for the marker until the caret is in it. */
+.prose-note .footnote-hidden {
+    font-size: 0;
+}
+.prose-note .footnote-raw {
+    color: var(--faint);
+}
+.prose-note .footnote-num {
+    margin: 0 1px;
+    padding: 0 3px;
+    border-radius: 4px;
+    background: var(--hover);
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 0.7em;
+    font-weight: 600;
+    line-height: 1;
+    cursor: default;
+    user-select: none;
+    vertical-align: super;
+}
+.prose-note .footnote-num:hover {
+    background: var(--active);
+    color: var(--ink);
+}
+.prose-note .footnote-def {
+    margin-right: 0.45em;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    font-weight: 600;
+    user-select: none;
+}
+.footnote-tip {
+    position: fixed;
+    z-index: 60;
+    max-width: 340px;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--menu);
+    box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.25);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    line-height: 1.55;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms var(--ease-out);
+}
+.footnote-tip[data-shown="true"] {
+    opacity: 1;
+}
+
 .prose-note code {
     font-family: var(--font-mono);
     font-size: 0.86em;
