@@ -1,0 +1,43 @@
+name: Bug report
+description: Something in Ornata doesn't work the way it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If it depends on a note's content, paste the Markdown (trimmed to what matters).
+      placeholder: |
+        1. Open a note containing …
+        2. Press …
+        3. …
+  - type: input
+    id: version
+    attributes:
+      label: Ornata version
+      description: Settings → About.
+      placeholder: "0.13.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Built from source on another platform
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: "macOS 26.1 / Windows 11 24H2"
