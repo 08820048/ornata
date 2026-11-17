@@ -63,8 +63,8 @@ console.log("Removing stale release artifacts...");
 rmSync(bundleDir, { recursive: true, force: true });
 rmSync(platformDir, { recursive: true, force: true });
 
-await run(["bun", "install", "--frozen-lockfile"]);
-await run(["bun", "run", "tauri", "build", "--bundles", "nsis"]);
+await run([process.execPath, "install", "--frozen-lockfile"]);
+await run([process.execPath, "run", "tauri", "build", "--bundles", "nsis"]);
 
 const nsisDir = join(bundleDir, "nsis");
 const installers = readdirSync(nsisDir).filter((name) => name.endsWith("-setup.exe"));
@@ -77,7 +77,7 @@ copyFileSync(installer, join(platformDir, installers[0]));
 copyFileSync(`${installer}.sig`, join(platformDir, `${installers[0]}.sig`));
 
 const notes = live?.notes || `Ornata ${version}`;
-await run(["bun", "scripts/generate-latest-json.js", version, notes], {
+await run([process.execPath, "scripts/generate-latest-json.js", version, notes], {
   RELEASE_PLATFORM: "windows",
   RELEASE_ARCH: arch,
 });

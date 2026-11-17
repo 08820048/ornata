@@ -1,0 +1,83 @@
+name: Release Windows
+
+# Builds the Windows installer for a version macOS has already published and
+# adds it to the stable channel. Run it by hand from the Actions tab after the
+# Mac release: version = the one now on the channel, publish off for a dry
+# run (the installer is attached to the run), on to upload. Steps:
+# docs/windows-release.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (must match package.json and the live channel), e.g. 0.13.1"
+        required: true
+        type: string
+      publish:
+        description: "Upload to R2 and add Windows to the stable channel (off = build only)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-windows
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    # Secrets live in this environment; add required reviewers to it in the
+    # repository settings if publishing should need a second click.
+    environment: release
+    timeout-minutes: 60
+    env:
+      # Passed as data, never pasted into a command line.
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      # Keep the version in sync with rust-toolchain.toml.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build and stage
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bun run release:windows $env:VERSION
+
+      - name: Keep the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ornata-${{ inputs.version }}-windows
+          path: release/${{ inputs.version }}/
+          retention-days: 14
+
+      - name: Dry run
+        shell: pwsh
+        run: bun run release:publish -- $env:VERSION
+
+      - name: Publish
+        if: ${{ inputs.publish }}
+        shell: pwsh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bun run release:publish -- $env:VERSION --confirm
+
+      - name: Next step
+        if: ${{ inputs.publish }}
+        shell: pwsh
+        run: |
+          echo "Published Windows $env:VERSION."
+          echo "Set WINDOWS_VERSION in site/lib/config.ts to $env:VERSION and deploy the site."

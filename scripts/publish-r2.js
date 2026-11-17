@@ -70,7 +70,9 @@ const wrangler = async (command, maxAttempts = 4) => {
   console.log(`wrangler ${command.join(" ")}`);
   if (!confirmed) return;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const child = Bun.spawn(["bunx", "wrangler", ...command], {
+    // The running bun itself ("bun x"): a bare "bunx" is not on PATH everywhere
+    // (Windows runners ship bun.exe only).
+    const child = Bun.spawn([process.execPath, "x", "wrangler", ...command], {
       cwd: join(projectRoot, "site"),
       stdout: "inherit",
       stderr: "inherit",
