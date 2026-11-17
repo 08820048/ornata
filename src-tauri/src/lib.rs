@@ -140,6 +140,8 @@ pub fn run() {
             commands::set_image_upload,
             commands::get_pdf_settings,
             commands::set_pdf_settings,
+            commands::get_typography,
+            commands::set_typography,
             commands::upload_image,
             commands::read_image,
             commands::save_image_as,

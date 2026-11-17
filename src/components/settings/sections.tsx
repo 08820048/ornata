@@ -20,6 +20,7 @@ import {
 import { BackupSettings } from "@/components/settings/BackupSettings";
 import { ImageUploadSettings } from "@/components/settings/ImageUploadSettings";
 import { PdfExportSettings } from "@/components/settings/PdfExportSettings";
+import { TypographySettings } from "@/components/settings/TypographySettings";
 import { UpdateControl } from "@/components/settings/UpdateControl";
 import { SHORTCUTS } from "@/lib/shortcuts";
 import { keyLabel } from "@/lib/utils";
@@ -152,6 +153,9 @@ export function EditorSection() {
             label={t("settings.outlineSound")}
           />
         </SettingRow>
+      </SettingGroup>
+      <SettingGroup title={t("settings.typography")}>
+        <TypographySettings />
       </SettingGroup>
       <ImageSection />
     </>

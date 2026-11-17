@@ -7,7 +7,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::backlinks::{self, Backlink};
-use crate::config::{self, DarkPalette, ImageUpload, ImageUploadMode, Language, LightPalette, PdfSettings, Theme};
+use crate::config::{self, DarkPalette, ImageUpload, ImageUploadMode, Language, LightPalette, PdfSettings, Theme, Typography};
 use crate::error::{AppError, AppResult};
 use crate::external_notes::ExternalNote;
 use crate::graph;
@@ -630,6 +630,18 @@ pub fn get_pdf_settings(app: AppHandle) -> PdfSettings {
 pub fn set_pdf_settings(app: AppHandle, pdf: PdfSettings) -> AppResult<()> {
     let mut cfg = config::load(&app);
     cfg.pdf = pdf;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
+pub fn get_typography(app: AppHandle) -> Typography {
+    config::load(&app).typography
+}
+
+#[tauri::command]
+pub fn set_typography(app: AppHandle, typography: Typography) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.typography = typography;
     config::save(&app, &cfg)
 }
 

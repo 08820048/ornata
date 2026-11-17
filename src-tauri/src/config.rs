@@ -34,6 +34,9 @@ pub struct AppConfig {
     pub cursor_animation: bool,
     #[serde(default)]
     pub image_upload: ImageUpload,
+    /// Text size, line width and line height of the note page.
+    #[serde(default)]
+    pub typography: Typography,
     #[serde(default)]
     pub pdf: PdfSettings,
     /// What external agents (the `ornata` command line / MCP server) may do,
@@ -102,6 +105,48 @@ pub enum ImageUploadMode {
     #[default]
     Local,
     Custom,
+}
+
+/// How the note page is set. Presets, like the PDF page setup; each default
+/// is what the editor used before the setting existed, so an old config
+/// looks the same.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Typography {
+    #[serde(default)]
+    pub font_size: FontSize,
+    #[serde(default)]
+    pub line_width: LineWidth,
+    #[serde(default)]
+    pub line_height: LineHeight,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum FontSize {
+    Small,
+    #[default]
+    Normal,
+    Large,
+    Larger,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum LineWidth {
+    Narrow,
+    Medium,
+    #[default]
+    Wide,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum LineHeight {
+    Compact,
+    #[default]
+    Normal,
+    Loose,
 }
 
 /// Page setup for PDF export. Presets rather than free-form numbers: a few
@@ -188,6 +233,7 @@ impl Default for AppConfig {
             outline_sound: default_outline_sound(),
             cursor_animation: default_cursor_animation(),
             image_upload: ImageUpload::default(),
+            typography: Typography::default(),
             pdf: PdfSettings::default(),
             cli_access: HashMap::new(),
             mcp_server: McpServerConfig::default(),
@@ -275,7 +321,23 @@ pub fn save(app: &tauri::AppHandle, config: &AppConfig) -> AppResult<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{migrate_palette, AppConfig, DarkPalette, Language, LightPalette};
+    use super::{
+        migrate_palette, AppConfig, DarkPalette, FontSize, Language, LightPalette, LineHeight,
+        LineWidth, Typography,
+    };
+
+    #[test]
+    fn typography_defaults_and_round_trips() {
+        let old: AppConfig = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(old.typography, Typography::default());
+        assert_eq!(old.typography.line_width, LineWidth::Wide);
+        let partial: AppConfig =
+            serde_json::from_str(r#"{"typography":{"fontSize":"larger"}}"#).unwrap();
+        assert_eq!(partial.typography.font_size, FontSize::Larger);
+        assert_eq!(partial.typography.line_height, LineHeight::Normal);
+        let json = serde_json::to_string(&partial).unwrap();
+        assert!(json.contains(r#""typography":{"fontSize":"larger","lineWidth":"wide","lineHeight":"normal"}"#));
+    }
 
     #[test]
     fn palettes_default_and_round_trip() {

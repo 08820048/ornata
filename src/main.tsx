@@ -7,6 +7,8 @@ import { PrintView } from "@/components/print/PrintView";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { applyPalettes, applyTheme, cachedPalettes, cachedTheme } from "@/lib/theme";
 import { currentWindowKind } from "@/lib/settingsSync";
+import { ipc } from "@/lib/ipc";
+import { applyTypography, cachedTypography, normalizeTypography } from "@/lib/typography";
 import "./styles.css";
 
 // Paint the last-used theme before React mounts so neither window flashes the
@@ -26,6 +28,16 @@ document.addEventListener("focusin", (event) => {
 });
 
 const windowKind = currentWindowKind();
+
+// The note page's size, width and line height. Printed and exported pages
+// keep the stock typography, so the print window never applies it.
+if (windowKind !== "print") {
+  applyTypography(cachedTypography());
+  void ipc
+    .getTypography()
+    .then((value) => applyTypography(normalizeTypography(value)))
+    .catch(() => undefined);
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

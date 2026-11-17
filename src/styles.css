@@ -510,7 +510,7 @@ body {
    spend their extra space on the document instead of an oversized margin. */
 .note-page {
     width: 100%;
-    max-width: 1200px;
+    max-width: var(--note-width, 1200px);
     margin-inline: auto;
     padding: 24px clamp(24px, 5vw, 72px) 0;
     /* Room in the left margin for the "+" and the fold arrows. */
@@ -566,9 +566,10 @@ body {
     font-family: var(--font-note);
     font-feature-settings: "zero";
     font-variant-numeric: slashed-zero;
-    font-size: 15px;
+    /* Settings › Editor (lib/typography.ts); the fallbacks are the defaults. */
+    font-size: var(--note-size, 15px);
     font-weight: 400;
-    line-height: 1.8;
+    line-height: var(--note-leading, 1.8);
     color: var(--note-ink);
     caret-color: var(--caret);
     outline: none;

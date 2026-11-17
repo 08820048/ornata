@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { listenSettings } from "@/lib/settingsSync";
+import { applyTypography } from "@/lib/typography";
 import { useLocale } from "@/stores/locale";
 import { useVault } from "@/stores/vault";
 
@@ -28,6 +29,7 @@ export function useSettingsBridge() {
       if (patch.cursorAnimation !== undefined) {
         vault.applyRemoteCursorAnimation(patch.cursorAnimation);
       }
+      if (patch.typography) applyTypography(patch.typography);
       if (patch.imageUpload) vault.applyRemoteImageUpload(patch.imageUpload);
       if (patch.vault) vault.adoptVaultSnapshot(patch.vault);
     })

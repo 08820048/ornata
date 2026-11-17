@@ -182,6 +182,12 @@ export const BASICS: DocSection[] = [
             <Kbd>⌘⇧F</Kbd> is focus mode: the sidebar and the bars fade away until you point at them.
           </Li>
         </Ul>
+        <H3>Text size and line width</H3>
+        <P>
+          Settings → Editor has three choices for the note page: text size (14, 15, 16 or 18), line width (narrow,
+          medium or wide — how far the text may spread in a large window) and line height (1.6, 1.8 or 2.0). They
+          change how notes look on screen only; the files and exported PDFs are not affected.
+        </P>
       </>
     ),
   },

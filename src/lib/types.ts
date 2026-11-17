@@ -19,6 +19,16 @@ export interface PdfSettings {
   margins: PageMargins;
 }
 
+/** Note page typography (Rust `config::Typography`). */
+export type FontSize = "small" | "normal" | "large" | "larger";
+export type LineWidth = "narrow" | "medium" | "wide";
+export type LineHeight = "compact" | "normal" | "loose";
+export interface Typography {
+  fontSize: FontSize;
+  lineWidth: LineWidth;
+  lineHeight: LineHeight;
+}
+
 export interface ImageUpload {
   mode: ImageUploadMode;
   command: string;

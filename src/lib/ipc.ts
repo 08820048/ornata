@@ -4,6 +4,7 @@ import type {
   ExternalNote,
   ImageUpload,
   PdfSettings,
+  Typography,
   Language,
   SearchHit,
   Backlink,
@@ -192,6 +193,9 @@ export const ipc = {
   getImageUpload: () => call<ImageUpload>("get_image_upload"),
   getPdfSettings: () => call<PdfSettings>("get_pdf_settings"),
   setPdfSettings: (pdf: PdfSettings) => call<void>("set_pdf_settings", { pdf }),
+  getTypography: () => call<Typography>("get_typography"),
+  setTypography: (typography: Typography) =>
+    call<void>("set_typography", { typography }),
   setImageUpload: (upload: ImageUpload) =>
     call<void>("set_image_upload", { upload }),
   uploadImage: (data: string, extension: string, command?: string) =>

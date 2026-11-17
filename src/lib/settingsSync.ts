@@ -6,6 +6,7 @@ import type {
   DarkPalette,
   LightPalette,
   Theme,
+  Typography,
   VaultSnapshot,
 } from "@/lib/types";
 
@@ -33,6 +34,7 @@ export interface SettingsPatch {
   outlineSound?: boolean;
   cursorAnimation?: boolean;
   imageUpload?: ImageUpload;
+  typography?: Typography;
   /** Present when the active vault changed; carries the full snapshot. */
   vault?: VaultSnapshot;
 }
