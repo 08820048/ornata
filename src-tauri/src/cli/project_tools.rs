@@ -78,7 +78,7 @@ pub fn call(root: &Path, name: &str, args: &Value) -> Option<AppResult<Value>> {
             }
             Ok(serde_json::to_value(list)?)
         }),
-        "next_issue" => scoped(root, args).and_then(|list| Ok(json!({ "issue": projects::next_issue(list) }))),
+        "next_issue" => scoped(root, args).map(|list| json!({ "issue": projects::next_issue(list) })),
         "claim_issue" => (|| {
             let agent = Some(opt(args, "agent")).filter(|a| !a.is_empty()).unwrap_or("agent");
             issues::claim_issue(root, arg(args, "path")?, line_of(args)?, arg(args, "text")?, agent, true)?;

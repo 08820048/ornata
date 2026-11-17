@@ -55,7 +55,7 @@
     "@tiptap/starter-kit": "^3.23.6",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",
-    "katex": "^0.16.47",
+    "katex": "^0.18.11",
     "mermaid": "^11.17.2",
     "motion": "^12.40.0",
     "prosemirror-highlight": "^0.16.0",
@@ -68,14 +68,14 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@happy-dom/global-registrator": "^20",
+    "@happy-dom/global-registrator": "^21.0.4",
     "@tauri-apps/cli": "^2",
     "@types/d3-force": "^3.0.10",
     "@types/node": "^25.0.3",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
-    "happy-dom": "^20.14.5",
+    "happy-dom": "^21.0.4",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }

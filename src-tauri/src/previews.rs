@@ -83,7 +83,7 @@ mod tests {
         ensure_layout(dir.path()).unwrap();
         let rel = create_note(dir.path(), "", "Clip").unwrap();
         write_note(dir.path(), &rel, "---\ntitle: x\n---\n\n# Clip\n\nbody").unwrap();
-        let heads = note_heads(dir.path(), &[rel.clone()]).unwrap();
+        let heads = note_heads(dir.path(), std::slice::from_ref(&rel)).unwrap();
         assert_eq!(heads, vec![NoteHead { rel, text: "# Clip\n\nbody".into() }]);
     }
 
