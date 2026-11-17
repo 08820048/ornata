@@ -2,7 +2,7 @@
 name = "Ornata"
 version = "0.13.0"
 description = "Local-first markdown notes"
-authors = ["Saurabh"]
+authors = ["Saurabh", "xuyi", "Ornata contributors"]
 license = "MIT"
 edition = "2021"
 default-run = "Ornata"
