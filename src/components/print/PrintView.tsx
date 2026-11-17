@@ -1,10 +1,11 @@
-import { useEditor } from "@tiptap/react";
+import { useEditor, type Editor } from "@tiptap/react";
 import { useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EditorContent } from "@tiptap/react";
 import { createExtensions } from "@/components/editor/extensions";
 import { renderTheme } from "@/lib/theme";
 import { ipc } from "@/lib/ipc";
+import { normalizeSyntaxLanguage } from "@/lib/syntaxHighlighter";
 import { headingsOf, outlineFromHeadings } from "@/lib/pdfOutline";
 
 interface PrintPayload {
@@ -98,6 +99,10 @@ export function PrintView() {
         if (rendering.length === 0) break;
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
+      // Code is coloured asynchronously too: each language's grammar loads on
+      // first use, and this window is new, so none is loaded yet. Handing the
+      // DOM over before that exported every code block uncoloured.
+      await codeHighlighted(editor, () => cancelled);
       if (cancelled) return;
       const bodyHtml = editor.view.dom.outerHTML;
       const css: string[] = [];
@@ -137,6 +142,28 @@ export function PrintView() {
   );
 }
 
+/** Wait (bounded) until every code block in a known language carries its
+ *  syntax colours. */
+async function codeHighlighted(editor: Editor, cancelled: () => boolean) {
+  const pending = () => {
+    const blocks: number[] = [];
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== "codeBlock") return;
+      const language = normalizeSyntaxLanguage(node.attrs.language);
+      if (language && language !== "plaintext" && node.textContent.trim()) blocks.push(pos);
+      return false;
+    });
+    return blocks.filter((pos) => {
+      const dom = editor.view.nodeDOM(pos);
+      return !(dom instanceof HTMLElement && dom.querySelector(".shiki"));
+    });
+  };
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (cancelled() || editor.isDestroyed || pending().length === 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 /** Silent PDF export: WebKit paginates from `@page`, so the user's margin
  *  goes there — on every page, all four sides — and the element's own inset
  *  (which only padded the first and last page vertically) is dropped. */
@@ -161,6 +188,12 @@ const PRINT_UNCLIP = `
   .prose-note {
     box-sizing: border-box !important;
     padding: 12mm 16mm 16mm !important;
+  }
+  /* Buttons that only work in the app have no place on paper or in a
+     saved page: the code block keeps its language label, nothing else. */
+  .prose-note .code-block-copy,
+  .prose-note .code-block-toggle {
+    display: none !important;
   }
   @page {
     margin: 12mm 14mm;

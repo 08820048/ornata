@@ -503,6 +503,10 @@ body {
 .page-scroll {
     height: 100%;
     overflow-y: auto;
+    /* Wide blocks (tables, code, math) scroll in their own box. The page
+       itself must not: a pane that has just been opened is briefly laid out
+       a scrollbar wider than it is, which showed a sideways scrollbar. */
+    overflow-x: hidden;
     scrollbar-gutter: stable both-edges;
 }
 
@@ -1429,6 +1433,11 @@ body {
     }
 }
 
+/* A table wider than a narrow pane scrolls inside its own box instead of
+   making the whole page scroll sideways. */
+.prose-note .tableWrapper {
+    overflow-x: auto;
+}
 .prose-note table {
     border-collapse: collapse;
     width: 100%;

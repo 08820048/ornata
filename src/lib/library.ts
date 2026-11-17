@@ -66,6 +66,9 @@ const BOX: Record<string, ItemMarker> = {
 /** A markdown line as the words a reader sees. */
 export function plainInline(line: string): string {
   return line
+    // footnote definitions and markers: the number is drawn by the editor
+    .replace(/^\[\^[^\]\s]+\]:\s*/, "")
+    .replace(/\[\^[^\]\s]+\]/g, "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, "$1")

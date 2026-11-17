@@ -60,6 +60,8 @@ test("coverNotes borrows from subfolders when a folder has no notes of its own",
 });
 
 test("plainInline keeps link labels and drops markup", () => {
+  expect(plainInline("A claim[^1] and another[^note].")).toBe("A claim and another.");
+  expect(plainInline("[^1]: The source.")).toBe("The source.");
   expect(plainInline("**Bold** and [a link](x/y.md), `code` ![img](a.png) [[t|alias]]")).toBe(
     "Bold and a link, code  alias",
   );

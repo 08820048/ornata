@@ -32,10 +32,12 @@ export function ShortcutBar() {
       aria-label={t("settings.shortcuts")}
       className="paper-status relative flex h-7 shrink-0 items-center gap-4 border-t border-line-soft bg-statusbar pl-3 pr-2 text-[10.5px] text-muted"
     >
-      <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden whitespace-nowrap">
+      {/* Wrapping with the overflow hidden drops a hint that doesn't fit as a
+          whole, instead of cutting it off mid-word at the right edge. */}
+      <div className="flex h-full min-w-0 flex-1 flex-wrap content-start gap-x-4 overflow-hidden whitespace-nowrap">
         {!hintsHidden &&
           barShortcuts(context).map((shortcut) => (
-            <span key={shortcut.label} className="flex items-center gap-1.5">
+            <span key={shortcut.label} className="flex h-full items-center gap-1.5">
               <KeyCombo keys={shortcut.keys} />
               {t(shortcut.label)}
             </span>

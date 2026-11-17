@@ -7,7 +7,8 @@ import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
  * middle of the pane and every other block is dimmed.
  *
  * The plugin's state is just "on or off", switched from React with
- * `setTypewriter` (focus mode and the setting live outside the editor). The
+ * `setTypewriter` (focus mode and the setting live outside the editor). In a
+ * split only the focused pane is on; the others stay fully readable. The
  * block under the caret gets `tw-current` (and its list item
  * `tw-current-item`); the dimming itself is CSS on everything without it.
  */

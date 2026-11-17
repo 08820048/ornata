@@ -37,7 +37,7 @@ export function NoteBreadcrumb({ note }: { note: NoteRef }) {
       )}
       {visibleFolders.map((folder, index) => (
         <Fragment key={index}>
-          <span className="max-w-[140px] shrink-0 truncate text-muted">
+          <span className="max-w-[140px] min-w-0 shrink-[4] truncate text-muted">
             {folder}
           </span>
           <IconChevronRight

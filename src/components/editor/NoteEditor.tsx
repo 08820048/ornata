@@ -74,7 +74,7 @@ export const NoteEditor = memo(function NoteEditor({
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
   const focusMode = useUi((s) => s.focusMode);
-  const typewriter = useUi((s) => s.focusMode && s.typewriterScroll) && !markdownSource;
+  const typewriter = useUi((s) => s.focusMode && s.typewriterScroll) && !markdownSource && active;
   const cursorAnimation = useVault((s) => s.cursorAnimation);
   const language = useLocale((s) => s.language);
   const t = useT();
