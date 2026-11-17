@@ -2,21 +2,24 @@
 
 **Local-first notes for people who write.**
 
-Ornata is a macOS-first notes app built for developers and content creators who care about speed, privacy, and ownership.
+Ornata is a notes app for macOS and Windows, built for developers and content creators who care about speed, privacy, and ownership. It is free and open source (MIT).
 
 No accounts.
 No cloud.
 No sync (for now).
 
-Your notes live on your Mac as plain `.md` files. Ornata simply makes writing and finding them fast.
+Your notes live on your computer as plain `.md` files. Ornata simply makes writing and finding them fast.
 
 ---
 
-## Installing on macOS
+## Installing
 
-Download the latest `.dmg` from [ornata.app](https://ornata.app) and drag Ornata to Applications.
+Download Ornata from [ornata.app](https://ornata.app):
 
-Production downloads are signed with an Apple Developer ID certificate and notarized by Apple before distribution.
+- **macOS 12 or later (Apple Silicon)** — open the `.dmg` and drag Ornata to Applications. Builds are signed with an Apple Developer ID and notarized by Apple.
+- **Windows 10 or later (64-bit)** — run the installer. It is not code-signed yet, so SmartScreen may ask you to confirm.
+
+The app keeps itself up to date from a signed update feed.
 
 ---
 
@@ -42,7 +45,7 @@ Pick any folder on disk as your vault:
 ```
 <vault>/
 ├── notes/          plain .md files — filename is the title, folders are real folders
-└── .ornata/         app data: pasted images
+└── .ornata/        app data: pasted images, note history, templates
 ```
 
 Notes are addressed by path, never by ID. Deletes go to the OS trash. Edit notes externally (vim, VS Code, whatever) — Ornata picks up changes on window focus.
@@ -80,20 +83,30 @@ Code lives in `src-tauri/src/cli/`: `tools.rs` is the shared tool set, `mcp.rs` 
 
 ---
 
-## Getting started
+## Building from source
 
-Requirements: [Bun](https://bun.sh), [Rust](https://rustup.rs), and Xcode Command Line Tools.
+Requirements: [Bun](https://bun.sh) and [Rust](https://rustup.rs) (the version is pinned in `rust-toolchain.toml`), plus the platform's build tools: Xcode Command Line Tools on macOS, or Visual Studio Build Tools ("Desktop development with C++") and WebView2 on Windows.
 
 ```bash
 bun install
 bun tauri dev      # run the app
 ```
 
-Build a local development bundle:
+Checks (CI runs the same on macOS and Windows):
 
 ```bash
-bun tauri build    # produces a .app and .dmg under src-tauri/target/release/bundle
+bunx tsc --noEmit
+bun test
+cd src-tauri && cargo clippy --all-targets -- -D warnings && cargo test
 ```
+
+Build a local bundle:
+
+```bash
+bun tauri build    # .app/.dmg on macOS, the NSIS installer on Windows, under src-tauri/target/release/bundle
+```
+
+A build you make yourself is unsigned. If you publish a fork, give it its own name, icon and update server; see [TRADEMARKS.md](./TRADEMARKS.md).
 
 ### Signed releases
 
@@ -121,7 +134,7 @@ export APPLE_PASSWORD="..."
 export APPLE_TEAM_ID="..."
 ```
 
-Then stage and publish a release:
+Then stage and publish a release (maintainers only; Windows builds are made on a Windows machine, see [docs/windows-release.md](./docs/windows-release.md)):
 
 ```bash
 bun run release:preflight
@@ -151,12 +164,17 @@ See [AGENTS.md](./AGENTS.md) for architecture details, or [CONTRIBUTING.md](./CO
 Ornata is under active development.
 Sync, encryption, and publishing may be added later — without compromising local-first performance.
 
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) first, and please follow the [code of conduct](./CODE_OF_CONDUCT.md). Security problems go through [SECURITY.md](./SECURITY.md), not public issues.
+
 ## License
 
-[MIT](./LICENSE)
+[MIT](./LICENSE). The Ornata name, icon and mascot are not covered by it; see [TRADEMARKS.md](./TRADEMARKS.md).
 
-Ornata is based on [Markd](https://github.com/starc007/markd). The original
-copyright notice and MIT license are preserved in [LICENSE](./LICENSE).
+Ornata is based on [Markd](https://github.com/starc007/markd) by Saurabh. The original
+copyright notice and MIT license are preserved in [LICENSE](./LICENSE). Code and fonts
+from other projects are listed in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
 
 ---
 

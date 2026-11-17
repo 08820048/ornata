@@ -1,5 +1,6 @@
 import { expect, test, describe } from "bun:test";
 import {
+  cornerLength,
   rankCorners,
   roundedPath,
   stepSpring,
@@ -16,12 +17,12 @@ describe("stepSpring", () => {
     let active = true;
     let frames = 0;
     while (active && frames < 240) {
-      active = stepSpring(s, 1 / 60, 0.125);
+      active = stepSpring(s, 1 / 60, 0.1);
       frames += 1;
     }
     expect(active).toBe(false);
     expect(Math.abs(s.offset)).toBeLessThan(0.01);
-    // A 125ms animation should settle well under a second of frames.
+    // A 100ms animation should settle well under a second of frames.
     expect(frames).toBeLessThan(60);
   });
 
@@ -30,14 +31,14 @@ describe("stepSpring", () => {
     const long = spring(100);
     let shortFrames = 0;
     let longFrames = 0;
-    while (stepSpring(short, 1 / 60, 0.05) && shortFrames < 240) shortFrames += 1;
-    while (stepSpring(long, 1 / 60, 0.125) && longFrames < 240) longFrames += 1;
+    while (stepSpring(short, 1 / 60, 0.04) && shortFrames < 240) shortFrames += 1;
+    while (stepSpring(long, 1 / 60, 0.1) && longFrames < 240) longFrames += 1;
     expect(shortFrames).toBeLessThan(longFrames);
   });
 
   test("zero dt keeps the offset and reports activity", () => {
     const s = spring(5);
-    expect(stepSpring(s, 0, 0.125)).toBe(true);
+    expect(stepSpring(s, 0, 0.1)).toBe(true);
     expect(s.offset).toBe(5);
   });
 
@@ -95,5 +96,15 @@ describe("roundedPath", () => {
 
   test("a zero radius keeps the corners sharp", () => {
     expect(roundedPath(square, 0).startsWith("M0.00,0.00 Q0.00,0.00")).toBe(true);
+  });
+});
+
+describe("cornerLength", () => {
+  test("the leading corner takes longest, the two trailing ones the least", () => {
+    const lengths = [0, 1, 2, 3].map((rank) => cornerLength(rank, 0.1));
+    expect(lengths[0]).toBeCloseTo(0.1);
+    expect(lengths[1]).toBeCloseTo((0.1 + lengths[2]) / 2);
+    expect(lengths[2]).toBeLessThan(lengths[1]);
+    expect(lengths[3]).toBe(lengths[2]);
   });
 });

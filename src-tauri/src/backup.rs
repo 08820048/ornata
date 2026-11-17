@@ -166,7 +166,7 @@ pub fn plan_retention(
     let today = now.date();
     let mut keep: Vec<&str> = Vec::new();
     let mut sorted: Vec<&(String, NaiveDateTime)> = backups.iter().collect();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1)); // newest first
+    sorted.sort_by_key(|entry| std::cmp::Reverse(entry.1)); // newest first
     if let Some(first) = sorted.first() {
         keep.push(&first.0);
     }
@@ -253,7 +253,7 @@ mod tests {
         let record = run(vault.path(), "My Vault", out.path()).unwrap();
         assert!(record.ok && record.detail.starts_with("My Vault-") && record.detail.ends_with(".zip"));
         let mut zip = zip::ZipArchive::new(File::open(out.path().join(&record.detail)).unwrap()).unwrap();
-        let mut names: Vec<String> = (0..zip.len()).map(|i| zip.by_index(i).unwrap().name().to_string()).collect();
+        let mut names: Vec<String> = (0..zip.len()).map(|i| zip.by_index(i).unwrap().name().unwrap().to_string()).collect();
         names.sort();
         assert_eq!(names, vec![".ornata/assets/p.png", "notes/a.md", "notes/sub/b.md"]);
         assert!(!out.path().join(format!("{}.part", record.detail)).exists());

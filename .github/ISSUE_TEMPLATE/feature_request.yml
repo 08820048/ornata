@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest something Ornata should do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ornata stays small on purpose: plain Markdown files, no account, no cloud. Some things are deliberately left out (built-in AI, plugins, sync, database queries, whiteboards). Ideas that fit are very welcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation and what gets in the way today. This matters more than the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do now instead?

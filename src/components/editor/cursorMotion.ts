@@ -1,7 +1,7 @@
 import type { EditorView } from "@tiptap/pm/view";
 
 /**
- * Zed-style cursor movement animation for the WYSIWYG editor.
+ * Animated caret for the WYSIWYG editor.
  *
  * The native caret can't be animated, so when this is enabled the caret is
  * drawn by us: a small SVG quad whose four corners each follow a critically
@@ -16,8 +16,10 @@ import type { EditorView } from "@tiptap/pm/view";
  * - The overlay lives inside `.note-page`, so it scrolls with the content for
  *   free — no scroll handlers.
  *
- * Physics and corner-ranking are adapted from Zed's `cursor_animation.rs`
- * (itself adapted from vscode-neovide-cursor / Neovide, MIT).
+ * The spring, the corner ranking and the per-rank timing follow
+ * vscode-neovide-cursor (https://github.com/LengineerC/vscode-neovide-cursor,
+ * Copyright (c) 2025 LengineerC, MIT; see THIRD_PARTY_NOTICES.md). Keep it to
+ * that source: other ports of it (Zed's is GPL) must not be copied in here.
  */
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -33,17 +35,29 @@ const CORNER_OFFSETS: ReadonlyArray<readonly [number, number]> = [
 const BAR_WIDTH = 2;
 /** Corner radius of the block caret, px. */
 const BLOCK_RADIUS = 2;
-/** Horizontal travel (px) at or below which a move counts as "short". */
+/** Horizontal travel (px) at or below which a move counts as "short": about
+ *  two characters on one line (the original's "two cells"). */
 const SHORT_MOVE_PX = 14;
-const LONG_LENGTH_SECONDS = 0.125;
-const SHORT_LENGTH_SECONDS = 0.05;
-/** Above this animation length we clear velocity instead of keeping momentum. */
-const RESET_THRESHOLD_SECONDS = 0.075;
-const MAX_FRAME_SECONDS = 0.033;
-const RESET_EPSILON = 0.001;
-const ACTIVE_EPSILON = 0.01;
-/** Per-corner timing multiplier by rank (0 = leading, 3 = trailing). */
-const RANK_FACTORS = [1, 0.9, 0.5, 0.3];
+const LONG_LENGTH_SECONDS = 0.1;
+const SHORT_LENGTH_SECONDS = 0.04;
+/** How far the trailing corners lag (0 = rigid, 1 = they snap and the leading
+ *  corner stretches the whole way). */
+const TRAIL_SIZE = 0.7;
+/** Longest frame step, so a stalled tab doesn't fling the caret. */
+const MAX_FRAME_SECONDS = 1 / 30;
+/** Below this offset (px) a spring is at rest. */
+const REST_EPSILON = 0.01;
+
+/** Animation length of a corner by rank on a long move: the corner leading
+ *  the travel takes the full length, the next one the average, the two
+ *  behind the shortest — that difference is the stretch. */
+export function cornerLength(rank: number, length = LONG_LENGTH_SECONDS): number {
+  const trailing = length;
+  const leading = length * Math.min(Math.max(1 - TRAIL_SIZE, 0), 1);
+  if (rank >= 2) return leading;
+  if (rank === 1) return (leading + trailing) / 2;
+  return trailing;
+}
 
 export interface Spring {
   /** Offset from the target (target - current). Decays to 0. */
@@ -61,13 +75,13 @@ export function stepSpring(spring: Spring, dt: number, length: number): boolean 
     dt < 0 ||
     !Number.isFinite(length) ||
     length <= dt ||
-    Math.abs(spring.offset) < RESET_EPSILON
+    Math.abs(spring.offset) < REST_EPSILON
   ) {
     spring.offset = 0;
     spring.velocity = 0;
     return false;
   }
-  if (dt === 0) return Math.abs(spring.offset) >= ACTIVE_EPSILON;
+  if (dt === 0) return true;
 
   const omega = 4 / length;
   const initial = spring.offset;
@@ -81,13 +95,13 @@ export function stepSpring(spring: Spring, dt: number, length: number): boolean 
   if (
     !Number.isFinite(spring.offset) ||
     !Number.isFinite(spring.velocity) ||
-    Math.abs(spring.offset) < RESET_EPSILON
+    Math.abs(spring.offset) < REST_EPSILON
   ) {
     spring.offset = 0;
     spring.velocity = 0;
     return false;
   }
-  return Math.abs(spring.offset) >= ACTIVE_EPSILON;
+  return true;
 }
 
 /**
@@ -337,24 +351,18 @@ export class CursorMotion {
     const travelY = y - previous.y;
     const ranks = rankCorners(travelX, travelY);
     const shortMove = Math.abs(travelX) <= SHORT_MOVE_PX && Math.abs(travelY) < 0.5;
-    const base = shortMove
-      ? Math.min(LONG_LENGTH_SECONDS, SHORT_LENGTH_SECONDS)
-      : LONG_LENGTH_SECONDS;
 
     this.corners.forEach((corner, index) => {
       corner.tgtX = target[index].x;
       corner.tgtY = target[index].y;
-      corner.length = base * RANK_FACTORS[Math.min(ranks[index], 3)];
-      if (corner.length > RESET_THRESHOLD_SECONDS) {
-        corner.springX.offset = 0;
-        corner.springX.velocity = 0;
-        corner.springY.offset = 0;
-        corner.springY.velocity = 0;
-      }
-      // Keep velocity on short/retargeted moves so rapid typing and arrow
-      // key repeats carry momentum instead of restarting from a dead stop.
+      // A short move slides the caret whole; a long one stretches it.
+      corner.length = shortMove ? SHORT_LENGTH_SECONDS : cornerLength(ranks[index]);
+      // Each move starts from where the corner is now, at rest, as in the
+      // original: the springs are retargeted, not carried over.
       corner.springX.offset = corner.tgtX - corner.curX;
       corner.springY.offset = corner.tgtY - corner.curY;
+      corner.springX.velocity = 0;
+      corner.springY.velocity = 0;
     });
   }
 

@@ -30,6 +30,12 @@ release/
 !CLAUDE.md
 !CONTRIBUTING.md
 !brand.md
+!CHANGELOG.md
+!CODE_OF_CONDUCT.md
+!SECURITY.md
+!THIRD_PARTY_NOTICES.md
+!TRADEMARKS.md
+!.github/**
 
 # Secrets and keys (never commit these!)
 *.key

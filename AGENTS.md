@@ -2,13 +2,7 @@
 
 Local-first markdown notes app for macOS and Windows. Tauri 2 (Rust) + React 19 + Vite + Tailwind v4 + Tiptap 3 + Zustand. The marketing site lives in `site/` (Next 16 on Cloudflare Workers via OpenNext).
 
-## Planning — read this first
-
-**All feature planning comes from one document in the user's Ornata vault: `10-项目/产品/Ornata/Ornata 开发规划.md`** (on disk: `~/Documents/notes/10-项目/产品/Ornata/Ornata 开发规划.md`). When asked what to build next, what is pending, or to "read the plan", read that note — through the Ornata MCP (`read_note` with that rel path) when it is connected, otherwise straight from the file. Do not plan from memory, from this file, or from other notes in that folder (`Ornata版本规划.md`, `Ornata 更新日志.md`, …).
-
-- Unchecked `- [ ]` items are the to-do list; sections are grouped by version or date, newest last. Re-read the note at the start of a planning task — the user edits it between sessions.
-- When an item ships, tick it (`- [x]`) in that note; add a short line under it if something notable was decided or left out. Never delete or reword the user's items.
-- The old in-repo `docs/功能规划.md` (work up to 0.9.0) was removed; it is only history now, still readable with `git show 9b16a0d:docs/功能规划.md`. Don't recreate a plan file in the repo.
+Maintainers may keep private notes (planning, release chores) in `AGENTS.local.md`, which is not in the repository. If it exists, read it too; it takes precedence over this file.
 
 ## Commands
 
@@ -139,10 +133,7 @@ Our `Modal` (`components/ui/Modal.tsx`) is built on the same tokens; keep new di
 ## Rules
 
 - Never add "Co-Authored-By" or any AI attribution to commits or PRs.
-- After finishing each discrete task (feature, fix, or reviewable unit of work): commit with a conventional message and `git push` to the remote tracking branch (usually `origin/main`). Do not leave completed work only on the local machine.
+- Work on a branch and open a pull request; keep each PR to one feature or fix, with the checks under Commands passing.
 - Commit messages: conventional commits, subject ≤50 chars where possible.
 - Block drag handles were tried and pulled (Tauri swallowed in-page HTML5 drag-and-drop, so drops did nothing). Keyboard moves (⌥↑/⌥↓) stay. If redone, don't rely on native HTML5 drag: drag with mouse events, draw the drop line, auto-scroll at edges, move a folded heading's whole section, and keep clear of the heading fold arrow and the empty-line “+”. Tiptap's collaboration packages drag in yjs (+163 kB).
 - Don't reintroduce: sticky notes, note IDs, plugin-fs, standalone todos/bookmarks. Don't *author* frontmatter (external frontmatter is preserved/rendered, not written by us). `[[wiki]]` is accepted as input but stored as standard markdown `[title](path.md)` links.
-
-## X运营
-- 每次发布新版本之后,提取本次版本中核心、主要、或者你认为不错的实用卖点来准备一条X推文,最好是包含配图,推文放在ornata中的产品-Ornata-X推文这个文档中。
