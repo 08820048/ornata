@@ -10,6 +10,33 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.13.1",
+    zh: {
+      summary: "Ornata 开源了（MIT），Windows 版恢复更新，并修复了 Windows 上的设置窗口、标题栏和图标。",
+      changes: [
+        "Ornata 开源了，采用 MIT 许可证：https://github.com/08820048/ornata",
+        "Windows 版恢复更新：这是 0.10.1 之后的第一个 Windows 版本，Windows 用户一次就能拿到 0.10.2 到 0.13.1 的全部更新。",
+        "动画光标重新调校：移动稍快一些，每次按键都会重新开始滑动。",
+        "修复：Windows 上设置窗口打开后一片空白、而且关不掉。",
+        "修复：Windows 上的标题栏跟随应用的浅色或深色模式，而不是系统的。",
+        "修复：Windows 上的应用图标改为圆角，不再是直角方块。",
+        "更新了含安全修复的依赖库，包括备份用到的 zip 处理和 KaTeX。",
+      ],
+    },
+    date: "November 17, 2026",
+    dateTime: "2026-11-17",
+    summary: "Ornata is open source (MIT), Windows builds are back, and the Settings window, title bar and icon are fixed on Windows.",
+    changes: [
+      "Ornata is open source, under the MIT License: https://github.com/08820048/ornata",
+      "Windows builds are back: this is the first Windows release since 0.10.1, so Windows users get everything from 0.10.2 to 0.13.1 in one update.",
+      "The animated caret is retuned: moves are a little quicker, and each keystroke starts the glide afresh.",
+      "Fixed: On Windows, the Settings window opened blank and could not be closed.",
+      "Fixed: On Windows, the title bar follows the app's light or dark mode instead of the system's.",
+      "Fixed: On Windows, the app icon has rounded corners instead of a hard-edged square.",
+      "Fixed: Updated libraries with security fixes, among them the zip handling used by backups and KaTeX.",
+    ],
+  },
+  {
     version: "0.13.0",
     zh: {
       summary: "写作体验：笔记库卡片视图、表格操作、提示块、脚注、图片缩放与图注、链接预览、排版设置和打字机滚动。",

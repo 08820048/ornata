@@ -1,5 +1,5 @@
 // Release coordinates — VERSION is kept in sync by scripts/sync-version.js.
-export const VERSION = "0.13.0";
+export const VERSION = "0.13.1";
 export const REPO_URL = "https://github.com/08820048/ornata";
 export const RELEASE_ORIGIN = "https://download.ornata.app";
 export const RELEASE_PREFIX = "products/ornata-markd";

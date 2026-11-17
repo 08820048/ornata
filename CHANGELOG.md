@@ -2,6 +2,24 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.13.1] - 2026-11-17
+
+### Added
+
+- Ornata is open source, under the MIT License: https://github.com/08820048/ornata
+- Windows builds are back: this is the first Windows release since 0.10.1, so Windows users get everything from 0.10.2 to 0.13.1 in one update.
+
+### Changed
+
+- The animated caret is retuned: moves are a little quicker, and each keystroke starts the glide afresh.
+
+### Fixed
+
+- Windows: the Settings window opened blank and could not be closed.
+- Windows: the title bar follows the app's light or dark mode instead of the system's.
+- Windows: the app icon has rounded corners instead of a hard-edged square.
+- Updated libraries with security fixes, among them the zip handling used by backups and KaTeX.
+
 ## [0.13.0] - 2026-11-17
 
 ### Added
