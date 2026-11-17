@@ -6,16 +6,29 @@
 // release (or any CHANGELOG edit) keeps the note current. It is idempotent.
 //
 // Usage: bun scripts/sync-changelog-note.js [path-to-note]   (or ORNATA_CHANGELOG_NOTE)
+//
+// The note is a personal file, so its location is not in the repository: pass it as an
+// argument, set ORNATA_CHANGELOG_NOTE, or put the path in `scripts/.changelog-note.local`
+// (gitignored) for a stable per-machine default.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const localPathFile = join(root, "scripts", ".changelog-note.local");
+
+function localNotePath() {
+  if (!existsSync(localPathFile)) return null;
+  const path = readFileSync(localPathFile, "utf8").trim();
+  return path || null;
+}
+
 const notePath =
   process.argv[2] ||
   process.env.ORNATA_CHANGELOG_NOTE ||
-  join(homedir(), "Documents/notes/10-项目/产品/Ornata/Ornata 更新日志.md");
+  localNotePath() ||
+  join(homedir(), "Documents/notes/Ornata 更新日志.md");
 
 /** Versions in CHANGELOG.md as { version, date, sections: [{ title, items }] }, newest first. */
 export function parseChangelog(text) {
@@ -72,7 +85,11 @@ export function syncNote(note, versions) {
 
 if (import.meta.main) {
   if (!existsSync(notePath)) {
-    console.error(`Note not found: ${notePath}`);
+    console.error(
+      `Note not found: ${notePath}\n` +
+        "Pass the path as an argument, set ORNATA_CHANGELOG_NOTE, " +
+        "or write it into scripts/.changelog-note.local (gitignored).",
+    );
     process.exit(1);
   }
   const versions = parseChangelog(readFileSync(join(root, "CHANGELOG.md"), "utf8")).filter(
