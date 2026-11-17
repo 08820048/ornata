@@ -54,8 +54,8 @@ Windows 安装包的更新签名和 Mac 用的是**同一把** Tauri 更新密�
 ### 拉取代码
 
 ```powershell
-git clone https://github.com/08820048/ornata-new.git
-cd ornata-new
+git clone https://github.com/08820048/ornata.git
+cd ornata
 bun install --frozen-lockfile
 ```
 

@@ -9,7 +9,7 @@ doesn't, download the current version from [ornata.app](https://ornata.app).
 
 Please **don't open a public issue** for a security problem. Report it
 privately through GitHub instead:
-[Report a vulnerability](https://github.com/08820048/ornata-new/security/advisories/new)
+[Report a vulnerability](https://github.com/08820048/ornata/security/advisories/new)
 (the Security tab → "Report a vulnerability").
 
 Include what you can of:
