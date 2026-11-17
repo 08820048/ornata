@@ -110,6 +110,8 @@ Releases are run by hand from the maintainer's Mac (Developer ID + Apple notariz
 3. `bun run release:publish -- x.y.z --confirm` — uploads to R2 and switches the stable channel (what the in-app updater reads). This is not undoable; check the staged files first.
 4. Only after step 3, `cd site && bun run deploy`: the site's download links are built from the version number.
 
+The Windows download link has its own number, `WINDOWS_VERSION` in `site/lib/config.ts`: a Mac release does not move it (for six releases the link followed the Mac version and pointed at installers that did not exist). After publishing a Windows build, set it to that version and deploy the site; before deploying, check the `.exe` URL answers 200.
+
 ## The website (`site/`)
 
 - Next 16 + OpenNext on Cloudflare Workers; `bun run deploy` builds and deploys, `bunx wrangler rollback` undoes it. If OpenNext refuses the Next version, upgrade Next rather than passing `--dangerouslyUseUnsupportedNextVersion`.

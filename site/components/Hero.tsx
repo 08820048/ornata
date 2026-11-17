@@ -7,7 +7,7 @@ import { AppDemo } from "./AppDemo";
 import { DownloadButton, WindowsLogo } from "./ui/download-button";
 import { ButtonLink } from "./ui/button";
 import { track } from "@/lib/analytics";
-import { EXE, VERSION } from "@/lib/config";
+import { EXE, VERSION, WINDOWS_VERSION } from "@/lib/config";
 import { EASE_OUT } from "@/lib/ease";
 import { useCopy } from "@/lib/locale";
 
@@ -95,9 +95,9 @@ export function Hero() {
                     variant="secondary"
                     size="lg"
                     aria-label={copy.windowsLabel}
-                    onClick={() => track("Download", { version: VERSION, platform: "windows" })}
+                    onClick={() => track("Download", { version: WINDOWS_VERSION, platform: "windows" })}
                     className="w-full whitespace-nowrap sm:w-auto"
-                    meta={copy.windowsBeta}
+                    meta={WINDOWS_VERSION === VERSION ? copy.windowsBeta : `${copy.windowsBeta} · ${WINDOWS_VERSION}`}
                   >
                     <WindowsLogo />
                     {copy.windowsDownload}

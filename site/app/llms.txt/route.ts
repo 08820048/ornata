@@ -1,4 +1,4 @@
-import { DMG, EXE, VERSION } from "@/lib/config";
+import { DMG, EXE, VERSION, WINDOWS_VERSION } from "@/lib/config";
 import { FAQS } from "@/lib/faq";
 
 // llms.txt — a plain index for AI crawlers and answer engines.
@@ -19,7 +19,7 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - [简体中文 / Chinese](https://ornata.app/zh): 中文首页、文档(/zh/docs)与更新日志(/zh/updates)
 - [Updates](https://ornata.app/updates): Release notes for every version
 - [Download ${VERSION} (Apple Silicon DMG)](${DMG}): Latest signed and notarized build
-- [Download ${VERSION} (Windows 64-bit installer)](${EXE}): Not yet code-signed; SmartScreen may warn
+- [Download ${WINDOWS_VERSION} (Windows 64-bit installer)](${EXE}): Not yet code-signed; SmartScreen may warn
 
 ## Key facts
 
