@@ -11,6 +11,7 @@ import {
   channelManifestKey,
   channelManifestUrl,
   liveChannelManifest,
+  publishedObjectExists,
   normalizeArch,
   platformKey,
   releaseObjectKey,
@@ -162,22 +163,15 @@ await wrangler([
 ]);
 
 if (confirmed) {
-  const manifestResponse = await fetch(`${channelManifestUrl()}?published=${Date.now()}`, {
-    cache: "no-store",
-  });
-  if (!manifestResponse.ok) {
-    throw new Error(`Published manifest returned HTTP ${manifestResponse.status}`);
+  // Read back what clients will get. Over the public URL when it answers;
+  // from R2 when Cloudflare refuses this network (CI runners).
+  const published = await liveChannelManifest();
+  if (published?.version !== version) {
+    throw new Error(`Published manifest reports ${published?.version}, expected ${version}`);
   }
-  const published = await manifestResponse.json();
-  if (published.version !== version) {
-    throw new Error(`Published manifest reports ${published.version}, expected ${version}`);
-  }
-  const bundleResponse = await fetch(manifest.platforms[platformKey(arch, platform)].url, {
-    method: "HEAD",
-    cache: "no-store",
-  });
-  if (!bundleResponse.ok) {
-    throw new Error(`Published updater bundle returned HTTP ${bundleResponse.status}`);
+  const bundleKey = releaseObjectKey(version, arch, manifest.platforms[platformKey(arch, platform)].url);
+  if (!(await publishedObjectExists(bundleKey))) {
+    throw new Error(`Published updater bundle is missing: ${bundleKey}`);
   }
   console.log(`Published and verified: ${channelManifestUrl()}`);
 }
