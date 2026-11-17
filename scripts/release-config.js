@@ -16,8 +16,10 @@ export function normalizeArch(value = process.arch) {
   throw new Error(`Unsupported release architecture: ${value}`);
 }
 
-export function releasePlatform(value = process.env.RELEASE_PLATFORM) {
-  if (!value || value === "darwin") return "darwin";
+// Defaults to the machine running the script, so a Windows release needs no
+// extra variable; RELEASE_PLATFORM still overrides it.
+export function releasePlatform(value = process.env.RELEASE_PLATFORM || process.platform) {
+  if (value === "darwin") return "darwin";
   if (value === "windows" || value === "win32") return "windows";
   if (value === "linux") return "linux";
   throw new Error(`Unsupported release platform: ${value}`);
@@ -41,4 +43,16 @@ export function channelManifestKey() {
 
 export function channelManifestUrl() {
   return `${RELEASE_ORIGIN}/${channelManifestKey()}`;
+}
+
+/** The manifest the stable channel serves right now, or null if there is none
+ *  yet. Throws on any other failure: callers use it to avoid dropping other
+ *  platforms, so "couldn't tell" must not pass for "nothing there". */
+export async function liveChannelManifest() {
+  const response = await fetch(`${channelManifestUrl()}?t=${Date.now()}`, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Could not read the live manifest (${channelManifestUrl()}): HTTP ${response.status}`);
+  }
+  return response.json();
 }

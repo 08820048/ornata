@@ -10,6 +10,7 @@ import {
   RELEASE_PREFIX,
   channelManifestKey,
   channelManifestUrl,
+  liveChannelManifest,
   normalizeArch,
   platformKey,
   releaseObjectKey,
@@ -84,6 +85,25 @@ const wrangler = async (command, maxAttempts = 4) => {
     await Bun.sleep(delayMs);
   }
 };
+
+// The channel manifest is replaced wholesale. Refuse to publish one that
+// would silently drop a platform the channel serves for this same version,
+// or (from Windows) one for a different version than macOS is on.
+const live = await liveChannelManifest();
+if (live) {
+  const dropped = Object.keys(live.platforms ?? {}).filter((key) => !manifest.platforms[key]);
+  if (live.version === version && dropped.length) {
+    console.error(`The live ${version} manifest also serves ${dropped.join(", ")}; the staged one does not.`);
+    console.error("Regenerate it (bun run update:generate) so it merges the live entries, then publish.");
+    process.exit(1);
+  }
+  if (live.version !== version && platform === "windows") {
+    console.error(`The stable channel serves ${live.version}; publishing ${version} from Windows would drop macOS.`);
+    process.exit(1);
+  }
+  console.log(`Live channel: ${live.version} (${Object.keys(live.platforms ?? {}).join(", ")})`);
+}
+console.log(`Staged manifest: ${Object.keys(manifest.platforms).join(", ")}`);
 
 console.log(`Bucket: ${R2_BUCKET}`);
 console.log(`Prefix: ${RELEASE_PREFIX}`);

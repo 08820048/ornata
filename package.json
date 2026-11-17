@@ -19,6 +19,7 @@
     "release:preflight": "bash scripts/check-release-signing.sh",
     "release:publish": "bun scripts/publish-r2.js",
     "release": "bash scripts/release.sh",
+    "release:windows": "bun scripts/release-windows.js",
     "changelog:note": "bun scripts/sync-changelog-note.js"
   },
   "dependencies": {
