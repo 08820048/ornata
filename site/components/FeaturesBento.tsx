@@ -17,6 +17,7 @@ import { useCopy, useLocale } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import { BacklinksDemo } from "@/components/BacklinksDemo";
 import { GraphDemo } from "@/components/GraphDemo";
+import { LibraryDemo } from "@/components/LibraryDemo";
 import { MachineryDemo } from "@/components/MachineryDemo";
 import { ProjectsDemo } from "@/components/ProjectsDemo";
 import { SplitDemo } from "@/components/SplitDemo";
@@ -398,7 +399,7 @@ function Pair({
     <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="hidden border-r border-border px-8 py-14 lg:block">
         <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
-          {/* "07–08 / 09" */}
+          {/* "08–09 / 10" */}
           {`${items[0].index.split(" /")[0]}–${items[items.length - 1].index}`}
         </span>
       </aside>
@@ -466,7 +467,7 @@ export function FeaturesBento() {
         <div id="features" className="scroll-mt-16">
           <Chapter number="01" word={f.chapters.write[0]} line={f.chapters.write[1]} />
           <Story
-            index="01 / 09"
+            index="01 / 10"
             eyebrow={f.files.eyebrow}
             title={f.files.title}
             body={f.files.body}
@@ -474,7 +475,7 @@ export function FeaturesBento() {
             <FilesDemo />
           </Story>
           <Story
-            index="02 / 09"
+            index="02 / 10"
             eyebrow={f.editor.eyebrow}
             title={f.editor.title}
             body={f.editor.body}
@@ -483,7 +484,7 @@ export function FeaturesBento() {
             <WritingDemo />
           </Story>
           <Story
-            index="03 / 09"
+            index="03 / 10"
             eyebrow={f.themes.eyebrow}
             title={f.themes.title}
             body={f.themes.body}
@@ -493,7 +494,7 @@ export function FeaturesBento() {
 
           <Chapter number="02" word={f.chapters.connect[0]} line={f.chapters.connect[1]} />
           <Story
-            index="04 / 09"
+            index="04 / 10"
             eyebrow={f.backlinks.eyebrow}
             title={f.backlinks.title}
             body={f.backlinks.body}
@@ -502,7 +503,7 @@ export function FeaturesBento() {
             <BacklinksDemo />
           </Story>
           <Story
-            index="05 / 09"
+            index="05 / 10"
             eyebrow={f.graph.eyebrow}
             title={f.graph.title}
             body={f.graph.body}
@@ -511,7 +512,7 @@ export function FeaturesBento() {
           </Story>
 
           <Story
-            index="06 / 09"
+            index="06 / 10"
             eyebrow={f.split.eyebrow}
             title={f.split.title}
             body={f.split.body}
@@ -521,17 +522,25 @@ export function FeaturesBento() {
           </Story>
 
           <Chapter number="03" word={f.chapters.find[0]} line={f.chapters.find[1]} />
+          <Story
+            index="07 / 10"
+            eyebrow={f.library.eyebrow}
+            title={f.library.title}
+            body={f.library.body}
+          >
+            <LibraryDemo />
+          </Story>
           <Pair
             items={[
               {
-                index: "07 / 09",
+                index: "08 / 10",
                 eyebrow: f.palette.eyebrow,
                 title: f.palette.title,
                 body: f.palette.body,
                 demo: <CommandDemo />,
               },
               {
-                index: "08 / 09",
+                index: "09 / 10",
                 eyebrow: f.tasks.eyebrow,
                 title: f.tasks.title,
                 body: f.tasks.body,
@@ -542,7 +551,7 @@ export function FeaturesBento() {
 
           <Chapter number="04" word={f.chapters.plan[0]} line={f.chapters.plan[1]} />
           <Story
-            index="09 / 09"
+            index="10 / 10"
             eyebrow={f.projects.eyebrow}
             title={f.projects.title}
             body={f.projects.body}

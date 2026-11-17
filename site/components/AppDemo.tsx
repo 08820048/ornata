@@ -16,6 +16,7 @@ import {
   FolderPlus,
   Hash,
   History,
+  LayoutGrid,
   ListChecks,
   MoreHorizontal,
   Palette as PaletteIcon,
@@ -101,6 +102,7 @@ function Sidebar({ active }: { active: string | null }) {
         </div>
         <div className="mt-1.5 flex flex-col gap-px">
           <QuickRow icon={CalendarDays} label="New daily note" keys="⌘J" />
+          <QuickRow icon={LayoutGrid} label="Library" />
           <QuickRow icon={ListChecks} label="Tasks" />
         </div>
         <div className="mt-2 grid grid-cols-2 rounded-md bg-sunken p-0.5 text-[12px]">

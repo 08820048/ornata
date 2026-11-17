@@ -38,6 +38,7 @@ export interface Copy {
     backlinks: Story;
     graph: Story;
     split: Story;
+    library: Story;
     palette: Story;
     tasks: Story;
     projects: Story;
@@ -104,6 +105,7 @@ const en: Copy = {
     backlinks: { eyebrow: "Linked mentions", title: "See what links here.", body: "Every note lists the notes that reference it, with the linking line as context — and surfaces plain mentions that should become links." },
     graph: { eyebrow: "The link graph", title: "See how your ideas connect.", body: "Folders gather into soft regions, hovering a note traces its links and which way they point, and search flies straight to the note you need. Any note can also show its own neighborhood beneath the text." },
     split: { eyebrow: "Side by side", title: "Read one note while you write another.", body: "⌘-click a link, or press ⌘↵ in the palette, and the note opens beside this one. Up to four panes, each with its own header and history arrows. Drag a divider to resize, or close a pane when you're done." },
+    library: { eyebrow: "The library", title: "Your notes, laid out on a desk.", body: "Open the Library and your folders and notes become cards. Point at a folder and the pages inside lift and fan out, newest on top; a note card shows how the note begins. Rename, pin or move a card right where it is." },
     palette: { eyebrow: "Command palette", title: "One keystroke to anywhere.", body: "Search titles and content, jump between notes, or run any action from ⌘K." },
     tasks: { eyebrow: "Vault-wide tasks", title: "Every open task, in one list.", body: "Checkboxes from across the vault, with counts and folder context. Tick one here and it's done in its note." },
     projects: { eyebrow: "Projects", title: "A board made of your own notes.", body: "Mark a folder as a project and the tasks in its notes become issues, on a board or in a list. Drag a card to change its status, set a priority, and let an agent claim one — its logo shows on the card, and stays as the one who finished it. Every change is just a line in a Markdown file." },
@@ -182,6 +184,7 @@ const zh: Copy = {
     backlinks: { eyebrow: "链接提及", title: "看看谁链接到这里。", body: "每篇笔记都会列出引用它的笔记，并附上链接所在的那一行作为上下文，还会找出本该变成链接的普通提及。" },
     graph: { eyebrow: "链接图谱", title: "看见想法如何相连。", body: "文件夹聚成柔和的区域，悬停一篇笔记会描出它的链接和方向，搜索可直接飞到你要找的笔记。任何一篇笔记也能在正文下方显示它自己的邻域。" },
     split: { eyebrow: "并排查看", title: "写这一篇时，读另一篇。", body: "⌘ 点击链接，或在命令面板里按 ⌘↵，笔记就在旁边打开。最多四个窗格，每个都有自己的标题栏和前进后退箭头。拖动分隔条调整大小，用完关掉即可。" },
+    library: { eyebrow: "笔记库", title: "把笔记摊在桌面上。", body: "打开笔记库，文件夹和笔记都变成卡片。鼠标移到文件夹上，里面的纸张会依次抬起、扇开，最新的在最前；笔记卡片就是正文开头的样子。重命名、置顶、移动，都在卡片上直接完成。" },
     palette: { eyebrow: "命令面板", title: "一个快捷键，去哪都行。", body: "搜索标题与内容，在笔记间跳转，或用 ⌘K 执行任何操作。" },
     tasks: { eyebrow: "全库待办", title: "所有未完成的事，一张清单。", body: "汇总整个笔记库的复选框，带数量和所在文件夹。在这里勾掉一项，它所在的笔记里就同步完成。" },
     projects: { eyebrow: "项目", title: "由你自己的笔记组成的看板。", body: "把一个文件夹标记为项目，它笔记里的待办就成了 issue，可以放在看板或列表里看。拖动卡片改状态、设优先级，也可以让智能体来认领 —— 卡片上会显示它的 logo，完成后还会留下完成者。每一次改动，都只是 Markdown 文件里的一行。" },
