@@ -49,6 +49,12 @@ See [AGENTS.md](./AGENTS.md) for the full architecture guide. The short version:
 - Anything that adds a color outside the token set.
 - Code copied from projects whose license isn't compatible with MIT (GPL, AGPL, no license). If you adapt MIT/BSD/Apache code, say where it came from in the PR and add it to [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
 
+## Where to ask
+
+Use [Discussions](https://github.com/08820048/ornata/discussions) for usage questions, ideas you haven't settled on, and showing what you built with Ornata. Use an issue for a reproducible bug or a feature you're ready to argue for. Both are fine in either language; the maintainer reads Chinese and English.
+
+Also: `.gitignore` only tracks Markdown files it lists by name (`*.md` with explicit `!` exceptions). A new root-level document stays untracked until it is added there, so check `git status` before assuming your doc shipped.
+
 ## License of contributions
 
 Ornata is MIT-licensed. Contributions are accepted under the same license: by opening a pull request you agree that your work is released under the [MIT License](./LICENSE).

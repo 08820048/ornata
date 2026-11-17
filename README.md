@@ -166,7 +166,7 @@ Sync, encryption, and publishing may be added later — without compromising loc
 
 ## Contributing
 
-Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) first, and please follow the [code of conduct](./CODE_OF_CONDUCT.md). Security problems go through [SECURITY.md](./SECURITY.md), not public issues.
+Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) first, and please follow the [code of conduct](./CODE_OF_CONDUCT.md). Questions and half-formed ideas fit better in [Discussions](https://github.com/08820048/ornata/discussions); security problems go through [SECURITY.md](./SECURITY.md), not public issues.
 
 ## License
 
