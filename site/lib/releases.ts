@@ -10,6 +10,47 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.13.0",
+    zh: {
+      summary: "写作体验：笔记库卡片视图、表格操作、提示块、脚注、图片缩放与图注、链接预览、排版设置和打字机滚动。",
+      changes: [
+        "笔记库。侧栏新增「笔记库」标签页，把文件夹和笔记显示成卡片：文件夹卡片里是最近修改的笔记，鼠标移上去时纸张会依次抬起、扇开；笔记卡片是正文开头的缩略图。点文件夹进入。卡片可以原地重命名、置顶、移动到其他文件夹和删除。",
+        "表格：在单元格上点右键可以增删行列、设置列对齐；鼠标移到表格上时，底边和右边会出现「+」条，用来添加一行或一列。",
+        "提示块。以 `[!note]`、`[!tip]`、`[!important]`、`[!warning]`、`[!caution]` 开头的引用会显示成带图标和标签的提示块，写法与 GitHub 和 Obsidian 相同。用 `/callout` 插入。",
+        "脚注。`[^1]` 显示成编号，鼠标悬停可以看到脚注内容，按住 ⌘ 点击在两者之间跳转。`/footnote` 一次插入两者。",
+        "图片：拖动右边缘的拖柄调整大小，用 Markdown 标题添加图注，双击放大查看。",
+        "把鼠标停在指向另一篇笔记的链接上，可以看到那篇笔记的开头。",
+        "可以在「设置 → 编辑器」里选择字号、行宽和行高。",
+        "打字机滚动：专注模式下，正在写的那一行保持在窗口中间，其余段落减淡。可在「设置 → 编辑器」里关闭。",
+        "修复：导出的 PDF 和 HTML 保留代码块的语法颜色，也不再带着复制按钮。",
+        "修复：按 ⌘⇧F 切换专注模式时不再同时弹出查找栏。",
+        "修复：只有一个词的脚注在打开笔记时不再丢失。",
+        "修复：保存笔记时保留图片的图注、宽度和带空格的路径。",
+        "修复：表格比窄面板宽时在自己的框里滚动，不再让整页横向滚动。",
+        "修复：窗口较窄时，状态栏的快捷键提示不再被从中间截断。",
+      ],
+    },
+    date: "November 17, 2026",
+    dateTime: "2026-11-17",
+    summary: "Writing: a library of folder and note cards, table editing, callouts, footnotes, image resizing and captions, link previews, typography settings and typewriter scrolling.",
+    changes: [
+      "Library. A new tab, opened from the sidebar, shows the vault as cards: a folder shows the notes you edited last inside it, and they lift and fan out when you point at it; a note is a miniature of how it begins. Click a folder to step in. Cards can be renamed in place, pinned, moved to another folder and deleted.",
+      "Tables: right-click a cell to insert or delete rows and columns or align a column, and use the \"+\" bars that appear at the bottom and right edge of a table to add a row or a column.",
+      "Callouts. A quote that starts with `[!note]`, `[!tip]`, `[!important]`, `[!warning]` or `[!caution]` is shown with an icon and a label, the same Markdown GitHub and Obsidian use. Insert one with `/callout`.",
+      "Footnotes. `[^1]` shows as a number, pointing at it shows the note, and ⌘-click jumps between the two. `/footnote` inserts both.",
+      "Images: drag the grip on the right edge to resize, add a caption as the Markdown title, and double-click to view larger.",
+      "Rest the pointer on a link to another note to see how that note begins.",
+      "Text size, line width and line height can be chosen in Settings → Editor.",
+      "Typewriter scrolling: in focus mode the line you are writing stays in the middle of the window and the other paragraphs are dimmed. It can be turned off in Settings → Editor.",
+      "Fixed: Exported PDFs and HTML pages keep the syntax colours of code blocks, and no longer show the copy button.",
+      "Fixed: ⌘⇧F no longer opens the find bar while switching focus mode.",
+      "Fixed: A footnote of a single word is no longer dropped when a note is loaded.",
+      "Fixed: Image captions, widths and paths with spaces are kept when a note is saved.",
+      "Fixed: A table wider than a narrow pane scrolls on its own instead of making the page scroll sideways.",
+      "Fixed: Shortcut hints in the status bar are no longer cut off mid-word in a narrow window.",
+    ],
+  },
+  {
     version: "0.12.2",
     zh: {
       summary: "列表视图能新增任务，升级为 issue 页面会带上决策记录，agent 可以给 issue 排序。",

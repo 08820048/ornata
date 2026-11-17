@@ -2,6 +2,28 @@
 
 All notable changes to Ornata are documented in this file.
 
+## [0.13.0] - 2026-11-17
+
+### Added
+
+- Library. A new tab, opened from the sidebar, shows the vault as cards: a folder shows the notes you edited last inside it, and they lift and fan out when you point at it; a note is a miniature of how it begins. Click a folder to step in. Cards can be renamed in place, pinned, moved to another folder and deleted.
+- Tables: right-click a cell to insert or delete rows and columns or align a column, and use the "+" bars that appear at the bottom and right edge of a table to add a row or a column.
+- Callouts. A quote that starts with `[!note]`, `[!tip]`, `[!important]`, `[!warning]` or `[!caution]` is shown with an icon and a label, the same Markdown GitHub and Obsidian use. Insert one with `/callout`.
+- Footnotes. `[^1]` shows as a number, pointing at it shows the note, and ⌘-click jumps between the two. `/footnote` inserts both.
+- Images: drag the grip on the right edge to resize, add a caption as the Markdown title, and double-click to view larger.
+- Rest the pointer on a link to another note to see how that note begins.
+- Text size, line width and line height can be chosen in Settings → Editor.
+- Typewriter scrolling: in focus mode the line you are writing stays in the middle of the window and the other paragraphs are dimmed. It can be turned off in Settings → Editor.
+
+### Fixed
+
+- Exported PDFs and HTML pages keep the syntax colours of code blocks, and no longer show the copy button.
+- ⌘⇧F no longer opens the find bar while switching focus mode.
+- A footnote of a single word is no longer dropped when a note is loaded.
+- Image captions, widths and paths with spaces are kept when a note is saved.
+- A table wider than a narrow pane scrolls on its own instead of making the page scroll sideways.
+- Shortcut hints in the status bar are no longer cut off mid-word in a narrow window.
+
 ## [0.12.2] - 2026-10-27
 
 ### Added

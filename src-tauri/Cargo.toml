@@ -1,6 +1,6 @@
 [package]
 name = "Ornata"
-version = "0.12.2"
+version = "0.13.0"
 description = "Local-first markdown notes"
 authors = ["Saurabh"]
 license = "MIT"
