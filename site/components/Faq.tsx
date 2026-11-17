@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { COPY, type Locale } from "@/lib/copy";
+import { Kicker } from "./ui/kicker";
 
 export function Faq({ locale = "en" }: { locale?: Locale }) {
   const copy = COPY[locale].faq;
@@ -23,17 +24,10 @@ export function Faq({ locale = "en" }: { locale?: Locale }) {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      <div className="mx-auto grid w-full max-w-[1440px] border-x border-b border-border bg-paper lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-border px-8 py-20 lg:block">
-          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-            {copy.aside}
-          </p>
-        </aside>
+      <div className="mx-auto w-full max-w-[1440px] border-x border-b border-border bg-paper">
         <div className="grid gap-12 px-5 py-20 sm:px-10 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-16 lg:py-28">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-              FAQ
-            </p>
+            <Kicker>FAQ</Kicker>
             <h2 className="mt-5 text-balance font-serif text-[42px] leading-[1] tracking-[-0.035em] text-foreground sm:text-[54px]">
               {copy.title}
             </h2>

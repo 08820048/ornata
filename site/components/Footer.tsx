@@ -35,14 +35,7 @@ export function Footer() {
   return (
     <footer className="px-3 pb-3 sm:px-6 sm:pb-6">
       <div className="mx-auto w-full max-w-[1440px] overflow-hidden bg-night text-night-ink">
-        <div className="relative grid min-h-[500px] border-b border-night-line lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="hidden border-r border-night-line px-8 py-14 lg:flex lg:flex-col lg:justify-between">
-            <LogoMark size={30} />
-            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-night-muted">
-              {copy.madeFor}
-            </span>
-          </aside>
-
+        <div className="relative min-h-[500px] border-b border-night-line">
           <div className="relative overflow-hidden px-5 py-20 sm:px-10 lg:px-16 lg:py-24">
             <Image
               src="/ornata-mark-2026.png"
@@ -57,9 +50,12 @@ export function Footer() {
               whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, ease: EASE_OUT }}
-              className="font-mono text-[10px] uppercase tracking-[0.15em] text-night-muted"
+              className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[10px] uppercase tracking-[0.15em] text-night-muted"
             >
-              {copy.start}
+              <LogoMark size={22} />
+              <span>{copy.start}</span>
+              <span aria-hidden="true" className="h-px w-6 bg-night-line" />
+              <span>{copy.madeFor}</span>
             </motion.p>
             <motion.h2
               initial={reduce ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
@@ -101,8 +97,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="hidden border-r border-night-line lg:block" />
+        <div>
           <div className="px-5 py-10 sm:px-10 lg:px-16">
             <div className="grid gap-12 md:grid-cols-[1fr_1fr]">
               <nav className="grid grid-cols-2 gap-x-8 gap-y-1">

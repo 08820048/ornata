@@ -16,7 +16,6 @@ export interface Copy {
   downloadModal: { close: string; started: string; title: string; note: string; steps: [string, string, string]; done: string };
   hero: {
     aside: [string, string, string];
-    readPosition: string;
     badge: string;
     headline: [string, string, string];
     body: string;
@@ -44,7 +43,7 @@ export interface Copy {
     projects: Story;
   };
   agents: { eyebrow: string; title: string; body: string; terminal: string };
-  faq: { aside: string; title: string; lead: string; items: Faq[] };
+  faq: { title: string; lead: string; items: Faq[] };
   footer: {
     madeFor: string;
     start: string;
@@ -83,7 +82,6 @@ const en: Copy = {
   },
   hero: {
     aside: ["Local-first", "Markdown", "Mac & Windows"],
-    readPosition: "Read the position",
     badge: "A focused writing instrument",
     headline: ["Markdown,", "without the", "machinery."],
     body: "Ornata is a local-first Markdown notes app for macOS and Windows. It keeps the editor fast, the interface quiet, and every note as a plain .md file in a folder you own. No proprietary database. No account required. Just a precise place to write.",
@@ -116,7 +114,7 @@ const en: Copy = {
     body: "Ornata speaks MCP, so Claude Code, Codex, Cursor, and the rest can search your notes, add to today’s page, tick off tasks, and pick up issues from your project boards. You decide per vault what an agent may do — off, read only, or read & write — and every edit keeps the old version in the note’s history.",
     terminal: "Or from any terminal:",
   },
-  faq: { aside: "Details", title: "The practical questions.", lead: "Storage, compatibility, updates, and exactly what an outside agent can do.", items: FAQS_EN },
+  faq: { title: "The practical questions.", lead: "Storage, compatibility, updates, and exactly what an outside agent can do.", items: FAQS_EN },
   footer: {
     madeFor: "Made for Mac and Windows",
     start: "Start with a folder",
@@ -161,8 +159,7 @@ const zh: Copy = {
     done: "知道了",
   },
   hero: {
-    aside: ["本地优先", "Markdown", "Mac · Windows"],
-    readPosition: "了解我们的主张",
+    aside: ["本地优先", "Markdown", "Mac 与 Windows"],
     badge: "一件专注的写作工具",
     headline: ["Markdown，", "没有多余的", "机关。"],
     body: "Ornata 是一款支持 macOS 和 Windows 的本地优先 Markdown 笔记应用。编辑器够快，界面够安静，每篇笔记都是你自己文件夹里的一个普通 .md 文件。没有私有数据库，不需要账号，只有一个精准的写作之处。",
@@ -195,7 +192,7 @@ const zh: Copy = {
     body: "Ornata 支持 MCP，所以 Claude Code、Codex、Cursor 等都能搜索你的笔记、往今天的日记里追加内容、勾选待办，还能从项目看板里认领 issue。每个笔记库允许智能体做什么由你决定 —— 关闭、只读，或读写 —— 每次编辑都会把旧版本留在笔记的历史里。",
     terminal: "也可以在任意终端里：",
   },
-  faq: { aside: "细节", title: "实际会问的问题。", lead: "存储、兼容、更新，以及外部智能体到底能做什么。", items: FAQS_ZH },
+  faq: { title: "实际会问的问题。", lead: "存储、兼容、更新，以及外部智能体到底能做什么。", items: FAQS_ZH },
   footer: {
     madeFor: "为 Mac 和 Windows 而做",
     start: "从一个文件夹开始",

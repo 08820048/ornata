@@ -23,6 +23,7 @@ import { ProjectsDemo } from "@/components/ProjectsDemo";
 import { SplitDemo } from "@/components/SplitDemo";
 import { TasksDemo } from "@/components/TasksDemo";
 import { ThemesDemo } from "@/components/ThemesDemo";
+import { Kicker } from "./ui/kicker";
 
 const FILES = [
   { name: "Projects", kind: "folder", depth: 0 },
@@ -71,13 +72,7 @@ function Story({
   const reduce = useReducedMotion();
 
   return (
-    <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="hidden border-r border-border px-8 py-14 lg:block">
-        {/* Stays in view while the section scrolls past. */}
-        <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
-          {index}
-        </span>
-      </aside>
+    <article className="border-b border-border">
       <div
         className={cn(
           "grid items-center gap-12 px-5 py-16 sm:px-10 sm:py-20 lg:px-16 xl:grid-cols-2 xl:gap-20",
@@ -91,9 +86,7 @@ function Story({
           transition={{ duration: 0.55, ease: EASE_OUT }}
           className="max-w-xl"
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
-            {eyebrow}
-          </p>
+          <Kicker index={index}>{eyebrow}</Kicker>
           <h2 className="mt-5 text-balance font-serif text-[42px] leading-[0.98] tracking-[-0.035em] text-foreground sm:text-[56px]">
             {title}
           </h2>
@@ -366,12 +359,7 @@ function Chapter({ number, word, line }: { number: string; word: string; line: s
   const reduce = useReducedMotion();
   const locale = useLocale();
   return (
-    <div className="grid border-b border-border bg-paper lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="hidden border-r border-border px-8 py-10 lg:block">
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-          {locale === "zh" ? `第 ${number} 章` : `Chapter ${number}`}
-        </span>
-      </aside>
+    <div className="border-b border-border bg-paper">
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 12 }}
         whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
@@ -379,6 +367,9 @@ function Chapter({ number, word, line }: { number: string; word: string; line: s
         transition={{ duration: 0.5, ease: EASE_OUT }}
         className="flex flex-wrap items-baseline gap-x-8 gap-y-2 px-5 py-9 sm:px-10 lg:px-16"
       >
+        <Kicker className="w-full sm:w-auto sm:min-w-[92px]">
+          {locale === "zh" ? `第 ${number} 章` : `Chapter ${number}`}
+        </Kicker>
         <span className="font-serif text-[44px] leading-none tracking-[-0.04em] text-foreground sm:text-[56px]">
           {word}
         </span>
@@ -396,13 +387,7 @@ function Pair({
 }) {
   const reduce = useReducedMotion();
   return (
-    <article className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="hidden border-r border-border px-8 py-14 lg:block">
-        <span className="sticky top-28 block font-mono text-[10px] tracking-[0.14em] text-faint">
-          {/* "08–09 / 10" */}
-          {`${items[0].index.split(" /")[0]}–${items[items.length - 1].index}`}
-        </span>
-      </aside>
+    <article className="border-b border-border">
       <div className="grid gap-16 px-5 py-16 sm:px-10 sm:py-20 lg:px-16 xl:grid-cols-2 xl:gap-14">
         {items.map((item, i) => (
           <motion.div
@@ -413,9 +398,7 @@ function Pair({
             transition={{ duration: 0.55, ease: EASE_OUT, delay: i * 0.08 }}
             className="flex flex-col"
           >
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
-              {item.eyebrow}
-            </p>
+            <Kicker index={item.index}>{item.eyebrow}</Kicker>
             <h2 className="mt-4 text-balance font-serif text-[34px] leading-[1.02] tracking-[-0.03em] text-foreground sm:text-[40px]">
               {item.title}
             </h2>
@@ -439,13 +422,8 @@ export function FeaturesBento() {
         {/* The position: one claim, and a demo that proves it. */}
         <div
           id="principles"
-          className="scroll-mt-20 grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]"
+          className="scroll-mt-20 border-b border-border"
         >
-          <aside className="hidden border-r border-border px-8 py-16 lg:block">
-            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-              {f.position}
-            </p>
-          </aside>
           <div className="grid items-center gap-12 px-5 py-20 sm:px-10 lg:px-16 lg:py-24 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-20">
             <motion.div
               initial={reduce ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
@@ -453,7 +431,8 @@ export function FeaturesBento() {
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.55, ease: EASE_OUT }}
             >
-              <h2 className="text-balance font-serif text-[44px] leading-[0.98] tracking-[-0.04em] text-foreground sm:text-[60px]">
+              <Kicker>{f.position}</Kicker>
+              <h2 className="mt-5 text-balance font-serif text-[44px] leading-[0.98] tracking-[-0.04em] text-foreground sm:text-[60px]">
                 {f.positionTitle}
               </h2>
               <p className="mt-7 max-w-md text-pretty text-[16px] leading-7 text-muted-foreground">

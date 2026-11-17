@@ -113,7 +113,7 @@ Icons: `bun run icon:generate` builds every icon from `src-tauri/icons/icon-sour
 ## The website (`site/`)
 
 - Next 16 + OpenNext on Cloudflare Workers; `bun run deploy` builds and deploys, `bunx wrangler rollback` undoes it. If OpenNext refuses the Next version, upgrade Next rather than passing `--dangerouslyUseUnsupportedNextVersion`.
-- When a feature or UI change ships, bring the site along in the same pass, in both languages: `lib/copy.ts`, `faq.ts`, `components/docs/*` (+ `.zh`), `app/llms.txt/route.ts`, and the README feature list. The hero demo (`components/AppDemo.tsx`) mirrors the real window — sidebar, tabs, pane headers, status bar — so update it when that chrome changes. Features worth a section get an animated demo (e.g. `ThemesDemo.tsx`), numbered `NN / TOTAL` in `FeaturesBento.tsx`.
+- When a feature or UI change ships, bring the site along in the same pass, in both languages: `lib/copy.ts`, `faq.ts`, `components/docs/*` (+ `.zh`), `app/llms.txt/route.ts`, and the README feature list. The hero demo (`components/AppDemo.tsx`) mirrors the real window — sidebar, tabs, pane headers, status bar — so update it when that chrome changes. Features worth a section get an animated demo (e.g. `ThemesDemo.tsx`), numbered `NN / TOTAL` in `FeaturesBento.tsx`. Sections run the full width of the frame: the index and label sit above the title as one `Kicker` line (`components/ui/kicker.tsx`), not in a left rail (the old 220px rails held only that text and squeezed the demos). The docs page's table of contents is the one side column.
 
 ## Adding beui components
 

@@ -4,6 +4,7 @@ import { DownloadModal } from "@/components/DownloadModal";
 import { DownloadButton } from "@/components/ui/download-button";
 import { COPY, type Locale } from "@/lib/copy";
 import { RELEASES, type Release } from "@/lib/releases";
+import { Kicker } from "./ui/kicker";
 
 export function UpdatesView({ locale }: { locale: Locale }) {
   const copy = COPY[locale].updates;
@@ -18,18 +19,11 @@ export function UpdatesView({ locale }: { locale: Locale }) {
       <Nav />
       <main className="px-3 pb-3 pt-24 sm:px-6 sm:pb-6 sm:pt-28">
         <div className="mx-auto w-full max-w-[1440px] border-x border-t border-border bg-paper">
-          <header className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
-            <aside className="hidden border-r border-border px-8 py-16 lg:block">
-              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-                {copy.archive}
-              </p>
-            </aside>
+          <header className="border-b border-border">
             <div className="px-5 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
-              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-faint">
-                {copy.eyebrow}
-              </p>
+              <Kicker index={copy.archive}>{copy.eyebrow}</Kicker>
               <div className="mt-6 flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
-                <div className="max-w-2xl">
+                <div className="max-w-4xl">
                   <h1 className="text-balance font-serif text-[48px] leading-[0.96] tracking-[-0.04em] text-foreground sm:text-[72px]">
                     {copy.title}
                   </h1>
@@ -42,8 +36,7 @@ export function UpdatesView({ locale }: { locale: Locale }) {
             </div>
           </header>
 
-          <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
-            <div className="hidden border-r border-border lg:block" />
+          <div>
             <section
               aria-label={copy.ariaLabel}
               className="px-5 sm:px-10 lg:px-16"
@@ -72,7 +65,7 @@ export function UpdatesView({ locale }: { locale: Locale }) {
                     </time>
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 max-w-3xl">
                     <h2 className="text-balance text-[21px] font-medium leading-7 tracking-[-0.015em] text-foreground sm:text-[24px]">
                       {text(release).summary}
                     </h2>

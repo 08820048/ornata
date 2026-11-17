@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowDownRight, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { AppDemo } from "./AppDemo";
 import { DownloadButton, WindowsLogo } from "./ui/download-button";
@@ -27,27 +27,7 @@ export function Hero() {
   return (
     <section className="px-3 pt-24 sm:px-6 sm:pt-28">
       <div className="mx-auto w-full max-w-[1440px] overflow-hidden border-x border-t border-border bg-paper">
-        <div className="grid border-b border-border lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="hidden border-r border-border px-8 py-12 lg:flex lg:flex-col lg:justify-between">
-            <p className="font-mono text-[10px] uppercase leading-5 tracking-[0.16em] text-faint">
-              {copy.aside[0]}
-              <br />
-              {copy.aside[1]}
-              <br />
-              {copy.aside[2]}
-            </p>
-            <a
-              href="#principles"
-              className="group inline-flex min-h-11 items-center gap-2 text-[12px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
-            >
-              {copy.readPosition}
-              <ArrowDownRight
-                size={14}
-                className="transition-transform duration-150 group-hover:translate-x-0.5 group-hover:translate-y-0.5"
-              />
-            </a>
-          </aside>
-
+        <div className="border-b border-border">
           <div className="relative overflow-hidden px-5 py-14 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
             <Image
               src="/ornata-mark-2026.png"
@@ -59,10 +39,14 @@ export function Hero() {
               className="pointer-events-none absolute -right-20 top-1/2 w-[260px] -translate-y-1/2 opacity-[0.055] sm:w-[360px] lg:right-0 lg:w-[420px]"
             />
 
-            <motion.div {...rise(0)} className="flex items-center gap-2">
+            <motion.div {...rise(0)} className="flex flex-wrap items-center gap-x-2 gap-y-2">
               <span className="size-1.5 rounded-full bg-foreground" />
               <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                 {copy.badge}
+              </span>
+              <span aria-hidden="true" className="mx-2 hidden h-px w-6 bg-border sm:block" />
+              <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-faint sm:inline">
+                {copy.aside.join(" · ")}
               </span>
             </motion.div>
 
