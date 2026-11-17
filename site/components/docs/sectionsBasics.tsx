@@ -179,7 +179,9 @@ export const BASICS: DocSection[] = [
             The <Code>{"</>"}</Code> button at the top right switches between the editor and the raw Markdown.
           </Li>
           <Li>
-            <Kbd>⌘⇧F</Kbd> is focus mode: the sidebar and the bars fade away until you point at them.
+            <Kbd>⌘⇧F</Kbd> is focus mode: the sidebar and the bars fade away until you point at them. While it
+            is on, the line you are writing stays in the middle of the window and the other paragraphs are dimmed
+            (typewriter scrolling; turn it off in Settings → Editor).
           </Li>
         </Ul>
         <H3>Text size and line width</H3>

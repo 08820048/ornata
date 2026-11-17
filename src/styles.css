@@ -577,6 +577,28 @@ body {
     overflow-wrap: break-word;
 }
 
+/* ---------- typewriter scrolling (focus mode) ---------- */
+/* editor/typewriter.ts marks the block under the caret; everything else in
+   the note is dimmed. Half a pane of room below lets the last line reach
+   the middle too. */
+.page-scroll[data-typewriter="true"] .prose-note {
+    padding-bottom: 50vh;
+}
+.page-scroll[data-typewriter="true"] .prose-note > *,
+.page-scroll[data-typewriter="true"] .prose-note li,
+.page-scroll[data-typewriter="true"] .prose-note li > p,
+.page-scroll[data-typewriter="true"] .prose-note li > div > p {
+    transition: opacity 150ms var(--ease-out);
+}
+.page-scroll[data-typewriter="true"] .prose-note > :not(.tw-current),
+/* In a list only the item being written stays lit: its siblings dim, and so
+   does the own line of any item it is nested in. */
+.page-scroll[data-typewriter="true"] .tw-current li:not(.tw-current-item):not(:has(.tw-current-item)):not(.tw-current-item li),
+.page-scroll[data-typewriter="true"] .tw-current li:has(.tw-current-item) > p,
+.page-scroll[data-typewriter="true"] .tw-current li:has(.tw-current-item) > div > p {
+    opacity: 0.35;
+}
+
 /* ---------- cursor motion (animated caret) ---------- */
 /* Hide the native caret while our animated one is drawn. */
 .prose-note.caret-hidden {

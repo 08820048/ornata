@@ -634,6 +634,18 @@ pub fn set_pdf_settings(app: AppHandle, pdf: PdfSettings) -> AppResult<()> {
 }
 
 #[tauri::command]
+pub fn get_typewriter_scroll(app: AppHandle) -> bool {
+    config::load(&app).typewriter_scroll
+}
+
+#[tauri::command]
+pub fn set_typewriter_scroll(app: AppHandle, enabled: bool) -> AppResult<()> {
+    let mut cfg = config::load(&app);
+    cfg.typewriter_scroll = enabled;
+    config::save(&app, &cfg)
+}
+
+#[tauri::command]
 pub fn get_typography(app: AppHandle) -> Typography {
     config::load(&app).typography
 }

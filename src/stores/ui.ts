@@ -26,6 +26,9 @@ interface UiState {
   sidebarHidden: boolean;
   shortcutBarHidden: boolean;
   focusMode: boolean;
+  /** Settings › Editor: focus mode also centres the caret's line and dims
+   *  the other blocks. Loaded from the config at launch (`main.tsx`). */
+  typewriterScroll: boolean;
   markdownSource: boolean;
   saveState: SaveState;
   /** Status-bar slot the active note portals its cursor / history / word info into. */
@@ -59,6 +62,7 @@ export const useUi = create<UiState>((set, get) => ({
   sidebarHidden: false,
   shortcutBarHidden: readShortcutBarHidden(),
   focusMode: false,
+  typewriterScroll: true,
   markdownSource: false,
   saveState: "idle",
   setMcpOpen: (mcpOpen) => set({ mcpOpen }),

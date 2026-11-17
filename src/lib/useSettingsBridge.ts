@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { listenSettings } from "@/lib/settingsSync";
 import { applyTypography } from "@/lib/typography";
 import { useLocale } from "@/stores/locale";
+import { useUi } from "@/stores/ui";
 import { useVault } from "@/stores/vault";
 
 /**
@@ -30,6 +31,9 @@ export function useSettingsBridge() {
         vault.applyRemoteCursorAnimation(patch.cursorAnimation);
       }
       if (patch.typography) applyTypography(patch.typography);
+      if (patch.typewriterScroll !== undefined) {
+        useUi.setState({ typewriterScroll: patch.typewriterScroll });
+      }
       if (patch.imageUpload) vault.applyRemoteImageUpload(patch.imageUpload);
       if (patch.vault) vault.adoptVaultSnapshot(patch.vault);
     })

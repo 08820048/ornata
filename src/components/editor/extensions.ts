@@ -14,6 +14,7 @@ import { TableHandles } from "./tableHandles";
 import { CalloutView } from "./callout";
 import { FootnoteView } from "./footnotes";
 import { ImageExtras, imageMarkdown } from "./imageExtras";
+import { Typewriter } from "./typewriter";
 import { CodeBlockWithCopy } from "./CodeBlock";
 import { CodeFold } from "./codeFold";
 import { MathBlock, MathInline } from "./Mathematics";
@@ -132,6 +133,7 @@ export function createExtensions(assetRoot: string) {
     CalloutView,
     FootnoteView,
     ImageExtras,
+    Typewriter,
     MoveBlock,
     FindReplace,
     SlashHighlight,

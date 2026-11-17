@@ -35,6 +35,7 @@ export interface SettingsPatch {
   cursorAnimation?: boolean;
   imageUpload?: ImageUpload;
   typography?: Typography;
+  typewriterScroll?: boolean;
   /** Present when the active vault changed; carries the full snapshot. */
   vault?: VaultSnapshot;
 }

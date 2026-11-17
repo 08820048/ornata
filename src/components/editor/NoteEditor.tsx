@@ -42,6 +42,7 @@ import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, type ImageTarget } from "./imageMenu";
 import { tableMenuItems } from "./tableMenu";
 import { LinkPreview } from "./LinkPreview";
+import { setTypewriter } from "./typewriter";
 import { parseImageTarget } from "./imageExtras";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 
@@ -73,6 +74,7 @@ export const NoteEditor = memo(function NoteEditor({
   const setSaveState = useUi((s) => s.setSaveState);
   const markdownSource = useUi((s) => s.markdownSource);
   const focusMode = useUi((s) => s.focusMode);
+  const typewriter = useUi((s) => s.focusMode && s.typewriterScroll) && !markdownSource;
   const cursorAnimation = useVault((s) => s.cursorAnimation);
   const language = useLocale((s) => s.language);
   const t = useT();
@@ -173,6 +175,11 @@ export const NoteEditor = memo(function NoteEditor({
       reloadIfChanged,
     });
 
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    setTypewriter(editor.view, typewriter);
+  }, [editor, typewriter]);
+
   const saveTemplateOpen = useUi((s) => s.saveTemplateOpen);
   const cursor = useCursorPosition(editor, active && !markdownSource);
 
@@ -247,6 +254,7 @@ export const NoteEditor = memo(function NoteEditor({
     <div
       ref={scrollRef}
       className="page-scroll relative"
+      data-typewriter={typewriter || undefined}
       onScroll={(event) => {
         content.savedScroll.current = event.currentTarget.scrollTop;
         updateActiveOutline();

@@ -32,6 +32,9 @@ pub struct AppConfig {
     pub outline_sound: bool,
     #[serde(default = "default_cursor_animation")]
     pub cursor_animation: bool,
+    /// In focus mode, keep the caret's line centred and dim the other blocks.
+    #[serde(default = "default_typewriter_scroll")]
+    pub typewriter_scroll: bool,
     #[serde(default)]
     pub image_upload: ImageUpload,
     /// Text size, line width and line height of the note page.
@@ -220,6 +223,10 @@ const fn default_cursor_animation() -> bool {
     true
 }
 
+const fn default_typewriter_scroll() -> bool {
+    true
+}
+
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
@@ -232,6 +239,7 @@ impl Default for AppConfig {
             backup: Default::default(),
             outline_sound: default_outline_sound(),
             cursor_animation: default_cursor_animation(),
+            typewriter_scroll: default_typewriter_scroll(),
             image_upload: ImageUpload::default(),
             typography: Typography::default(),
             pdf: PdfSettings::default(),
@@ -371,6 +379,9 @@ mod tests {
         assert_eq!(config.language, Language::English);
         assert!(config.outline_sound);
         assert!(config.cursor_animation);
+        assert!(config.typewriter_scroll);
+        let off: AppConfig = serde_json::from_str(r#"{"typewriterScroll":false}"#).unwrap();
+        assert!(!off.typewriter_scroll);
         assert!(serde_json::to_string(&config).unwrap().contains("cursorAnimation"));
     }
 

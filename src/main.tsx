@@ -9,6 +9,7 @@ import { applyPalettes, applyTheme, cachedPalettes, cachedTheme } from "@/lib/th
 import { currentWindowKind } from "@/lib/settingsSync";
 import { ipc } from "@/lib/ipc";
 import { applyTypography, cachedTypography, normalizeTypography } from "@/lib/typography";
+import { useUi } from "@/stores/ui";
 import "./styles.css";
 
 // Paint the last-used theme before React mounts so neither window flashes the
@@ -36,6 +37,10 @@ if (windowKind !== "print") {
   void ipc
     .getTypography()
     .then((value) => applyTypography(normalizeTypography(value)))
+    .catch(() => undefined);
+  void ipc
+    .getTypewriterScroll()
+    .then((typewriterScroll) => useUi.setState({ typewriterScroll: typewriterScroll !== false }))
     .catch(() => undefined);
 }
 

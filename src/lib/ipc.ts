@@ -193,6 +193,9 @@ export const ipc = {
   getImageUpload: () => call<ImageUpload>("get_image_upload"),
   getPdfSettings: () => call<PdfSettings>("get_pdf_settings"),
   setPdfSettings: (pdf: PdfSettings) => call<void>("set_pdf_settings", { pdf }),
+  getTypewriterScroll: () => call<boolean>("get_typewriter_scroll"),
+  setTypewriterScroll: (enabled: boolean) =>
+    call<void>("set_typewriter_scroll", { enabled }),
   getTypography: () => call<Typography>("get_typography"),
   setTypography: (typography: Typography) =>
     call<void>("set_typography", { typography }),

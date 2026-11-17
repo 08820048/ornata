@@ -47,7 +47,9 @@ export function usePaneDialogs({
     if (!active) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (markdownSource) return;
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
+      // ⌘⇧F is focus mode (App.tsx): it must not open the find bar as well.
+      const mod = (event.metaKey || event.ctrlKey) && !event.shiftKey;
+      if (mod && event.key.toLowerCase() === "f") {
         event.preventDefault();
         setFindWithReplace(event.altKey);
         setFindOpen(true);

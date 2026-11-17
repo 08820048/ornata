@@ -5,7 +5,11 @@ import {
   IconMoon,
   IconSun,
 } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { MessageKey } from "@/lib/i18n";
+import { ipc } from "@/lib/ipc";
+import { broadcastSettings } from "@/lib/settingsSync";
 import type { Language, Theme } from "@/lib/types";
 import { DARK_PALETTES, LIGHT_PALETTES } from "@/lib/palettes";
 import { PalettePicker } from "@/components/settings/PalettePicker";
@@ -153,12 +157,49 @@ export function EditorSection() {
             label={t("settings.outlineSound")}
           />
         </SettingRow>
+        <TypewriterRow />
       </SettingGroup>
       <SettingGroup title={t("settings.typography")}>
         <TypographySettings />
       </SettingGroup>
       <ImageSection />
     </>
+  );
+}
+
+/** Loaded and saved here, like the typography rows: only the main window's
+ *  editor uses it, and it hears about a change through the broadcast. */
+function TypewriterRow() {
+  const t = useT();
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    ipc
+      .getTypewriterScroll()
+      .then((value) => {
+        if (!cancelled) setEnabled(value !== false);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const save = (next: boolean) => {
+    setEnabled(next);
+    broadcastSettings({ typewriterScroll: next });
+    ipc.setTypewriterScroll(next).catch((err) => {
+      setEnabled(!next);
+      broadcastSettings({ typewriterScroll: !next });
+      toast.error(err instanceof Error ? err.message : String(err));
+    });
+  };
+
+  return (
+    <SettingRow label={t("settings.typewriter")} hint={t("settings.typewriterDetail")}>
+      <Toggle checked={enabled} onChange={save} label={t("settings.typewriter")} />
+    </SettingRow>
   );
 }
 

@@ -132,6 +132,9 @@ const en = {
   "settings.language.zhCN": "简体中文",
   "settings.outlineSound": "Outline interaction sound",
   "settings.outlineSoundDetail": "Play a subtle tick while moving across sections",
+  "settings.typewriter": "Typewriter scrolling",
+  "settings.typewriterDetail":
+    "In focus mode, keep the line you are writing in the middle and dim the rest.",
   "settings.typography": "Typography",
   "settings.typography.size": "Text size",
   "settings.typography.width": "Line width",
@@ -584,6 +587,8 @@ const zhCN = {
   "settings.language.zhCN": "简体中文",
   "settings.outlineSound": "目录交互音效",
   "settings.outlineSoundDetail": "在章节刻度之间移动时播放轻微 Tick 音效",
+  "settings.typewriter": "打字机滚动",
+  "settings.typewriterDetail": "专注模式下，正在写的那一行保持在窗口中间，其余段落减淡。",
   "settings.typography": "排版",
   "settings.typography.size": "字号",
   "settings.typography.width": "行宽",
