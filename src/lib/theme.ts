@@ -19,6 +19,22 @@ function paintPalette() {
   else document.documentElement.dataset.palette = id;
 }
 
+let titleBarTheme: Theme | undefined;
+
+/** Windows draws a native title bar above the page (macOS hides it under the
+ *  overlay), and that bar follows the system mode, not the app's: choosing
+ *  Dark with Windows in light mode left a white bar over a dark window. Tell
+ *  the window which mode it is in; "system" hands it back to Windows. */
+function paintTitleBar(theme: Theme) {
+  if (theme === titleBarTheme || !navigator.platform.toLowerCase().startsWith("win")) return;
+  titleBarTheme = theme;
+  void import("@tauri-apps/api/window")
+    .then(({ getCurrentWindow }) => getCurrentWindow().setTheme(theme === "system" ? null : theme))
+    .catch(() => {
+      titleBarTheme = undefined;
+    });
+}
+
 /**
  * Apply a theme to the document root and mirror it to localStorage. The
  * mirror lets either window paint the correct theme synchronously on load,
@@ -30,6 +46,7 @@ export function applyTheme(theme: Theme) {
   isDark = dark;
   document.documentElement.classList.toggle("dark", dark);
   paintPalette();
+  paintTitleBar(theme);
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {

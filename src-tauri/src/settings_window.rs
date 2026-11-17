@@ -54,8 +54,14 @@ pub fn get_settings(app: AppHandle, state: State<'_, AppState>) -> AppResult<Set
 /// Open the settings window, focusing it if it already exists. The window
 /// loads the same entry point as the main window; the frontend tells them
 /// apart by label.
+///
+/// Must stay `async`: a sync command runs on the main thread, and building a
+/// webview window there deadlocks on Windows (WebView2 needs that thread to
+/// finish creating it). The settings window then came up blank and could not
+/// be closed. The print window is opened from an async command for the same
+/// reason.
 #[tauri::command]
-pub fn open_settings_window(app: AppHandle) -> AppResult<()> {
+pub async fn open_settings_window(app: AppHandle) -> AppResult<()> {
     if let Some(window) = app.get_webview_window(SETTINGS_WINDOW_LABEL) {
         let _ = window.unminimize();
         let _ = window.show();

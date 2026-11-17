@@ -34,6 +34,15 @@ sips -s format png "$SOURCE" --out "$SOURCE_PNG" >/dev/null
 echo "Generating platform icons with tauri icon..."
 bunx tauri icon "$SOURCE_PNG" --output "$ICONS_DIR"
 
+# Windows shows the icon unmasked, so its icon.ico and Store logos are built
+# again from a rounded copy with transparent corners (scripts/round-icon.mjs).
+# macOS rounds the full-bleed square itself; the icns and pngs stay as they are.
+echo "Generating the rounded Windows icons..."
+ROUNDED_PNG="$work/icon-rounded.png"
+bun "$SCRIPT_DIR/round-icon.mjs" "$SOURCE_PNG" "$ROUNDED_PNG"
+bunx tauri icon "$ROUNDED_PNG" --output "$work/windows"
+cp "$work/windows/icon.ico" "$work/windows/StoreLogo.png" "$work/windows"/Square*Logo.png "$ICONS_DIR/"
+
 # tauri icon skips these two, but tauri.conf.json references 256x256.png.
 echo "Generating 256x256.png and the 1024 master..."
 sips -z 256 256 "$SOURCE_PNG" --out "$ICONS_DIR/256x256.png" >/dev/null
