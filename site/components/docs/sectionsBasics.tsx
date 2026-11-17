@@ -136,6 +136,10 @@ export const BASICS: DocSection[] = [
             heading looks like <Code>note.md#heading</Code>.
           </Li>
           <Li>
+            Rest the pointer on a link to another note and a small card shows how that note begins, so you can
+            look without opening it.
+          </Li>
+          <Li>
             A link to a note that doesn&apos;t exist yet is shown gray and dashed; clicking it creates the note.
           </Li>
           <Li>

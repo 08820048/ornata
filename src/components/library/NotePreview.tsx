@@ -18,6 +18,7 @@ export const ThumbPage = memo(function ThumbPage({
   pad,
   ready = true,
   children,
+  lead,
 }: {
   title: string;
   /** null while the preview is still being read. */
@@ -27,6 +28,8 @@ export const ThumbPage = memo(function ThumbPage({
   ready?: boolean;
   /** Replaces the title (the inline rename field). */
   children?: React.ReactNode;
+  /** Shown above the title (the link preview's folder path). */
+  lead?: React.ReactNode;
 }) {
   const t = useT();
   const blocks = useMemo(
@@ -35,6 +38,7 @@ export const ThumbPage = memo(function ThumbPage({
   );
   return (
     <div className="flex size-full flex-col overflow-hidden" style={{ padding: pad }}>
+      {lead}
       {children ?? (
         <div className="library-title mb-2 line-clamp-3 shrink-0 text-[14px] font-bold leading-[20px] text-ink">
           {title}

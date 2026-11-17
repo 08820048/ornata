@@ -119,6 +119,7 @@ export const BASICS_ZH: DocSection[] = [
             用 <Code>/link</Code> 链接到另一篇笔记，或输入 <Code>[[</Code> 加标题。Ornata 会把它存成标准的 Markdown 链接{" "}
             <Code>[标题]（文件夹/笔记.md）</Code>，所以在其他应用里也能用。指向标题的链接形如 <Code>笔记.md#标题</Code>。
           </Li>
+          <Li>把鼠标停在指向另一篇笔记的链接上，会浮出那篇笔记的开头内容，不用打开就能看一眼。</Li>
           <Li>指向尚不存在的笔记的链接显示为灰色虚线；点击它会创建这篇笔记。</Li>
           <Li>
             把图片粘贴或拖进笔记，会保存到 <Code>.ornata/assets/</Code>。你也可以在「设置 → 编辑器」里改用自己的上传命令，例如 PicGo。

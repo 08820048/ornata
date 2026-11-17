@@ -10,6 +10,16 @@ const cache = new Map<string, { ms: number; text: string }>();
  * whose modification time moved. Nothing is fetched while `enabled` is off
  * (the library tab hidden), so typing in a note never triggers reads here.
  */
+/** One note's preview text, from the cache when its mtime hasn't moved. */
+export async function loadNoteHead(node: TreeNode): Promise<string> {
+  const hit = cache.get(node.rel);
+  if (hit && hit.ms === node.modifiedMs) return hit.text;
+  const heads = await ipc.noteHeads([node.rel]);
+  const text = heads?.[0]?.text ?? "";
+  cache.set(node.rel, { ms: node.modifiedMs, text });
+  return text;
+}
+
 export function useNoteHeads(notes: TreeNode[], enabled: boolean): (rel: string) => string | null {
   const [, setTick] = useState(0);
 

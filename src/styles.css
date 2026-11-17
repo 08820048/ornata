@@ -1829,6 +1829,45 @@ kbd,
     font-family: var(--font-note);
 }
 
+/* Hovering a note link: the target's first page in a small floating card. */
+.link-preview {
+    --page-scale: 0.78;
+    position: fixed;
+    z-index: 60;
+    width: 340px;
+    height: 230px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow:
+        0 1px 2px -1px rgba(0, 0, 0, 0.1),
+        0 14px 34px -14px rgba(0, 0, 0, 0.32);
+    pointer-events: none;
+    animation: link-preview-in 140ms var(--ease-out);
+}
+.link-preview::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 44px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+}
+.link-preview-path {
+    overflow: hidden;
+    margin-bottom: 2px;
+    color: var(--faint);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+@keyframes link-preview-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+}
+
 /* A note card: a loose sheet with a hairline and the faintest lift. */
 .library-note-shadow {
     position: absolute;
@@ -1904,8 +1943,9 @@ kbd,
 
 /* The miniature page: laid out at reading size, shown at 28%. */
 .library-page {
-    width: calc(100% / 0.28);
-    transform: scale(0.28);
+    /* The link preview reuses this page at a readable scale. */
+    width: calc(100% / var(--page-scale, 0.28));
+    transform: scale(var(--page-scale, 0.28));
     transform-origin: 0 0;
     font-family: var(--font-note);
     font-size: 16px;

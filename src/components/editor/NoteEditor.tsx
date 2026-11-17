@@ -41,6 +41,7 @@ import { LocalGraph } from "@/components/graph/LocalGraph";
 import { ImageSourcePopover } from "./ImageSourcePopover";
 import { imageMenuItems, type ImageTarget } from "./imageMenu";
 import { tableMenuItems } from "./tableMenu";
+import { LinkPreview } from "./LinkPreview";
 import { parseImageTarget } from "./imageExtras";
 import { ContextMenu, type MenuPosition } from "@/components/ui/ContextMenu";
 
@@ -384,6 +385,7 @@ export const NoteEditor = memo(function NoteEditor({
           onClose={() => setImageSource(null)}
         />
       )}
+      {!markdownSource && <LinkPreview scrollRef={scrollRef} noteRef={content.noteRef} active={active} />}
       {active && tableMenu && editor && !markdownSource && (
         <ContextMenu
           position={tableMenu}
