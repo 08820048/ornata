@@ -7,7 +7,7 @@ import { DownloadButton } from "./ui/download-button";
 import { ButtonLink } from "./ui/button";
 import { LogoMark } from "./Logo";
 import { EASE_OUT } from "@/lib/ease";
-import { DMG, VERSION } from "@/lib/config";
+import { DMG, REPO_URL, VERSION } from "@/lib/config";
 import { useCopy, useHref } from "@/lib/locale";
 
 const MORE_PRODUCTS = [
@@ -29,6 +29,7 @@ export function Footer() {
     { label: copy.links.updates, href: href("/updates") },
     { label: copy.links.faq, href: href("/#faq") },
     { label: copy.links.direct, href: DMG },
+    { label: copy.links.source, href: REPO_URL },
   ];
 
   return (

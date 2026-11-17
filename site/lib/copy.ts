@@ -51,7 +51,7 @@ export interface Copy {
     title: string;
     body: string;
     updates: string;
-    links: { why: string; inside: string; agents: string; docs: string; updates: string; faq: string; direct: string };
+    links: { why: string; inside: string; agents: string; docs: string; updates: string; faq: string; direct: string; source: string };
     more: string;
     version: (v: string) => string;
     tagline: string;
@@ -123,10 +123,10 @@ const en: Copy = {
     title: "Give your notes less software.",
     body: "Download Ornata, choose a folder, and keep writing in files that never stop being yours.",
     updates: "Read the updates",
-    links: { why: "Why Ornata", inside: "Inside the app", agents: "Agents", docs: "Docs", updates: "Updates", faq: "FAQ", direct: "Direct download" },
+    links: { why: "Why Ornata", inside: "Inside the app", agents: "Agents", docs: "Docs", updates: "Updates", faq: "FAQ", direct: "Direct download", source: "Source on GitHub" },
     more: "More products",
     version: (v) => `© Ornata · version ${v}`,
-    tagline: "Plain Markdown · no required account",
+    tagline: "Plain Markdown · open source (MIT)",
   },
   docs: { eyebrow: "Documentation", title: "Using Ornata.", lead: "Everything the app does, in the order you are likely to need it.", onThisPage: "On this page" },
   updates: {
@@ -202,10 +202,10 @@ const zh: Copy = {
     title: "让笔记少一点软件。",
     body: "下载 Ornata，选一个文件夹，继续在永远属于你的文件里写作。",
     updates: "查看更新日志",
-    links: { why: "为什么是 Ornata", inside: "应用一览", agents: "智能体", docs: "文档", updates: "更新日志", faq: "常见问题", direct: "直接下载" },
+    links: { why: "为什么是 Ornata", inside: "应用一览", agents: "智能体", docs: "文档", updates: "更新日志", faq: "常见问题", direct: "直接下载", source: "GitHub 源码" },
     more: "更多产品",
     version: (v) => `© Ornata · 版本 ${v}`,
-    tagline: "纯 Markdown · 无需账号",
+    tagline: "纯 Markdown · 开源（MIT）",
   },
   docs: { eyebrow: "文档", title: "使用 Ornata。", lead: "应用的全部功能，按你最可能用到的顺序排列。", onThisPage: "本页内容" },
   updates: {

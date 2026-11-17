@@ -6,6 +6,10 @@ export const FAQS_EN: Faq[] = [
     a: "Ornata is free to download and use — no account, no subscription. The macOS build is signed with an Apple Developer ID certificate and notarized by Apple.",
   },
   {
+    q: "Is Ornata open source?",
+    a: "Yes. The source is on GitHub (github.com/08820048/ornata) under the MIT License: you can read it, build it yourself, and send fixes. The name and icon are kept for the official app, so a fork you publish needs its own.",
+  },
+  {
     q: "Where are my notes stored?",
     a: "On your computer, as plain Markdown files in a folder you choose. The core editor needs no account or proprietary database, and you can open the folder in Finder or File Explorer at any time.",
   },
@@ -78,6 +82,10 @@ export const FAQS_ZH: Faq[] = [
   {
     q: "Ornata 要花多少钱？",
     a: "Ornata 可免费下载和使用 —— 无需账号，没有订阅。macOS 版使用 Apple Developer ID 证书签名，并经过 Apple 公证。",
+  },
+  {
+    q: "Ornata 开源吗？",
+    a: "开源。源码在 GitHub（github.com/08820048/ornata），采用 MIT 许可证：你可以阅读、自己构建，也可以提交修复。名称和图标保留给官方应用，你发布的分支版本需要换成自己的。",
   },
   {
     q: "我的笔记存在哪里？",

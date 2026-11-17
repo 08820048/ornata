@@ -18,6 +18,7 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - [Docs](https://ornata.app/docs): How to use every part of the app, including MCP, the command line, and shortcuts
 - [简体中文 / Chinese](https://ornata.app/zh): 中文首页、文档(/zh/docs)与更新日志(/zh/updates)
 - [Updates](https://ornata.app/updates): Release notes for every version
+- [Source code](https://github.com/08820048/ornata): MIT-licensed, on GitHub
 - [Download ${VERSION} (Apple Silicon DMG)](${DMG}): Latest signed and notarized build
 - [Download ${WINDOWS_VERSION} (Windows 64-bit installer)](${EXE}): Not yet code-signed; SmartScreen may warn
 
@@ -42,7 +43,7 @@ Ornata is built on the principle that notes should outlive the app: plain Markdo
 - Extras: LaTeX math (KaTeX), Mermaid diagrams, full-text search, vault-wide open tasks, project boards
 - Updates: signed update feed; the macOS build is Developer ID signed and notarized (the Windows installer is not yet code-signed)
 - Languages: English, Simplified Chinese
-- License: MIT
+- License: MIT (open source: https://github.com/08820048/ornata)
 
 ## Questions
 
