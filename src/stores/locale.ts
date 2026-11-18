@@ -28,15 +28,23 @@ interface LocaleState {
   applyRemoteLanguage: (language: Language) => void;
 }
 
+// No cached choice means Ornata has never run on this machine: the config
+// still holds its default, so the system language is the better guess (it also
+// decides the language of the getting-started notes in a new vault).
+export const firstLaunch = localStorage.getItem(STORAGE_KEY) === null;
 const initialLanguage = storedLanguage();
 applyLanguage(initialLanguage);
 
-export const useLocale = create<LocaleState>((set) => ({
+export const useLocale = create<LocaleState>((set, get) => ({
   language: initialLanguage,
 
   startup: async () => {
     try {
       const language = await ipc.getLanguage();
+      if (firstLaunch && language === "en" && /^zh\b/i.test(navigator.language)) {
+        await get().setLanguage("zh-CN");
+        return;
+      }
       applyLanguage(language);
       set({ language });
     } catch {

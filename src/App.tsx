@@ -14,7 +14,7 @@ import { activeDir, useVault } from "@/stores/vault";
 import { useUi } from "@/stores/ui";
 import { useTabs } from "@/stores/tabs";
 import { useUpdater } from "@/stores/updater";
-import { t as translate, useLocale, useT } from "@/stores/locale";
+import { firstLaunch, t as translate, useLocale, useT } from "@/stores/locale";
 import { writeRich } from "@/lib/clipboard";
 import { goBack, goForward } from "@/lib/navigate";
 import { handleVaultChanged } from "@/lib/vaultEvents";
@@ -24,6 +24,9 @@ import { IssuePicker } from "@/components/projects/IssuePicker";
 import { TasksDialog } from "@/components/tasks/TasksDialog";
 import { TagsDialog } from "@/components/tasks/TagsDialog";
 import { UnusedAssetsDialog } from "@/components/assets/UnusedAssetsDialog";
+import { WhatsNewDialog } from "@/components/whatsNew/WhatsNewDialog";
+import { takeWhatsNew } from "@/lib/whatsNew";
+import packageInfo from "../package.json";
 
 const AppShell = lazy(() =>
   import("@/components/layout/AppShell").then((module) => ({
@@ -44,6 +47,14 @@ export default function App() {
   const t = useT();
 
   useSettingsBridge();
+
+  // After an update, once the vault is open, show what changed since the
+  // version this machine last ran.
+  useEffect(() => {
+    if (status !== "ready") return;
+    const releases = takeWhatsNew(packageInfo.version, firstLaunch);
+    if (releases.length) useUi.getState().setWhatsNew(releases);
+  }, [status]);
 
   useEffect(() => {
     initSessionSync();
@@ -261,6 +272,7 @@ export default function App() {
         {status === "ready" && <McpDialog />}
       {status === "ready" && <TagsDialog />}
       {status === "ready" && <UnusedAssetsDialog />}
+      {status === "ready" && <WhatsNewDialog />}
       </Suspense>
       <AppToaster />
     </>

@@ -11,6 +11,7 @@ import {
   IconPlug,
   IconSearch,
   IconSettings,
+  IconSparkles,
   IconLayoutGrid,
   IconLayoutKanban,
   IconTopologyStar3,
@@ -20,6 +21,8 @@ import { openPath } from "@tauri-apps/plugin-opener";
 import { motion } from "motion/react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ipc } from "@/lib/ipc";
+import { releaseNotes } from "@/lib/whatsNew";
+import packageInfo from "../../../package.json";
 import { SPRING_LAYOUT } from "@/lib/ease";
 import { closeSplitKeepingFocus } from "@/lib/closePane";
 import { openRelAside } from "@/lib/openAside";
@@ -163,6 +166,12 @@ export function CommandPalette() {
           useProjects.getState().setSidebar("projects");
           useVault.getState().setView({ type: "projects" });
         },
+      },
+      {
+        id: "whats-new",
+        label: t("whatsNew.title"),
+        icon: IconSparkles,
+        run: () => useUi.getState().setWhatsNew(releaseNotes(packageInfo.version)),
       },
       {
         id: "cleanup-assets",

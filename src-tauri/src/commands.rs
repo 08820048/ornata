@@ -138,9 +138,10 @@ fn activate_vault(app: &AppHandle, state: &AppState, root: PathBuf) -> AppResult
     let _ = legacy::archive_collections(&root);
     // Drop in agent guide files so coding agents understand the vault.
     let _ = agent_docs::ensure(&root);
-    // Seed a starter note only on a brand-new vault, so it isn't empty.
+    // Seed the getting-started notes only on a brand-new vault, so it isn't
+    // empty, in the language the app is set to.
     if first_run {
-        let _ = notes::seed_welcome(&root);
+        let _ = crate::guide::seed(&root, config::load(app).language);
     }
     // Allow the webview to load images from the vault's asset folder.
     let _ = app

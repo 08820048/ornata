@@ -36,6 +36,7 @@ release/
 !THIRD_PARTY_NOTICES.md
 !TRADEMARKS.md
 !.github/**
+!src-tauri/guide/**
 
 # Secrets and keys (never commit these!)
 *.key

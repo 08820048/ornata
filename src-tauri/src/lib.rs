@@ -11,6 +11,7 @@ mod config;
 mod error;
 mod external_notes;
 mod graph;
+mod guide;
 mod history;
 mod link_rewrite;
 mod image_source;

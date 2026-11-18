@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Release } from "@/lib/whatsNew";
 
 type SaveState = "idle" | "saving" | "error";
 
@@ -23,6 +24,8 @@ interface UiState {
   tagsOpen: boolean;
   saveTemplateOpen: boolean;
   unusedAssetsOpen: boolean;
+  /** Release notes shown by the "What's new" dialog; null = closed. */
+  whatsNew: Release[] | null;
   sidebarHidden: boolean;
   shortcutBarHidden: boolean;
   focusMode: boolean;
@@ -41,6 +44,7 @@ interface UiState {
   setTagsOpen: (open: boolean) => void;
   setSaveTemplateOpen: (open: boolean) => void;
   setUnusedAssetsOpen: (open: boolean) => void;
+  setWhatsNew: (releases: Release[] | null) => void;
   toggleSidebar: () => void;
   toggleShortcutBar: () => void;
   /** Hide the sidebar and fade the chrome; leaving restores the sidebar. */
@@ -59,6 +63,7 @@ export const useUi = create<UiState>((set, get) => ({
   tagsOpen: false,
   saveTemplateOpen: false,
   unusedAssetsOpen: false,
+  whatsNew: null,
   sidebarHidden: false,
   shortcutBarHidden: readShortcutBarHidden(),
   focusMode: false,
@@ -72,6 +77,7 @@ export const useUi = create<UiState>((set, get) => ({
   setTagsOpen: (tagsOpen) => set({ tagsOpen }),
   setSaveTemplateOpen: (saveTemplateOpen) => set({ saveTemplateOpen }),
   setUnusedAssetsOpen: (unusedAssetsOpen) => set({ unusedAssetsOpen }),
+  setWhatsNew: (whatsNew) => set({ whatsNew }),
   toggleSidebar: () => set({ sidebarHidden: !get().sidebarHidden }),
   toggleShortcutBar: () => {
     const shortcutBarHidden = !get().shortcutBarHidden;

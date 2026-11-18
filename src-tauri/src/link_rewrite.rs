@@ -313,7 +313,7 @@ fn rewrite_wiki(target: &str, ctx: &MatchCtx) -> Option<String> {
 
 /// Vault rel → href, mirroring the frontend's `relToHref`
 /// (per-segment `encodeURIComponent`).
-fn rel_to_href(rel: &str) -> String {
+pub(crate) fn rel_to_href(rel: &str) -> String {
     rel.split('/')
         .map(encode_component)
         .collect::<Vec<_>>()

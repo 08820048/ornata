@@ -3,69 +3,7 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{AppError, AppResult};
 use crate::util::sanitize_name;
-use crate::vault::{notes_root, rel_of, resolve_rel};
-
-const WELCOME: &str = if cfg!(target_os = "macos") {
-    r#"# Welcome to Ornata
-
-A fast, local-first place to write. Every note here is a plain `.md` file in the
-folder you picked — open it in Finder, sync it with iCloud, version it with git.
-Delete this note whenever you like.
-
-## Try these
-
-- [ ] Press **⌘K** to jump to any note or run a command
-- [ ] Press **⌘N** to create a new note
-- [ ] Type `[[` to link to another note
-- [ ] Press **⌘⇧D** to toggle light / dark
-- [ ] Drag notes and folders in the sidebar to organize
-
-## Markdown just works
-
-**Bold**, *italic*, `inline code`, lists, quotes, and fenced code:
-
-```ts
-const notes = "yours, forever";
-```
-
-> Your words stay on your disk. No account, no cloud.
-"#
-} else {
-    r#"# Welcome to Ornata
-
-A fast, local-first place to write. Every note here is a plain `.md` file in the
-folder you picked — open it in Explorer, sync it with the cloud, version it with git.
-Delete this note whenever you like.
-
-## Try these
-
-- [ ] Press **Ctrl+K** to jump to any note or run a command
-- [ ] Press **Ctrl+N** to create a new note
-- [ ] Type `[[` to link to another note
-- [ ] Press **Ctrl+Shift+D** to toggle light / dark
-- [ ] Drag notes and folders in the sidebar to organize
-
-## Markdown just works
-
-**Bold**, *italic*, `inline code`, lists, quotes, and fenced code:
-
-```ts
-const notes = "yours, forever";
-```
-
-> Your words stay on your disk. No account, no cloud.
-"#
-};
-
-/// Write a starter `notes/Welcome.md` if it doesn't already exist. Used on the
-/// first launch of a brand-new vault so it isn't an empty screen.
-pub fn seed_welcome(root: &Path) -> AppResult<()> {
-    let path = notes_root(root).join("Welcome.md");
-    if !path.exists() {
-        fs::write(path, WELCOME)?;
-    }
-    Ok(())
-}
+use crate::vault::{rel_of, resolve_rel};
 
 pub fn read_note(root: &Path, rel: &str) -> AppResult<String> {
     let path = resolve_rel(root, rel)?;
