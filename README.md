@@ -19,7 +19,7 @@ Download Ornata from [ornata.app](https://ornata.app):
 - **macOS 12 or later (Apple Silicon)** — open the `.dmg` and drag Ornata to Applications. Builds are signed with an Apple Developer ID and notarized by Apple.
 - **Windows 10 or later (64-bit)** — run the installer. It is not code-signed yet, so SmartScreen may ask you to confirm.
 
-The app keeps itself up to date from a signed update feed.
+The same installers, with checksums, are attached to each version on [GitHub Releases](https://github.com/08820048/ornata/releases). The app keeps itself up to date from a signed update feed.
 
 ---
 

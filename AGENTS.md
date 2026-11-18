@@ -103,6 +103,7 @@ Releases are run by hand from the maintainer's Mac (Developer ID + Apple notariz
 2. `bun run release x.y.z "<notes>"` — version sync, signed build, notarization, staged in `release/x.y.z/`. Commit and push the version bump it makes.
 3. `bun run release:publish -- x.y.z --confirm` — uploads to R2 and switches the stable channel (what the in-app updater reads). This is not undoable; check the staged files first.
 4. Only after step 3, `cd site && bun run deploy`: the site's download links are built from the version number.
+5. Tag the version-bump commit and make the GitHub release: `git tag -a vx.y.z -m "Ornata x.y.z" && git push origin vx.y.z`, then `bun run release:github -- x.y.z --assets` (notes from CHANGELOG.md, the DMG and SHA256SUMS.txt attached). The Windows workflow adds its installer to the same release when it publishes; older releases carry notes and download links only.
 
 The Windows download link has its own number, `WINDOWS_VERSION` in `site/lib/config.ts`: a Mac release does not move it (for six releases the link followed the Mac version and pointed at installers that did not exist). After publishing a Windows build, set it to that version and deploy the site; before deploying, check the `.exe` URL answers 200.
 

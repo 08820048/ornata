@@ -20,6 +20,7 @@
     "release:publish": "bun scripts/publish-r2.js",
     "release": "bash scripts/release.sh",
     "release:windows": "bun scripts/release-windows.js",
+    "release:github": "bun scripts/github-release.js",
     "changelog:note": "bun scripts/sync-changelog-note.js"
   },
   "dependencies": {

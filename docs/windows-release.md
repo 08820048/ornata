@@ -45,7 +45,7 @@ Mac 发布新版本时,清单里旧的 Windows 条目会被去掉,这是正常�
 1. 打开仓库的 **Actions → Release Windows → Run workflow**。
 2. `version` 填版本号(例如 `0.13.1`)。`publish` **先不勾**,运行一次:只构建,不上传。
 3. 跑完后在这次运行页面下方的 **Artifacts** 下载 `ornata-<版本>-windows`,在 Windows 上装一下试试。
-4. 没问题就再运行一次,这次勾上 `publish`:上传到 R2,并把 Windows 加进稳定渠道。
+4. 没问题就再运行一次,这次勾上 `publish`:上传到 R2,把 Windows 加进稳定渠道,并把安装包附到这个版本的 GitHub Release 上(Release 由 Mac 发布时创建)。
 5. 修改 `site/lib/config.ts` 里的 `WINDOWS_VERSION` 并部署官网(见“发布之后”)。
 
 ## 在云端 Windows 上手动发布(备用)

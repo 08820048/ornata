@@ -33,6 +33,9 @@ jobs:
     # repository settings if publishing should need a second click.
     environment: release
     timeout-minutes: 60
+    # Write access only to attach the installer to the release.
+    permissions:
+      contents: write
     env:
       # Passed as data, never pasted into a command line.
       VERSION: ${{ inputs.version }}
@@ -81,6 +84,18 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: bun run release:publish -- $env:VERSION --confirm
+
+      # Adds the installer (and its checksum) to the GitHub release the Mac
+      # release created for this tag.
+      - name: Attach to the GitHub release
+        if: ${{ inputs.publish }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # The download links are checked through R2 (the public URL answers 403 here).
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bun run release:github -- $env:VERSION --assets
 
       - name: Next step
         if: ${{ inputs.publish }}
